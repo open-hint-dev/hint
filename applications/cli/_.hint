@@ -1,0 +1,3 @@
+# app
+
+The HINT (Human Intent Native Transpiler) command-line tool is a lightweight, zero-dependency compiler. It reads local repository architectures, aggregates cascading file configurations, processes structural block directives, and outputs an ultra-dense, markdown-formatted system prompt optimized for LLM coding assistants.

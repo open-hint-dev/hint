@@ -1,0 +1,21 @@
+{
+    "name": "@openhint/cli",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "coverage": "make coverage-js",
+        "fix": "make fix-js",
+        "lint": "make lint-js",
+        "refresh": "make refresh-js",
+        "release": "make release-js",
+        "test": "make test-js"
+    },
+    "devDependencies": {
+        "@openhint/preset-eslint": "workspace:*",
+        "@openhint/preset-typescript": "workspace:*",
+        "eslint": "*",
+        "typescript": "*",
+        "vite": "*"
+    }
+}

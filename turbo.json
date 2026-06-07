@@ -1,0 +1,26 @@
+{
+    "$schema": "https://turbo.build/schema.json",
+    "tasks": {
+        "coverage": {
+            "dependsOn": ["^coverage"]
+        },
+        "fix": {
+            "dependsOn": ["^fix"]
+        },
+        "lint": {
+            "dependsOn": ["^lint"]
+        },
+        "refresh": {
+            "dependsOn": ["^refresh"]
+        },
+        "refresh-react": {
+            "dependsOn": ["^refresh-react"]
+        },
+        "release": {
+            "dependsOn": ["^release"]
+        },
+        "test": {
+            "dependsOn": ["^test"]
+        }
+    }
+}

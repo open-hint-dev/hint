@@ -1,0 +1,40 @@
+# lang
+
+TypeScript (Node.js v20+ / ESM). All exports are pure ESM — no CommonJS.
+
+# deps
+
+- `eslint` + `@eslint/js` — core linting engine and JS recommended rules
+- `typescript-eslint` + `@typescript-eslint/eslint-plugin` + `@typescript-eslint/parser` — TypeScript-aware linting and type-checked rules
+- `eslint-plugin-import-x` + `eslint-import-resolver-typescript` — import order enforcement with TypeScript path resolution
+- `eslint-plugin-prettier` + `eslint-config-prettier` + `prettier` — Prettier formatting enforced as an ESLint rule, conflicts disabled
+- `prettier-eslint` — runs Prettier then ESLint for formatting pipelines
+- `prettier-plugin-astro` — Prettier support for `.astro` files
+- `prettier-plugin-multiline-arrays` — formats long arrays across multiple lines
+- `prettier-plugin-packagejson` — sorts and formats `package.json` fields
+- `@ianvs/prettier-plugin-sort-imports` — deterministic import ordering via Prettier
+- `globals` — environment global variable sets (node, browser, etc.)
+- `jiti` — runtime TypeScript import support for config files
+- `@openhint/preset-typescript` — workspace TypeScript preset; `tsconfig.json` extends its `node.json`
+
+# build
+
+- Consumed directly as TypeScript source — no separate compile step for the preset itself
+- Downstream packages import specific config variants: `import config from '@openhint/preset-eslint/node'`
+- Each package's `eslint.config.ts` spreads the imported config array and adds project-specific overrides
+
+# lib @openhint/preset-eslint
+
+Exports three composable ESLint flat config arrays — `base`, `node`, and `isomorphic` — each targeting a different runtime environment. All three build on a shared base that wires up TypeScript-ESLint, import ordering, and Prettier as a linter rule.
+
+# good
+
+- Always spread the preset config inside `defineConfig` and layer overrides on top — never replace the base outright.
+- The `import-x` resolver must always point to the consuming package's `tsconfig.json` to resolve path aliases correctly.
+- Prettier must remain the canonical formatter; ESLint formatting rules are intentionally disabled via `eslint-config-prettier` to avoid conflicts.
+
+# bad
+
+- Do not enable `@typescript-eslint/no-explicit-any` — it is explicitly turned off to allow gradual typing in utility and config code.
+- Do not re-enable `@typescript-eslint/no-unused-vars` — it produces false positives on type-only declarations; TypeScript's own checks are sufficient.
+- Do not add environment globals directly to the base config — use the `node` or `isomorphic` variants which scope globals to their runtime.

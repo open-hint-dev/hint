@@ -1,0 +1,29 @@
+{
+    "name": "@openhint/preset-eslint",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "dependencies": {
+        "@eslint/js": "*",
+        "@ianvs/prettier-plugin-sort-imports": "*",
+        "@openhint/preset-typescript": "workspace:*",
+        "@types/node": "*",
+        "@typescript-eslint/eslint-plugin": "*",
+        "@typescript-eslint/parser": "*",
+        "eslint": "*",
+        "eslint-config-prettier": "*",
+        "eslint-import-resolver-typescript": "*",
+        "eslint-plugin-import-x": "*",
+        "eslint-plugin-prettier": "*",
+        "globals": "*",
+        "jiti": "*",
+        "prettier": "*",
+        "prettier-eslint": "*",
+        "prettier-plugin-astro": "*",
+        "prettier-plugin-multiline-arrays": "*",
+        "prettier-plugin-packagejson": "*",
+        "react": "*",
+        "typescript": "*",
+        "typescript-eslint": "*"
+    }
+}

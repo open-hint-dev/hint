@@ -1,0 +1,12 @@
+# lang
+
+TypeScript (Node.js v20+ / ESM)
+
+# deps
+
+Only use standard native Node.js APIs (`fs/promises`, `path`) and standard regex. Do not use external parsers or heavy dependencies.
+
+# build
+
+- tsc for compilation
+- makefile for better development and maintenance experience.

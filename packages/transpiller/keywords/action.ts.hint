@@ -1,0 +1,25 @@
+# module action
+
+Renders an action as a registered macro behavior. The "registered as a macro behavior" framing is deliberate — it teaches the model to treat the action name as a referenceable command token, so cross-references like {invalidateSessionCache} in other blocks are resolved reliably.
+
+# entity Input
+
+- directive: 'action'
+- name: the action name, camelCase (e.g. 'invalidateSessionCache', 'renderBlock') — required
+- body: plain-language description of what this action does and when it fires
+
+# entity Output
+
+```markdown
+## [REUSABLE AUTOMATION SCRIPTS: {{name}}]
+
+The following action is registered as a macro behavior. Whenever the described condition is met or this action is referenced by name in other blocks, execute the following steps exactly:
+
+{{body}}
+```
+
+# rule
+
+- name is required. An action block without a name is a PARSE_ERROR.
+- If the developer lists numbered steps in the body, they are the action's logic sequence and must be preserved exactly.
+- {variable} references in the body are resolved before this template executes.
