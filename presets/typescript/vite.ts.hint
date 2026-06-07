@@ -1,0 +1,49 @@
+@read ./vite.ts
+
+# module vite
+
+Vite configuration factories for three distinct build targets: Node.js libraries, isomorphic libraries, and React Router fullstack apps. Each factory is a zero-arg function that returns a fully defined Vite `UserConfig` and is meant to be called directly from a package's `vite.config.ts`.
+
+All library builds share a private base config that sets `outDir` to {packageReleaseDir}, `emptyOutDir: false`, a single `./index.ts` entry point, `formats: ["es"]`, and `esbuild.target: "ES2024"`. The TSC plugin always runs as a pre-build step to emit declaration files before Vite emits JS.
+
+# function NodeBuildConfig
+
+Vite config for packages that are pure Node.js libraries. Emits individual unbundled ESM files with all node_modules treated as external.
+
+## return UserConfig - Fully defined Vite configuration.
+
+## flow
+
+1. Apply the shared library base config (outDir, emptyOutDir, lib entry, ES2024 target).
+2. Apply plugins in order:
+    - `nodeExternals()` — marks every package in node_modules as external so they are not bundled.
+    - `tscPlugin` (prebuild: true) — runs `tsc --declaration --declarationMap --emitDeclarationOnly` into {packageReleaseDir} before Vite starts.
+    - `noBundlePlugin()` — preserves each source file as a separate output module instead of rolling them up.
+
+# function IsomorphicBuildConfig
+
+Vite config for packages that must run in both browser and Node.js. Bundles all code into the output — no external exclusions — so the artifact is self-contained.
+
+## return UserConfig - Fully defined Vite configuration.
+
+## flow
+
+1. Apply the shared library base config (outDir, emptyOutDir, lib entry, ES2024 target).
+2. Apply only `tscPlugin` (prebuild: true) for declaration emit.
+3. Omit `nodeExternals` and `noBundlePlugin` — dependencies are inlined and modules are rolled up into the bundle.
+
+# function ReactRouterBuildConfig
+
+Vite config for fullstack React Router applications. Does not configure a library entry or output directory — the React Router plugin owns the build output entirely.
+
+## return UserConfig - Fully defined Vite configuration.
+
+## flow
+
+1. Define `optimizeDeps.esbuildOptions.define` with three stubs for browser compatibility during dep pre-bundling:
+    - `process.env` → `{}`
+    - `process.versions` → `{}`
+    - `process.platform` → `"browser"`
+2. Apply plugins in order:
+    - `reactRouter()` — enables file-based routing, server rendering, and React Router's Vite integration.
+    - `tsconfigPaths()` — resolves TypeScript path aliases (defined in `tsconfig.json` `paths`) inside Vite's module graph.

@@ -1,0 +1,27 @@
+# test
+
+Renders verification and testing criteria. The exact section header phrase `## [VERIFICATION & UNIT TEST CRITERIA` is a recognized signal for AI coding agents and must be preserved verbatim — do not paraphrase it.
+
+# entity Input
+
+- directive: 'test'
+- name: the target being tested — optional (function name, entity name, or module name)
+- body: test scenarios, edge cases, mock data requirements, and assertion criteria
+
+# entity Output
+
+```markdown
+## [VERIFICATION & UNIT TEST CRITERIA{{#name}}: {{name}}{{/name}}]
+
+Generate tests that explicitly cover every scenario listed below. Each edge case, mock data structure, and assertion described here must appear in the test output. Do not omit any scenario:
+
+{{body}}
+```
+
+# rule
+
+- name is optional. {{#name}}: {{name}}{{/name}} is a conditional block — included only when name is non-empty.
+- When name is absent the header is: `## [VERIFICATION & UNIT TEST CRITERIA]`
+- The section header must use the exact phrase `VERIFICATION & UNIT TEST CRITERIA`. Do not paraphrase — AI coding agents scan for this string.
+- Multiple test blocks targeting different names render as separate sections.
+- Multiple test blocks with the same name across cascade levels are merged in cascade order.

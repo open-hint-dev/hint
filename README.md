@@ -1,1 +1,153 @@
-# hint
+# HINT — Human Intent Native Transpiler
+
+<p>
+  <img alt="spec" src="https://img.shields.io/badge/spec-v1.0.0-black">
+  <img alt="format" src="https://img.shields.io/badge/format-Markdown%E2%80%91native-blue">
+  <img alt="output" src="https://img.shields.io/badge/output-LLM%20prompt%20payload-6e40c9">
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-green">
+</p>
+
+> **A programming language with no syntax of its own. Write intent in any human language; ship code in any programming language. For engineers.**
+
+I'm tired of codebases that grow without control — vibe-coded sprawl no one fully understands and everyone's scared to touch. I like beautiful, maintainable code: clear boundaries, no dead weight, every file there for a reason. I'm not giving that up just to move faster with AI.
+
+HINT — **H**uman **INT**ent — you write the **borders** (contracts, data shapes, the things that must never happen) in plain Markdown, in whatever human language you think in. You name the target — Python, TypeScript, Go — in one line. HINT compiles it into a prompt that makes the AI build _exactly that and nothing else_, stay inside your lines, and flag anything you left unspecified instead of guessing. **You design. It types.**
+
+---
+
+## See it work
+
+`src/domain/auth/login.ts.hint` — you write the borders:
+
+```markdown
+# read {src/infrastructure/security/tokens.ts} as TokenEngine
+
+Core JWT signing wrapper.
+
+# entity Credentials
+
+- username: string (authenticated email pattern)
+- password: string (min 8 chars, argon2-hashed)
+
+# function executeLogin
+
+## arg inputs: {Credentials} - Payload from the login route.
+
+## return string - A signed bearer token.
+
+## error InvalidCredentialsException - User missing or password mismatch.
+
+## flow
+
+1. Look up the username, fetch the secure profile.
+2. If missing, throw InvalidCredentialsException.
+3. Compare the password against the stored argon2 hash.
+4. On success, sign a token via {TokenEngine} and return it.
+
+# bad
+
+- Never reveal whether a user exists in failure messages.
+```
+
+```bash
+hint src/domain/auth/login.ts.hint | claude
+```
+
+The agent answers inside the fence:
+
+```text
+CONTRACT TRACE
+  entity Credentials            — SATISFIABLE
+  function executeLogin         — SATISFIABLE
+  rule (no user-existence leak) — SATISFIABLE
+
+→ writes login.ts        — exactly the surface declared, nothing adjacent
+→ writes login.test.ts   — one regression test per declared error
+
+ASSUMPTIONS
+  // ASSUMPTION: token TTL not specified — defaulted to 3600s.
+```
+
+It built only what you declared, wrote the error test, and told you where your spec was thin. Add a `# rule` for the TTL, recompile — assumption gone.
+
+---
+
+## Quick start
+
+**1. Root baseline — `project.hint`:**
+
+```markdown
+# lang
+
+TypeScript (Node.js v22+ / ESM)
+
+# deps
+
+- Express.js, Zod
+- Prefer native modules; avoid bloated utilities.
+
+# build
+
+- npm run build
+- make test
+```
+
+**2. Companion files** — drop a `*.hint` next to any file you want built. Context lives where your code lives.
+
+**3. Compile** — `hint src/**/*.hint`. No CLI? Paste the `*.hint` into any chat LLM — it's pure Markdown.
+
+Full walkthrough → [`docs/02-quick-start.md`](docs/02-quick-start.md).
+
+---
+
+## What the prompt enforces
+
+No new syntax — the compiler wraps your spec in a border contract that makes the AI:
+
+- **Stay in scope** — only the files, types, and fields you declared. Nothing adjacent.
+- **Implement, not redesign** — your architecture, not its own; simplest construct that fits.
+- **Skip stubs** — every path built; `TODO`s go in `# notes` (stripped at compile).
+- **Gate before coding** — trace each clause `SATISFIABLE | UNDERSPECIFIED | CONFLICTING`; gaps stop, they don't get guessed.
+- **Surface assumptions** — unavoidable gap-fills marked in-code and listed back to you.
+- **Cover errors** — every `## error` gets a fail-then-pass regression test.
+- **Honor per-file control** — a companion beside each file; root → folder → file wins.
+
+Exact prompt strings → [`docs/05-transpilation.md`](docs/05-transpilation.md).
+
+---
+
+## Directives
+
+| Directive                                                      | Purpose                                                      |
+| -------------------------------------------------------------- | ------------------------------------------------------------ |
+| `# lang` / `# deps` / `# build`                                | Language, dependency whitelist, build & test pipelines       |
+| `# app` / `# lib` / `# module`                                 | Architectural scope declarations                             |
+| `# entity`                                                     | Data models, schemas, payload shapes                         |
+| `# function` (`## arg` / `## return` / `## error` / `## flow`) | Typed implementation contracts                               |
+| `# ui` (`## form` / `## block` / `## image` / `## table`)      | UI surfaces                                                  |
+| `# action`                                                     | Reusable macro behaviors                                     |
+| `# res` / `# rule`                                             | Static assets / non-negotiable mandates                      |
+| `# good` / `# bad`                                             | Required patterns / prohibited anti-patterns                 |
+| `# example` / `# test`                                         | Few-shot examples / verification criteria                    |
+| `# notes`                                                      | Private scratchpad — stripped at compile                     |
+| `# read` / `@include`                                          | LLM reads a file at run time / inline a file at compile time |
+| `{name}`                                                       | Cross-reference between blocks                               |
+
+Keywords are case-insensitive and abbreviations accept their full word (`# app` = `# Application`). Full grammar → [`docs/03-syntax.md`](docs/03-syntax.md).
+
+---
+
+## Docs
+
+| Doc                                                    | Contents                        |
+| ------------------------------------------------------ | ------------------------------- |
+| [`docs/01-intro.md`](docs/01-intro.md)                 | What HINT is, context hierarchy |
+| [`docs/02-quick-start.md`](docs/02-quick-start.md)     | Running in 5 minutes            |
+| [`docs/03-syntax.md`](docs/03-syntax.md)               | Syntax specification            |
+| [`docs/04-how-it-works.md`](docs/04-how-it-works.md)   | Engine mechanics                |
+| [`docs/05-transpilation.md`](docs/05-transpilation.md) | Prompt-mapping contract         |
+
+---
+
+**Status** — spec stable at v1.0.0; CLI + engine under `packages/transpiller/`. Issues and PRs welcome.
+**License** — MIT, see [`LICENSE`](LICENSE).

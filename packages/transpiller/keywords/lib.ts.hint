@@ -1,0 +1,24 @@
+# lib
+
+Renders a library scope declaration as an XML context wrapper. Identical structure to app and module — the type attribute distinguishes them for the model.
+
+# entity Input
+
+- directive: 'lib'
+- name: the library identifier (e.g. 'authHelpers', '@openhint/transpiler') — required
+- body: the library's purpose, API surface, and expected usage patterns
+
+# entity Output
+
+```markdown
+<system_context type="LIB" name="{{name}}">
+
+{{body}}
+
+</system_context>
+```
+
+# rule
+
+- name is required. A lib block without a name is a PARSE_ERROR.
+- The closing `</system_context>` tag must always be present on its own line with a blank line before it.

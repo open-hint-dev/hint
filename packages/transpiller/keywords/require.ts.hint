@@ -1,0 +1,25 @@
+# require
+
+Renders a scoped module dependency declaration — a targeted import list for a specific named boundary. More specific than the global deps block; more local than the project-wide whitelist.
+
+# entity Input
+
+- directive: 'require'
+- name: the scope this requirement applies to — optional
+- body: required packages, modules, or services with constraints
+
+# entity Output
+
+```markdown
+### [MODULE DEPENDENCIES{{#name}}: {{name}}{{/name}}]
+
+The following packages must be imported and available for this scope. Do not add imports outside this list for this module:
+
+{{body}}
+```
+
+# rule
+
+- name is optional. {{#name}}: {{name}}{{/name}} is a conditional block — included only when name is non-empty.
+- When name is absent the header is: `### [MODULE DEPENDENCIES]`
+- Multiple require blocks with the same name across cascade levels are merged in cascade order.

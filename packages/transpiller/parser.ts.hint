@@ -1,0 +1,328 @@
+# module parser
+
+The parser is the first stage of the compilation pipeline. Its job is to understand the file hierarchy, gather everything that applies to a target, and hand a clean ordered collection of blocks to the compiler.
+
+When a developer asks HINT to process a file, the parser figures out which global rules apply, which folder-level constraints layer on top, and what the file itself declares — then returns everything in the right order so the compiler can build the final prompt.
+
+# entity Directive
+
+Everything a HINT file can express belongs to one of these block types. The parser uses them to identify and separate a file into discrete chunks.
+
+- 'lang' | 'deps' | 'build' — project environment stack
+- 'module' | 'app' | 'lib' | 'res' | 'require' — scope and ownership declarations
+- 'entity' | 'function' | 'action' — domain definitions and logic
+- 'good' | 'bad' | 'example' | 'test' | 'notes' — guardrails and assurances
+
+# entity RawBlock
+
+A single section of a HINT file — one directive header and everything the developer wrote beneath it. This is the fundamental unit the compiler works with. Each block carries its source file and its position in the hierarchy so the compiler knows how to weigh it against others.
+
+- directive: {Directive}
+  which block type this is
+- name: string | undefined
+  the specific target this block applies to, if any (e.g. `applyCoupon`)
+- body: string
+  everything the developer wrote inside this block
+- sourcePath: string
+  which hint file this block came from
+- sourceKind: 'global' | 'wildcard' | 'baseline' | 'direct' | 'file'
+  where in the priority chain this block lives — global is the lowest precedence, file is the highest
+
+# entity ReadRef
+
+A declared `@read` intent from a hint file. This is not a file load — it is an instruction that the compiler will transpile into the final prompt, telling the LLM to go read a specific file before writing any code. The parser captures the name, the path, and the description the developer wrote beneath the directive.
+
+- name: string
+  the identifier used in `{name}` references throughout block bodies
+- glob: string
+  the file path or glob pattern as the developer wrote it
+- description: string
+  the lines the developer wrote beneath the `@read` directive — explains the file's architectural significance to the LLM
+
+# entity ParsedFile
+
+One fully processed HINT file — its blocks extracted and its read references loaded. Each file in the cascade becomes a ParsedFile so the compiler receives a clean, ordered list with no raw I/O left to do.
+
+- hintPath: string
+  where this hint file lives on disk
+- sourceKind: {RawBlock}.sourceKind
+  its position in the priority chain
+- blocks: {RawBlock}[]
+  all directive blocks found in this file
+- reads: {ReadRef}[]
+  all `@read` intents declared in this file — captured as instructions for the compiler, not loaded from disk
+
+# entity ParseResult
+
+Everything the compiler needs, assembled and ordered. Blocks flow from the lowest priority (global project rules) to the highest (file-specific instructions), mirroring how a senior developer thinks about layered constraints.
+
+- targetPaths: string[]
+  the files the developer originally asked to process
+- files: {ParsedFile}[]
+  every hint file involved, in priority order from global to file-specific
+- blocks: {RawBlock}[]
+  all blocks from all files, flat and in order — ready for the compiler to merge
+- reads: Map<string, {ReadRef}>
+  every `@read` intent across all files, keyed by name; more specific declarations win over general ones — the compiler turns these into LLM instructions in the final prompt
+- projectRoot: string
+  the project root directory, where `project.hint` lives
+
+# function normalizeInputPaths
+
+Forgives missing `.hint` extensions. Developers should not have to think about this — if they point at `auth.ts`, we understand they mean `auth.ts.hint`.
+
+## arg paths
+
+string[], the raw list of paths the caller passed in.
+
+## return string[]
+
+The same paths with `.hint` appended wherever it was missing.
+
+## flow
+
+1. Go through each path in the list.
+2. If it already ends with `.hint`, leave it alone.
+3. Otherwise append `.hint` and continue.
+
+# function findProjectRoot
+
+Locates the root of the project — the anchor point where the global `project.hint` lives. Walks upward from a starting directory until it finds a folder that contains `project.hint`, or falls back to standard project markers like `package.json`, `turbo.json`, or `.git`.
+
+## arg startDir
+
+string, the directory to begin searching from.
+
+## return Promise<string>
+
+The absolute path to the project root.
+
+## error AppError(IO_ERROR)
+
+If we reach the top of the filesystem without finding any project root marker — this usually means HINT is being run somewhere outside of a project.
+
+## flow
+
+1. Start from the given directory and look for `project.hint` first — that is the clearest signal this is a HINT project root.
+2. If found, return that directory immediately.
+3. If not, also check for `package.json`, `turbo.json`, or `.git` as fallback markers.
+4. If none are present, step up one directory and try again.
+5. If we reach the filesystem root without finding anything, fail with a clear explanation.
+
+# function discoverHierarchy
+
+The heart of HINT's cascading context system. For any target file, this maps out everything that applies to it — following a strict priority chain from the broadest global rules down to the file's own specific instructions, plus wildcard files at every level that are added alongside the chain.
+
+There are two separate mechanisms at work:
+
+**The priority chain** — each level can override what came before it. From lowest to highest priority:
+- `project.hint` at the project root — global baseline for the entire codebase
+- `_.hint` files in each parent folder, walking down toward the target — folder-level baselines
+- `auth.hint` in the target's folder — a direct match by name, without the source extension
+- `auth.ts.hint` in the target's folder — the specific companion file with the highest precedence
+
+**Wildcard files** — at every directory level, all other `*.hint` files that exist there are collected and added to the context. They do not override anything; they append shared domain rules automatically so developers do not have to manually `@include` them everywhere.
+
+## arg hintPath
+
+string, the target hint file we are building context for.
+
+## arg projectRoot
+
+string, the project root as found by {findProjectRoot}.
+
+## return string[]
+
+The full ordered list of hint file paths that apply to this target, from lowest to highest priority. Only files that actually exist on disk are included.
+
+## flow
+
+1. Check whether `project.hint` exists at the project root. If it does, add it first — it is the global anchor and carries the lowest priority.
+2. Walk down every directory from the project root toward the target file's folder. At each directory:
+   a. Collect any `*.hint` files present, excluding `_.hint` and `project.hint` — these are the wildcard additions for this level.
+   b. Check whether `_.hint` exists here. If it does, add it as the folder baseline after the wildcards.
+3. In the target file's own folder, check for a direct match — a file named after the target without the source extension (e.g., `auth.hint` for `auth.ts.hint`). If it exists, add it.
+4. Finally, add the target file itself — it has the highest priority of all.
+5. Return the complete ordered list.
+
+# function loadFile
+
+Reads a hint file off disk. If anything goes wrong, wraps the filesystem error into a structured {AppError} with the file path attached so the developer immediately knows what to look at.
+
+## arg filePath
+
+string, the absolute path to the hint file.
+
+## return Promise<string>
+
+The raw text content of the file.
+
+## error AppError(IO_ERROR)
+
+If the file cannot be read for any reason. The error includes the file path.
+
+## flow
+
+1. Read the file from disk.
+2. Return its content.
+3. If the read fails for any reason, wrap it into a clean error that includes the file path and rethrow.
+
+# function resolveIncludes
+
+Expands `@include` directives inline — replaces each one with the full content of the target file, recursively. This is how shared rule files get merged before the tokenizer runs. Detects circular references and stops before they cause an infinite loop.
+
+## arg content
+
+string, the raw hint text that may contain `@include` lines.
+
+## arg baseDir
+
+string, the directory of the file being processed, used to resolve relative include paths.
+
+## arg visited
+
+Set<string>, the set of files already expanded in this include chain — used to catch circular references before they loop forever.
+
+## return Promise<string>
+
+The fully expanded content with every `@include` replaced by the actual file it points to.
+
+## error AppError(IO_ERROR)
+
+If a file referenced by `@include` does not exist on disk.
+
+## error AppError(PARSE_ERROR)
+
+If expanding an include would create a circular dependency.
+
+## flow
+
+1. Go through the content line by line.
+2. Whenever an `@include` line appears, find the target file and load it.
+3. If that file was already expanded earlier in this chain, stop and report the cycle — do not proceed.
+4. Otherwise, recursively expand that file's own includes before splicing its content in.
+5. Return the fully expanded text.
+
+# function extractReads
+
+Finds every `@read` declaration in a hint file and captures it as a named intent — the reference name, the file path or glob, and the description the developer wrote beneath it. Nothing is loaded from disk. The compiler will later turn these intents into instructions in the final prompt, telling the LLM which files to read before touching the code.
+
+## arg content
+
+string, the hint text after includes have already been resolved.
+
+## return {ReadRef}[]
+
+All the `@read` intents declared in this file, captured as plain records.
+
+## flow
+
+1. Scan through the content looking for `@read` declarations.
+2. For each one, record the reference name and the file path or glob as written.
+3. Collect the lines immediately following the directive — until the next header or directive — as the description.
+4. Return all captured intents together.
+
+# function tokenize
+
+Splits a processed hint file into its individual blocks — one per directive header. The `# notes` section is stripped entirely; it is the developer's private scratchpad and never leaves their file.
+
+## arg content
+
+string, the fully resolved hint text.
+
+## arg sourcePath
+
+string, the hint file this content came from.
+
+## arg sourceKind
+
+{RawBlock}.sourceKind, where this file sits in the priority chain.
+
+## return {RawBlock}[]
+
+The ordered list of blocks found in this file. Empty if the file has no directive headers.
+
+## flow
+
+1. Work through the content from top to bottom.
+2. Each time a new directive header appears, start a new block.
+3. Everything that follows belongs to that block until the next header or a `---` separator.
+4. A `---` line closes the current block — anything after it, until the next header, is the developer's own comments and gets discarded.
+5. Strip any `# notes` blocks — they are never passed further.
+6. Return everything else in order.
+
+# function parseFile
+
+Runs the full processing pipeline for a single hint file: load it, expand includes, pull in read references, and split into blocks. Returns the result packaged as a {ParsedFile}.
+
+## arg hintPath
+
+string, the hint file to process.
+
+## arg sourceKind
+
+{RawBlock}.sourceKind, where this file sits in the priority chain.
+
+## arg includeVisited
+
+Set<string>, the shared cycle-detection set for include expansion — passed through so circular references are caught across file boundaries.
+
+## return Promise<{ParsedFile}>
+
+## error AppError(IO_ERROR)
+
+If any file involved — the hint file itself, any of its includes, or any of its reads — cannot be loaded.
+
+## error AppError(PARSE_ERROR)
+
+If a circular include is found during expansion.
+
+## flow
+
+1. Load the hint file from disk.
+2. Expand all `@include` directives, using the shared visited set to catch any cycles.
+3. Extract all `@read` intents — name, path, and description — without touching the referenced files.
+4. Split the resolved content into blocks.
+5. Return the complete {ParsedFile}.
+
+# function parse
+
+The main entry point. Takes a developer's file list, assembles the full cascade for each target, processes every hint file involved, and returns a single {ParseResult} ready for the {compiler}.
+
+## arg inputPaths
+
+string[], the target files the developer wants to process. The `.hint` extension is optional.
+
+## return Promise<{ParseResult}>
+
+## error AppError(IO_ERROR)
+
+If any required file cannot be loaded from disk.
+
+## error AppError(PARSE_ERROR)
+
+If any hint file in the cascade is malformed or contains a circular include.
+
+## flow
+
+1. Normalize the input paths — add `.hint` where it is missing.
+2. Find the project root so we know where the cascade begins.
+3. For each target file, map out its full hint hierarchy using {discoverHierarchy}.
+4. Process every hint file in the hierarchy in order. If a file appears in multiple targets' cascades, load and process it only once.
+5. Collect all blocks in priority order — global rules first, file-specific rules last.
+6. Merge all read references into one map. The most specific declaration for any given name wins.
+7. Hand the complete {ParseResult} to the compiler.
+
+# good
+
+- Every target gets its full cascade — global anchor, wildcard additions, folder baselines, direct match, and specific companion. Never skip a level.
+- Wildcard `*.hint` files are additions, not overrides — collect them at every directory level regardless of what else is present.
+- A missing `_.hint`, `project.hint`, or direct match at any level is expected and normal. Only the specific companion file the developer explicitly created is required.
+- Never load `@read` target files from disk — they are intent declarations for the LLM, not file imports. The compiler turns them into prompt instructions.
+- Any hint file shared across multiple targets is loaded and processed exactly once.
+
+# bad
+
+- Do not decide which blocks matter — hand everything to the {compiler} and let it choose what to keep or override.
+- Do not resolve `{variable}` placeholders inside blocks. The compiler owns that step.
+- Do not confuse `@include` with `@read`. `@include` inlines file content into the text stream right now, at parse time. `@read` is a message to the LLM — capture it as intent and leave it for the compiler to emit.

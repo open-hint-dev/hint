@@ -1,0 +1,9 @@
+{
+    "extends": "@openhint/preset-typescript/node.json",
+    "include": [
+        "."
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

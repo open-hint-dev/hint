@@ -1,0 +1,38 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "compilerOptions": {
+        "allowJs": true,
+        "allowSyntheticDefaultImports": true,
+        "declaration": true,
+        "declarationMap": true,
+        "emitDecoratorMetadata": false,
+        "esModuleInterop": true,
+        "experimentalDecorators": true,
+        "forceConsistentCasingInFileNames": true,
+        "incremental": false,
+        "isolatedModules": true,
+        "jsx": "react-jsx",
+        "jsxImportSource": "react",
+        "lib": [
+            "DOM",
+            "DOM.Iterable",
+            "es2024"
+        ],
+        "module": "ESNext",
+        "moduleDetection": "force",
+        "moduleResolution": "Bundler",
+        "noEmit": true,
+        "noUncheckedIndexedAccess": true,
+        "removeComments": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "strict": true,
+        "strictNullChecks": true,
+        "target": "ES2024",
+        "verbatimModuleSyntax": true
+    },
+    "display": "Base",
+    "exclude": ["node_modules"],
+    "include": ["."]
+}
