@@ -1,0 +1,25 @@
+# deps
+
+Renders the dependency whitelist as a continuation sub-block within the `## [ENVIRONMENT RUNTIME & LANGUAGE]` section opened by the lang template. The prohibition prefix is fixed — it activates strict compliance behavior in the model for package selection.
+
+# entity Input
+
+- directive: 'deps'
+- name: undefined — deps is always anonymous
+- body: the dependency list and constraints
+
+# entity Output
+
+```markdown
+### Approved Dependency Whitelist
+
+You are strictly forbidden from installing or importing any package outside of this list:
+
+{{body}}
+```
+
+# rule
+
+- deps blocks carry no name. A name field on a deps block is a PARSE_ERROR.
+- This template emits no `##` section header — it renders as a `###` sub-section inside the lang section. The compiler must output this block immediately after lang.
+- Multiple deps blocks from different cascade levels are merged in cascade order. The compiler concatenates their bodies with a blank line before binding — the AI sees the complete whitelist in one block.

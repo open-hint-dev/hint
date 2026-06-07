@@ -1,0 +1,9 @@
+{
+    "extends": "./node.json",
+    "include": [
+        "."
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

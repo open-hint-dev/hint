@@ -1,0 +1,197 @@
+# module error
+
+A thin wrapper around JavaScript errors that makes them easier to work with. The standard `Error` is fine for throwing, but it tells you almost nothing useful when you catch it — no classification, no structured context, nothing that survives serialization cleanly.
+
+This module fixes that. Every error gets a code so you can tell failures apart without parsing messages. Every catch boundary has a safe landing. Every error can be logged or inspected in a consistent shape. That is all this is — a small quality-of-life layer that makes debugging faster and error handling less fragile.
+
+# entity ErrorCode
+
+A fixed set of names for the kinds of things that can go wrong. Having a name for each failure type means you can react to specific situations in code rather than guessing from a message string.
+
+- PARSE_ERROR
+  the input was structurally wrong or could not be understood
+- REFERENCE_ERROR
+  something was used before it was declared
+- IO_ERROR
+  a file could not be read or written
+- UNKNOWN_ERROR
+  something unexpected was thrown — external dependency, edge case, anything we did not anticipate
+
+# entity AppError
+
+A regular JavaScript error with two extra things: a code that identifies what kind of failure this is, and a place to attach context about where and why it happened. Everything else — stack, message, cause — works exactly as you would expect from a native error.
+
+- code: {ErrorCode}
+  what kind of failure this is
+- message: string
+  a plain explanation of what went wrong
+- stack: string
+  the call stack at the moment this error was created — never changed after that
+- cause: unknown | undefined
+  the original error this one wraps, if any
+- meta: Record<string, unknown> | undefined
+  anything extra worth knowing at the point of failure — file path, line number, token, whatever is relevant
+- timestamp: number
+  when this error was created
+
+# entity SerializedError
+
+A plain object version of an {AppError} — safe to pass to `JSON.stringify`, write to a log, or print to a terminal. Nothing here can cause a serialization surprise.
+
+- code: {ErrorCode}
+- message: string
+- stack: string
+- cause: string | undefined
+  the cause rendered as a plain string, if one was present
+- meta: Record<string, unknown> | undefined
+- timestamp: number
+
+# function create
+
+The standard way to make an {AppError}. Always use this instead of `new Error()` directly — it captures the stack at the right place and gives the error a code from the start.
+
+## arg code
+
+{ErrorCode}, what kind of failure this is.
+
+## arg message
+
+string, a plain explanation of what went wrong.
+
+## arg options
+
+{ cause?: unknown; meta?: Record<string, unknown> } | undefined, the original error and any extra context worth attaching.
+
+## return {AppError}
+
+A fully formed error with the stack captured at the call site and the timestamp set to now.
+
+## flow
+
+1. Create a new error so the call stack is captured here, at the actual failure point.
+2. Attach the code, message, cause, meta, and timestamp.
+3. Return it.
+
+# function wrap
+
+The safe landing for every `catch` block. Whatever JavaScript throws — a native error, a string, a rejected promise, anything — this turns it into a clean {AppError}. Use it at every catch boundary so the rest of the code never has to deal with `unknown`.
+
+## arg raw
+
+unknown, whatever was caught.
+
+## arg code
+
+{ErrorCode} | undefined, the code to assign if the caught value is not already an {AppError}. Defaults to `UNKNOWN_ERROR`.
+
+## arg meta
+
+Record<string, unknown> | undefined, extra context to attach at this catch point.
+
+## return {AppError}
+
+If what was caught is already an {AppError}, return it as-is with any extra context merged in. Otherwise wrap it in a new {AppError} and store the original as the cause.
+
+## flow
+
+1. If what was caught is already an {AppError}, attach any additional context and return it directly.
+2. Otherwise, pull whatever message is available from the caught value.
+3. Create a new {AppError} wrapping the original as the cause, attach the code and any meta, and return it.
+
+# function is
+
+Answers the question "is this the specific kind of failure I think it is?" without casting or digging into raw fields. The right tool for branching on error type inside a catch block.
+
+## arg value
+
+unknown, the value to check.
+
+## arg code
+
+{ErrorCode} | undefined, the specific kind to look for. Omit it to just check whether the value is an {AppError} at all.
+
+## return boolean
+
+True if the value is an {AppError} and, when a code is given, its code matches.
+
+## flow
+
+1. If the value is not an {AppError}, return false immediately.
+2. If a code was given, check whether the error's code matches and return the result.
+3. Otherwise return true — it is an {AppError}, which is all the caller asked.
+
+# function serialize
+
+Turns an {AppError} into a plain object that can go anywhere — a log line, a JSON file, a terminal output, a debug dump. Nothing in the result will surprise serialization.
+
+## arg error
+
+{AppError}, the error to convert.
+
+## return {SerializedError}
+
+A flat, plain-object snapshot of the error with every field in a safe, printable form.
+
+## flow
+
+1. Take every field off the error.
+2. If a cause is present, render it as a plain string.
+3. Return the flat object.
+
+# function log
+
+Writes an error to the output — stderr by default. Never throws, no matter what state the process is in. Safe to call from anywhere, including error handlers where you cannot afford another failure.
+
+## arg error
+
+{AppError}, the error to write out.
+
+## arg level
+
+'error' | 'warn' | 'debug' | undefined, how severe this is. Defaults to `'error'`.
+
+## return void
+
+## flow
+
+1. Serialize the error into a plain object.
+2. Format it as a single line with the severity level and a timestamp prefix.
+3. Write it to the output stream.
+
+# function fire
+
+Creates an {AppError} and throws it immediately. For when you know exactly what went wrong and just want to stop — cleaner than writing create and throw on separate lines every time.
+
+## arg code
+
+{ErrorCode}, what kind of failure this is.
+
+## arg message
+
+string, a plain explanation of what went wrong.
+
+## arg options
+
+{ cause?: unknown; meta?: Record<string, unknown> } | undefined, passed straight through to {create}.
+
+## return never
+
+This always throws. It never returns.
+
+## flow
+
+1. Create the error.
+2. Throw it.
+
+# good
+
+- Call {wrap} at every catch boundary. Never let an `unknown` travel further than the catch block it came from.
+- Use {is} to tell failure types apart in catch blocks. Never branch on message strings — they change, codes do not.
+- Give every anticipated failure path a specific code. `UNKNOWN_ERROR` is for things you genuinely did not expect, not things you were too busy to classify.
+- Attach file path, line number, or token position in `meta` whenever the failure comes from parsing or reading a file — it makes the difference between a useful error and a useless one.
+
+# bad
+
+- Do not subclass {AppError}. Use the code to tell errors apart — keep the type surface flat.
+- Do not change the stack after the error is created. It records exactly where things went wrong.
+- Do not swallow errors inside {log}. If writing to the output stream fails, surface it — silent failures inside error handling are the worst kind to debug.

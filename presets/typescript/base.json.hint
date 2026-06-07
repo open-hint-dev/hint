@@ -1,0 +1,19 @@
+# lang
+
+JSON (RFC 8259 / TSConfig schema)
+
+# res baseTsConfig
+
+Shared strict TypeScript baseline that all other presets in this package extend.
+
+Key compiler options:
+- target `ES2024`, module `ESNext`, moduleResolution `Bundler`
+- `strict: true`, `strictNullChecks: true`, `noUncheckedIndexedAccess: true`
+- `verbatimModuleSyntax: true` — type-only imports must use `import type`
+- `isolatedModules: true` — every file must be independently transpilable
+- `jsx: react-jsx`, `jsxImportSource: react` — React JSX transform enabled globally
+- `declaration: true`, `declarationMap: true`, `sourceMap: true`
+- `noEmit: true` — emit is controlled at build time by the TSC plugin, not statically here
+- `allowJs: true`, `resolveJsonModule: true`, `skipLibCheck: true`
+- lib: `["DOM", "DOM.Iterable", "es2024"]`
+- `incremental: false` — avoids stale build cache issues in CI

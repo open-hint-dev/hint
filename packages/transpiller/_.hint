@@ -1,0 +1,16 @@
+@read presets/typescript as PresetTypescript
+@read presets/eslint as PresetEslint
+
+# lib @openhint/transpiler
+
+Library provides the programmatic API for the HINT ecosystem. It handles file pre-processing, variable resolution, and markdown compilation.
+
+# dependencies
+
+Development:
+
+- {PresetTypescript}
+- {PresetEslint}
+- vite
+- node
+- typescript

@@ -1,0 +1,55 @@
+# function
+
+Renders a complete function implementation contract. The most critical line is the Logic Flow instruction: "step-by-step without skipping any code validations" — this prevents the model from collapsing multi-step sequences. The Errors section now also mandates one regression test per declared error, closing the gap between declared error handling and verified error handling.
+
+# entity Input
+
+- directive: 'function'
+- name: the function name, camelCase (e.g. 'applyCoupon', 'parse') — required
+- body: raw sub-block content containing ## arg, ## return, ## error, and ## flow headers
+
+# entity SubBlock
+
+The compiler splits the body on `## ` prefixed lines to extract these before rendering.
+
+- kind: 'arg' | 'return' | 'error' | 'flow'
+- label: string | undefined — the inline declaration on the sub-header line (e.g. `cart: {ShoppingCart} - description`)
+- content: string — everything written under this sub-header, trimmed
+
+# entity Output
+
+```markdown
+### FUNCTION CONTRACT: {{name}}
+
+Implement the {{name}} function according to the binding contract below. Every parameter, the return type, each error condition, and every step of the logic flow are mandatory — do not skip, reorder, rename, or approximate any of them.
+
+#### Parameters
+
+{{args}}
+
+#### Returns
+
+{{return}}
+
+#### Errors
+
+Throw these exact error types under the described conditions only. Do not substitute, wrap, or rename them. For every error listed here, emit at least one regression test that fails without the guard and passes with it — a declared error with no corresponding test is an incomplete implementation:
+
+{{errors}}
+
+#### Logic Flow
+
+Implement the following logical sequence step-by-step without skipping any code validations:
+
+{{flow}}
+```
+
+# rule
+
+- name is required. A missing function name is a PARSE_ERROR.
+- A function block with no `## flow` sub-block is a PARSE_ERROR — the logic sequence is mandatory.
+- {{args}} expands to one list item per `## arg` sub-block: `- **\`{{label}}\`\*\* — {{content}}`
+- {{return}} expands to the `## return` label and content: `` `type` — description ``. When no return sub-block is present, renders as `void`.
+- {{errors}} expands to one list item per `## error` sub-block: `- **\`ErrorType\`\*\* — {{content}}`. When no error sub-blocks are present, the Errors section and its header are omitted entirely.
+- {{flow}} expands to the `## flow` content verbatim, preserving the developer's original numbered list.
+- {variable} references in all labels and content are resolved against the reads map before sub-block extraction.

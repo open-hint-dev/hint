@@ -1,0 +1,11 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "display": "React Router",
+    "extends": "./base.json",
+    "compilerOptions": {
+        "types": [
+            "node",
+            "vite/client"
+        ]
+    }
+}

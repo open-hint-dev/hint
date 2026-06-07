@@ -1,0 +1,8 @@
+# lang
+
+JSON (RFC 8259 / TSConfig schema)
+
+# res nodeTsConfig
+
+Extends {baseTsConfig}, adds `types: ["node"]`.
+Use for packages that run exclusively in Node.js and need Node.js globals and built-in module types.

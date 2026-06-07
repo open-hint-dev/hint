@@ -1,0 +1,11 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "display": "Isomorphic",
+    "extends": "./base.json",
+    "include": [
+        "."
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

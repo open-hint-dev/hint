@@ -1,0 +1,24 @@
+# app
+
+Renders an application scope declaration as an XML context wrapper. The XML boundary signals to the model that everything inside is a scoped architectural context — not a prose description to summarize, but a precise operational boundary to work within.
+
+# entity Input
+
+- directive: 'app'
+- name: the application identifier (e.g. 'cartService') — optional
+- body: the application's intent, service boundaries, and deployment targets
+
+# entity Output
+
+```markdown
+<system_context type="APP"{{#name}} name="{{name}}"{{/name}}>
+
+{{body}}
+
+</system_context>
+```
+
+# rule
+
+- name is optional. {{#name}} name="{{name}}"{{/name}} is a conditional block — the name attribute is included only when name is non-empty.
+- The closing `</system_context>` tag must always be present and on its own line with a blank line before it.

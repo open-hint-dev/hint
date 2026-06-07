@@ -1,0 +1,26 @@
+# lang
+
+Renders the runtime and language section header. lang and deps together form one prompt section — lang opens the `## [ENVIRONMENT RUNTIME & LANGUAGE]` header and contributes the target specification; deps renders the dependency whitelist as a sub-block beneath it.
+
+# entity Input
+
+- directive: 'lang'
+- name: undefined — lang is always anonymous
+- body: the language and runtime specification text
+
+# entity Output
+
+```markdown
+## [ENVIRONMENT RUNTIME & LANGUAGE]
+
+Write all code strictly targeting the following language specification. Apply the correct module syntax, standard library APIs, and runtime-specific idioms throughout. Do not use syntax, features, or tools that do not belong to this target.
+
+{{body}}
+```
+
+# rule
+
+- lang blocks carry no name. A name field on a lang block is a PARSE_ERROR.
+- An empty body is a PARSE_ERROR.
+- The compiler renders lang first, then deps immediately after. Together they form one visual section in the prompt — the `##` header belongs to lang, the `###` sub-header belongs to deps.
+- When multiple lang blocks arrive across cascade levels, only the most specific one is passed to this template.

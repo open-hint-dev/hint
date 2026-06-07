@@ -1,0 +1,24 @@
+# build
+
+Renders the build pipeline and test commands. The instruction prefix makes explicit that generated code must remain compatible with these scripts — preventing the AI from producing code that compiles in isolation but breaks the project's real toolchain.
+
+# entity Input
+
+- directive: 'build'
+- name: undefined — build is always anonymous
+- body: compilation steps, test commands, and automation scripts
+
+# entity Output
+
+```markdown
+## [COMPILATION & TESTING PIPELINES]
+
+The following commands validate this codebase. All generated code, configuration files, and project structure must remain compatible with these pipelines. Do not generate anything that breaks them.
+
+{{body}}
+```
+
+# rule
+
+- build blocks carry no name. A name field on a build block is a PARSE_ERROR.
+- Multiple build blocks from different cascade levels are merged in cascade order before this template executes.

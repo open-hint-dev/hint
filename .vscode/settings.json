@@ -1,0 +1,65 @@
+{
+    "[env]": {
+        "editor.formatOnSave": false
+    },
+    "[ignore]": {},
+    "[shellscript]": {
+        "editor.defaultFormatter": "foxundermoon.shell-format"
+    },
+    "cSpell.customDictionaries": {
+        "custom": true,
+        "project-words": {
+            "addWords": true,
+            "description": "Words used in this project",
+            "name": "project-words",
+            "path": "${workspaceRoot}/cspell.txt"
+        }
+    },
+    "editor.codeActionsOnSave": {
+        "source.removeUnusedImports": "always"
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "explorerExclude.backup": {},
+
+    "files.associations": {
+        "*.hint": "markdown"
+    },
+
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/.classpath": true,
+        "**/.factorypath": true,
+        "**/.project": true,
+        "**/.settings": true,
+        "**/.prettierignore": true,
+        "**/.turbo": true,
+        "**/.venv": true,
+        "**/.vscode": true,
+        "**/.yarn": true,
+        "**/.yarnrc": true,
+        "**/.yarnrc.yaml": true,
+        "**/build": true,
+        "**/node_modules": true,
+        "**/prettier.config.mjs": true,
+        "**/turbo.json": true,
+        "**/yarn.lock": true
+    },
+
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/node_modules/*/**": true
+    },
+
+    "search.followSymlinks": true,
+
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/.git": true
+    }
+}

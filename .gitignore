@@ -1,0 +1,12 @@
+*.egg-info
+.astro/
+.DS_Store
+.react-router/
+.ruff_cache/
+.turbo/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/install-state.gz
+build/
+node_modules/
+release/

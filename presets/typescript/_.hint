@@ -1,0 +1,39 @@
+# lang
+
+TypeScript (Node.js v20+ / ESM). All exports are pure ESM — no CommonJS.
+
+# deps
+
+- `typescript` for type checking and declaration emit
+- `vite` + `vite-node` as the primary build engine
+- `rollup-plugin-node-externals` to exclude node_modules from library bundles
+- `vite-plugin-no-bundle` to preserve individual module files in library output
+- `@wroud/vite-plugin-tsc` for declaration file generation as a Vite pre-build step
+- `vite-tsconfig-paths` and `@react-router/dev` for React Router app builds
+- `@types/node` for Node.js ambient types in server-side configs
+
+# build
+
+- Consumed directly as TypeScript source — no separate compile step for the preset itself
+- Packages extend tsconfig presets by relative path (e.g., `"extends": "@openhint/preset-typescript/node.json"`)
+- Build factories are imported from `vite.ts` and invoked inside each package's `vite.config.ts`
+- `tsconfig.json` in this folder is the preset package's own build config; it extends `node.json`
+
+# lib @openhint/preset-typescript
+
+Exports two categories: **tsconfig preset files** (static JSON configs that downstream packages extend) and **TypeScript utility modules** (`package.ts` for path resolution, `vite.ts` for Vite config factories). Together they enforce a single, opinionated build pipeline across all monorepo packages.
+
+# good
+
+- All presets must extend {baseTsConfig} (or a trusted upstream base like `astro/tsconfigs/base`) — never define a tsconfig from scratch.
+- `verbatimModuleSyntax: true` is non-negotiable across all presets; packages must use `import type` for type-only imports.
+- `noUncheckedIndexedAccess: true` stays on — array and record access must be treated as potentially undefined.
+- Release output always resolves to `{rootDir}/release/{packageName}` via `packageReleaseDir` — never hardcode paths or write artifacts into the source tree.
+- `emptyOutDir: false` in all Vite build configs — the TSC declaration pre-build step must not be wiped by the subsequent JS emit.
+
+# bad
+
+- Do not add `"composite": true` to any preset unless project references are explicitly required — it forces `rootDir` constraints that break the monorepo layout.
+- Do not set `"noEmit": false` inside a tsconfig JSON file — emit direction is controlled at build time via TSC plugin CLI flags.
+- Do not bundle node_modules into Node-targeted library output — always apply `nodeExternals()` so consumers manage their own dependency trees.
+- Do not hardcode package names or output directories in build configs — always derive them through `packageName()` and `packageReleaseDir()`.
