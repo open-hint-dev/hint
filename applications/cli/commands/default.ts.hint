@@ -18,10 +18,14 @@ Propagated from `compileFiles`. Do not catch here.
 
 ## flow
 
-1. Import `compileFiles` from `./command`.
+1. Import `compileFiles` from `./command.js`.
 2. Call `compileFiles(filePaths)` and return the result directly.
 
 # rule
 
 - Do not write to stdout, stderr, or call `process.exit()` — return the string and let the caller decide.
 - Do not catch errors; let them propagate to the CLI entry point.
+
+# test for executeDefault
+
+Create or update `applications/cli/commands/default_test.ts` using Vitest. Verify the `.js` module import, direct return of compiler output including the empty string, and unchanged error propagation.
