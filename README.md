@@ -11,7 +11,7 @@
 
 I'm tired of codebases that grow without control — vibe-coded sprawl no one fully understands and everyone's scared to touch. I like beautiful, maintainable code: clear boundaries, no dead weight, every file there for a reason. I'm not giving that up just to move faster with AI.
 
-HINT — **H**uman **INT**ent — you write the **borders** (contracts, data shapes, the things that must never happen) in plain Markdown, in whatever human language you think in. You name the target — Python, TypeScript, Go — in one line. HINT compiles it into a prompt that makes the AI build _exactly that and nothing else_, stay inside your lines, and flag anything you left unspecified instead of guessing. **You design. It types.**
+HINT — **H**uman **INT**ent — means I don't have to. You write the **borders** (contracts, data shapes, the things that must never happen) in plain Markdown, in whatever human language you think in. You name the target — Python, TypeScript, Go — in one line. HINT compiles it into a prompt that makes the AI build _exactly that and nothing else_, stay inside your lines, and flag anything you left unspecified instead of guessing. **You design. It types.**
 
 ---
 
@@ -31,11 +31,17 @@ Core JWT signing wrapper.
 
 # function executeLogin
 
-## arg inputs: {Credentials} - Payload from the login route.
+## arg inputs: {Credentials}
 
-## return string - A signed bearer token.
+Payload from the login route.
 
-## error InvalidCredentialsException - User missing or password mismatch.
+## return string
+
+A signed bearer token.
+
+## error InvalidCredentialsException
+
+User missing or password mismatch.
 
 ## flow
 
@@ -74,7 +80,7 @@ It built only what you declared, wrote the error test, and told you where your s
 
 ## Quick start
 
-**1. Root baseline — `project.hint`:**
+**1. Mark the root + set baselines** — an empty `hint.yml` marks the project root; a root `_.hint` holds the global defaults:
 
 ```markdown
 # lang
@@ -118,20 +124,20 @@ Exact prompt strings → [`docs/05-transpilation.md`](docs/05-transpilation.md).
 
 ## Directives
 
-| Directive                                                      | Purpose                                                      |
-| -------------------------------------------------------------- | ------------------------------------------------------------ |
-| `# lang` / `# deps` / `# build`                                | Language, dependency whitelist, build & test pipelines       |
-| `# app` / `# lib` / `# module`                                 | Architectural scope declarations                             |
-| `# entity`                                                     | Data models, schemas, payload shapes                         |
-| `# function` (`## arg` / `## return` / `## error` / `## flow`) | Typed implementation contracts                               |
-| `# ui` (`## form` / `## block` / `## image` / `## table`)      | UI surfaces                                                  |
-| `# action`                                                     | Reusable macro behaviors                                     |
-| `# res` / `# rule`                                             | Static assets / non-negotiable mandates                      |
-| `# good` / `# bad`                                             | Required patterns / prohibited anti-patterns                 |
-| `# example` / `# test`                                         | Few-shot examples / verification criteria                    |
-| `# notes`                                                      | Private scratchpad — stripped at compile                     |
-| `# read` / `@include`                                          | LLM reads a file at run time / inline a file at compile time |
-| `{name}`                                                       | Cross-reference between blocks                               |
+| Directive                                                      | Purpose                                                                    |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `# lang` / `# deps` / `# build`                                | Language, dependency whitelist, build & test pipelines                     |
+| `# app` / `# lib` / `# namespace` / `# module`                 | Architectural scope: app, library, namespace/package boundary, single file |
+| `# entity`                                                     | Data models, schemas, payload shapes                                       |
+| `# function` (`## arg` / `## return` / `## error` / `## flow`) | Typed implementation contracts                                             |
+| `# ui` (`## form` / `## block` / `## image` / `## table`)      | UI surfaces                                                                |
+| `# action`                                                     | Reusable macro behaviors                                                   |
+| `# res` / `# rule`                                             | Static assets / non-negotiable mandates                                    |
+| `# good` / `# bad`                                             | Required patterns / prohibited anti-patterns                               |
+| `# example` / `# test`                                         | Few-shot examples / verification criteria                                  |
+| `# notes`                                                      | Private scratchpad — stripped at compile                                   |
+| `# read` / `@include`                                          | LLM reads a file at run time / inline a file at compile time               |
+| `{name}`                                                       | Cross-reference between blocks                                             |
 
 Keywords are case-insensitive and abbreviations accept their full word (`# app` = `# Application`). Full grammar → [`docs/03-syntax.md`](docs/03-syntax.md).
 

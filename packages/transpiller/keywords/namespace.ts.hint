@@ -1,0 +1,26 @@
+# namespace
+
+Renders a namespace scope declaration as an XML context wrapper with an injected language-native namespacing instruction. Unlike app, lib, and module, the compiler does not emit the author's body verbatim — it prepends a namespacing mandate and appends a cross-boundary symbol-leakage prohibition, producing a single combined instruction inside the wrapper.
+
+# entity Input
+
+- directive: 'namespace'
+- name: the namespace identifier (e.g. 'billing', 'catalog') — required
+- body: the namespace's responsibilities and any cross-namespace reference constraints
+
+# entity Output
+
+```markdown
+<system_context type="NAMESPACE" name="{{name}}">
+
+All code in this scope belongs to the `{{name}}` namespace — emit it under the target language's namespacing construct (package, namespace, or module path) with this as the qualified name and import root. {{body}} Keep cross-namespace references explicit and do not leak symbols across this boundary.
+
+</system_context>
+```
+
+# rule
+
+- name is required. A namespace block without a name is a PARSE_ERROR.
+- The compiler injects the namespacing mandate as a prefix and the symbol-leakage prohibition as a suffix — the author's body text is placed between them, not before or after the wrapper.
+- {variable} references in the body are resolved before this template executes.
+- The closing `</system_context>` tag must always be present on its own line with a blank line before it.
