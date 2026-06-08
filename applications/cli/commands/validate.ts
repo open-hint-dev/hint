@@ -1,3 +1,5 @@
+import { ErrorCode, create, header } from '@openhint/transpiler';
+
 import { compileFiles } from './command.js';
 
 export const VALIDATION_HEADER = `You are a principal software engineer performing a pre-implementation specification review. The HINT specification below is a candidate implementation contract. Do not write any code.
@@ -19,9 +21,12 @@ Collect all open questions in a \`## OPEN QUESTIONS\` block at the end of your r
 Do not output an implementation. The specification follows.`;
 
 export async function executeValidate(filePaths: string[]): Promise<string> {
-    const compiled = await compileFiles(filePaths);
-    if (compiled === '') {
+    const compiledPrompt = await compileFiles(filePaths);
+    if (compiledPrompt === '') {
         return '';
     }
-    return `${VALIDATION_HEADER}\n\n---\n\n${compiled}`;
+    if (!compiledPrompt.startsWith(header)) {
+        throw create(ErrorCode.UNKNOWN_ERROR, 'Compiled prompt did not start with the transpiler header.');
+    }
+    return VALIDATION_HEADER + '\n\n---' + compiledPrompt.slice(header.length);
 }

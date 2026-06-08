@@ -10,8 +10,8 @@ TypeScript (Node.js v22+ / ESM). The compiled output is a single ESM entry point
 
 # deps
 
-- `@openhint/transpiler` — the sole runtime dependency; provides `parse`, `compile`, and the `is` error predicate.
-- No additional runtime packages. Use only Node.js built-in modules for process I/O.
+- `@openhint/transpiler` — the sole runtime dependency; provides `parse`, `compile`, `header`, `create`, `ErrorCode`, and the `is` error predicate.
+- No additional runtime packages. Node.js built-in modules, including `node:child_process`, `node:fs/promises`, and `node:path`, are allowed where required.
 
 # build
 
@@ -44,38 +44,3 @@ The Codex CLI integration command. Invoked when the first argv token is `codex`.
 # read {applications/cli/commands/config.ts.hint} as ConfigCommand
 
 The agent config command. Invoked when the first argv token is `config`. Locates the project root and appends HINT integration instructions to `AGENTS.md` and `CLAUDE.md`. Exports `executeConfig(projectRoot?: string): Promise<void>`.
-
-# function run
-
-## arg filePaths: string[]
-
-Resolved file path arguments after the optional command name has been stripped from argv. Empty only when `command === "config"` with no explicit path.
-
-## arg command: string | undefined
-
-The sub-command name extracted from argv, or `undefined` for the default behavior. Accepted values: `"validate"`, `"claude"`, `"codex"`, `"config"`.
-
-## return Promise<void>
-
-Exits the process before returning on every code path.
-
-## error UsageError
-
-`command !== "config"` and `filePaths` is empty (only a command name was given with no file paths). Print usage to stderr and exit 1.
-
-## error AppError
-
-The transpiler threw a structured HINT error (parse, I/O, or reference error), or a spawned agent binary was not found. Print `error.message` to stderr and exit 1.
-
-## flow
-
-1. If `command !== "config"` and `filePaths` is empty, print usage to stderr and exit 1.
-2. Wrap steps 3–10 in a single try/catch; on any error print to stderr and exit 1.
-3. If `command === "config"`, call `executeConfig(filePaths[0])` from {ConfigCommand} and exit 0.
-4. If `command === "claude"`, call `executeClaude(filePaths)` from {ClaudeCommand} and exit 0.
-5. If `command === "codex"`, call `executeCodex(filePaths)` from {CodexCommand} and exit 0.
-6. If `command === "validate"`, call `executeValidate(filePaths)` from {ValidateCommand}.
-7. Otherwise call `executeDefault(filePaths)` from {DefaultCommand}.
-8. If the returned string is empty, exit 0 without writing to stdout.
-9. Write the string followed by a single trailing newline to `process.stdout`.
-10. Exit 0.
