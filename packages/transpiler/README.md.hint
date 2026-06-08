@@ -1,0 +1,45 @@
+# read {README.md} as ProjectReadme
+
+Provides the project-level HINT description, terminology, repository links,
+and syntax examples.
+
+# read {packages/transpiler/index.ts.hint} as PublicApi
+
+Defines the supported root programmatic API.
+
+# read {packages/transpiler/package.json.hint} as PackageManifest
+
+Defines installation requirements and public entry points.
+
+# module transpilerReadme
+
+Package-specific npm README for `@openhint/transpiler`. It documents library
+installation and programmatic usage without duplicating the full project
+manual.
+
+# rule
+
+Write concise Markdown containing:
+
+1. Package name and one-paragraph purpose.
+2. Requirements: Node.js 22 or newer, ESM.
+3. Installation: `npm install @openhint/transpiler`.
+4. A parser-to-compiler example:
+   - call `parse` with one or more HINT target paths
+   - pass its project root, retained targets, config ignore patterns, blocks, and reads into `compile`
+   - receive the compiled prompt string
+5. A direct compiler example for programmatic callers constructing
+   `CompilerInput`.
+6. Structured error handling using `is`, `ErrorCode`, and `serialize`.
+7. Public entry points:
+   - `@openhint/transpiler`
+   - `@openhint/transpiler/keywords`
+8. A short API inventory grouped into parser, compiler, errors, and keywords.
+9. A link to the repository root README for HINT syntax and CLI documentation.
+10. MIT license attribution.
+
+- Examples must use `.js` ESM import semantics only where relative imports appear; package imports remain bare specifiers.
+- Do not document internal concrete keyword subpaths.
+- Do not claim browser support. Parser and compiler use Node.js filesystem APIs.
+- Do not describe unpublished or hypothetical APIs.
+- Keep the README useful when rendered on npm without relying on repository-relative images.
