@@ -1,0 +1,4 @@
+# example
+
+GET /carts/:id HTTP/1.1
+Authorization: Bearer <token>

@@ -1,0 +1,24 @@
+# function applyCoupon
+
+## arg cart: {ShoppingCart}
+The active user shopping cart instance.
+
+## arg code: string
+The raw coupon identifier string to apply.
+
+## return {ShoppingCart}
+The updated cart entity with applied discount fields.
+
+## error ExpiredCouponError
+Thrown if the current calendar date is past the coupon validity window.
+
+## error MinimumOrderValueException
+Thrown if the cart total is lower than the coupon threshold.
+
+## flow
+
+1. Query our database to fetch metadata for the requested coupon `code`.
+2. Check if the coupon is still active. If expired, halt and throw an ExpiredCouponError.
+3. Sum the `priceInCents` multiplied by `quantity` for all items inside the ShoppingCart.
+4. Compare total with coupon requirements. If insufficient, throw MinimumOrderValueException.
+5. Apply the discount percentage to the total, mutate the cart's coupon state, and return the cart instance.

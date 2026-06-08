@@ -1,0 +1,17 @@
+# ui SettingsPanel
+
+User preferences panel.
+
+## form
+
+Fields:
+- displayName: string (required, max 80 chars)
+- emailNotifications: boolean
+
+Actions:
+- Save: call {updateUserPreferences}; show success toast on completion.
+
+## table
+
+Columns: permission, granted, grantedAt.
+Empty state: "No permissions assigned."

@@ -1,0 +1,27 @@
+# ui LoginScreen
+
+The screen a user sees when signing in.
+
+## form CredentialsForm
+
+Fields:
+- email: string (required, validated email pattern)
+- password: string (required, masked input, min 8 chars)
+
+Actions:
+- Submit: validate inputs, then call {executeLogin}; on failure show an inline error.
+- Forgot password: link to {PasswordResetScreen}.
+
+## image BrandMark
+
+Source: {brandAssets} primary logo. Alt text: "Acme". Centered above the form, max width 160px.
+
+## block HelpFooter
+
+Static text linking to the support portal and privacy policy. No interactive elements.
+
+## table RecentLogins
+
+Columns: device, location, timestamp (UTC).
+Sort: timestamp descending by default.
+Empty state: "No recent logins."
