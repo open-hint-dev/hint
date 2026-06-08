@@ -23,8 +23,8 @@ As a senior programmer, you already know exactly what needs to be built. Writing
 
 When you run the HINT compiler against a target file, it performs a cascading, upward directory scan to merge specifications deterministically:
 
-1. **Project Root Marker**: The engine locates the project root by finding a `hint.yml` (or `hint.yaml`) file there. This file marks the root and will hold project-wide configuration — it is reserved for future use and can be empty today.
+1. **Project Root Marker**: The engine locates the project root by finding a `hint.yml` (or `hint.yaml`) file there. Its optional `ignore` array contains gitignore-style, project-relative patterns. Ignored targets, context files, includes, and read references are excluded from compilation.
 2. **Folder-Level Cascading**: The engine climbs the parent directories, merging each folder's `_.hint` baseline. Nearer folders take priority over those further up, and the **root `_.hint`** holds your global baselines (`# lang`, `# deps`, `# build`) that everything below inherits.
 3. **File-Specific Primacy**: A file-specific specification (e.g., `auth.ts.hint` sitting right next to `auth.ts`) takes absolute precedence, establishing the final constraint boundaries.
 
-To share rules across many files, pull them in explicitly with `@include common.hint` at the top of the files that need them. There is no automatic wildcard merging — context comes only from the `_.hint` cascade, the file's own companion, and what you `@include`.
+Prefer `# read {path} as Name` for reusable contracts and source context: the compiled prompt carries one file reference and the AI can read it once, retain it, and reuse it through `{Name}`. Use `@include` only when another HINT fragment must be physically spliced into the current token stream so its blocks participate in parsing, cascade merging, or overrides. There is no automatic wildcard merging.

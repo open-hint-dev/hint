@@ -1,14 +1,8 @@
-# notes
+# module notes
 
 The notes block is the developer's private scratchpad. It is always stripped during compilation — it never appears in the final prompt payload and this template is never executed by the compiler.
 
 `# notes` is the designated home for deferred work, future ideas, and open questions. Because the compiled prompt explicitly forbids the model from emitting `TODO`, `FIXME`, placeholder, or stub code, anything that is not ready to implement yet belongs here — in the spec file, out of the output entirely.
-
-# entity Input
-
-- directive: 'notes'
-- name: undefined
-- body: anything the developer wrote — TODOs, open questions, deferred work, brainstorming, ideas not yet ready to commit
 
 # entity Output
 

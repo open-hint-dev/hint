@@ -1,0 +1,428 @@
+# read {packages/transpiler/keywords/keyword.ts.hint} as KeywordContract
+
+Defines canonical directives, parsed blocks, and structural read references consumed by this parser.
+
+# read {packages/transpiler/error.ts.hint} as ErrorModule
+
+Defines AppError and its parser-facing error codes.
+
+# module parser
+
+The parser is the first stage of the compilation pipeline. Its job is to understand the file hierarchy, gather everything that applies to a target, and hand a clean ordered collection of blocks to the compiler.
+
+When a developer asks HINT to process a file, the parser figures out which global rules apply, which folder-level constraints layer on top, and what the file itself declares — then returns everything in the right order so the compiler can build the final prompt.
+
+# entity ParsedFile
+
+One fully processed HINT file — its blocks extracted and its read references loaded. Each file in the cascade becomes a ParsedFile so the compiler receives a clean, ordered list with no raw I/O left to do.
+
+- hintPath: string
+  where this hint file lives on disk
+- sourceKind: {KeywordContract}.RawBlock.sourceKind
+  its position in the priority chain
+- blocks: {KeywordContract}.RawBlock[]
+  all directive blocks found in this file
+- reads: {KeywordContract}.ReadRef[]
+  all `# read` references declared in this file — captured as instructions for the compiler, not loaded from disk
+
+# entity ProjectConfig
+
+The validated contents of the root `hint.yml` or `hint.yaml`.
+
+- ignore: string[]
+  optional gitignore-style patterns evaluated relative to {ParseResult}.projectRoot; defaults to an empty list
+
+# entity ReadExtraction
+
+The result of filtering structural read blocks against project ignores.
+
+- content: string
+  the HINT text with ignored `# read` blocks removed
+- reads: {KeywordContract}.ReadRef[]
+  retained read references in declaration order
+
+# entity IgnoreMatcher
+
+The project-relative path predicate created from {ProjectConfig}.ignore.
+
+- matches: (path: string) => boolean
+  accepts an absolute or project-relative path and returns true when the last matching gitignore-style rule excludes it
+- matchedRule: (path: string) => string | undefined
+  returns the last matching rule for diagnostics, including a negated rule when it wins
+
+# entity ParseResult
+
+Everything the compiler needs, assembled and ordered. Blocks flow from the lowest priority (global project rules) to the highest (file-specific instructions), mirroring how a senior developer thinks about layered constraints.
+
+- targetPaths: string[]
+  the files the developer originally asked to process
+- files: {ParsedFile}[]
+  every hint file involved, in priority order from global to file-specific
+- blocks: {KeywordContract}.RawBlock[]
+  all blocks from all files, flat and in order — ready for the compiler to merge
+- reads: Map<string, {KeywordContract}.ReadRef>
+  every `# read` reference across all files, keyed by name; more specific declarations win over general ones
+- projectRoot: string
+  the project root directory marked by `hint.yml` or `hint.yaml`
+- config: {ProjectConfig}
+  the validated project configuration used for this parse
+
+# function loadProjectConfig
+
+Loads and validates the root project configuration. The root marker is active configuration, not a HINT directive file.
+
+## arg projectRoot
+
+string, the absolute project root returned by {findProjectRoot}.
+
+## return Promise<{ProjectConfig}>
+
+The validated configuration. A missing `ignore` key produces an empty array.
+
+## error AppError(IO_ERROR)
+
+If the marker file cannot be read.
+
+## error AppError(PARSE_ERROR)
+
+If the YAML is invalid, the root value is not a mapping, `ignore` is not an array, or an ignore entry is not a string.
+
+## flow
+
+1. Prefer `hint.yml` when both supported marker names exist; otherwise load `hint.yaml`.
+2. Parse the supported YAML configuration using native string processing: an optional top-level `ignore:` key followed by an indented sequence of scalar strings. An empty file is an empty mapping.
+3. Reject unsupported top-level keys, nested mappings, malformed indentation, and non-string sequence values with PARSE_ERROR. Do not add an external YAML dependency.
+4. Read `ignore`; default it to an empty array.
+5. Preserve quoted or unquoted pattern text after YAML scalar unescaping without rewriting gitignore syntax.
+6. Return the normalized {ProjectConfig}.
+
+# function createIgnoreMatcher
+
+Builds the single path filter shared by parser and compiler.
+
+## arg projectRoot
+
+string, the absolute HINT project root.
+
+## arg patterns
+
+string[], the gitignore-style patterns from {ProjectConfig}.ignore.
+
+## return {IgnoreMatcher}
+
+The shared matcher used throughout parsing. The compiler reconstructs equivalent filtering from its render context.
+
+## flow
+
+1. Normalize each candidate to a forward-slash project-relative path with no leading `./`.
+2. Apply patterns in declaration order using gitignore semantics:
+    - blank lines are ignored
+    - unescaped leading `#` marks a comment
+    - `*`, `?`, `**`, character ranges, leading `/`, and trailing `/` follow gitignore matching rules
+    - unescaped leading `!` negates an earlier match and re-includes the path
+    - the last matching pattern wins
+3. A directory match ignores that directory and all descendants unless a later negation re-includes them.
+4. Paths outside projectRoot are never ignored by project patterns.
+5. Return false when no pattern matches.
+
+# function normalizeInputPaths
+
+Forgives missing `.hint` extensions. Developers should not have to think about this — if they point at `auth.ts`, we understand they mean `auth.ts.hint`.
+
+## arg paths
+
+string[], the raw list of paths the caller passed in.
+
+## return string[]
+
+The same paths with `.hint` appended wherever it was missing.
+
+## flow
+
+1. Go through each path in the list.
+2. If it already ends with `.hint`, leave it alone.
+3. Otherwise append `.hint` and continue.
+
+# function findProjectRoot
+
+Locates the HINT project root. Walks upward from a starting directory until it finds `hint.yml` or `hint.yaml`.
+
+## arg startDir
+
+string, the directory to begin searching from.
+
+## return Promise<string>
+
+The absolute path to the project root.
+
+## error AppError(IO_ERROR)
+
+If the filesystem root is reached without finding `hint.yml` or `hint.yaml`.
+
+## flow
+
+1. Start from the given directory and check for `hint.yml` and `hint.yaml`.
+2. If either marker exists, return that directory immediately.
+3. Otherwise step up one directory and repeat.
+4. If the filesystem root is reached, fail with a clear explanation that no HINT project marker exists.
+
+# function discoverHierarchy
+
+The heart of HINT's cascading context system. For any target file, this maps the documented priority chain from root folder baselines to the target's own specification. Unrelated `*.hint` files are never merged automatically; shared fragments enter only through explicit `@include`.
+
+From lowest to highest priority:
+
+- root `_.hint` beside `hint.yml` or `hint.yaml`
+- each descendant folder's `_.hint`, walking toward the target
+- a direct match such as `auth.hint` for `auth.ts.hint`
+- the target file itself, such as `auth.ts.hint`
+
+## arg hintPath
+
+string, the target hint file we are building context for.
+
+## arg projectRoot
+
+string, the project root as found by {findProjectRoot}.
+
+## arg isIgnored
+
+{IgnoreMatcher}, the matcher returned by {createIgnoreMatcher}.
+
+## return string[]
+
+The full ordered list of hint file paths that apply to this target, from lowest to highest priority. Only files that actually exist on disk are included.
+
+## flow
+
+1. Walk every directory from the project root to the target file's folder.
+2. At each directory, add `_.hint` when it exists and is not ignored, starting with the root baseline.
+3. In the target folder, add the direct match without the source extension when it exists and is not ignored.
+4. Add the target file itself only when it is not ignored.
+5. Do not scan or merge any other `*.hint` files.
+6. Return the complete ordered list.
+
+# function loadFile
+
+Reads a hint file off disk. If anything goes wrong, wraps the filesystem error into a structured {ErrorModule}.AppError with the file path attached so the developer immediately knows what to look at.
+
+## arg filePath
+
+string, the absolute path to the hint file.
+
+## return Promise<string>
+
+The raw text content of the file.
+
+## error AppError(IO_ERROR)
+
+If the file cannot be read for any reason. The error includes the file path.
+
+## flow
+
+1. Read the file from disk.
+2. Return its content.
+3. If the read fails for any reason, wrap it into a clean error that includes the file path and rethrow.
+
+# function resolveIncludes
+
+Expands `@include` directives inline — replaces each one with the full content of the target file, recursively. This is how shared rule files get merged before the tokenizer runs. Detects circular references and stops before they cause an infinite loop.
+
+## arg content
+
+string, the raw hint text that may contain `@include` lines.
+
+## arg baseDir
+
+string, the directory of the file being processed, used to resolve relative include paths.
+
+## arg visited
+
+Set<string>, the set of files already expanded in this include chain — used to catch circular references before they loop forever.
+
+## arg isIgnored
+
+{IgnoreMatcher}, the project ignore matcher.
+
+## return Promise<string>
+
+The fully expanded content with every `@include` replaced by the actual file it points to.
+
+## error AppError(IO_ERROR)
+
+If a file referenced by `@include` does not exist on disk.
+
+## error AppError(PARSE_ERROR)
+
+If expanding an include would create a circular dependency.
+
+## flow
+
+1. Go through the content line by line.
+2. Whenever an `@include` line appears, find the target file and load it.
+3. If the resolved include path is ignored, replace the include directive with empty content and continue without reading it.
+4. If that file was already expanded earlier in this chain, stop and report the cycle — do not proceed.
+5. Otherwise, recursively expand that file's own includes before splicing its content in.
+6. Return the fully expanded text.
+
+# function extractReads
+
+Finds every `# read` structural block and captures its {KeywordContract}.ReadRef. Nothing at the referenced path is loaded from disk. The original read block remains in the token stream so the compiler can render it.
+
+## arg content
+
+string, the hint text after includes have already been resolved.
+
+## arg projectRoot
+
+string, the root used to resolve project-relative read globs.
+
+## arg isIgnored
+
+{IgnoreMatcher}, the project ignore matcher.
+
+## return {ReadExtraction}
+
+The filtered source text and all retained `# read` references.
+
+## flow
+
+1. Scan for top-level `# read &#123;glob&#125;` headers after includes have expanded.
+2. Parse the optional `as [name]` clause; when omitted, derive a deterministic reference name from the path.
+3. Resolve the glob against projectRoot only for ignore filtering; do not read matching file contents.
+4. Remove ignored matches from the reference. If every concrete match is ignored, omit the read block and reference entirely.
+5. For a glob with no current matches, omit it only when its literal project-relative path is ignored; otherwise preserve it for run-time resolution.
+6. Record the filtered glob or explicit remaining paths and the following body through the next top-level header, `---`, or EOF.
+7. Remove omitted `# read` blocks from the text passed to {tokenize}; leave retained read blocks intact.
+8. Return {ReadExtraction} containing the filtered content and retained references.
+
+# function tokenize
+
+Splits a processed hint file into its individual blocks — one per directive header. The `# notes` section is stripped entirely; it is the developer's private scratchpad and never leaves their file.
+
+## arg content
+
+string, the fully resolved hint text.
+
+## arg sourcePath
+
+string, the hint file this content came from.
+
+## arg sourceKind
+
+{KeywordContract}.RawBlock.sourceKind, where this file sits in the priority chain.
+
+## return {KeywordContract}.RawBlock[]
+
+The ordered list of blocks found in this file. Empty if the file has no directive headers.
+
+## flow
+
+1. Work through the content from top to bottom.
+2. Each time a new directive header appears, start a new block.
+3. Everything that follows belongs to that block until the next header or a `---` separator.
+4. A `---` line closes the current block — anything after it, until the next header, is the developer's own comments and gets discarded.
+5. Strip any `# notes` blocks — they are never passed further.
+6. Return everything else in order.
+
+# function parseFile
+
+Runs the full processing pipeline for a single hint file: load it, expand includes, pull in read references, and split into blocks. Returns the result packaged as a {ParsedFile}.
+
+## arg hintPath
+
+string, the hint file to process.
+
+## arg sourceKind
+
+{KeywordContract}.RawBlock.sourceKind, where this file sits in the priority chain.
+
+## arg includeVisited
+
+Set<string>, the shared cycle-detection set for include expansion — passed through so circular references are caught across file boundaries.
+
+## arg isIgnored
+
+{IgnoreMatcher}, the project ignore matcher.
+
+## return Promise<{ParsedFile} | undefined>
+
+## error AppError(IO_ERROR)
+
+If the HINT file or any compile-time include cannot be loaded.
+
+## error AppError(PARSE_ERROR)
+
+If a circular include is found during expansion.
+
+## flow
+
+1. If hintPath is ignored, return no {ParsedFile} and do not read it.
+2. Load the HINT file from disk.
+3. Expand all `@include` directives, using the shared visited set to catch cycles and the ignore matcher to reject ignored includes.
+4. Extract {ReadExtraction} using projectRoot without loading referenced contents.
+5. Split {ReadExtraction}.content into blocks and attach {ReadExtraction}.reads.
+6. Return the complete {ParsedFile}.
+
+# function parse
+
+The main entry point. Takes a developer's file list, assembles the full cascade for each target, processes every HINT file involved, and returns a single {ParseResult} ready for the compiler.
+
+## arg inputPaths
+
+string[], the target files the developer wants to process. The `.hint` extension is optional.
+
+## return Promise<{ParseResult}>
+
+## error AppError(IO_ERROR)
+
+If any required file cannot be loaded from disk.
+
+## error AppError(PARSE_ERROR)
+
+If any hint file in the cascade is malformed or contains a circular include.
+
+## flow
+
+1. Normalize the input paths — add `.hint` where it is missing.
+2. Find the project root so we know where the cascade begins.
+3. Load {ProjectConfig} and create the shared ignore matcher.
+4. Drop ignored input targets before hierarchy discovery. Explicitly naming an ignored target does not override `hint.yml`.
+5. For each remaining target, map out its hierarchy using {discoverHierarchy} and the matcher.
+6. Process every non-ignored HINT file in hierarchy order. If a file appears in multiple targets' cascades, load and process it only once.
+7. Collect all blocks in priority order — global rules first, file-specific rules last.
+8. Merge retained read references into one map. The most specific declaration for any given name wins.
+9. Return {ParseResult} with only retained targetPaths/files/blocks/reads plus config.
+10. Hand the complete {ParseResult} to the compiler module.
+
+# good
+
+- Every target gets its full documented cascade: root-to-local `_.hint` baselines, optional direct match, and specific companion.
+- A missing `_.hint` or direct match is expected and normal. The requested target file is the only required HINT file.
+- Never merge unrelated `*.hint` files automatically. Shared context must be inherited through `_.hint` or requested through `@include`.
+- Never load `# read` target files from disk — they are run-time instructions for the LLM, not file imports.
+- Apply the same project-relative ignore matcher to explicit targets, cascaded HINT files, includes, and `# read` paths.
+- Ignored explicit targets are skipped silently so directory and shell-glob batches can contain ignored files without failing.
+- An `@include` resolving to an ignored file is replaced with empty content without reading that file.
+- Any hint file shared across multiple targets is loaded and processed exactly once.
+
+# bad
+
+- Do not decide which blocks matter — hand everything to the compiler and let it choose what to keep or override.
+- Do not resolve `&#123;variable&#125;` placeholders inside blocks. The compiler owns that step.
+- Do not confuse `@include` with `# read`. `@include` inlines HINT content at parse time. `# read` remains a structural block that tells the LLM to inspect source at run time.
+
+# test for projectIgnore
+
+- Empty or missing `ignore`: preserve every target, cascade file, include, and read reference.
+- Directory pattern: `testdata/` excludes the directory and all descendants from explicit and batch targets.
+- Wildcards: `**/*.generated.hint` excludes generated specifications at any depth.
+- Root anchoring: `/build/` excludes only the root build directory.
+- Negation: a later `!src/contracts/generated.hint` re-includes that path when gitignore parent-directory rules allow it.
+- Ordering: when multiple rules match, assert that the last applicable rule wins.
+- Explicit target: an ignored CLI target is absent from targetPaths and produces no parsed files or blocks.
+- Cascades: ignored `_.hint` and direct-match files are not loaded.
+- Includes: an ignored `@include` target is not read and expands to empty content.
+- Reads: remove ignored matches from a mixed glob; omit the read block when no permitted path remains.
+- Isolation: a path outside projectRoot is never ignored by project patterns.
+- Validation: malformed configuration, unsupported keys, and non-string ignore entries throw AppError(PARSE_ERROR).
