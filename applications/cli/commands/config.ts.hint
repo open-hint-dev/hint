@@ -1,0 +1,61 @@
+# module config
+
+The `config` sub-command. Locates the project root by walking upward from the current working directory until a `hint.yml` (or `hint.yaml`) file is found, then ensures both `AGENTS.md` and `CLAUDE.md` in that root contain the HINT CLI integration instruction block. Idempotent — running it twice has the same result as running it once.
+
+Defines the exported module-level constant `CONFIG_INSTRUCTION` — the exact markdown block appended to each agent config file. Follows the same text-constant pattern as `VALIDATION_HEADER` in the validate module.
+
+# example
+
+The exact constant declaration the module must export at module scope:
+
+```typescript
+export const CONFIG_INSTRUCTION = `## HINT
+
+When you encounter \`.hint\` files in this repository: run \`hint <file>\` to compile the specification into an AI-ready implementation prompt. Use the compiled output as your primary implementation context instead of reading the raw \`.hint\` file directly.
+
+If \`hint\` is not installed globally, use \`npx @openhint/cli <file>\` instead.`;
+```
+
+# action findProjectRoot
+
+Walk upward from `startDir` (default: `process.cwd()`) checking each directory for the presence of `hint.yml` or `hint.yaml`. Return the absolute path of the first directory where either marker file is found.
+
+Throw `AppError` with the message `"No hint.yml found — not inside a HINT project"` if the filesystem root is reached without finding a marker.
+
+# action appendInstruction
+
+Given `projectRoot` and a `filename` (`'AGENTS.md'` or `'CLAUDE.md'`):
+
+1. Derive the full file path as `path.join(projectRoot, filename)`.
+2. If the file does not exist, write `CONFIG_INSTRUCTION` as its entire content and return.
+3. Read the existing content.
+4. If the content already contains the literal string `'## HINT'`, return without modification (idempotency guard).
+5. Append `'\n\n' + CONFIG_INSTRUCTION` to the existing content and write the result back.
+
+# function executeConfig
+
+## arg projectRoot: string | undefined
+
+Optional explicit project root path. If not provided, call `findProjectRoot()` to locate it via upward walk from `process.cwd()`.
+
+## return Promise<void>
+
+Resolves after both `AGENTS.md` and `CLAUDE.md` have been checked and updated if necessary.
+
+## error AppError
+
+Thrown by `findProjectRoot` when no marker is found, or on any file system error. Do not catch here; let it propagate to the CLI entry point.
+
+## flow
+
+1. Resolve `projectRoot`: use the argument if provided, otherwise call `findProjectRoot()`.
+2. Call `appendInstruction(projectRoot, 'AGENTS.md')`.
+3. Call `appendInstruction(projectRoot, 'CLAUDE.md')`.
+4. Return.
+
+# rule
+
+- Use only `node:fs/promises` and `node:path` for all file system operations; do not shell out.
+- The idempotency guard is the presence of the string `'## HINT'` anywhere in the file; do not re-append if the marker exists regardless of surrounding content.
+- Do not write anything to stdout or stderr; all outcomes surface through returned values or thrown `AppError` values.
+- Do not call `process.exit()`.

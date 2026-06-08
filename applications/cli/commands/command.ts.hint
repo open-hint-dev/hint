@@ -1,0 +1,63 @@
+# read {packages/transpiler/index.ts} as TranspilerAPI
+
+The parse-and-compile pipeline. Import `parse`, `compile`, and `CompilerInput` from here to drive the transpiler lifecycle. `AppError` and `is()` are used by the CLI entry point for error handling, not by commands directly — commands let errors propagate.
+
+# module command
+
+Shared transpiler orchestration and agent subprocess management used by every CLI command. Commands import `compileFiles` and `spawnAgent` from here instead of calling the transpiler or `child_process` directly. Keeping both concerns here means each command module stays focused on its own output-shaping logic.
+
+# function compileFiles
+
+## arg filePaths: string[]
+
+The file paths to compile. Pre-validated by the caller as non-empty.
+
+## return Promise<string>
+
+The compiled prompt string. An empty string means the input resolved to no renderable output — all targets were filtered or ignored.
+
+## error AppError
+
+The transpiler threw a structured HINT error (parse, I/O, or reference error). Propagate without catching — the CLI entry point handles it.
+
+## flow
+
+1. Call `parse(filePaths)` from {TranspilerAPI}.
+2. Build `CompilerInput` from the parse result: `projectRoot`, `targetPaths`, `ignore` (from `config.ignore`), `blocks`, and `reads`.
+3. Call `compile(compilerInput)` from {TranspilerAPI}.
+4. Return the resulting string.
+
+# function spawnAgent
+
+## arg binary: string
+
+The name or absolute path of the agent CLI binary to execute. Must be on PATH or an absolute path.
+
+## arg args: string[]
+
+Additional CLI arguments forwarded to the binary before stdin is written.
+
+## arg prompt: string
+
+The compiled prompt string written to the process stdin as UTF-8. Stdin is closed immediately after writing.
+
+## return Promise<void>
+
+Resolves when the child process exits with code 0. The agent's output flows directly to the parent's stdout and stderr — this function never captures or returns it.
+
+## error AppError
+
+Thrown when the binary is not found (`ENOENT`) or when the process exits with a non-zero code. The message includes the binary name and, for non-zero exits, the exit code.
+
+## flow
+
+1. Spawn `binary` with `args` using `spawn` from `node:child_process`. Set `stdio` to `['pipe', 'inherit', 'inherit']`.
+2. Write `prompt` to `proc.stdin`, then end stdin.
+3. Return a `Promise<void>` that resolves on `close` when `exitCode === 0`, or rejects with an `AppError` otherwise.
+4. Attach an `error` event handler on `proc` to catch ENOENT (binary not found) and reject with an `AppError` immediately.
+
+# rule
+
+- Do not call `process.exit()`, write to stdout, or write to stderr — all I/O and lifecycle decisions belong to the CLI entry point.
+- Do not catch errors thrown by the transpiler; let them propagate.
+- In `spawnAgent`, never buffer the child process's stdout or stderr — always inherit so the agent's output streams to the terminal in real time.

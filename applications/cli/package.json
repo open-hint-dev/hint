@@ -3,7 +3,11 @@
     "version": "0.0.0",
     "private": true,
     "type": "module",
+    "bin": {
+        "hint": "./index.js"
+    },
     "scripts": {
+        "build": "make build-js",
         "coverage": "make coverage-js",
         "fix": "make fix-js",
         "lint": "make lint-js",
@@ -14,6 +18,7 @@
     "devDependencies": {
         "@openhint/preset-eslint": "workspace:*",
         "@openhint/preset-typescript": "workspace:*",
+        "@openhint/transpiler": "workspace:*",
         "eslint": "*",
         "typescript": "*",
         "vite": "*",

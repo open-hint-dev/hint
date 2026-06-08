@@ -1,0 +1,59 @@
+# read {packages/transpiler/index.ts} as TranspilerAPI
+
+The complete public surface of the transpiler. Use `is(error, ErrorCode)` in the catch block to produce specific error messages for known HINT error codes before falling through to a generic unknown-error branch.
+
+# module cli
+
+The `index.ts` entry point and argv dispatcher for the `hint` binary. Responsible for argument parsing, command dispatch, and process lifecycle. All HINT logic lives in {TranspilerAPI} and the command modules; this module owns only: stripping `process.argv`, detecting the optional sub-command name, forwarding file paths to {run}, and catching unhandled rejections.
+
+# action printUsage
+
+Print the following message to `process.stderr` and return without exiting:
+
+```
+Usage: hint [command] [file ...]
+
+Commands:
+  (default)  Compile .hint files and write the prompt to stdout.
+  validate   Compile .hint files and prepend a spec-review directive instead of an implementation directive.
+  claude     Compile .hint files and pipe the prompt to the claude CLI (--print mode).
+  codex      Compile .hint files and pipe the prompt to the codex CLI.
+  config     Add HINT CLI integration instructions to AGENTS.md and CLAUDE.md at the project root.
+
+Arguments:
+  file    Path to a .hint file or to the source file whose companion .hint should be compiled.
+          Accepts multiple paths and standard shell glob patterns.
+          Not required for the config command.
+
+Examples:
+  hint src/domain/auth/login.ts
+  hint src/domain/auth/login.ts.hint
+  hint src/domain/**/*.hint
+  hint validate src/domain/auth/login.ts.hint
+  hint claude src/domain/auth/login.ts.hint
+  hint codex src/domain/auth/login.ts.hint
+  hint config
+```
+
+# action parseArgv
+
+Extract the optional sub-command name and the file path list from a raw argv array. Return `{ command: string | undefined, filePaths: string[] }`.
+
+Known command names: `["validate", "claude", "codex", "config"]`.
+
+If the first element of argv is a known command name, set `command` to that value and `filePaths` to the remaining elements. Otherwise set `command` to `undefined` and `filePaths` to all elements.
+
+# rule
+
+- Prefix the entry file with the `#!/usr/bin/env node` shebang line.
+- Call `run(filePaths, command)` with the output of {parseArgv} applied to `process.argv.slice(2)`.
+- Use `is(error, ErrorCode)` checks inside catch blocks to branch on specific HINT error conditions before falling back to printing `String(error)`.
+- Do not place `process.exit()` calls outside of {run}; all lifecycle decisions belong there.
+
+# good
+
+- Keep the top-level module body to three lines: parse argv, call run, attach an `unhandledRejection` handler that prints to stderr and exits 1.
+
+# bad
+
+- Never mix compiled prompt output with diagnostic text — any non-prompt byte on stdout corrupts output for callers who pipe it.

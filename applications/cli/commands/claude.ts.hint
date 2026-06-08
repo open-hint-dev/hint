@@ -1,0 +1,45 @@
+# read {applications/cli/commands/command.ts.hint} as CommandModule
+
+Provides `compileFiles` for transpiler orchestration and `spawnAgent` for subprocess management. Both are the only transpiler and process-spawning entry points commands should use.
+
+# module claude
+
+The `claude` sub-command. Compiles the specification files to a prompt string and pipes it to the Anthropic `claude` CLI in non-interactive print mode. The compiled prompt is submitted as the first user message; Claude's response streams directly to the terminal.
+
+Requires the `claude` binary to be on PATH. Install via `npm install -g @anthropic-ai/claude-code` or by following the Claude Code setup instructions.
+
+# function executeClaude
+
+## arg filePaths: string[]
+
+The file paths to compile, pre-validated as non-empty by the CLI entry point.
+
+## return Promise<void>
+
+Does not return a string — the `claude` process owns its own stdout. Resolves when the process exits with code 0.
+
+## error AppError
+
+Propagated from `compileFiles` (transpiler errors) or from `spawnAgent` (binary not found, non-zero exit). Do not catch here; let errors propagate to the CLI entry point.
+
+## flow
+
+1. Import `compileFiles` and `spawnAgent` from `./command`.
+2. Call `compileFiles(filePaths)`.
+3. If the result is an empty string, return without spawning.
+4. Call `spawnAgent('claude', ['--print'], compiledPrompt)`.
+
+# rule
+
+- Do not write to stdout, stderr, or call `process.exit()`.
+- Do not catch errors; let them propagate to the CLI entry point.
+- Always pass `--print` so `claude` runs in non-interactive single-response mode; omitting it would open an interactive session the caller cannot control.
+- Never pass the prompt as a command-line argument — always via stdin through `spawnAgent`.
+
+# good
+
+- `spawnAgent('claude', ['--print'], prompt)` — `--print` is the canonical non-interactive flag.
+
+# bad
+
+- Do not interpolate the prompt into the argument list (`['--print', prompt]`): multi-line prompts break shell escaping and risk injection.

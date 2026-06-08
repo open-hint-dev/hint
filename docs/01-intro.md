@@ -19,6 +19,20 @@ As a senior programmer, you already know exactly what needs to be built. Writing
 - **Gaps Are Surfaced, Not Filled**: When your specification is silent on something, the compiled prompt forces the model to flag it rather than quietly invent a detail. Every assumption it makes is marked in-code and reported back to you, turning each compile into a feedback loop that tightens your specification over time.
 - **Universal Execution**: Because HINT is pure markdown, a `*.hint` file is fully readable and executable by an LLM as a direct prompt even without using the HINT compiler tool.
 
+## The HINT CLI
+
+The `hint` binary (available as `npx @openhint/cli`) compiles one or more `.hint` files into a ready-to-use AI prompt. It supports several sub-commands that control what happens with the compiled output:
+
+| Command | Invocation | What it does |
+|---|---|---|
+| *(default)* | `hint <file>` | Compiles and writes the prompt to stdout. |
+| `validate` | `hint validate <file>` | Prepends a spec-review directive; prompts the LLM to critique the spec rather than implement it. |
+| `claude` | `hint claude <file>` | Compiles and pipes the prompt to the `claude` CLI in print mode. |
+| `codex` | `hint codex <file>` | Compiles and pipes the prompt to the `codex` CLI via stdin. |
+| `config` | `hint config` | Appends HINT integration instructions to `AGENTS.md` and `CLAUDE.md` at the project root so AI agents automatically know to use the `hint` CLI when they encounter `.hint` files. |
+
+The `validate` command is the recommended first step when a specification is complete: run it before handing the spec to an implementation agent to surface ambiguities and underspecified clauses while they are still cheap to fix.
+
 ## File Context Hierarchy & Resolution
 
 When you run the HINT compiler against a target file, it performs a cascading, upward directory scan to merge specifications deterministically:

@@ -121,7 +121,53 @@ The transpiler immediately initiates its four-stage lifecycle:
 
 ---
 
-## 4. Bypassing the CLI (The Native Fallback)
+## 4. CLI Commands
+
+Beyond the default compile-and-output flow, the `hint` CLI provides four additional commands.
+
+### `validate` — spec review before implementation
+
+Before handing a spec to an implementation agent, run `validate` to surface ambiguities, contradictions, missing error paths, and scope gaps:
+
+```bash
+hint validate src/domain/auth/login.ts.hint
+```
+
+The output is the same compiled prompt prefixed with a structured review directive. The LLM produces a critique with cited findings and an `## OPEN QUESTIONS` block — not code. Fix the questions it raises, then compile with the default command.
+
+### `claude` — compile and send to Claude
+
+Compile and pipe the prompt directly to the `claude` CLI in one step:
+
+```bash
+hint claude src/domain/auth/login.ts.hint
+```
+
+Requires `claude` to be installed (`npm install -g @anthropic-ai/claude-code`). Claude's response streams to your terminal in real time.
+
+### `codex` — compile and send to Codex
+
+Same pattern for the OpenAI Codex CLI:
+
+```bash
+hint codex src/domain/auth/login.ts.hint
+```
+
+Requires `codex` to be on PATH (`npm install -g @openai/codex`).
+
+### `config` — register HINT with your AI agents
+
+Run `config` once per project to add a short integration instruction to `AGENTS.md` and `CLAUDE.md` at the project root:
+
+```bash
+hint config
+```
+
+After this, AI coding agents (Claude Code, Codex, etc.) that read these files will automatically know to run `hint <file>` when they encounter `.hint` files, rather than reading the raw specification directly.
+
+---
+
+## 5. Bypassing the CLI (The Native Fallback)
 
 If you are traveling, working away from your dev terminal, or interacting with a basic LLM browser interface (like Claude Web or ChatGPT), **you do not need the HINT CLI**.
 

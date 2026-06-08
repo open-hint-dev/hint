@@ -1,0 +1,27 @@
+# module default
+
+The default `hint` command. Drives the full parse-and-compile pipeline for the supplied specification files and returns the prompt string for the CLI to write to stdout. This is the behavior when no sub-command name is provided.
+
+# function executeDefault
+
+## arg filePaths: string[]
+
+The file paths to compile, pre-validated as non-empty by the CLI entry point.
+
+## return Promise<string>
+
+The compiled prompt string returned by `compileFiles`. Empty string if all targets were filtered or ignored — the caller writes nothing to stdout in that case.
+
+## error AppError
+
+Propagated from `compileFiles`. Do not catch here.
+
+## flow
+
+1. Import `compileFiles` from `./command`.
+2. Call `compileFiles(filePaths)` and return the result directly.
+
+# rule
+
+- Do not write to stdout, stderr, or call `process.exit()` — return the string and let the caller decide.
+- Do not catch errors; let them propagate to the CLI entry point.
