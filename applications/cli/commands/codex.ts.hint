@@ -1,0 +1,44 @@
+# read {applications/cli/commands/command.ts.hint} as CommandModule
+
+Provides `compileFiles` and `spawnAgent`.
+
+# module codex
+
+The `codex` sub-command. Compiles the specification files to a prompt string and pipes it to the OpenAI `codex` CLI via stdin. Codex's response streams directly to the terminal.
+
+Requires the `codex` binary to be on PATH. Install via `npm install -g @openai/codex` or by following the Codex CLI setup instructions.
+
+# function executeCodex
+
+## arg filePaths: string[]
+
+The file paths to compile, pre-validated as non-empty by the CLI entry point.
+
+## return Promise<void>
+
+Does not return a string — the `codex` process owns its own stdout. Resolves when the process exits with code 0.
+
+## error AppError
+
+Propagated from `compileFiles` or `spawnAgent`. Do not catch here; let errors propagate to the CLI entry point.
+
+## flow
+
+1. Import `compileFiles` and `spawnAgent` from `./command`.
+2. Call `compileFiles(filePaths)`.
+3. If the result is an empty string, return without spawning.
+4. Call `spawnAgent('codex', [], compiledPrompt)`.
+
+# rule
+
+- Do not write to stdout, stderr, or call `process.exit()`.
+- Do not catch errors; let them propagate.
+- Always pass the prompt via stdin — never as a command-line argument.
+
+# good
+
+- `spawnAgent('codex', [], prompt)` — codex reads the prompt from stdin.
+
+# bad
+
+- Do not pass the prompt as a CLI argument: shell escaping is unreliable across multi-line, markdown-rich prompts.

@@ -876,10 +876,13 @@ __metadata:
   dependencies:
     "@openhint/preset-eslint": "workspace:*"
     "@openhint/preset-typescript": "workspace:*"
+    "@openhint/transpiler": "workspace:*"
     eslint: "npm:*"
     typescript: "npm:*"
     vite: "npm:*"
     vitest: "npm:*"
+  bin:
+    hint: ./index.js
   languageName: unknown
   linkType: soft
 
