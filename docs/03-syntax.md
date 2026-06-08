@@ -70,9 +70,12 @@ Defines core domain objects, database schemas, API payload shapes, or data model
 
 Maps sequential logic blocks, transactional behaviors, or algorithmic loops tied to structured input/output contracts. It enforces a strict layout with the LLM using four functional sub-headers:
 
-- `## arg [parameterName]: [type] - [description]`: Defines an explicit input parameter.
-- `## return [type] - [description]`: Declares the expected output payload.
-- `## error [ExceptionType] - [trigger condition]`: Highlights a possible failure condition. Each declared error also instructs the model to emit at least one regression test covering that condition, so declaring an error gives you both the guard and its test.
+- `## arg [parameterName]: [type]`: Defines an explicit input parameter. The header line holds only `name: type`; its description follows on the next line(s).
+- `## return [type]`: Declares the expected output payload. The header line holds only the type; its description follows on the next line(s).
+- `## error [ExceptionType]`: Highlights a possible failure condition. The header line holds only the exception type; the trigger condition follows on the next line(s). Each declared error also instructs the model to emit at least one regression test covering that condition, so declaring an error gives you both the guard and its test.
+
+Like every HINT block, the parser reads the rest of the header line as the name/signature, then accumulates the following lines as the body (the description) until the next header. There is no inline `- description` on the header line.
+
 - `## flow`: A step-by-step sequential list of the business rules or logic steps written in plain language.
 
 ### 4. # ui
@@ -98,6 +101,7 @@ Defines a specific task, operational instruction, automation behavior, macro, or
 
 - `# app [appName]`: High-level summary of a specific application's intent, service boundaries, or deployment targets.
 - `# lib [libName]`: Declares wide codebase utility scopes, package frameworks, or cross-cutting helper libraries.
+- `# namespace [namespaceName]`: A logical grouping and boundary that bundles related modules, entities, and functions under one qualified name and import root. It is the language-neutral name for whatever the target language calls this unit — Go/Java _package_, C#/C++/TypeScript _namespace_, Rust _module_, Python _package_ — and the compiler lowers it to the target's construct. Declares what qualified name generated code belongs under and what may be referenced across the boundary.
 - `# module [moduleName]`: Identifies a single, logical file of execution code. It bridges structural application domains down to their localized functions and internal entities.
 - `# res [resourceName]`: Describes non-code project assets (e.g., JSON schema configs, localization text files, static maps, images, or assets directories) specifying their purpose, structural patterns, and application boundaries.
 - `# rule`: Details strict non-functional constraints, SLA performance timings, data isolation protocols, or security compliance mandates.
@@ -191,15 +195,25 @@ This module handles state transformations, coupon processing, and stock locking 
 
 # function applyCoupon
 
-## arg cart: {ShoppingCart} - The active user shopping cart instance.
+## arg cart: {ShoppingCart}
 
-## arg code: string - The raw coupon identifier string to apply.
+The active user shopping cart instance.
 
-## return {ShoppingCart} - The updated cart entity with applied discount fields.
+## arg code: string
 
-## error ExpiredCouponError - Thrown if the current calendar date is past the coupon validity window.
+The raw coupon identifier string to apply.
 
-## error MinimumOrderValueException - Thrown if the cart total is lower than the coupon threshold.
+## return {ShoppingCart}
+
+The updated cart entity with applied discount fields.
+
+## error ExpiredCouponError
+
+Thrown if the current calendar date is past the coupon validity window.
+
+## error MinimumOrderValueException
+
+Thrown if the cart total is lower than the coupon threshold.
 
 ## flow
 

@@ -61,7 +61,7 @@ The compiler executes this for every {RawBlock} in the flat ordered blocks list:
 
 # rule
 
-- Every value in the {Directive} union must have a corresponding .ts.hint file in this directory. The complete set is: read, lang, deps, build, module, app, lib, res, require, entity, function, ui, action, rule, good, bad, example, test, notes. An unmatched directive at compile time is an immediate PARSE_ERROR.
+- Every value in the {Directive} union must have a corresponding .ts.hint file in this directory. The complete set is: read, lang, deps, build, app, lib, namespace, module, res, entity, function, ui, action, rule, good, bad, example, test, notes. An unmatched directive at compile time is an immediate PARSE_ERROR.
 - Template files follow the naming convention {directive}.ts.hint. The header and footer use the reserved names header.ts.hint and footer.ts.hint.
 - Template files are valid HINT files — they self-document their own rendering contracts and can be processed by the HINT toolchain.
 - {{double-brace}} tokens mark compiler interpolation points. They are distinct from HINT's {single-brace} cross-references, which the compiler resolves before any template executes.

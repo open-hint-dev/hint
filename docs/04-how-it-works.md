@@ -16,7 +16,7 @@ The engine runs this target pipeline against every unique file matched across th
 
 1. **Cascade Discovery (Context Inheritance & Resolution Priority)**
     - For every target file argument (e.g., target file `src/domain/auth/auth.ts`), the engine isolates its path directory and establishes a strict, bottom-up priority resolution tree to inherit and merge context specifications.
-    - The lookup hierarchy behaves with the following strict sequence, checking files locally before recursively climbing parent folders up to the root:
+    - The lookup hierarchy behaves with the following strict sequence, checking files locally before recursively climbing parent folders up to the root (the root is the folder containing `hint.yml`):
         ```text
         [HIGHEST PRIORITY - Overrides all below]
         ├── 1. Specific Companion File  : auth.ts.hint (In current folder)
@@ -26,17 +26,13 @@ The engine runs this target pipeline against every unique file matched across th
         │   [CASCADE UPWARD LOOP - Repeats at each parent folder level]
         ├── 4. Parent Baseline Match    : ../_.hint -> ../../_.hint -> ...
         │
-        │   [REPOSITORY CONTAINER ROOT]
-        └── 5. Global Project Anchor    : project.hint (In project root)
-        [LOWEST PRIORITY - Global baseline configuration defaults]
+        │   [REPOSITORY CONTAINER ROOT - marked by hint.yml]
+        └── 5. Root Baseline            : _.hint (In the hint.yml project root)
+        [LOWEST PRIORITY - Global baseline defaults]
         ```
-    - **The Wildcard (`*.hint`) Addition Rule**: In addition to the direct override hierarchy above, **all standalone `*.hint` files found at each directory level are parsed and automatically added to the file's context**.
-    - They follow the exact same folder priority order during the merge step:
-        ```text
-        *.hint in current folder -> *.hint in parent folder -> ... -> *.hint in root folder
-        ```
-    - **Why this matters**: Wildcards are **added, not overridden**. This is a powerful mechanism designed to inject common domain rules and shared context definitions automatically into your files without forcing you to constantly write manual `@include` directives at the top of every single script.
-    - Later instruction blocks inside the high-priority override chain completely replace earlier blocks if they share the exact same header signature (e.g., matching `# lang` or matching `# entity User`). Unmatched blocks and added wildcard blocks append smoothly into the master localized compilation pipeline buffer.
+    - `hint.yml` (or `hint.yaml`) itself carries no HINT directives — it only marks the project root and holds project-wide configuration (reserved for future use; it may be empty). The global baselines live in the root `_.hint`.
+    - **Sharing rules across files** is explicit: pull a common file in with `@include common.hint` at the top of the specs that need it. There is no automatic wildcard merging — context comes only from the `_.hint` cascade, the file's own companion, and `@include`.
+    - Later instruction blocks inside the high-priority override chain completely replace earlier blocks if they share the exact same header signature (e.g., matching `# lang` or matching `# entity User`). Unmatched blocks append smoothly into the master localized compilation pipeline buffer.
 
 2. **Preprocessing & Context Instructions**
     - `@include <glob>`: A compile-time preprocessor macro — the engine resolves it first, before parsing. The compiler fetches the target file, reads its raw contents, and copies them as-is directly into the active text stream.
@@ -63,7 +59,7 @@ To maximize your velocity and get flawless code generation from AI tools, follow
 
 ### Rule A: Put Environment Setup in the Root
 
-Never copy-paste your `# lang`, `# deps`, or `# build` setups into individual module files. Declare them exactly once in a global `project.hint` file at the root of your project domain or folder structure. The cascade engine guarantees that every sub-file companion inherits these configurations automatically.
+Never copy-paste your `# lang`, `# deps`, or `# build` setups into individual module files. Declare them exactly once in your root `_.hint` (the one beside `hint.yml`). The cascade engine guarantees that every sub-file companion inherits these configurations automatically.
 
 ### Rule B: Function Contracts Must Be Strict
 
