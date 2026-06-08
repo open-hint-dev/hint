@@ -1,5 +1,5 @@
-import type { SubBlock } from './keyword';
-import { defineKeyword, interpolate, splitSubBlocks } from './keyword';
+import type { SubBlock } from './keyword.js';
+import { defineKeyword, interpolate, splitSubBlocks } from './keyword.js';
 
 const template = `### UI SURFACE{{#name}}: {{name}}{{/name}}
 

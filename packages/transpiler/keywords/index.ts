@@ -1,26 +1,26 @@
-import type { Directive, KeywordDefinition, KeywordInput, RawBlock, ReadRef } from './keyword';
-import { action } from './action';
-import { app } from './app';
-import { bad } from './bad';
-import { build } from './build';
-import { deps } from './deps';
-import { entity } from './entity';
-import { example } from './example';
-import { footer } from './footer';
-import { functionKeyword } from './function';
-import { good } from './good';
-import { header } from './header';
-import { validateKeyword } from './keyword';
-import { lang } from './lang';
-import { lib } from './lib';
-import { moduleKeyword } from './module';
-import { namespace } from './namespace';
-import { notes } from './notes';
-import { read } from './read';
-import { res } from './res';
-import { rule } from './rule';
-import { test } from './test';
-import { ui } from './ui';
+import type { Directive, KeywordDefinition, KeywordInput, RawBlock, ReadRef } from './keyword.js';
+import { action } from './action.js';
+import { app } from './app.js';
+import { bad } from './bad.js';
+import { build } from './build.js';
+import { deps } from './deps.js';
+import { entity } from './entity.js';
+import { example } from './example.js';
+import { footer } from './footer.js';
+import { functionKeyword } from './function.js';
+import { good } from './good.js';
+import { header } from './header.js';
+import { validateKeyword } from './keyword.js';
+import { lang } from './lang.js';
+import { lib } from './lib.js';
+import { moduleKeyword } from './module.js';
+import { namespace } from './namespace.js';
+import { notes } from './notes.js';
+import { read } from './read.js';
+import { res } from './res.js';
+import { rule } from './rule.js';
+import { test } from './test.js';
+import { ui } from './ui.js';
 
 const definitions = [
     read,
@@ -78,4 +78,4 @@ export function renderKeyword(block: RawBlock, body: string, reads: Map<string, 
 }
 
 export { footer, header };
-export * from './keyword';
+export * from './keyword.js';

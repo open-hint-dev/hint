@@ -72,12 +72,15 @@ check:
 
 .PHONY: release-check
 release-check:
+	$(MAKE) -f "$(TRANSPILER_DIR)/makefile" test-js
 	$(MAKE) -f "$(TRANSPILER_DIR)/makefile" check-release-js
 
 .PHONY: release-dry-run
 release-dry-run:
+	$(MAKE) -f "$(TRANSPILER_DIR)/makefile" test-js
 	$(MAKE) -f "$(TRANSPILER_DIR)/makefile" release-dry-run-js
 
 .PHONY: release
 release:
+	$(MAKE) -f "$(TRANSPILER_DIR)/makefile" test-js
 	$(MAKE) -f "$(TRANSPILER_DIR)/makefile" release-js

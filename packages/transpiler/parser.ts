@@ -2,11 +2,11 @@ import { existsSync, globSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 
-import type { Directive, RawBlock, ReadRef, SourceKind } from './keywords';
-import { ErrorCode, fire, wrap } from './error';
-import { normalizeDirective } from './keywords';
+import type { Directive, RawBlock, ReadRef, SourceKind } from './keywords/index.js';
+import { ErrorCode, fire, wrap } from './error.js';
+import { normalizeDirective } from './keywords/index.js';
 
-export type { Directive, RawBlock, ReadRef, SourceKind } from './keywords';
+export type { Directive, RawBlock, ReadRef, SourceKind } from './keywords/index.js';
 
 export type ParsedFile = {
     hintPath: string;
@@ -457,8 +457,9 @@ export function tokenize(content: string, sourcePath: string, sourceKind: Source
         const header = parseHeader(line);
         if (header !== undefined) {
             close();
-            discardUntilHeader = false;
-            current = { ...header, body: [] };
+            if (!discardUntilHeader) {
+                current = { ...header, body: [] };
+            }
             continue;
         }
         if (/^---\s*$/.test(line)) {
