@@ -13,11 +13,35 @@
   HINT — Human Intent Native Transpiler
 </h1>
 
-> **A programming language with no syntax of its own. Write intent in any human language; ship code in any programming language. For engineers.**
+> **Write software in the language you already speak. Let the agent handle the syntax.**
 
-I'm tired of codebases that grow without control — vibe-coded sprawl no one fully understands and everyone's scared to touch. I like beautiful, maintainable code: clear boundaries, no dead weight, every file there for a reason. I'm not giving that up just to move faster with AI.
+I built HINT because I got tired of watching AI turn small tasks into sprawling code changes. You ask for one feature and get extra abstractions, new files, and architecture decisions you never made. The code may work. Now you own all of it.
 
-HINT — **H**uman **INT**ent — means I don't have to. You write the **borders** (contracts, data shapes, the things that must never happen) in plain Markdown, in whatever human language you think in. You name the target — Python, TypeScript, Go — in one line. HINT compiles it into a prompt that makes the AI build _exactly that and nothing else_, stay inside your lines, and flag anything you left unspecified instead of guessing. **You design. It types.**
+I want the speed without giving up control of the codebase.
+
+### A programming language you already speak
+
+HINT is not just another spec-driven workflow. It is a native-speaking programming language. English describes the program. HINT adds enough structure to make that description precise.
+
+- A `.hint` file lives next to your code.
+- `src/controllers/auth.py.hint` defines `src/controllers/auth.py`.
+- `pkg/utils/crypto.go.hint` defines shared helpers in `pkg/utils/crypto.go`.
+- You declare files, entities, functions, dependencies, errors, flows, and rules.
+- The agent reports missing decisions instead of quietly making them.
+
+Think of `.hint` as closer to `.py`, `.ts`, or `.go` than to a ticket or planning document.
+
+### How it is different
+
+| Approach | What it controls |
+| --- | --- |
+| [OpenSpec](https://github.com/Fission-AI/OpenSpec) | Proposals, behavioral specs, tasks, and spec changes |
+| [GitHub Spec Kit](https://github.com/github/spec-kit) | The workflow from feature spec to plan, tasks, and implementation |
+| **HINT** | The source boundary: what code exists, where it lives, and how it behaves |
+
+You still ask an AI agent to write the final code. But you do not hand it a vague prompt and hope its architecture matches yours. HINT compiles your files and project rules into a strict implementation prompt.
+
+**You decide where code lives, what gets reused, and what must never happen. The agent writes the syntax.**
 
 ---
 
