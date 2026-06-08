@@ -61,5 +61,11 @@
     "search.exclude": {
         "**/node_modules": true,
         "**/.git": true
+    },
+
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.expand": false,
+    "explorer.fileNesting.patterns": {
+        "*.hint": "${capture}, ${capture}.*"
     }
 }

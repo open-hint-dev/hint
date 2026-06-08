@@ -23,7 +23,8 @@ As a senior programmer, you already know exactly what needs to be built. Writing
 
 When you run the HINT compiler against a target file, it performs a cascading, upward directory scan to merge specifications deterministically:
 
-1. **Global Base Configuration**: The engine scans the repository root directory for a global `project.hint` file to set global baselines (like `# lang`).
-2. **Folder-Level Cascading**: The engine climbs the parent directories. Any localized `_.hint` baseline overrides or appends rules for the modules inside that folder, with nearer folders taking priority over those further up.
+1. **Project Root Marker**: The engine locates the project root by finding a `hint.yml` (or `hint.yaml`) file there. This file marks the root and will hold project-wide configuration — it is reserved for future use and can be empty today.
+2. **Folder-Level Cascading**: The engine climbs the parent directories, merging each folder's `_.hint` baseline. Nearer folders take priority over those further up, and the **root `_.hint`** holds your global baselines (`# lang`, `# deps`, `# build`) that everything below inherits.
 3. **File-Specific Primacy**: A file-specific specification (e.g., `auth.ts.hint` sitting right next to `auth.ts`) takes absolute precedence, establishing the final constraint boundaries.
-4. **Wildcard Addition**: Alongside the override chain above, every _other_ standalone `*.hint` file found at each directory level is parsed and **added** to the target's context — nearest folder first — rather than overriding anything. This injects shared domain rules automatically, without forcing an explicit `@include` at the top of every file. The named files (`project.hint`, `_.hint`, and the file's own companion) drive the override chain; any other `*.hint` is purely additive.
+
+To share rules across many files, pull them in explicitly with `@include common.hint` at the top of the files that need them. There is no automatic wildcard merging — context comes only from the `_.hint` cascade, the file's own companion, and what you `@include`.
