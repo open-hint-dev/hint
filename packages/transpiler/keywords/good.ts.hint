@@ -1,12 +1,6 @@
-# good
+# module good
 
 Renders approved engineering patterns. The "do not substitute alternatives, even equivalent-seeming ones" clause is essential — it closes the gap between what the model thinks is equivalent and what the codebase has explicitly adopted.
-
-# entity Input
-
-- directive: 'good'
-- name: undefined — good is always anonymous
-- body: required patterns, proven approaches, and style mandates
 
 # entity Output
 

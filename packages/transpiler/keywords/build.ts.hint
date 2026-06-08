@@ -1,12 +1,6 @@
-# build
+# module build
 
 Renders the build pipeline and test commands. The instruction prefix makes explicit that generated code must remain compatible with these scripts — preventing the AI from producing code that compiles in isolation but breaks the project's real toolchain.
-
-# entity Input
-
-- directive: 'build'
-- name: undefined — build is always anonymous
-- body: compilation steps, test commands, and automation scripts
 
 # entity Output
 

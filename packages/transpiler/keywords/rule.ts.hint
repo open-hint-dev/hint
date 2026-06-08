@@ -1,12 +1,6 @@
-# rule
+# module rule
 
 Renders non-functional constraints and system mandates. The bracket-uppercase label and the "without exception" language maximise the weight the model assigns to these constraints relative to softer instructional sections.
-
-# entity Input
-
-- directive: 'rule'
-- name: undefined — rule is always anonymous
-- body: constraints, latency ceilings, isolation requirements, or security mandates
 
 # entity Output
 

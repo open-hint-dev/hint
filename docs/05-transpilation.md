@@ -1,6 +1,6 @@
 # HINT Prompt Mapping Specification v1.0.0
 
-This document defines the exact, deterministic prompt strings the HINT transpiler produces for every special word in the syntax. Each mapping is the authoritative implementation contract — template files in `packages/transpiller/templates/` must produce outputs that match these specifications precisely.
+This document defines the exact, deterministic prompt strings the HINT transpiler produces for every special word in the syntax. Each mapping is the authoritative implementation contract — template files in `packages/transpiler/keywords/` must produce outputs that match these specifications precisely.
 
 > **Keyword normalization.** The directives below are written in their canonical short, lowercase form. Before these mappings apply, the compiler normalizes every keyword: matching is case-insensitive and full-word aliases collapse to the canonical keyword (`# Application` → `# app`, `# Dependencies` → `# deps`, `## argument` → `## arg`, etc. — see the alias table in the Syntax Specification). The output is therefore identical regardless of which accepted spelling appears in the source.
 
@@ -10,6 +10,8 @@ This document defines the exact, deterministic prompt strings the HINT transpile
 
 ```
 [PROMPT HEADER]       ─────────────────────────► [ROLE + BORDER CONTRACT + ASSUMPTION PROTOCOL]
+[REPOSITORY CONTEXT]  ─────────────────────────► [ROOT + IMPLEMENTATION TARGETS + SPECIFICATION SOURCES]
+[SOURCE MARKER]       ─────────────────────────► <source_ref ids="S1" />
 
 @include              ─────────────────────────► [Inlined Content Stream — no prompt output]
 # read                ─────────────────────────► <repository_file name="..."> ... </repository_file>
@@ -73,6 +75,8 @@ These principles drive every mapping decision. Understanding them explains why e
 
 8. **Surfaced gaps over silent invention.** An underspecified spec is normal; a model that quietly fills the gaps is how codebases rot. The pre-implementation gate forces the model to declare every clause `SATISFIABLE | UNDERSPECIFIED | CONFLICTING` before it writes a line, and the assumption protocol forces every gap-fill to be marked in-code and listed at the end. The ASSUMPTIONS block is the author's feedback loop: it shows exactly where the `.hint` file was thin so the border can be tightened on the next pass.
 
+9. **Explicit repository location without path repetition.** The model must know where implementation belongs and where each contract originated. A single `<repository_context>` manifest declares project-relative targets and contributing HINT files. Compact source IDs then annotate rendered sections, preserving provenance without repeating long paths throughout the prompt. Absolute compiler-machine paths are never emitted.
+
 ---
 
 ## Compiled Prompt Assembly Order
@@ -82,8 +86,15 @@ A fully compiled prompt assembles in this order:
 ```
 [PROMPT HEADER]
 
+<repository_context root=".">
+  <implementation_targets>...</implementation_targets>
+  <specification_sources>...</specification_sources>
+</repository_context>
+
+<source_ref ids="S1" />
 <repository_file name="..."> ... </repository_file>   ← one block per # read, in declaration order
 
+<source_ref ids="S1,S2" />
 ## [ENVIRONMENT RUNTIME & LANGUAGE]                   ← # lang
 ### Approved Dependency Whitelist                      ← # deps (sub-section of lang)
 
@@ -115,6 +126,53 @@ A fully compiled prompt assembles in this order:
   ## [SCOPE & FOOTPRINT]                               ← scope fence + minimal-diff / reuse-existing bias
   ## [IMPLEMENTATION VERIFICATION CHECKLIST]           ← border-aware checklist, then ASSUMPTIONS block
 ```
+
+## Repository Context
+
+The compiler emits one repository manifest immediately after the prompt header and before any `# read` blocks or directive sections:
+
+```markdown
+<repository_context root=".">
+
+All paths in this prompt are relative to the repository root above. Inspect existing target files before editing them. Create a target only when it does not already exist. Keep every change inside the declared targets unless a contract explicitly requires another repository path.
+
+<implementation_targets>
+
+<target path="src/domain/auth/login.ts" specification="src/domain/auth/login.ts.hint" source="S3" />
+
+</implementation_targets>
+
+<specification_sources>
+
+<source id="S1" path="_.hint" kind="baseline" />
+<source id="S2" path="src/domain/_.hint" kind="baseline" />
+<source id="S3" path="src/domain/auth/login.ts.hint" kind="file" />
+
+</specification_sources>
+
+</repository_context>
+```
+
+All paths are normalized project-relative POSIX paths. The root is always `.`: absolute paths reveal irrelevant machine details and make compiled prompts non-portable.
+
+Each emitted section is preceded by a compact provenance marker:
+
+```markdown
+<source_ref ids="S3" />
+```
+
+Merged sections use all contributing IDs in cascade order:
+
+```markdown
+<source_ref ids="S1,S2" />
+```
+
+This gives the implementation agent both forms of location context it needs:
+
+- **Edit location:** `<implementation_targets>` names the files to inspect, modify, or create.
+- **Contract provenance:** source markers map every rendered requirement back to the HINT file that declared it.
+
+The compiler does not repeat full source paths on every section. The manifest is the single path table; source IDs keep section-level overhead small.
 
 ---
 

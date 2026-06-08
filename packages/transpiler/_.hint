@@ -1,0 +1,23 @@
+# read {presets/typescript} as PresetTypescript
+
+Shared TypeScript build presets used by this package.
+
+# read {presets/eslint} as PresetEslint
+
+Shared ESLint presets used by this package.
+
+# lib @openhint/transpiler
+
+Library provides the programmatic API for the HINT ecosystem. It handles file pre-processing, variable resolution, and markdown compilation.
+
+The parser and compiler honor the root `hint.yml` or `hint.yaml` `ignore` array for every target, cascaded HINT file, compile-time include, and run-time read reference.
+
+# dependencies
+
+Development:
+
+- {PresetTypescript}
+- {PresetEslint}
+- vite
+- node
+- typescript

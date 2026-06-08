@@ -1,0 +1,19 @@
+# module module
+
+Renders a module scope declaration as an XML context wrapper. The MODULE type tells the model it is working inside a single logical file — a scoped implementation boundary, not a top-level service.
+
+# entity Output
+
+```markdown
+<system_context type="MODULE"{{#name}} name="{{name}}"{{/name}}>
+
+{{body}}
+
+</system_context>
+```
+
+# rule
+
+- name is optional. When present it must be camelCase and renders as the `name` attribute; when absent the attribute is omitted.
+- Single-brace variable references in the body are resolved before this template executes — they become resolved names that tell the model which other modules or services this one connects to.
+- The closing `</system_context>` tag must always be present on its own line with a blank line before it.
