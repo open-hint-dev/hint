@@ -1,6 +1,6 @@
 # read {packages/transpiler/index.ts} as TranspilerAPI
 
-The parse-and-compile pipeline. Import `parse`, `compile`, and `CompilerInput` from here to drive the transpiler lifecycle. `AppError` and `is()` are used by the CLI entry point for error handling, not by commands directly — commands let errors propagate.
+The parse-and-compile pipeline. Import `parse`, `compile`, `CompilerInput`, `create`, and `ErrorCode` from here. Transpiler errors propagate unchanged; locally detected subprocess failures are created with `create(ErrorCode.IO_ERROR, message)`.
 
 # module command
 
@@ -47,17 +47,29 @@ Resolves when the child process exits with code 0. The agent's output flows dire
 
 ## error AppError
 
-Thrown when the binary is not found (`ENOENT`) or when the process exits with a non-zero code. The message includes the binary name and, for non-zero exits, the exit code.
+Created with `create(ErrorCode.IO_ERROR, message)` for every subprocess failure:
+
+- Process `error` with `code === 'ENOENT'`: `"Agent binary not found: '<binary>'. Make sure it is installed and on PATH."`
+- Any other process `error`: `"Failed to spawn '<binary>': <error.message>"`
+- Stdin `error` or write callback error: `"Failed to write prompt to '<binary>': <error.message>"`
+- Non-zero close code: `"'<binary>' exited with code <code>."`
+- Signal termination (`code === null`): `"'<binary>' exited due to signal <signal>."`, using `"unknown"` when the close event provides `signal === null`.
 
 ## flow
 
-1. Spawn `binary` with `args` using `spawn` from `node:child_process`. Set `stdio` to `['pipe', 'inherit', 'inherit']`.
-2. Write `prompt` to `proc.stdin`, then end stdin.
-3. Return a `Promise<void>` that resolves on `close` when `exitCode === 0`, or rejects with an `AppError` otherwise.
-4. Attach an `error` event handler on `proc` to catch ENOENT (binary not found) and reject with an `AppError` immediately.
+1. Return a new `Promise<void>` and spawn `binary` with `args` using `spawn` from `node:child_process`, with `stdio: ['pipe', 'inherit', 'inherit']`.
+2. Maintain a local settled flag so only the first process, stdin, or close event resolves or rejects the promise.
+3. Before writing stdin, attach a process `error` listener that rejects with the exact ENOENT or generic spawn `AppError` message above.
+4. Attach a stdin `error` listener that rejects with the exact stdin `AppError` message above.
+5. Attach a `close` listener receiving `(code, signal)`: resolve only for `code === 0`; reject with the exact signal message when `code === null`, substituting `signal ?? 'unknown'`; otherwise reject with the exact non-zero-code message.
+6. Write `prompt` as UTF-8. In the write callback, reject on a callback error with the exact stdin message; otherwise end stdin immediately.
 
 # rule
 
 - Do not call `process.exit()`, write to stdout, or write to stderr — all I/O and lifecycle decisions belong to the CLI entry point.
 - Do not catch errors thrown by the transpiler; let them propagate.
 - In `spawnAgent`, never buffer the child process's stdout or stderr — always inherit so the agent's output streams to the terminal in real time.
+
+# test for compileFilesAndSpawnAgent
+
+Create or update `applications/cli/commands/command_test.ts` using Vitest. Cover `CompilerInput` mapping, empty compiler output, inherited stdout/stderr, successful close, ENOENT, generic spawn errors, stdin errors, non-zero exit codes, and signal termination. Assert the exact `ErrorCode.IO_ERROR` messages declared above.

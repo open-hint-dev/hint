@@ -50,6 +50,11 @@ async function run(filePaths: string[], command: string | undefined): Promise<vo
         process.exit(1);
     }
 
+    if (command === 'config' && filePaths.length > 1) {
+        printUsage();
+        process.exit(1);
+    }
+
     try {
         if (command === 'config') {
             await executeConfig(filePaths[0]);
@@ -73,11 +78,9 @@ async function run(filePaths: string[], command: string | undefined): Promise<vo
             result = await executeDefault(filePaths);
         }
 
-        if (result === '') {
-            process.exit(0);
+        if (result !== '') {
+            process.stdout.write(`${result}\n`);
         }
-
-        process.stdout.write(`${result}\n`);
         process.exit(0);
     } catch (error: unknown) {
         if (is(error, ErrorCode.REFERENCE_ERROR)) {
@@ -94,8 +97,4 @@ async function run(filePaths: string[], command: string | undefined): Promise<vo
 }
 
 const { command, filePaths } = parseArgv(process.argv.slice(2));
-run(filePaths, command);
-process.on('unhandledRejection', (reason: unknown) => {
-    process.stderr.write(`${String(reason)}\n`);
-    process.exit(1);
-});
+void run(filePaths, command);

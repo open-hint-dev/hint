@@ -24,7 +24,7 @@ Propagated from `compileFiles` or `spawnAgent`. Do not catch here; let errors pr
 
 ## flow
 
-1. Import `compileFiles` and `spawnAgent` from `./command`.
+1. Import `compileFiles` and `spawnAgent` from `./command.js`.
 2. Call `compileFiles(filePaths)`.
 3. If the result is an empty string, return without spawning.
 4. Call `spawnAgent('codex', [], compiledPrompt)`.
@@ -42,3 +42,7 @@ Propagated from `compileFiles` or `spawnAgent`. Do not catch here; let errors pr
 # bad
 
 - Do not pass the prompt as a CLI argument: shell escaping is unreliable across multi-line, markdown-rich prompts.
+
+# test for executeCodex
+
+Create or update `applications/cli/commands/codex_test.ts` using Vitest. Verify `.js` module imports, empty-output short-circuiting, `spawnAgent('codex', [], prompt)`, and unchanged error propagation.

@@ -24,7 +24,7 @@ Propagated from `compileFiles` (transpiler errors) or from `spawnAgent` (binary 
 
 ## flow
 
-1. Import `compileFiles` and `spawnAgent` from `./command`.
+1. Import `compileFiles` and `spawnAgent` from `./command.js`.
 2. Call `compileFiles(filePaths)`.
 3. If the result is an empty string, return without spawning.
 4. Call `spawnAgent('claude', ['--print'], compiledPrompt)`.
@@ -43,3 +43,7 @@ Propagated from `compileFiles` (transpiler errors) or from `spawnAgent` (binary 
 # bad
 
 - Do not interpolate the prompt into the argument list (`['--print', prompt]`): multi-line prompts break shell escaping and risk injection.
+
+# test for executeClaude
+
+Create or update `applications/cli/commands/claude_test.ts` using Vitest. Verify `.js` module imports, empty-output short-circuiting, `spawnAgent('claude', ['--print'], prompt)`, and unchanged error propagation.

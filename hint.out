@@ -1,0 +1,710 @@
+You are a principal software engineer performing a pre-implementation specification review. The HINT specification below is a candidate implementation contract. Do not write any code.
+
+Review the specification systematically and identify every issue that would prevent a clean, assumption-free implementation:
+
+- **Underspecified clauses** — fields, types, defaults, or behaviors the implementer would have to guess.
+- **Contradictions** — two clauses that cannot both be satisfied simultaneously.
+- **Missing error conditions** — failure paths that are clearly possible but not declared in the spec.
+- **Unclear cross-references** — names that appear in the spec but whose contracts are absent or incomplete.
+- **Scope gaps** — behaviors the declared interface implies but the spec does not cover.
+
+For each finding: cite the specific section and clause, state the concern precisely, and write a direct question to the spec author.
+
+If the specification is complete and unambiguous, state that explicitly after your review.
+
+Collect all open questions in a `## OPEN QUESTIONS` block at the end of your review.
+
+Do not output an implementation. The specification follows.
+
+---
+
+You are a senior software engineer implementing a precise technical specification. The architecture, data boundaries, and design decisions in this document are already settled by its author. You are not a designer and you are not being asked to improve the design — your role is to implement within the borders defined below, and to surface anything the borders do not cover rather than fill the gap yourself.
+
+Every section in this document is a binding instruction — not a suggestion.
+
+**Your implementation must:**
+
+- Match every data structure field name, type, and constraint exactly as written.
+- Implement every function contract step-by-step in the exact order specified.
+- Enforce every mandate and constraint without exception.
+- Use only the approved language, runtime, and dependency list.
+- Implement every specified edge case and error path completely.
+- Satisfy every verification criterion described.
+
+**Your implementation must not:**
+
+- Add fields, parameters, methods, abstractions, files, modules, or helpers that are not explicitly specified or strictly required to satisfy a specified clause. Implement exactly the surface this specification defines — nothing adjacent, nothing "while we're here."
+- Introduce a new abstraction layer, framework, or design pattern unless the specification names it. When more than one implementation satisfies the contract, choose the simplest construct that does so.
+- Use libraries, patterns, or approaches the specification prohibits.
+- Guess at error handling — every error condition is explicitly documented.
+- Emit `TODO`, `FIXME`, placeholder, or stub code. Deferred work does not belong in the output; if a requirement genuinely cannot be implemented, report it through the verification gate instead of stubbing it.
+
+**When the specification is silent, surface the gap — do not fill it.**
+Any field type, default value, branch, or behavior the specification does not define is a GAP. Do not silently invent it. Where you must make a choice to produce running code, mark it inline as an assumption using the comment syntax of the target language declared in `[ENVIRONMENT RUNTIME & LANGUAGE]` — for example `// ASSUMPTION:` in TypeScript, Go, Java, or Rust; `# ASSUMPTION:` in Python or Ruby; `-- ASSUMPTION:` in SQL or Haskell — and collect every assumption in an ASSUMPTIONS block at the end of your output. An unmarked invented detail is a contract violation.
+
+---
+
+<repository_context root=".">
+
+All paths in this prompt are relative to the repository root above. Inspect existing target files before editing them. Create a target only when it does not already exist. Keep every change inside the declared targets unless a contract explicitly requires another repository path.
+
+<implementation_targets>
+
+<target path="applications/cli/_" specification="applications/cli/_.hint" source="S2" />
+<target path="applications/cli/commands/claude.ts" specification="applications/cli/commands/claude.ts.hint" source="S3" />
+<target path="applications/cli/commands/codex.ts" specification="applications/cli/commands/codex.ts.hint" source="S4" />
+<target path="applications/cli/commands/command.ts" specification="applications/cli/commands/command.ts.hint" source="S5" />
+<target path="applications/cli/commands/config.ts" specification="applications/cli/commands/config.ts.hint" source="S6" />
+<target path="applications/cli/commands/default.ts" specification="applications/cli/commands/default.ts.hint" source="S7" />
+<target path="applications/cli/commands/validate.ts" specification="applications/cli/commands/validate.ts.hint" source="S8" />
+<target path="applications/cli/index.ts" specification="applications/cli/index.ts.hint" source="S9" />
+
+</implementation_targets>
+
+<specification_sources>
+
+<source id="S1" path="_.hint" kind="baseline" />
+<source id="S2" path="applications/cli/_.hint" kind="file" />
+<source id="S3" path="applications/cli/commands/claude.ts.hint" kind="file" />
+<source id="S4" path="applications/cli/commands/codex.ts.hint" kind="file" />
+<source id="S5" path="applications/cli/commands/command.ts.hint" kind="file" />
+<source id="S6" path="applications/cli/commands/config.ts.hint" kind="file" />
+<source id="S7" path="applications/cli/commands/default.ts.hint" kind="file" />
+<source id="S8" path="applications/cli/commands/validate.ts.hint" kind="file" />
+<source id="S9" path="applications/cli/index.ts.hint" kind="file" />
+
+</specification_sources>
+
+</repository_context>
+
+<source_ref ids="S2" />
+
+<repository_file name="DefaultCommand" path="applications/cli/commands/default.ts.hint">
+
+The default compile-and-output command. Invoked when no sub-command name is present in argv. Exports `executeDefault(filePaths: string[]): Promise<string>`.
+
+Before writing any code that touches this reference, open and read the file(s) at the path above and analyze them carefully. Mirror their existing formatting, export patterns, and error-handling architecture. Do not guess at their contents, and do not reimplement what they already provide.
+
+</repository_file>
+
+<source_ref ids="S2" />
+
+<repository_file name="ValidateCommand" path="applications/cli/commands/validate.ts.hint">
+
+The specification-review command. Invoked when the first argv token is `validate`. Prepends a structured critique directive so the LLM reviews the spec rather than implementing it. Exports `executeValidate(filePaths: string[]): Promise<string>`.
+
+Before writing any code that touches this reference, open and read the file(s) at the path above and analyze them carefully. Mirror their existing formatting, export patterns, and error-handling architecture. Do not guess at their contents, and do not reimplement what they already provide.
+
+</repository_file>
+
+<source_ref ids="S2" />
+
+<repository_file name="ClaudeCommand" path="applications/cli/commands/claude.ts.hint">
+
+The Claude CLI integration command. Invoked when the first argv token is `claude`. Compiles files and pipes the prompt to the `claude` CLI. Exports `executeClaude(filePaths: string[]): Promise<void>`.
+
+Before writing any code that touches this reference, open and read the file(s) at the path above and analyze them carefully. Mirror their existing formatting, export patterns, and error-handling architecture. Do not guess at their contents, and do not reimplement what they already provide.
+
+</repository_file>
+
+<source_ref ids="S2" />
+
+<repository_file name="CodexCommand" path="applications/cli/commands/codex.ts.hint">
+
+The Codex CLI integration command. Invoked when the first argv token is `codex`. Compiles files and pipes the prompt to the `codex` CLI. Exports `executeCodex(filePaths: string[]): Promise<void>`.
+
+Before writing any code that touches this reference, open and read the file(s) at the path above and analyze them carefully. Mirror their existing formatting, export patterns, and error-handling architecture. Do not guess at their contents, and do not reimplement what they already provide.
+
+</repository_file>
+
+<source_ref ids="S2" />
+
+<repository_file name="ConfigCommand" path="applications/cli/commands/config.ts.hint">
+
+The agent config command. Invoked when the first argv token is `config`. Locates the project root and appends HINT integration instructions to `AGENTS.md` and `CLAUDE.md`. Exports `executeConfig(projectRoot?: string): Promise<void>`.
+
+Before writing any code that touches this reference, open and read the file(s) at the path above and analyze them carefully. Mirror their existing formatting, export patterns, and error-handling architecture. Do not guess at their contents, and do not reimplement what they already provide.
+
+</repository_file>
+
+<source_ref ids="S4" />
+
+<repository_file name="CommandModule" path="applications/cli/commands/command.ts.hint">
+
+Provides `compileFiles` and `spawnAgent`.
+
+Before writing any code that touches this reference, open and read the file(s) at the path above and analyze them carefully. Mirror their existing formatting, export patterns, and error-handling architecture. Do not guess at their contents, and do not reimplement what they already provide.
+
+</repository_file>
+
+<source_ref ids="S9" />
+
+<repository_file name="TranspilerAPI" path="packages/transpiler/index.ts">
+
+The complete public surface of the transpiler. Use `is(error, ErrorCode)` in the catch block to produce specific error messages for known HINT error codes before falling through to a generic unknown-error branch.
+
+Before writing any code that touches this reference, open and read the file(s) at the path above and analyze them carefully. Mirror their existing formatting, export patterns, and error-handling architecture. Do not guess at their contents, and do not reimplement what they already provide.
+
+</repository_file>
+
+<source_ref ids="S2" />
+
+## [ENVIRONMENT RUNTIME & LANGUAGE]
+
+Write all code strictly targeting the following language specification. Apply the correct module syntax, standard library APIs, and runtime-specific idioms throughout. Do not use syntax, features, or tools that do not belong to this target.
+
+TypeScript (Node.js v22+ / ESM). The compiled output is a single ESM entry point executed directly by Node.js through the `bin` field of `package.json`.
+
+<source_ref ids="S1,S2" />
+
+### Approved Dependency Whitelist
+
+You are strictly forbidden from installing or importing any package outside of this list:
+
+Only use standard native Node.js APIs (`fs/promises`, `path`) and standard regex. Do not use external parsers or heavy dependencies.
+
+- `@openhint/transpiler` — the sole runtime dependency; provides `parse`, `compile`, and the `is` error predicate.
+- No additional runtime packages. Use only Node.js built-in modules for process I/O.
+
+<source_ref ids="S1,S2" />
+
+## [COMPILATION & TESTING PIPELINES]
+
+The following commands validate this codebase. All generated code, configuration files, and project structure must remain compatible with these pipelines. Do not generate anything that breaks them.
+
+- tsc for compilation
+- makefile for better development and maintenance experience.
+
+- `make build-js` to compile TypeScript to the release directory.
+- `make test-js` to run the vitest suite.
+
+<source_ref ids="S2,S3,S4,S5,S6,S7,S8,S9" />
+
+## [CRITICAL SYSTEM MANDATES]
+
+The following mandates are non-negotiable system-level constraints. Every function, data access pattern, and error path must satisfy all mandates listed here without exception:
+
+- Write nothing to stdout except the final compiled prompt string.
+- Write all diagnostic messages, usage text, and error details exclusively to stderr.
+- Exit code 0 on success; exit code 1 on any failure.
+- Never swallow an error silently — always emit the message before exiting.
+
+- Do not write to stdout, stderr, or call `process.exit()`.
+- Do not catch errors; let them propagate to the CLI entry point.
+- Always pass `--print` so `claude` runs in non-interactive single-response mode; omitting it would open an interactive session the caller cannot control.
+- Never pass the prompt as a command-line argument — always via stdin through `spawnAgent`.
+
+- Do not write to stdout, stderr, or call `process.exit()`.
+- Do not catch errors; let them propagate.
+- Always pass the prompt via stdin — never as a command-line argument.
+
+- Do not call `process.exit()`, write to stdout, or write to stderr — all I/O and lifecycle decisions belong to the CLI entry point.
+- Do not catch errors thrown by the transpiler; let them propagate.
+- In `spawnAgent`, never buffer the child process's stdout or stderr — always inherit so the agent's output streams to the terminal in real time.
+
+- Use only `node:fs/promises` and `node:path` for all file system operations; do not shell out.
+- The idempotency guard is the presence of the string `'## HINT'` anywhere in the file; do not re-append if the marker exists regardless of surrounding content.
+- Do not write anything to stdout or stderr; all outcomes surface through returned values or thrown `AppError` values.
+- Do not call `process.exit()`.
+
+- Do not write to stdout, stderr, or call `process.exit()` — return the string and let the caller decide.
+- Do not catch errors; let them propagate to the CLI entry point.
+
+- `VALIDATION_HEADER` must be declared at module scope with `export const`; do not construct it at runtime or vary it per invocation.
+- Do not write to stdout, stderr, or call `process.exit()` — return the string and let the caller decide.
+- Do not catch errors; let them propagate to the CLI entry point.
+
+- Prefix the entry file with the `#!/usr/bin/env node` shebang line.
+- Call `run(filePaths, command)` with the output of parseArgv applied to `process.argv.slice(2)`.
+- Use `is(error, ErrorCode)` checks inside catch blocks to branch on specific HINT error conditions before falling back to printing `String(error)`.
+- Do not place `process.exit()` calls outside of run; all lifecycle decisions belong there.
+
+<source_ref ids="S2" />
+
+<system_context type="APP">
+
+The HINT (Human Intent Native Transpiler) command-line tool is a lightweight, zero-dependency compiler. It reads local repository architectures, aggregates cascading file configurations, processes structural block directives, and outputs an ultra-dense, markdown-formatted system prompt optimized for LLM coding assistants.
+
+Runnable as npx cli command like `npx @openhint/cli` and register also executable file to run it more simpler way just like `hint ...`.
+
+</system_context>
+
+<source_ref ids="S3" />
+
+<system_context type="MODULE" name="claude">
+
+The `claude` sub-command. Compiles the specification files to a prompt string and pipes it to the Anthropic `claude` CLI in non-interactive print mode. The compiled prompt is submitted as the first user message; Claude's response streams directly to the terminal.
+
+Requires the `claude` binary to be on PATH. Install via `npm install -g @anthropic-ai/claude-code` or by following the Claude Code setup instructions.
+
+</system_context>
+
+<source_ref ids="S4" />
+
+<system_context type="MODULE" name="codex">
+
+The `codex` sub-command. Compiles the specification files to a prompt string and pipes it to the OpenAI `codex` CLI via stdin. Codex's response streams directly to the terminal.
+
+Requires the `codex` binary to be on PATH. Install via `npm install -g @openai/codex` or by following the Codex CLI setup instructions.
+
+</system_context>
+
+<source_ref ids="S5" />
+
+<system_context type="MODULE" name="command">
+
+Shared transpiler orchestration and agent subprocess management used by every CLI command. Commands import `compileFiles` and `spawnAgent` from here instead of calling the transpiler or `child_process` directly. Keeping both concerns here means each command module stays focused on its own output-shaping logic.
+
+</system_context>
+
+<source_ref ids="S6" />
+
+<system_context type="MODULE" name="config">
+
+The `config` sub-command. Locates the project root by walking upward from the current working directory until a `hint.yml` (or `hint.yaml`) file is found, then ensures both `AGENTS.md` and `CLAUDE.md` in that root contain the HINT CLI integration instruction block. Idempotent — running it twice has the same result as running it once.
+
+Defines the exported module-level constant `CONFIG_INSTRUCTION` — the exact markdown block appended to each agent config file. Follows the same text-constant pattern as `VALIDATION_HEADER` in the validate module.
+
+</system_context>
+
+<source_ref ids="S7" />
+
+<system_context type="MODULE" name="default">
+
+The default `hint` command. Drives the full parse-and-compile pipeline for the supplied specification files and returns the prompt string for the CLI to write to stdout. This is the behavior when no sub-command name is provided.
+
+</system_context>
+
+<source_ref ids="S8" />
+
+<system_context type="MODULE" name="validate">
+
+The `validate` sub-command. Compiles the specification files and prepends a specification-review directive in place of the default implementation directive. The resulting prompt instructs the LLM to produce a structured critique — flagging underspecified clauses, contradictions, missing error conditions, unclear cross-references, and scope gaps — rather than writing any code. Use it to tighten a specification before committing to implementation.
+
+Defines the exported module-level constant `VALIDATION_HEADER` — an immutable string that replaces the default implementation directive with a specification-review directive. Follows the same text-constant pattern used by `header` and `footer` in the transpiler keyword modules.
+
+</system_context>
+
+<source_ref ids="S9" />
+
+<system_context type="MODULE" name="cli">
+
+The `index.ts` entry point and argv dispatcher for the `hint` binary. Responsible for argument parsing, command dispatch, and process lifecycle. All HINT logic lives in TranspilerAPI and the command modules; this module owns only: stripping `process.argv`, detecting the optional sub-command name, forwarding file paths to run, and catching unhandled rejections.
+
+</system_context>
+
+<source_ref ids="S2" />
+
+### FUNCTION CONTRACT: run
+
+Implement the run function according to the binding contract below. Every parameter, the return type, each error condition, and every step of the logic flow are mandatory — do not skip, reorder, rename, or approximate any of them.
+
+#### Parameters
+
+- **`filePaths: string[]`** — Resolved file path arguments after the optional command name has been stripped from argv. Empty only when `command === "config"` with no explicit path.
+- **`command: string | undefined`** — The sub-command name extracted from argv, or `undefined` for the default behavior. Accepted values: `"validate"`, `"claude"`, `"codex"`, `"config"`.
+
+#### Returns
+
+`Promise<void>` — Exits the process before returning on every code path.
+
+#### Errors
+
+Throw these exact error types under the described conditions only. Do not substitute, wrap, or rename them. For every error listed here, emit at least one regression test that fails without the guard and passes with it — a declared error with no corresponding test is an incomplete implementation:
+
+- **`UsageError`** — `command !== "config"` and `filePaths` is empty (only a command name was given with no file paths). Print usage to stderr and exit 1.
+- **`AppError`** — The transpiler threw a structured HINT error (parse, I/O, or reference error), or a spawned agent binary was not found. Print `error.message` to stderr and exit 1.
+
+#### Logic Flow
+
+Implement the following logical sequence step-by-step without skipping any code validations:
+
+1. If `command !== "config"` and `filePaths` is empty, print usage to stderr and exit 1.
+2. Wrap steps 3–10 in a single try/catch; on any error print to stderr and exit 1.
+3. If `command === "config"`, call `executeConfig(filePaths[0])` from ConfigCommand and exit 0.
+4. If `command === "claude"`, call `executeClaude(filePaths)` from ClaudeCommand and exit 0.
+5. If `command === "codex"`, call `executeCodex(filePaths)` from CodexCommand and exit 0.
+6. If `command === "validate"`, call `executeValidate(filePaths)` from ValidateCommand.
+7. Otherwise call `executeDefault(filePaths)` from DefaultCommand.
+8. If the returned string is empty, exit 0 without writing to stdout.
+9. Write the string followed by a single trailing newline to `process.stdout`.
+10. Exit 0.
+
+<source_ref ids="S3" />
+
+### FUNCTION CONTRACT: executeClaude
+
+Implement the executeClaude function according to the binding contract below. Every parameter, the return type, each error condition, and every step of the logic flow are mandatory — do not skip, reorder, rename, or approximate any of them.
+
+#### Parameters
+
+- **`filePaths: string[]`** — The file paths to compile, pre-validated as non-empty by the CLI entry point.
+
+#### Returns
+
+`Promise<void>` — Does not return a string — the `claude` process owns its own stdout. Resolves when the process exits with code 0.
+
+#### Errors
+
+Throw these exact error types under the described conditions only. Do not substitute, wrap, or rename them. For every error listed here, emit at least one regression test that fails without the guard and passes with it — a declared error with no corresponding test is an incomplete implementation:
+
+- **`AppError`** — Propagated from `compileFiles` (transpiler errors) or from `spawnAgent` (binary not found, non-zero exit). Do not catch here; let errors propagate to the CLI entry point.
+
+#### Logic Flow
+
+Implement the following logical sequence step-by-step without skipping any code validations:
+
+1. Import `compileFiles` and `spawnAgent` from `./command`.
+2. Call `compileFiles(filePaths)`.
+3. If the result is an empty string, return without spawning.
+4. Call `spawnAgent('claude', ['--print'], compiledPrompt)`.
+
+<source_ref ids="S4" />
+
+### FUNCTION CONTRACT: executeCodex
+
+Implement the executeCodex function according to the binding contract below. Every parameter, the return type, each error condition, and every step of the logic flow are mandatory — do not skip, reorder, rename, or approximate any of them.
+
+#### Parameters
+
+- **`filePaths: string[]`** — The file paths to compile, pre-validated as non-empty by the CLI entry point.
+
+#### Returns
+
+`Promise<void>` — Does not return a string — the `codex` process owns its own stdout. Resolves when the process exits with code 0.
+
+#### Errors
+
+Throw these exact error types under the described conditions only. Do not substitute, wrap, or rename them. For every error listed here, emit at least one regression test that fails without the guard and passes with it — a declared error with no corresponding test is an incomplete implementation:
+
+- **`AppError`** — Propagated from `compileFiles` or `spawnAgent`. Do not catch here; let errors propagate to the CLI entry point.
+
+#### Logic Flow
+
+Implement the following logical sequence step-by-step without skipping any code validations:
+
+1. Import `compileFiles` and `spawnAgent` from `./command`.
+2. Call `compileFiles(filePaths)`.
+3. If the result is an empty string, return without spawning.
+4. Call `spawnAgent('codex', [], compiledPrompt)`.
+
+<source_ref ids="S5" />
+
+### FUNCTION CONTRACT: compileFiles
+
+Implement the compileFiles function according to the binding contract below. Every parameter, the return type, each error condition, and every step of the logic flow are mandatory — do not skip, reorder, rename, or approximate any of them.
+
+#### Parameters
+
+- **`filePaths: string[]`** — The file paths to compile. Pre-validated by the caller as non-empty.
+
+#### Returns
+
+`Promise<string>` — The compiled prompt string. An empty string means the input resolved to no renderable output — all targets were filtered or ignored.
+
+#### Errors
+
+Throw these exact error types under the described conditions only. Do not substitute, wrap, or rename them. For every error listed here, emit at least one regression test that fails without the guard and passes with it — a declared error with no corresponding test is an incomplete implementation:
+
+- **`AppError`** — The transpiler threw a structured HINT error (parse, I/O, or reference error). Propagate without catching — the CLI entry point handles it.
+
+#### Logic Flow
+
+Implement the following logical sequence step-by-step without skipping any code validations:
+
+1. Call `parse(filePaths)` from TranspilerAPI.
+2. Build `CompilerInput` from the parse result: `projectRoot`, `targetPaths`, `ignore` (from `config.ignore`), `blocks`, and `reads`.
+3. Call `compile(compilerInput)` from TranspilerAPI.
+4. Return the resulting string.
+
+<source_ref ids="S5" />
+
+### FUNCTION CONTRACT: spawnAgent
+
+Implement the spawnAgent function according to the binding contract below. Every parameter, the return type, each error condition, and every step of the logic flow are mandatory — do not skip, reorder, rename, or approximate any of them.
+
+#### Parameters
+
+- **`binary: string`** — The name or absolute path of the agent CLI binary to execute. Must be on PATH or an absolute path.
+- **`args: string[]`** — Additional CLI arguments forwarded to the binary before stdin is written.
+- **`prompt: string`** — The compiled prompt string written to the process stdin as UTF-8. Stdin is closed immediately after writing.
+
+#### Returns
+
+`Promise<void>` — Resolves when the child process exits with code 0. The agent's output flows directly to the parent's stdout and stderr — this function never captures or returns it.
+
+#### Errors
+
+Throw these exact error types under the described conditions only. Do not substitute, wrap, or rename them. For every error listed here, emit at least one regression test that fails without the guard and passes with it — a declared error with no corresponding test is an incomplete implementation:
+
+- **`AppError`** — Thrown when the binary is not found (`ENOENT`) or when the process exits with a non-zero code. The message includes the binary name and, for non-zero exits, the exit code.
+
+#### Logic Flow
+
+Implement the following logical sequence step-by-step without skipping any code validations:
+
+1. Spawn `binary` with `args` using `spawn` from `node:child_process`. Set `stdio` to `['pipe', 'inherit', 'inherit']`.
+2. Write `prompt` to `proc.stdin`, then end stdin.
+3. Return a `Promise<void>` that resolves on `close` when `exitCode === 0`, or rejects with an `AppError` otherwise.
+4. Attach an `error` event handler on `proc` to catch ENOENT (binary not found) and reject with an `AppError` immediately.
+
+<source_ref ids="S6" />
+
+### FUNCTION CONTRACT: executeConfig
+
+Implement the executeConfig function according to the binding contract below. Every parameter, the return type, each error condition, and every step of the logic flow are mandatory — do not skip, reorder, rename, or approximate any of them.
+
+#### Parameters
+
+- **`projectRoot: string | undefined`** — Optional explicit project root path. If not provided, call `findProjectRoot()` to locate it via upward walk from `process.cwd()`.
+
+#### Returns
+
+`Promise<void>` — Resolves after both `AGENTS.md` and `CLAUDE.md` have been checked and updated if necessary.
+
+#### Errors
+
+Throw these exact error types under the described conditions only. Do not substitute, wrap, or rename them. For every error listed here, emit at least one regression test that fails without the guard and passes with it — a declared error with no corresponding test is an incomplete implementation:
+
+- **`AppError`** — Thrown by `findProjectRoot` when no marker is found, or on any file system error. Do not catch here; let it propagate to the CLI entry point.
+
+#### Logic Flow
+
+Implement the following logical sequence step-by-step without skipping any code validations:
+
+1. Resolve `projectRoot`: use the argument if provided, otherwise call `findProjectRoot()`.
+2. Call `appendInstruction(projectRoot, 'AGENTS.md')`.
+3. Call `appendInstruction(projectRoot, 'CLAUDE.md')`.
+4. Return.
+
+<source_ref ids="S7" />
+
+### FUNCTION CONTRACT: executeDefault
+
+Implement the executeDefault function according to the binding contract below. Every parameter, the return type, each error condition, and every step of the logic flow are mandatory — do not skip, reorder, rename, or approximate any of them.
+
+#### Parameters
+
+- **`filePaths: string[]`** — The file paths to compile, pre-validated as non-empty by the CLI entry point.
+
+#### Returns
+
+`Promise<string>` — The compiled prompt string returned by `compileFiles`. Empty string if all targets were filtered or ignored — the caller writes nothing to stdout in that case.
+
+#### Errors
+
+Throw these exact error types under the described conditions only. Do not substitute, wrap, or rename them. For every error listed here, emit at least one regression test that fails without the guard and passes with it — a declared error with no corresponding test is an incomplete implementation:
+
+- **`AppError`** — Propagated from `compileFiles`. Do not catch here.
+
+#### Logic Flow
+
+Implement the following logical sequence step-by-step without skipping any code validations:
+
+1. Import `compileFiles` from `./command`.
+2. Call `compileFiles(filePaths)` and return the result directly.
+
+<source_ref ids="S8" />
+
+### FUNCTION CONTRACT: executeValidate
+
+Implement the executeValidate function according to the binding contract below. Every parameter, the return type, each error condition, and every step of the logic flow are mandatory — do not skip, reorder, rename, or approximate any of them.
+
+#### Parameters
+
+- **`filePaths: string[]`** — The file paths to compile, pre-validated as non-empty by the CLI entry point.
+
+#### Returns
+
+`Promise<string>` — `VALIDATION_HEADER` joined to the compiled prompt by `\n\n---\n\n`. Empty string if `compileFiles` returns empty — the caller writes nothing to stdout in that case.
+
+#### Errors
+
+Throw these exact error types under the described conditions only. Do not substitute, wrap, or rename them. For every error listed here, emit at least one regression test that fails without the guard and passes with it — a declared error with no corresponding test is an incomplete implementation:
+
+- **`AppError`** — Propagated from `compileFiles`. Do not catch here.
+
+#### Logic Flow
+
+Implement the following logical sequence step-by-step without skipping any code validations:
+
+1. Import `compileFiles` from `./command`.
+2. Call `compileFiles(filePaths)`.
+3. If the result is an empty string, return an empty string.
+4. Return `VALIDATION_HEADER` concatenated with `\n\n---\n\n` and the compiled result.
+
+<source_ref ids="S6" />
+
+## [REUSABLE AUTOMATION SCRIPTS: findProjectRoot]
+
+The following action is registered as a macro behavior. Whenever the described condition is met or this action is referenced by name in other blocks, execute the following steps exactly:
+
+Walk upward from `startDir` (default: `process.cwd()`) checking each directory for the presence of `hint.yml` or `hint.yaml`. Return the absolute path of the first directory where either marker file is found.
+
+Throw `AppError` with the message `"No hint.yml found — not inside a HINT project"` if the filesystem root is reached without finding a marker.
+
+<source_ref ids="S6" />
+
+## [REUSABLE AUTOMATION SCRIPTS: appendInstruction]
+
+The following action is registered as a macro behavior. Whenever the described condition is met or this action is referenced by name in other blocks, execute the following steps exactly:
+
+Given `projectRoot` and a `filename` (`'AGENTS.md'` or `'CLAUDE.md'`):
+
+1. Derive the full file path as `path.join(projectRoot, filename)`.
+2. If the file does not exist, write `CONFIG_INSTRUCTION` as its entire content and return.
+3. Read the existing content.
+4. If the content already contains the literal string `'## HINT'`, return without modification (idempotency guard).
+5. Append `'\n\n' + CONFIG_INSTRUCTION` to the existing content and write the result back.
+
+<source_ref ids="S9" />
+
+## [REUSABLE AUTOMATION SCRIPTS: printUsage]
+
+The following action is registered as a macro behavior. Whenever the described condition is met or this action is referenced by name in other blocks, execute the following steps exactly:
+
+Print the following message to `process.stderr` and return without exiting:
+
+```
+Usage: hint [command] [file ...]
+
+Commands:
+  (default)  Compile .hint files and write the prompt to stdout.
+  validate   Compile .hint files and prepend a spec-review directive instead of an implementation directive.
+  claude     Compile .hint files and pipe the prompt to the claude CLI (--print mode).
+  codex      Compile .hint files and pipe the prompt to the codex CLI.
+  config     Add HINT CLI integration instructions to AGENTS.md and CLAUDE.md at the project root.
+
+Arguments:
+  file    Path to a .hint file or to the source file whose companion .hint should be compiled.
+          Accepts multiple paths and standard shell glob patterns.
+          Not required for the config command.
+
+Examples:
+  hint src/domain/auth/login.ts
+  hint src/domain/auth/login.ts.hint
+  hint src/domain/**/*.hint
+  hint validate src/domain/auth/login.ts.hint
+  hint claude src/domain/auth/login.ts.hint
+  hint codex src/domain/auth/login.ts.hint
+  hint config
+```
+
+<source_ref ids="S9" />
+
+## [REUSABLE AUTOMATION SCRIPTS: parseArgv]
+
+The following action is registered as a macro behavior. Whenever the described condition is met or this action is referenced by name in other blocks, execute the following steps exactly:
+
+Extract the optional sub-command name and the file path list from a raw argv array. Return `{ command: string | undefined, filePaths: string[] }`.
+
+Known command names: `["validate", "claude", "codex", "config"]`.
+
+If the first element of argv is a known command name, set `command` to that value and `filePaths` to the remaining elements. Otherwise set `command` to `undefined` and `filePaths` to all elements.
+
+<source_ref ids="S3,S4,S9" />
+
+## [ENFORCED CODING DESIGN PATTERNS]
+
+Apply every pattern and practice listed below in all generated code without exception. These are validated, required standards for this codebase — do not substitute alternatives, even equivalent-seeming ones:
+
+- `spawnAgent('claude', ['--print'], prompt)` — `--print` is the canonical non-interactive flag.
+
+- `spawnAgent('codex', [], prompt)` — codex reads the prompt from stdin.
+
+- Keep the top-level module body to three lines: parse argv, call run, attach an `unhandledRejection` handler that prints to stderr and exits 1.
+
+<source_ref ids="S3,S4,S9" />
+
+## [PROHIBITED ANTI-PATTERNS]
+
+CRITICAL ASSURANCE: You are strictly prohibited from implementing the following behaviors under any circumstances. These prohibitions exist because of real vulnerabilities and failures in this codebase — do not reintroduce them:
+
+- Do not interpolate the prompt into the argument list (`['--print', prompt]`): multi-line prompts break shell escaping and risk injection.
+
+- Do not pass the prompt as a CLI argument: shell escaping is unreliable across multi-line, markdown-rich prompts.
+
+- Never mix compiled prompt output with diagnostic text — any non-prompt byte on stdout corrupts output for callers who pipe it.
+
+<source_ref ids="S6" />
+
+## [FEW-SHOT SYNTAX EXAMPLES]
+
+The following example demonstrates the required implementation pattern. Replicate this structure, naming conventions, and style exactly:
+
+The exact constant declaration the module must export at module scope:
+
+```typescript
+export const CONFIG_INSTRUCTION = `## HINT
+
+When you encounter \`.hint\` files in this repository: run \`hint <file>\` to compile the specification into an AI-ready implementation prompt. Use the compiled output as your primary implementation context instead of reading the raw \`.hint\` file directly.
+
+If \`hint\` is not installed globally, use \`npx @openhint/cli <file>\` instead.`;
+```
+
+<source_ref ids="S8" />
+
+## [FEW-SHOT SYNTAX EXAMPLES]
+
+The following example demonstrates the required implementation pattern. Replicate this structure, naming conventions, and style exactly:
+
+The exact constant declaration the module must export at module scope:
+
+```typescript
+export const VALIDATION_HEADER = `You are a principal software engineer performing a pre-implementation specification review. The HINT specification below is a candidate implementation contract. Do not write any code.
+
+Review the specification systematically and identify every issue that would prevent a clean, assumption-free implementation:
+
+- **Underspecified clauses** — fields, types, defaults, or behaviors the implementer would have to guess.
+- **Contradictions** — two clauses that cannot both be satisfied simultaneously.
+- **Missing error conditions** — failure paths that are clearly possible but not declared in the spec.
+- **Unclear cross-references** — names that appear in the spec but whose contracts are absent or incomplete.
+- **Scope gaps** — behaviors the declared interface implies but the spec does not cover.
+
+For each finding: cite the specific section and clause, state the concern precisely, and write a direct question to the spec author.
+
+If the specification is complete and unambiguous, state that explicitly after your review.
+
+Collect all open questions in a \`## OPEN QUESTIONS\` block at the end of your review.
+
+Do not output an implementation. The specification follows.`;
+```
+
+---
+
+## [PRE-IMPLEMENTATION VERIFICATION GATE]
+
+Before writing any code, produce a CONTRACT TRACE. For every data structure, function contract, system mandate, and prohibition above, write exactly one line:
+
+`<clause> — SATISFIABLE | UNDERSPECIFIED | CONFLICTING`
+
+- **SATISFIABLE** — state in one short phrase how you will implement it.
+- **UNDERSPECIFIED** — the specification does not give you enough to implement this deterministically. Name the exact decision you would otherwise be forced to guess. Do not guess.
+- **CONFLICTING** — two clauses cannot both hold. Name both.
+
+If every clause is SATISFIABLE, proceed to generate the complete implementation. If any clause is UNDERSPECIFIED or CONFLICTING, output the trace and the blocking questions only, and generate no code for the affected clauses. A passing trace is the contract that the rest of your output will be checked against.
+
+## [SCOPE & FOOTPRINT]
+
+- Implement only what the contract above defines. Do not create files, modules, exports, or dependencies the specification does not require.
+- Treat `<implementation_targets>` as the authoritative edit scope. Inspect those repository-relative paths first, preserve their existing architecture, and do not redirect the implementation to similarly named files.
+- When modifying an existing codebase, prefer the smallest possible diff: touch the fewest files, reuse the utilities and patterns exposed via the files named by `# read`, and never reimplement something that already exists in the provided context.
+
+## [IMPLEMENTATION VERIFICATION CHECKLIST]
+
+Confirm each point before returning the final code:
+
+- [ ] Every data structure is implemented with all specified fields, types, and constraints — no additions, no omissions, no renames.
+- [ ] Every function contract is implemented with the correct signature, error handling, and logic flow — step by step, in order.
+- [ ] Every action macro is wired to its described trigger condition.
+- [ ] Every system mandate is enforced throughout the implementation.
+- [ ] No surface — file, module, abstraction, parameter, or dependency — exists that the specification did not require.
+- [ ] Every changed or created file is one of the declared implementation targets, or is strictly required by an explicit contract clause and reported in the final response.
+- [ ] No dependency outside the approved whitelist has been introduced.
+- [ ] No prohibited pattern appears anywhere in the implementation.
+- [ ] No `TODO`, `FIXME`, or stub remains; every specified path is fully implemented.
+- [ ] Every error condition declared in a function contract has at least one regression test that fails without the guard and passes with it.
+- [ ] Every assumption made for an underspecified clause is marked inline (in the target language's comment syntax) and listed in the ASSUMPTIONS block.
+- [ ] All verification criteria are covered by the test suite.
+
+Generate the complete implementation now, followed by the ASSUMPTIONS block (or `ASSUMPTIONS: none`).

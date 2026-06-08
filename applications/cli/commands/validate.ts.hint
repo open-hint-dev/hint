@@ -1,6 +1,6 @@
 # module validate
 
-The `validate` sub-command. Compiles the specification files and prepends a specification-review directive in place of the default implementation directive. The resulting prompt instructs the LLM to produce a structured critique — flagging underspecified clauses, contradictions, missing error conditions, unclear cross-references, and scope gaps — rather than writing any code. Use it to tighten a specification before committing to implementation.
+The `validate` sub-command. Compiles the specification files and replaces the transpiler's leading implementation `header` with a specification-review directive. The resulting prompt contains exactly one role directive and instructs the LLM to critique rather than implement.
 
 Defines the exported module-level constant `VALIDATION_HEADER` — an immutable string that replaces the default implementation directive with a specification-review directive. Follows the same text-constant pattern used by `header` and `footer` in the transpiler keyword modules.
 
@@ -36,21 +36,26 @@ The file paths to compile, pre-validated as non-empty by the CLI entry point.
 
 ## return Promise<string>
 
-`VALIDATION_HEADER` joined to the compiled prompt by `\n\n---\n\n`. Empty string if `compileFiles` returns empty — the caller writes nothing to stdout in that case.
+The compiled prompt with its leading exported transpiler `header` replaced by `VALIDATION_HEADER + '\n\n---'`. Empty string if `compileFiles` returns empty.
 
 ## error AppError
 
-Propagated from `compileFiles`. Do not catch here.
+Propagated unchanged from `compileFiles`. Also create `ErrorCode.UNKNOWN_ERROR` with message `"Compiled prompt did not start with the transpiler header."` if a non-empty compiler result violates the header contract.
 
 ## flow
 
-1. Import `compileFiles` from `./command`.
+1. Import `header`, `create`, and `ErrorCode` from `@openhint/transpiler`, and import `compileFiles` from `./command.js`.
 2. Call `compileFiles(filePaths)`.
 3. If the result is an empty string, return an empty string.
-4. Return `VALIDATION_HEADER` concatenated with `\n\n---\n\n` and the compiled result.
+4. If the result does not start with `header`, throw `create(ErrorCode.UNKNOWN_ERROR, 'Compiled prompt did not start with the transpiler header.')`.
+5. Return `VALIDATION_HEADER + '\n\n---' + compiledPrompt.slice(header.length)`.
 
 # rule
 
 - `VALIDATION_HEADER` must be declared at module scope with `export const`; do not construct it at runtime or vary it per invocation.
 - Do not write to stdout, stderr, or call `process.exit()` — return the string and let the caller decide.
 - Do not catch errors; let them propagate to the CLI entry point.
+
+# test for executeValidate
+
+Create or update `applications/cli/commands/validate_test.ts` using Vitest. Verify empty output, exact replacement of the implementation header, preservation of the compiled body, absence of the original implementation directive, malformed-header failure, and unchanged compiler error propagation.
