@@ -1,11 +1,17 @@
-# HINT — Human Intent Native Transpiler
+<p align="center">
+  <img src="sites/openhint.dev/public/logo-full.png" alt="HINT" width="491">
+</p>
 
-<p>
+<p align="center">
   <img alt="spec" src="https://img.shields.io/badge/spec-v1.0.0-black">
   <img alt="format" src="https://img.shields.io/badge/format-Markdown%E2%80%91native-blue">
   <img alt="output" src="https://img.shields.io/badge/output-LLM%20prompt%20payload-6e40c9">
   <img alt="license" src="https://img.shields.io/badge/license-MIT-green">
 </p>
+
+<h1 align="center">
+  HINT — Human Intent Native Transpiler
+</h1>
 
 > **A programming language with no syntax of its own. Write intent in any human language; ship code in any programming language. For engineers.**
 
