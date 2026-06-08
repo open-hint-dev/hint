@@ -1,0 +1,30 @@
+# lang
+
+GNU Make 4.x include fragments with recipes written for a POSIX-compatible
+shell.
+
+# build
+
+- Every `*.mk.hint` file generates the sibling `*.mk` file with the final
+  `.hint` suffix removed.
+- Package and application makefiles consume the shared targets through
+  `include ../../presets/scripts/index.mk` from their standard two-level
+  monorepo locations.
+- Recipe command lines begin with literal tab characters.
+
+# good
+
+- Use `?=` for caller-overridable configuration.
+- Resolve paths from the included preset file or explicit package variables.
+- Quote filesystem paths in recipes.
+- Declare every public target phony.
+- Keep targets non-interactive and suitable for local development and CI.
+
+# bad
+
+- Do not assume the caller is at a fixed directory depth when computing the
+  monorepo root.
+- Do not install dependencies, mutate source manifests, or publish as an
+  implicit side effect.
+- Do not use Bash-only syntax in recipes.
+- Do not expose npm credentials in commands or logs.

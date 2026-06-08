@@ -1,0 +1,86 @@
+# read {package.json} as WorkspaceManifest
+
+Provides the repository URL, package manager, workspace conventions, and
+supported Node.js baseline.
+
+# read {packages/transpiler/index.ts} as PublicEntrypoint
+
+Defines the root API exported to package consumers.
+
+# read {packages/transpiler/keywords/index.ts} as KeywordEntrypoint
+
+Defines the supported keyword-registry subpath API.
+
+# lang
+
+JSON (RFC 8259 npm package manifest).
+
+# module transpilerPackageManifest
+
+Public npm manifest for the Node.js ESM `@openhint/transpiler` library. The
+manifest must resolve runtime JavaScript and TypeScript declarations
+deterministically for NodeNext consumers without relying on deprecated
+directory or implicit-index lookup.
+
+# entity PackageMetadata
+
+- name: `"@openhint/transpiler"`
+- version: `"0.1.0"` for the first public release
+- private: `false`
+- type: `"module"`
+- description: concise public description of parsing HINT specifications and compiling them into implementation prompts
+- license: `"MIT"`
+- repository.type: `"git"`
+- repository.url: `"git+https://github.com/neprel/hint.git"`
+- repository.directory: `"packages/transpiler"`
+- homepage: `"https://github.com/neprel/hint#readme"`
+- bugs.url: `"https://github.com/neprel/hint/issues"`
+- engines.node: `">=22"`
+- sideEffects: `false`
+- publishConfig.access: `"public"`
+
+# entity PackageExports
+
+Declare only these public entry points:
+
+- `"."`
+  - types: `"./index.d.ts"`
+  - import: `"./index.js"`
+- `"./keywords"`
+  - types: `"./keywords/index.d.ts"`
+  - import: `"./keywords/index.js"`
+- `"./package.json"`: `"./package.json"`
+
+Also declare:
+
+- main: `"./index.js"`
+- types: `"./index.d.ts"`
+- files: `["*.js", "*.d.ts", "*.d.ts.map", "keywords", "README.md", "LICENSE"]`
+
+Do not expose internal keyword modules as stable subpaths. Consumers use the
+root API or `@openhint/transpiler/keywords`.
+
+# entity PackageScripts
+
+Preserve existing quality and release scripts. Add:
+
+- build: `make build-js`
+- check: `make lint-js && make test-js && make verify-package-js`
+- pack: `make pack-js`
+
+# rule
+
+- Keep all development tools in `devDependencies`; the runtime package has no external dependencies.
+- Do not publish source `.ts`, test files, `.hint` specifications, Makefiles, Vite configuration, or TypeScript configuration.
+- Do not use wildcard export maps.
+- Do not add CommonJS entry points.
+- The manifest copied to the staged release directory must be directly publishable without rewriting fields during release.
+- `npm publish --access public` must not be blocked by `private`.
+
+# test for manifest
+
+- `npm pack --dry-run` includes `index.js`, `index.d.ts`, keyword runtime/declaration files, README, LICENSE, and package.json.
+- The tarball excludes TypeScript source, tests, build configuration, and HINT specifications.
+- Node ESM resolves `@openhint/transpiler`.
+- Node ESM resolves `@openhint/transpiler/keywords`.
+- TypeScript NodeNext resolves runtime exports and exported types without TS2834 or TS2835 diagnostics.
