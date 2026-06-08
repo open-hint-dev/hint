@@ -33,11 +33,11 @@ Think of `.hint` as closer to `.py`, `.ts`, or `.go` than to a ticket or plannin
 
 ### How it is different
 
-| Approach | What it controls |
-| --- | --- |
-| [OpenSpec](https://github.com/Fission-AI/OpenSpec) | Proposals, behavioral specs, tasks, and spec changes |
-| [GitHub Spec Kit](https://github.com/github/spec-kit) | The workflow from feature spec to plan, tasks, and implementation |
-| **HINT** | The source boundary: what code exists, where it lives, and how it behaves |
+| Approach                                              | What it controls                                                          |
+| ----------------------------------------------------- | ------------------------------------------------------------------------- |
+| [OpenSpec](https://github.com/Fission-AI/OpenSpec)    | Proposals, behavioral specs, tasks, and spec changes                      |
+| [GitHub Spec Kit](https://github.com/github/spec-kit) | The workflow from feature spec to plan, tasks, and implementation         |
+| **HINT**                                              | The source boundary: what code exists, where it lives, and how it behaves |
 
 You still ask an AI agent to write the final code. But you do not hand it a vague prompt and hope its architecture matches yours. HINT compiles your files and project rules into a strict implementation prompt.
 
@@ -130,7 +130,7 @@ TypeScript (Node.js v22+ / ESM)
 
 **2. Companion files** — drop a `*.hint` next to any file you want built. Context lives where your code lives.
 
-**3. Compile** — `hint src/**/*.hint`. No CLI? Paste the `*.hint` into any chat LLM — it's pure Markdown.
+**3. Compile & Run** — `hint src/**/*.hint | claude`.
 
 Full walkthrough → [`docs/02-quick-start.md`](docs/02-quick-start.md).
 
