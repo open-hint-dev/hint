@@ -1,10 +1,10 @@
 import { globSync } from 'node:fs';
 import { relative, resolve, sep } from 'node:path';
 
-import type { Directive, RawBlock, ReadRef } from './parser';
-import { ErrorCode, fire } from './error';
-import { footer, getKeyword, header, keywordOrder, renderKeyword } from './keywords';
-import { createIgnoreMatcher } from './parser';
+import type { Directive, RawBlock, ReadRef } from './parser.js';
+import { ErrorCode, fire } from './error.js';
+import { footer, getKeyword, header, keywordOrder, renderKeyword } from './keywords/index.js';
+import { createIgnoreMatcher } from './parser.js';
 
 export type CompilerInput = {
     projectRoot: string;

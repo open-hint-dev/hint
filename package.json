@@ -3,6 +3,7 @@
     "private": true,
     "workspaces": [
         "applications/**/*",
+        "integrations/**/*",
         "packages/**/*",
         "presets/**/*",
         "sites/**/*"

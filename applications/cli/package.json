@@ -16,6 +16,7 @@
         "@openhint/preset-typescript": "workspace:*",
         "eslint": "*",
         "typescript": "*",
-        "vite": "*"
+        "vite": "*",
+        "vitest": "*"
     }
 }

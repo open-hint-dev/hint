@@ -1,4 +1,4 @@
-import { ErrorCode, fire } from '../error';
+import { ErrorCode, fire } from '../error.js';
 
 export const directives = [
     'read',

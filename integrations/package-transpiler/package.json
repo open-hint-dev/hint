@@ -1,0 +1,12 @@
+{
+    "name": "@openhint/integrations-transpiler",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "test": "make test-js"
+    },
+    "devDependencies": {
+        "@openhint/transpiler": "workspace:*",
+        "vitest": "*"
+    }
+}

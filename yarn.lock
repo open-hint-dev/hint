@@ -879,6 +879,16 @@ __metadata:
     eslint: "npm:*"
     typescript: "npm:*"
     vite: "npm:*"
+    vitest: "npm:*"
+  languageName: unknown
+  linkType: soft
+
+"@openhint/integrations-transpiler@workspace:integrations/package-transpiler":
+  version: 0.0.0-use.local
+  resolution: "@openhint/integrations-transpiler@workspace:integrations/package-transpiler"
+  dependencies:
+    "@openhint/transpiler": "workspace:*"
+    vitest: "npm:*"
   languageName: unknown
   linkType: soft
 
@@ -931,7 +941,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@openhint/transpiler@workspace:packages/transpiler":
+"@openhint/transpiler@workspace:*, @openhint/transpiler@workspace:packages/transpiler":
   version: 0.0.0-use.local
   resolution: "@openhint/transpiler@workspace:packages/transpiler"
   dependencies:
@@ -940,6 +950,7 @@ __metadata:
     eslint: "npm:*"
     typescript: "npm:*"
     vite: "npm:*"
+    vitest: "npm:*"
   languageName: unknown
   linkType: soft
 

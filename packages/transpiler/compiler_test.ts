@@ -1,10 +1,15 @@
 /// <reference types="node" />
 /// <reference types="vitest/globals" />
 
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import type { CompilerInput } from './compiler';
 import { compile, filterIgnored } from './compiler';
 import { ErrorCode, is } from './error';
 import { parse } from './parser';
+
+const here = dirname(fileURLToPath(import.meta.url));
 
 function input(overrides: Partial<CompilerInput> = {}): CompilerInput {
     return {
@@ -182,7 +187,7 @@ describe('compiler', () => {
     });
 
     it('compiles a repository specification through the full parser pipeline', async () => {
-        const parsed = await parse(['packages/transpiler/error.ts']);
+        const parsed = await parse([resolve(here, 'error.ts')]);
         const output = await compile({
             projectRoot: parsed.projectRoot,
             targetPaths: parsed.targetPaths,

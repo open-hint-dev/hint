@@ -1,6 +1,6 @@
-import { ErrorCode, fire } from '../error';
-import type { SubBlock } from './keyword';
-import { defineKeyword, interpolate, splitSubBlocks } from './keyword';
+import { ErrorCode, fire } from '../error.js';
+import type { SubBlock } from './keyword.js';
+import { defineKeyword, interpolate, splitSubBlocks } from './keyword.js';
 
 const template = `### FUNCTION CONTRACT: {{name}}
 
@@ -44,7 +44,7 @@ export const functionKeyword = defineKeyword({
         }
         const returned = subBlocks.find((item) => item.kind === 'return');
         const errors = subBlocks.filter((item) => item.kind === 'error');
-        const renderedTemplate = errors.length === 0 ? template.replace(/\n#### Errors\n[\s\S]*?\n\{\{errors}}\n/, '\n') : template;
+        const renderedTemplate = errors.length === 0 ? template.replace(/\n#### Errors\n[\s\S]*?\n\{\{errors}}\n/, '') : template;
 
         return interpolate(renderedTemplate, {
             name,

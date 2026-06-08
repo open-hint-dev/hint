@@ -1,4 +1,4 @@
-import { defineKeyword } from './keyword';
+import { defineKeyword } from './keyword.js';
 
 export const notes = defineKeyword({
     directive: 'notes',

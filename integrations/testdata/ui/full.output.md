@@ -16,17 +16,17 @@ Actions:
 - Submit: validate inputs, then call executeLogin; on failure show an inline error.
 - Forgot password: link to PasswordResetScreen.
 
-#### IMAGE: BrandMark
-
-Place this image as specified, honoring its source, alt text, and role in the layout. Do not substitute it or add imagery beyond what is declared:
-
-Source: brandAssets primary logo. Alt text: "Acme". Centered above the form, max width 160px.
-
 #### BLOCK: HelpFooter
 
 Compose this visual region exactly as described. Do not introduce additional sections or rearrange the declared structure:
 
 Static text linking to the support portal and privacy policy. No interactive elements.
+
+#### IMAGE: BrandMark
+
+Place this image as specified, honoring its source, alt text, and role in the layout. Do not substitute it or add imagery beyond what is declared:
+
+Source: brandAssets primary logo. Alt text: "Acme". Centered above the form, max width 160px.
 
 #### TABLE: RecentLogins
 

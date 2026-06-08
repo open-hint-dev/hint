@@ -1,12 +1,53 @@
 {
     "name": "@openhint/transpiler",
-    "version": "0.0.0",
-    "private": true,
+    "version": "0.1.0",
     "type": "module",
+    "description": "Parse HINT specifications and compile them into implementation prompts.",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/neprel/hint.git",
+        "directory": "packages/transpiler"
+    },
+    "homepage": "https://github.com/neprel/hint#readme",
+    "bugs": {
+        "url": "https://github.com/neprel/hint/issues"
+    },
+    "engines": {
+        "node": ">=22"
+    },
+    "sideEffects": false,
+    "publishConfig": {
+        "access": "public"
+    },
+    "exports": {
+        ".": {
+            "types": "./index.d.ts",
+            "import": "./index.js"
+        },
+        "./keywords": {
+            "types": "./keywords/index.d.ts",
+            "import": "./keywords/index.js"
+        },
+        "./package.json": "./package.json"
+    },
+    "main": "./index.js",
+    "types": "./index.d.ts",
+    "files": [
+        "*.js",
+        "*.d.ts",
+        "*.d.ts.map",
+        "keywords",
+        "README.md",
+        "LICENSE"
+    ],
     "scripts": {
+        "build": "make build-js",
+        "check": "make lint-js && make test-js && make verify-package-js",
         "coverage": "make coverage-js",
         "fix": "make fix-js",
         "lint": "make lint-js",
+        "pack": "make pack-js",
         "refresh": "make refresh-js",
         "release": "make release-js",
         "test": "make test-js"
@@ -16,6 +57,7 @@
         "@openhint/preset-typescript": "workspace:*",
         "eslint": "*",
         "typescript": "*",
-        "vite": "*"
+        "vite": "*",
+        "vitest": "*"
     }
 }
