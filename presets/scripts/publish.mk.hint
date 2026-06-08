@@ -1,7 +1,0 @@
-# read {presets/scripts/index.mk.hint} as ScriptDefaults
-
-Use the shared paths and command defaults defined by {ScriptDefaults}.
-
-# module publishMakefile
-
-Reusable GNU Make include fragment for publishing an npm packages to npmjs.org.
