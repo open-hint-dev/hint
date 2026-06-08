@@ -1,12 +1,6 @@
-# app
+# module app
 
 Renders an application scope declaration as an XML context wrapper. The XML boundary signals to the model that everything inside is a scoped architectural context — not a prose description to summarize, but a precise operational boundary to work within.
-
-# entity Input
-
-- directive: 'app'
-- name: the application identifier (e.g. 'cartService') — optional
-- body: the application's intent, service boundaries, and deployment targets
 
 # entity Output
 

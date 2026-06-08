@@ -1,12 +1,6 @@
-# deps
+# module deps
 
 Renders the dependency whitelist as a continuation sub-block within the `## [ENVIRONMENT RUNTIME & LANGUAGE]` section opened by the lang template. The prohibition prefix is fixed — it activates strict compliance behavior in the model for package selection.
-
-# entity Input
-
-- directive: 'deps'
-- name: undefined — deps is always anonymous
-- body: the dependency list and constraints
 
 # entity Output
 

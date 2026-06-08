@@ -80,7 +80,7 @@ It built only what you declared, wrote the error test, and told you where your s
 
 ## Quick start
 
-**1. Mark the root + set baselines** — an empty `hint.yml` marks the project root; a root `_.hint` holds the global defaults:
+**1. Mark the root + set baselines** — `hint.yml` marks the project root and can ignore paths using gitignore-style patterns; a root `_.hint` holds the global defaults:
 
 ```markdown
 # lang
@@ -155,5 +155,5 @@ Keywords are case-insensitive and abbreviations accept their full word (`# app` 
 
 ---
 
-**Status** — spec stable at v1.0.0; CLI + engine under `packages/transpiller/`. Issues and PRs welcome.
+**Status** — spec stable at v1.0.0; CLI + engine under `packages/transpiler/`. Issues and PRs welcome.
 **License** — MIT, see [`LICENSE`](LICENSE).

@@ -1,12 +1,6 @@
-# res
+# module res
 
 Renders a static data asset declaration. The "do not modify" instruction is critical — it prevents the model from generating write logic for read-only configuration assets.
-
-# entity Input
-
-- directive: 'res'
-- name: the resource identifier (e.g. 'countryCodes', 'translationMap') — required
-- body: the resource's purpose, structural pattern, and how code should access it
 
 # entity Output
 

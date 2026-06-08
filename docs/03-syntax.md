@@ -10,10 +10,10 @@ HINT files are 100% valid Markdown. They can be read by any standard editor, giv
 
 HINT brings external files into a spec with two directives. They use different prefixes because they act at different stages of the pipeline:
 
-- `@include <glob_pattern>`: A compile-time **preprocessor** action — the only `@` directive. The compiler immediately reads the target file and inlines its raw content into the current token stream before evaluating further; the content physically becomes part of the spec. Use it for HINT fragments and shared rule files.
+- `@include <glob_pattern>`: A compile-time **preprocessor** action — the only `@` directive. The compiler immediately reads the target file and inlines its raw content into the current token stream before evaluating further; the content physically becomes part of the spec. Reserve it for HINT fragments whose blocks must participate in parsing or merge semantics.
 - `# read {glob_pattern} as [referenceName]`: A **structural** directive (`#` prefix), resolved at **run time**. The compiler does _not_ read or inline the file; it emits an instruction directing the LLM to open and read the real source file(s) itself, by path, before writing code, and binds them to the given reference name. The `as [referenceName]` clause is optional. Use it for actual source files the agent can open. The lines immediately following this directive describe the file's purpose.
 
-The prefix tells you the stage: `@` runs at compile time and may produce no output (`@include` is invisible in the final prompt); `#` is a structural block that emits a prompt section (`# read` emits a read instruction). In short — `@include` pastes the file in now; `# read` tells the LLM to go read it itself.
+The prefix tells you the stage: `@` runs at compile time and may produce no output (`@include` is invisible in the final prompt); `#` is a structural block that emits a prompt section (`# read` emits a read instruction). In short — `@include` pastes the file in now; `# read` tells the LLM to read it once and reuse it by reference. Prefer `# read` unless literal token-stream insertion is required.
 
 ### Structural Directive Blocks
 

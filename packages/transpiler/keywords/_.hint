@@ -1,0 +1,52 @@
+# module keywords
+
+# read {packages/transpiler/keywords/keyword.ts.hint} as KeywordContract
+
+Authoritative shared contract for canonical directives, parsed blocks, read references, and keyword template inputs. Read it once and reuse its definitions across every keyword module.
+
+This directory is the keyword registry and prompt-rendering layer. keyword.ts.hint owns the canonical directive, parsed block, read-reference, and shared template-input contracts. Every concrete directive template references that contract and declares a module whose name matches its filename stem.
+
+The parser depends on the keyword contract to recognize valid directives and produce blocks. The keyword registry does not include or depend on the parser. The compiler selects templates by canonical directive and assembles their rendered markdown without hard-coding directive output text.
+
+# entity TemplateOutput
+
+What the compiler collects from each rendered template and assembles into the final prompt payload.
+
+- section: string
+  the fully rendered markdown string to append to the output buffer
+- directive: string
+  preserved for ordering, deduplication, and section grouping logic
+
+# action renderPrompt
+
+The full compiler rendering lifecycle:
+
+1. Render header.ts.hint and write it to the output buffer first.
+2. Render the compiler-owned repository context manifest.
+3. Render all `# read` blocks in declaration order.
+4. Render the remaining blocks in the documented prompt assembly order, preserving declaration order within each directive group.
+5. Prefix every rendered section with its compact source marker.
+6. For each block, execute {renderBlock}.
+7. Render footer.ts.hint and append it to the output buffer last.
+8. Join the buffer and emit to stdout or the designated output file.
+
+# action renderBlock
+
+The compiler executes this for every parsed directive block:
+
+1. If block.directive is 'notes', drop it silently — never load a template for it.
+2. Resolve the template path `keywords/&#123;block.directive&#125;.ts.hint`. Never resolve keyword.ts.hint directly; it is a shared include, not a directive template.
+3. If the file does not exist, throw AppError(PARSE_ERROR) naming the unknown directive.
+4. Bind the shared keyword input from the block's directive, name, body, source metadata, and read-reference map.
+5. For `# read`, additionally bind the glob parsed from the header line.
+6. Resolve all single-brace variable tokens in body against declared structural names and the reads map before binding.
+7. Extract the Output specification from the template and fill all {{double-brace}} interpolation tokens.
+8. Append the resulting {TemplateOutput}.section to the prompt buffer.
+
+# rule
+
+- Every canonical directive must have a corresponding `&#123;directive&#125;.ts.hint` module. An unmatched directive is an immediate PARSE_ERROR.
+- keyword.ts.hint is the shared contract module referenced as {KeywordContract}. header.ts.hint and footer.ts.hint are reserved structural-wrapper modules, not directives.
+- Template files are valid HINT files — they self-document their own rendering contracts and can be processed by the HINT toolchain.
+- Templates describe intent and output shape only. No logic or conditional branching lives in the template file — the compiler implements those from the rules each template declares.
+- No wildcard file discovery occurs in this directory. Reusable contracts are exposed through `# read`; `@include` is reserved for literal HINT token-stream insertion.

@@ -1,12 +1,6 @@
-# ui
+# module ui
 
 Renders a user interface surface contract — a screen, page, view, or component. Like a function contract, a ui block uses fixed sub-headers that each define a specific element type. Only the elements declared inside are built; the model is forbidden from adding or omitting any.
-
-# entity Input
-
-- directive: 'ui'
-- name: the surface name (e.g. 'LoginScreen', 'OrderTable', 'ProfileCard') — optional
-- body: raw sub-block content containing ## form, ## block, ## image, and ## table headers
 
 # entity SubBlock
 
@@ -52,4 +46,4 @@ Build this user interface surface exactly as specified. Implement only the eleme
 - When a sub-block kind has no entries, its placeholder is omitted entirely — do not render an empty section.
 - Sub-block labels are optional. When absent, render `#### FORM` / `#### BLOCK` / `#### IMAGE` / `#### TABLE` with no colon or name suffix.
 - When `{{body}}` is empty (no intro text before the first sub-header), omit the blank line placeholder.
-- {variable} references in sub-block content and body are resolved against the reads map before sub-block extraction.
+- Single-brace variable references in sub-block content and body are resolved against the reads map before sub-block extraction.

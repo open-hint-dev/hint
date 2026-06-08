@@ -1,4 +1,4 @@
-# header
+# module header
 
 Renders the opening of every compiled prompt. Establishes the model's role as implementer (not designer), the border contract, and the assumption surfacing protocol. The "surface the gap — do not fill it" principle and the ASSUMPTION comment convention are the two additions that close the silent invention problem.
 

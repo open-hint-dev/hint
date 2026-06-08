@@ -1,12 +1,6 @@
-# example
+# module example
 
 Renders few-shot examples. Examples trigger pattern replication — the model matches output style to what it sees rather than what it infers from description. The instruction to replicate "exactly" reduces creative drift.
-
-# entity Input
-
-- directive: 'example'
-- name: optional label identifying what this example demonstrates
-- body: the example content — may be prose, structured data, or fenced code blocks
 
 # entity Output
 

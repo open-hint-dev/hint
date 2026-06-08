@@ -6,9 +6,19 @@ Get up and running with HINT (Human Intent Native Transpiler) in less than 5 min
 
 ## 1. Global Setup (`hint.yml` + root `_.hint`)
 
-Every HINT project has two pieces at its root. A `hint.yml` (or `hint.yaml`) file **marks the project root** and holds project-wide configuration — it's reserved for future use, so for now it can be an empty file. A root-level `_.hint` holds the **global baseline instructions** (`# lang`, `# deps`, `# build`) that every sub-directory and companion file inherits.
+Every HINT project has two pieces at its root. A `hint.yml` (or `hint.yaml`) file **marks the project root** and may exclude paths through a gitignore-style `ignore` array. A root-level `_.hint` holds the **global baseline instructions** (`# lang`, `# deps`, `# build`) that every sub-directory and companion file inherits.
 
-Create an empty `hint.yml` in your repository root, then a root `_.hint` next to it:
+Create `hint.yml` in your repository root, then a root `_.hint` next to it:
+
+```yaml
+ignore:
+    - node_modules/
+    - dist/
+    - '*.generated.hint'
+    - '!src/contracts/generated.hint'
+```
+
+Patterns are evaluated relative to the project root in declaration order using gitignore semantics; the last matching pattern wins. Explicit CLI targets do not override ignored paths.
 
 ```markdown
 # lang

@@ -1,15 +1,15 @@
-# read
+# module read
 
 Renders a `# read` structural directive as an XML reference block. This is a run-time instruction — the compiler emits the file path and description so the LLM opens and reads the file itself before generating code. Nothing is embedded; the file's contents never appear in the prompt.
 
-`# read` uses a special header syntax: `# read {glob} as [name]`. The compiler extracts the file path from the `{glob}` portion before the `as` keyword and the reference name from the `[name]` portion after it. The description the developer wrote beneath the directive becomes the block body.
+`# read` uses a special header syntax: `# read &#123;glob&#125; as [name]`. The compiler extracts the file path from the braced glob before the `as` keyword and the optional reference name after it. The description beneath the directive becomes the block body.
 
-# entity Input
+# entity ReadInput
 
-- directive: 'read'
-- name: the reference identifier from the `as [name]` portion of the header (e.g. 'AppLogger')
-- glob: the file path or glob pattern extracted from the `{glob}` portion of the header (e.g. 'src/infrastructure/logger.ts') — provided by the compiler as a parsed header field
-- body: the description lines the developer wrote beneath the directive
+Additional input bound for `# read` alongside {KeywordContract}.KeywordInput.
+
+- glob: string
+  the file path or glob pattern extracted from the braced portion of the header
 
 # entity Output
 
@@ -25,8 +25,8 @@ Before writing any code that touches this reference, open and read the file(s) a
 
 # rule
 
-- name is required. A read block without a name is a PARSE_ERROR.
-- glob is extracted from the `{glob}` portion of the header line (before the `as` keyword), not from the body. It is passed to the template as a parsed field alongside name and body.
+- The `as [name]` clause is optional. When absent, the parser derives a stable reference name from glob so the repository file and single-brace cross-references remain addressable.
+- glob is extracted from the braced portion of the header line before the `as` keyword, not from the body. It is passed to the template as a parsed field alongside name and body.
 - When the glob matches multiple files, the path attribute lists the pattern and the instruction already refers to "the file(s)" — no template change needed.
 - The closing `</repository_file>` tag must be on its own line with a blank line before it.
 - A missing body (no description) is a compiler warning — the LLM needs the developer's explanation to understand the file's architectural role.

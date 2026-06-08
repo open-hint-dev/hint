@@ -1,12 +1,6 @@
-# entity
+# module entity
 
 Renders a data structure schema. The `DATA STRUCT:` label pattern is a recognizable signal — every time the model sees it, it knows to treat what follows as a type definition contract, not descriptive prose.
-
-# entity Input
-
-- directive: 'entity'
-- name: the entity name, always PascalCase (e.g. 'ShoppingCart', 'ParseResult') — required
-- body: field definitions formatted as `fieldName: type (constraints)`
 
 # entity Output
 
@@ -21,6 +15,6 @@ Implement the {{name}} data model with this exact schema. Do not alter field nam
 # rule
 
 - name is required and must be PascalCase. A missing name is a PARSE_ERROR.
-- {variable} references in field definitions (e.g. `items: Array<{CartItem}>`) are resolved to the referenced entity name before this template executes.
+- Single-brace references in field definitions, for example `items: Array<&#123;CartItem&#125;>`, are resolved to the referenced entity name before this template executes.
 - When the body defines a union or enum-like type (list of constant values rather than fields), the template renders it identically — the instructional prefix still applies.
 - Multiple entity blocks with different names each render as a separate `### DATA STRUCT:` section.

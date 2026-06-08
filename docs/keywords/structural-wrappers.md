@@ -1,6 +1,6 @@
 # Structural Wrappers — PROMPT HEADER & PROMPT FOOTER
 
-These are not triggered by any HINT directive. The compiler emits them unconditionally as the opening and closing of every compiled prompt. They establish the foundational role contract, the assumption protocol, and the final verification checklist that every generated implementation must satisfy.
+These are not triggered by any HINT directive. The compiler emits them unconditionally as the opening and closing of every compiled prompt. A compiler-owned `<repository_context>` manifest is inserted immediately after the header and before directive output. Together they establish the role contract, repository location, assumption protocol, and final verification checklist.
 
 ---
 
@@ -74,6 +74,7 @@ If every clause is SATISFIABLE, proceed to generate the complete implementation.
 ## [SCOPE & FOOTPRINT]
 
 - Implement only what the contract above defines. Do not create files, modules, exports, or dependencies the specification does not require.
+- Treat `<implementation_targets>` as the authoritative edit scope. Inspect those repository-relative paths first, preserve their existing architecture, and do not redirect the implementation to similarly named files.
 - When modifying an existing codebase, prefer the smallest possible diff: touch the fewest files, reuse the utilities and patterns exposed via the files named by `# read`, and never reimplement something that already exists in the provided context.
 
 ## [IMPLEMENTATION VERIFICATION CHECKLIST]
@@ -85,6 +86,7 @@ Confirm each point before returning the final code:
 - [ ] Every action macro is wired to its described trigger condition.
 - [ ] Every system mandate is enforced throughout the implementation.
 - [ ] No surface — file, module, abstraction, parameter, or dependency — exists that the specification did not require.
+- [ ] Every changed or created file is one of the declared implementation targets, or is strictly required by an explicit contract clause and reported in the final response.
 - [ ] No dependency outside the approved whitelist has been introduced.
 - [ ] No prohibited pattern appears anywhere in the implementation.
 - [ ] No `TODO`, `FIXME`, or stub remains; every specified path is fully implemented.

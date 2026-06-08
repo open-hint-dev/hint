@@ -1,0 +1,215 @@
+# read {packages/transpiler/keywords/keyword.ts.hint} as KeywordContract
+
+Defines the canonical parsed block and read-reference contracts consumed by the compiler.
+
+# module compiler
+
+The compiler accepts parsed keyword blocks and renders the final prompt. It treats project ignores as a mandatory security and scope boundary even when called programmatically without the standard parser.
+
+# entity CompilerInput
+
+- projectRoot: string
+  the absolute HINT project root
+- targetPaths: string[]
+  retained target HINT specifications requested by the developer
+- ignore: string[]
+  gitignore-style patterns loaded from the root `hint.yml` or `hint.yaml`
+- blocks: {KeywordContract}.RawBlock[]
+  parsed directive blocks in cascade order
+- reads: Map<string, {KeywordContract}.ReadRef>
+  structural read references keyed by reference name
+
+# entity SpecificationSource
+
+A HINT file that contributes one or more blocks to the compiled prompt.
+
+- id: string
+  deterministic compact identifier assigned in cascade order: S1, S2, S3, and so on
+- path: string
+  normalized project-relative POSIX path
+- kind: 'baseline' | 'direct' | 'file'
+  its role in the context cascade
+
+# entity ImplementationTarget
+
+The repository path the implementation agent is expected to inspect or modify.
+
+- path: string
+  normalized project-relative path derived by removing the final `.hint` suffix from the requested target
+- specification: string
+  normalized project-relative path of the target HINT file
+- sourceId: string
+  the {SpecificationSource}.id assigned to the target specification
+
+# entity RepositoryContext
+
+Compact path metadata emitted once near the start of the compiled prompt.
+
+- root: '.'
+  all emitted paths are relative to the HINT project root; never expose the compiler machine's absolute path
+- targets: {ImplementationTarget}[]
+  intended implementation paths and their target specifications
+- sources: {SpecificationSource}[]
+  every non-ignored HINT source that contributed to the prompt
+
+# entity FilteredCompilerInput
+
+- targetPaths: string[]
+  retained target specifications
+- blocks: {KeywordContract}.RawBlock[]
+  blocks whose sourcePath is not ignored
+- reads: Map<string, {KeywordContract}.ReadRef>
+  read references with ignored concrete paths removed and fully ignored references omitted
+
+# function filterIgnored
+
+Applies the same project-relative ignore semantics as the parser before any reference resolution or template rendering.
+
+## arg input
+
+{CompilerInput}, the untrusted programmatic compiler input.
+
+## return {FilteredCompilerInput}
+
+Only content permitted by the root ignore configuration.
+
+## flow
+
+1. Reconstruct the gitignore matcher from input.projectRoot and input.ignore using the parser's documented normalization and last-match-wins semantics.
+2. Remove every block whose sourcePath is ignored.
+3. For each read reference, remove ignored concrete matches from its glob.
+4. Omit a read reference when every concrete match is ignored, or when an unmatched literal path is itself ignored.
+5. Remove ignored targetPaths.
+6. Return the filtered targets, blocks, and reads without loading any read target contents.
+
+# function buildRepositoryContext
+
+Builds compact, deterministic repository metadata for the implementation agent.
+
+## arg input
+
+{FilteredCompilerInput}, all retained compilation inputs.
+
+## return {RepositoryContext}
+
+Project-relative targets and specification sources.
+
+## flow
+
+1. Normalize every path relative to projectRoot using forward slashes and remove leading `./`.
+2. Never emit projectRoot as an absolute path; render root as `.` so prompts remain portable and do not leak local machine details.
+3. Derive contributing files from retained blocks, then deduplicate by normalized sourcePath while preserving first appearance in cascade order.
+4. Assign source IDs S1, S2, S3, and so on in that order.
+5. Derive each implementation target by removing only the final `.hint` suffix from its target specification path. For example, `src/auth.ts.hint` maps to `src/auth.ts`.
+6. Bind each target to the source ID of its target specification.
+7. Return the complete {RepositoryContext}.
+
+# function renderRepositoryContext
+
+Renders the path manifest inserted immediately after the prompt header.
+
+## arg context
+
+{RepositoryContext}, the normalized path metadata.
+
+## return string
+
+The exact repository context block:
+
+```markdown
+<repository_context root=".">
+
+All paths in this prompt are relative to the repository root above. Inspect existing target files before editing them. Create a target only when it does not already exist. Keep every change inside the declared targets unless a contract explicitly requires another repository path.
+
+<implementation_targets>
+
+<target path="src/domain/auth/login.ts" specification="src/domain/auth/login.ts.hint" source="S3" />
+
+</implementation_targets>
+
+<specification_sources>
+
+<source id="S1" path="_.hint" kind="baseline" />
+<source id="S2" path="src/domain/_.hint" kind="baseline" />
+<source id="S3" path="src/domain/auth/login.ts.hint" kind="file" />
+
+</specification_sources>
+
+</repository_context>
+```
+
+## rule
+
+- Omit an empty list's inner entries but retain both list elements so the schema is stable.
+- XML attribute values are escaped.
+- Paths appear exactly once in this manifest except for the target-to-specification mapping.
+- Do not include ignored files, absolute paths, current working directory paths, or files that contributed no retained block or read.
+
+# function renderSourceMarker
+
+Adds compact provenance before every rendered directive section.
+
+## arg sourceIds
+
+string[], the ordered unique source IDs whose blocks contributed to the rendered section.
+
+## return string
+
+`<source_ref ids="S1" />` for one source or `<source_ref ids="S1,S2" />` for a merged section.
+
+## rule
+
+- Emit the marker immediately before its rendered section with no path repetition.
+- Merged rule, good, bad, build, deps, and same-target test sections list every contributing source ID in cascade order.
+- The repository context manifest is the authoritative mapping from source ID to path.
+
+# function compile
+
+Builds the complete prompt from non-ignored keyword blocks.
+
+## arg input
+
+{CompilerInput}, parser output or equivalent programmatic input.
+
+## return Promise<string>
+
+The complete rendered prompt.
+
+## flow
+
+1. Run {filterIgnored} before resolving references or selecting templates.
+2. If no blocks or reads remain, return an empty string without rendering header or footer.
+3. Resolve single-brace references using only names and reads that remain after filtering. A reference whose declaration was ignored is unresolved and must fail normally.
+4. Render the prompt header.
+5. Build and render {RepositoryContext} immediately after the header.
+6. Render retained read blocks and directive groups in the documented assembly order.
+7. Prefix every rendered read or directive section with {renderSourceMarker}.
+8. Render the prompt footer.
+9. Return the assembled markdown.
+
+# rule
+
+- Ignore filtering is mandatory and cannot be disabled by explicitly passing an ignored target or block.
+- Never emit a block, read path, reference, or prompt text sourced exclusively from an ignored file.
+- All emitted repository paths are normalized, project-relative, and explicit.
+- The manifest declares repository structure once; source markers provide section provenance without repeating paths.
+- Parser filtering is the normal first line of enforcement; compiler filtering is required defense in depth for alternate programmatic callers.
+
+# test for ignoredCompilation
+
+- Fully ignored input returns an empty string with no prompt wrappers.
+- Mixed input renders only non-ignored blocks and read paths.
+- A programmatic caller cannot bypass ignore filtering by directly supplying an ignored {KeywordContract}.RawBlock.
+- A reference to an entity or read removed by filtering fails with REFERENCE_ERROR rather than resolving stale ignored content.
+- Negated patterns produce the same inclusion result as parser filtering.
+
+# test for repositoryContext
+
+- A nested target `src/auth/login.ts.hint` emits implementation path `src/auth/login.ts`.
+- Absolute project and source paths never appear in output.
+- Cascade sources receive stable IDs in root-to-target order.
+- Every rendered section has the correct single-source marker.
+- Merged sections list all contributing source IDs once and in cascade order.
+- Ignored and empty contributing files are absent from the manifest.
+- Multiple targets are all listed with their own specification and source ID.
+- Existing `# read` paths remain in repository_file blocks and are not duplicated in specification_sources unless that HINT file also contributed compilation blocks.

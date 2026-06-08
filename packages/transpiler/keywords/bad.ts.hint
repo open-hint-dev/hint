@@ -1,12 +1,6 @@
-# bad
+# module bad
 
 Renders absolute prohibitions. The "CRITICAL ASSURANCE" prefix and the "real vulnerabilities and failures" framing are not stylistic choices — they activate stronger compliance behavior in the model than softer prohibition language. Do not weaken this wording.
-
-# entity Input
-
-- directive: 'bad'
-- name: undefined — bad is always anonymous
-- body: forbidden patterns, prohibited approaches, and known failure modes
 
 # entity Output
 

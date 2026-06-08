@@ -30,8 +30,9 @@ The engine runs this target pipeline against every unique file matched across th
         └── 5. Root Baseline            : _.hint (In the hint.yml project root)
         [LOWEST PRIORITY - Global baseline defaults]
         ```
-    - `hint.yml` (or `hint.yaml`) itself carries no HINT directives — it only marks the project root and holds project-wide configuration (reserved for future use; it may be empty). The global baselines live in the root `_.hint`.
-    - **Sharing rules across files** is explicit: pull a common file in with `@include common.hint` at the top of the specs that need it. There is no automatic wildcard merging — context comes only from the `_.hint` cascade, the file's own companion, and `@include`.
+    - `hint.yml` (or `hint.yaml`) itself carries no HINT directives. It marks the project root and may define an `ignore` array using gitignore-style patterns relative to that root. The parser applies it to targets, cascaded HINT files, includes, and `# read` matches; the compiler defensively filters ignored sources again. The global baselines live in the root `_.hint`.
+    - Ignored explicit targets are skipped, including targets produced by directory or shell-glob batches. An `@include` resolving to an ignored file is replaced with empty content without reading it. For `# read` globs, ignored matches are removed and the block is omitted when nothing remains.
+    - **Sharing context across files** is explicit. Prefer `# read {common.hint} as CommonContract` for reusable contracts so the AI reads the file once and reuses `{CommonContract}` without duplicating its contents in the prompt. Use `@include common.hint` only when the included HINT blocks must be parsed and merged as part of the current specification. There is no automatic wildcard merging.
     - Later instruction blocks inside the high-priority override chain completely replace earlier blocks if they share the exact same header signature (e.g., matching `# lang` or matching `# entity User`). Unmatched blocks append smoothly into the master localized compilation pipeline buffer.
 
 2. **Preprocessing & Context Instructions**

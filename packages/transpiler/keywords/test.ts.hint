@@ -1,12 +1,6 @@
-# test
+# module test
 
 Renders verification and testing criteria. The exact section header phrase `## [VERIFICATION & UNIT TEST CRITERIA` is a recognized signal for AI coding agents and must be preserved verbatim — do not paraphrase it.
-
-# entity Input
-
-- directive: 'test'
-- name: the target being tested — optional (function name, entity name, or module name)
-- body: test scenarios, edge cases, mock data requirements, and assertion criteria
 
 # entity Output
 

@@ -1,12 +1,6 @@
-# lang
+# module lang
 
 Renders the runtime and language section header. lang and deps together form one prompt section — lang opens the `## [ENVIRONMENT RUNTIME & LANGUAGE]` header and contributes the target specification; deps renders the dependency whitelist as a sub-block beneath it.
-
-# entity Input
-
-- directive: 'lang'
-- name: undefined — lang is always anonymous
-- body: the language and runtime specification text
 
 # entity Output
 
