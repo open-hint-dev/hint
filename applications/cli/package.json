@@ -1,16 +1,39 @@
 {
     "name": "@openhint/cli",
-    "version": "0.0.0",
-    "private": true,
+    "version": "0.1.0",
     "type": "module",
+    "description": "Compile HINT specifications into AI-ready implementation prompts.",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/neprel/hint.git",
+        "directory": "applications/cli"
+    },
+    "homepage": "https://github.com/neprel/hint#readme",
+    "bugs": {
+        "url": "https://github.com/neprel/hint/issues"
+    },
+    "engines": {
+        "node": ">=22"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
     "bin": {
         "hint": "./index.js"
     },
+    "files": [
+        "index.js",
+        "README.md",
+        "LICENSE"
+    ],
     "scripts": {
         "build": "make build-js",
+        "check": "make lint-js && make test-js && make verify-package-js",
         "coverage": "make coverage-js",
         "fix": "make fix-js",
         "lint": "make lint-js",
+        "pack": "make pack-js",
         "refresh": "make refresh-js",
         "release": "make release-js",
         "test": "make test-js"

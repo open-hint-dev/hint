@@ -28,17 +28,7 @@ export default defineConfig({
     },
     plugins: [
         tscPlugin({
-            tscArgs: [
-                '--project',
-                './tsconfig.json',
-                '--declaration',
-                '--declarationMap',
-                '--emitDeclarationOnly',
-                '--noEmit',
-                'false',
-                '--outDir',
-                releaseDir,
-            ],
+            tscArgs: ['--project', './tsconfig.json', '--noEmit'],
             prebuild: true,
         }),
     ],
