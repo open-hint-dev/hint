@@ -2,7 +2,7 @@ NPM_COMMAND ?= npm
 NPM_REGISTRY ?= https://registry.npmjs.org
 NPM_TAG ?= latest
 NPM_ACCESS ?= public
-NPM_PROVENANCE ?= true
+NPM_PROVENANCE ?= false
 NPM_PUBLISH_ARGS ?=
 NPM_PROVENANCE_FLAG ?= $(if $(filter true 1 yes,$(NPM_PROVENANCE)),--provenance)
 

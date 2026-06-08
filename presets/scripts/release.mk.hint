@@ -21,11 +21,13 @@ All release controls use `?=`:
 - `NPM_REGISTRY ?= https://registry.npmjs.org`
 - `NPM_TAG ?= latest`
 - `NPM_ACCESS ?= public`
-- `NPM_PROVENANCE ?= true`
+- `NPM_PROVENANCE ?= false`
 - `NPM_PUBLISH_ARGS ?=`
 
 Derive `NPM_PROVENANCE_FLAG` as `--provenance` only when
 `NPM_PROVENANCE` is `true`, `1`, or `yes`; otherwise it is empty.
+Provenance is opt-in because npm can generate it only within a supported CI
+provider.
 
 # action check-release-js
 
