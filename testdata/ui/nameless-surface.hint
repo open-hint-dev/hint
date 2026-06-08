@@ -1,0 +1,7 @@
+# ui
+
+A full-screen loading overlay shown during async navigation.
+
+## block Spinner
+
+Centered animated spinner, 48px, using the brand primary color.

@@ -1,0 +1,6 @@
+# test for applyCoupon
+
+- Expired coupon: assert ExpiredCouponError is thrown when coupon date is in the past.
+- Minimum order: assert MinimumOrderValueException is thrown when cart total < coupon threshold.
+- Valid coupon: assert returned cart contains applied discount and correct total.
+- Idempotency: applying the same coupon twice must throw without mutating the cart a second time.

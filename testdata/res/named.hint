@@ -1,0 +1,3 @@
+# res countryCodes
+
+Geo-configuration file containing country abbreviation codes, localized tax rate defaults, and active currency mappings used during globalization checks.

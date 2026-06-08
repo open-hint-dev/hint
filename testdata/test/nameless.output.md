@@ -1,0 +1,7 @@
+## [VERIFICATION & UNIT TEST CRITERIA]
+
+Generate tests that explicitly cover every scenario listed below. Each edge case, mock data structure, and assertion described here must appear in the test output. Do not omit any scenario:
+
+- Empty cart: assert buildCartSummary returns itemCount 0 and subtotalInCents 0.
+- Single item: assert subtotalInCents equals priceInCents times quantity.
+- Coupon applied: assert couponLabel is present when couponCode is set.

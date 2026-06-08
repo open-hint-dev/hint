@@ -1,0 +1,87 @@
+# read {src/infrastructure/logger.ts} as AppLogger
+
+The base utility for error trace logging. Mirror its export and error-handling patterns in all generated code.
+
+# lang
+
+TypeScript (Node.js v22+ / ESM)
+
+# deps
+
+- Prisma ORM for database connectivity
+- ioredis for Redis session access
+- Avoid any date arithmetic libraries; use native Date and UTC timestamps.
+
+# build
+
+- npm run build to compile
+- make test to run vitest suites
+
+# rule
+
+- All operations must complete within 200ms.
+- Every external service call must be wrapped in a try/catch that logs via {AppLogger}.
+
+# namespace billing
+
+Handles coupon application and discount calculation. May reference {cartStore} but nothing here may be imported by the {catalog} namespace.
+
+# entity ShoppingCart
+
+- id: string (uuidv4)
+- userId: string | null
+- items: Array<CartItem>
+- couponCode: string | null
+- subtotalInCents: number
+
+# entity CartItem
+
+- productId: string
+- quantity: number (positive integer, min 1)
+- priceInCents: number
+
+# function applyCoupon
+
+## arg cart: {ShoppingCart}
+The active user shopping cart instance.
+
+## arg code: string
+The raw coupon identifier string to apply.
+
+## return {ShoppingCart}
+The updated cart entity with applied discount fields.
+
+## error ExpiredCouponError
+Thrown if the current calendar date is past the coupon validity window.
+
+## error MinimumOrderValueException
+Thrown if the cart total is lower than the coupon threshold.
+
+## flow
+
+1. Query the database to fetch coupon metadata for the given `code`.
+2. If the coupon expiry date is before today, throw ExpiredCouponError.
+3. Sum priceInCents multiplied by quantity across all cart items.
+4. If the subtotal is below the coupon minimum, throw MinimumOrderValueException.
+5. Apply the discount percentage to the subtotal and set couponCode on the cart.
+6. Persist the updated cart and return it.
+
+# action invalidateSessionCache
+
+Whenever a user logs out or completes a checkout, purge their session token from the Redis store immediately.
+
+# good
+
+- Always use database transactions for any write that touches more than one table.
+- Log every thrown error through {AppLogger} before rethrowing.
+
+# bad
+
+- Never calculate discounts client-side; all pricing logic must execute on the server.
+- Never swallow errors silently — every catch block must log or rethrow.
+
+# test for applyCoupon
+
+- Expired coupon: assert ExpiredCouponError when coupon date is past.
+- Below minimum: assert MinimumOrderValueException when cart total is under threshold.
+- Valid coupon: assert returned cart has updated subtotalInCents and couponCode set.
