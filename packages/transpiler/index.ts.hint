@@ -1,0 +1,67 @@
+# read {packages/transpiler/parser.ts.hint} as ParserContract
+
+Defines parsing types and functions intended for programmatic consumers.
+
+# read {packages/transpiler/compiler.ts.hint} as CompilerContract
+
+Defines prompt compilation types and functions intended for programmatic
+consumers.
+
+# read {packages/transpiler/error.ts.hint} as ErrorContract
+
+Defines structured error handling intended for programmatic consumers.
+
+# read {packages/transpiler/keywords/keyword.ts.hint} as KeywordContract
+
+Defines canonical directive and keyword-registry types.
+
+# lang
+
+TypeScript (Node.js 22+ / pure ESM).
+
+# module transpilerPublicEntrypoint
+
+Stable root entry point for `@openhint/transpiler`. It re-exports the
+supported parser, compiler, error, and keyword-registry APIs while keeping
+concrete keyword implementation modules internal.
+
+# res rootExports
+
+Export all public parser, compiler, and error values and types.
+
+Export these keyword values:
+
+- directives
+- footer
+- getKeyword
+- header
+- interpolate
+- keywordOrder
+- keywordRegistry
+- normalizeDirective
+- renderKeyword
+- splitSubBlocks
+- validateKeyword
+
+Export these keyword types:
+
+- KeywordDefinition
+- KeywordInput
+- MergePolicy
+- NamePolicy
+- SubBlock
+
+# rule
+
+- Every relative export specifier includes `.js`.
+- Export the keyword registry through `./keywords/index.js`, never through a directory import.
+- Do not export individual concrete keyword modules from the root.
+- Do not introduce a default export.
+- Keep the root API compatible with the package manifest `"."` export.
+- Any intentional public API removal requires a major version change.
+
+# test for publicApi
+
+- A Node ESM consumer imports `parse`, `compile`, `ErrorCode`, and `normalizeDirective` from `@openhint/transpiler`.
+- A TypeScript NodeNext consumer imports `AppError`, `ParseResult`, and `CompilerInput` as types.
+- Importing the root package emits no deprecated implicit-main warning.

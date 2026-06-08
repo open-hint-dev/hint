@@ -1,0 +1,14 @@
+# read {LICENSE} as RepositoryLicense
+
+The authoritative repository license text.
+
+# res transpilerLicense
+
+An exact package-local copy of {RepositoryLicense}.
+
+# rule
+
+- Preserve the MIT license text verbatim.
+- Preserve the copyright line `Copyright (c) 2026 Andrei Neprel`.
+- Do not add package-specific exceptions, additional restrictions, or commentary.
+- The build metadata staging step must copy this file into the npm artifact.

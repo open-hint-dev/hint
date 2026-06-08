@@ -1,0 +1,63 @@
+# read {packages/transpiler/package.json.hint} as PackageManifest
+
+Defines the expected npm exports, supported Node version, and packed files.
+
+# read {packages/transpiler/makefile.hint} as PackageBuild
+
+Defines the canonical build, verification, and archive locations.
+
+# lang
+
+TypeScript (Node.js 22+ / ESM) using Vitest globals.
+
+# module packageConsumerTest
+
+Black-box publication regression tests for the exact packed
+`@openhint/transpiler` tarball. These tests exercise the package as an
+external application would, not through workspace source imports.
+
+# function createConsumerProject
+
+## arg tarballPath: string
+
+Absolute path to the package archive produced by the package build.
+
+## return Promise<string>
+
+Absolute path to a newly created isolated temporary npm project containing
+the installed tarball.
+
+## error Error
+
+Propagate filesystem, npm initialization, or installation failures with
+captured command output.
+
+## flow
+
+1. Create a temporary directory under the operating-system temp directory.
+2. Initialize a private npm package with `type: "module"`.
+3. Install the exact tarball path with scripts disabled.
+4. Return the temporary project path.
+
+# test for packedConsumer
+
+- Build and pack the package once before consumer assertions.
+- Runtime root import:
+  - import `parse`, `compile`, `ErrorCode`, and `normalizeDirective`
+  - assert imports exist and `normalizeDirective("model")` returns `"entity"`
+  - fail on deprecation warnings related to implicit package entry lookup
+- Runtime keyword subpath:
+  - import `keywordRegistry` from `@openhint/transpiler/keywords`
+  - assert all canonical directives are registered
+- TypeScript NodeNext:
+  - create a strict consumer `tsconfig.json` using `module` and `moduleResolution` `"NodeNext"`
+  - import root values and `AppError`, `ParseResult`, and `CompilerInput` types
+  - import keyword values and types from the keyword subpath
+  - run the workspace TypeScript binary with `--noEmit`
+  - assert successful exit and no TS2834/TS2835 diagnostics
+- Package contents:
+  - inspect `npm pack --json` output
+  - assert README, LICENSE, package.json, root JavaScript/declarations, and keyword JavaScript/declarations are included
+  - assert `.ts`, `_test`, `.hint`, tsconfig, Vite config, and Makefiles are absent
+- Always remove temporary projects in cleanup, including after failed assertions.
+- Do not publish or contact the npm registry beyond installing the local tarball.

@@ -1,1 +1,1 @@
-include ../../../presets/scripts/index.mk
+include ../../presets/scripts/index.mk

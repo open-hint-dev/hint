@@ -1,0 +1,169 @@
+# read {package.json} as WorkspaceManifest
+
+The root workspace manifest defines the Yarn version, supported Node.js
+version, scripts, and workspace layout. Keep Make targets aligned with its
+existing script names.
+
+# read {turbo.json} as TurboConfiguration
+
+The authoritative Turbo task graph. Root targets delegate workspace execution
+to these tasks rather than discovering package directories or invoking package
+makefiles directly.
+
+# read {presets/scripts/index.mk.hint} as PackageMakeContract
+
+The package-level Make contract used by applications and packages. The root
+Makefile orchestrates those package scripts through Turbo and must not include
+the generated `index.mk`, because the root workspace is private and is not a
+publishable package.
+
+# lang
+
+GNU Make 4.x with recipes compatible with a POSIX shell.
+
+# module rootMakefile
+
+Root developer entry point for the HINT monorepo. It bootstraps the Yarn
+workspace and delegates package-scoped quality and release commands to Turbo.
+It contains no package build or npm publish implementation of its own.
+
+# entity RootMakeVariables
+
+Define `ROOT_DIR :=` as the absolute directory containing the root Makefile,
+derived immediately from `$(lastword $(MAKEFILE_LIST))`.
+
+Every command and optional argument list is caller-overridable:
+
+- `PACKAGE_MANAGER ?= yarn`
+- `TURBO_COMMAND ?= $(PACKAGE_MANAGER) turbo`
+- `TURBO_ARGS ?=`
+- `INSTALL_ARGS ?= --immutable`
+- `CLEAN_COMMAND ?= rm -rf`
+- `CLEAN_PATHS ?= .turbo coverage release`
+
+Define `SHELL := /bin/sh`.
+
+All recipes execute from `$(ROOT_DIR)`, regardless of the caller's current
+working directory.
+
+# action help
+
+Declare `help` phony and make it the explicit `.DEFAULT_GOAL`.
+
+Print a concise, stable list of public targets and their purpose:
+
+- `install` - install the locked workspace dependencies
+- `check` - run lint and tests
+- `test` - run package tests
+- `coverage` - run package tests with coverage
+- `lint` - check package lint rules
+- `fix` - apply package ESLint fixes
+- `refresh` - format and fix packages
+- `refresh-react` - run React-specific refresh tasks
+- `release` - publish eligible packages through their package release targets
+- `clean` - remove root-generated caches and release artifacts
+
+Do not derive help output by parsing this Makefile.
+
+# action install
+
+Declare `install` phony. Run:
+
+`cd "$(ROOT_DIR)" && $(PACKAGE_MANAGER) install $(INSTALL_ARGS)`
+
+The immutable lockfile check is the default for both local and CI use. Callers
+may override `INSTALL_ARGS` when intentionally updating dependencies.
+
+# action test
+
+Declare `test` phony. Run:
+
+`cd "$(ROOT_DIR)" && $(TURBO_COMMAND) test $(TURBO_ARGS)`
+
+# action coverage
+
+Declare `coverage` phony. Run:
+
+`cd "$(ROOT_DIR)" && $(TURBO_COMMAND) coverage $(TURBO_ARGS)`
+
+# action lint
+
+Declare `lint` phony. Run:
+
+`cd "$(ROOT_DIR)" && $(TURBO_COMMAND) lint $(TURBO_ARGS)`
+
+# action fix
+
+Declare `fix` phony. Run:
+
+`cd "$(ROOT_DIR)" && $(TURBO_COMMAND) fix $(TURBO_ARGS)`
+
+# action refresh
+
+Declare `refresh` phony. Run:
+
+`cd "$(ROOT_DIR)" && $(TURBO_COMMAND) refresh $(TURBO_ARGS)`
+
+# action refresh-react
+
+Declare `refresh-react` phony. Run:
+
+`cd "$(ROOT_DIR)" && $(TURBO_COMMAND) refresh-react $(TURBO_ARGS)`
+
+# action check
+
+Declare `check` phony. Its recipe invokes these recursive Make commands in
+strict order:
+
+1. `$(MAKE) lint`
+2. `$(MAKE) test`
+
+Do not model them as ordinary prerequisites; explicit recursive calls preserve
+the order under parallel Make execution and stop tests when linting fails.
+
+# action release
+
+Declare `release` phony. Run:
+
+`cd "$(ROOT_DIR)" && $(TURBO_COMMAND) release --force $(TURBO_ARGS)`
+
+This target delegates to each eligible workspace package's `release` script,
+which reaches {PackageMakeContract}.release-js. It must not run `npm publish`
+directly, publish the private root manifest, change versions, create Git tags,
+commit, or push.
+
+# action clean
+
+Declare `clean` phony.
+
+1. Require `$(CLEAN_PATHS)` to be non-empty.
+2. For each entry, reject absolute paths and the values `.`, `..`, `/`, or any
+   path containing a `..` segment.
+3. Remove only paths listed by `$(CLEAN_PATHS)`, resolved beneath
+   `$(ROOT_DIR)`.
+4. Quote each path passed to `$(CLEAN_COMMAND)`.
+5. Do not remove `node_modules`, the Yarn cache, source files, generated
+   package Makefiles, or lockfiles.
+
+# build
+
+- `make install` validates and installs the Yarn lockfile.
+- `make check` is the standard local verification pipeline.
+- `make coverage` runs coverage separately when reports are required.
+- Package build and npm packing happen inside package release targets defined
+  by {PackageMakeContract}; the root does not duplicate them.
+
+# rule
+
+- Keep the root Makefile independent from package directory depth and package
+  discovery.
+- Delegate workspace task selection, dependency ordering, filtering, caching,
+  and concurrency to {TurboConfiguration}.
+- Append `$(TURBO_ARGS)` to every Turbo invocation so callers can use options
+  such as `--filter`, `--concurrency`, or cache controls.
+- Preserve command exit statuses and stop compound workflows at the first
+  failure.
+- Do not include `presets/scripts/index.mk` from the root.
+- Do not install dependencies implicitly from test, lint, refresh, or release
+  targets.
+- Recipe command lines use literal tab characters.

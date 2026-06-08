@@ -1,1 +1,217 @@
-include ../../../presets/scripts/index.mk
+# read {presets/scripts/index.mk.hint} as SharedMakeScripts
+
+Provides the reusable npm package build, test, quality, pack, and release
+targets. This package configures and aliases those targets without duplicating
+their recipes.
+
+# read {packages/transpiler/package.json} as PackageManifest
+
+The authoritative npm package name, version, privacy status, scripts, and
+dependencies. Release validation must use the staged copy of this manifest.
+
+# read {packages/transpiler/vite.config.ts} as ViteConfiguration
+
+The package uses the shared Node library Vite configuration. Builds emit ESM
+JavaScript and TypeScript declarations into the canonical monorepo release
+directory.
+
+# read {packages/transpiler/tsconfig.json} as TypeScriptConfiguration
+
+The authoritative TypeScript project configuration used by the Vite build and
+type declaration generation.
+
+# lang
+
+GNU Make 4.x include consumer with recipes compatible with a POSIX shell.
+
+# module transpilerMakefile
+
+Developer command entry point for the `@openhint/transpiler` library. It
+configures {SharedMakeScripts} for this package and exposes concise package
+commands for build, verification, testing, quality checks, packing, and npm
+release.
+
+# entity TranspilerMakeVariables
+
+Before including the shared script entry point, define:
+
+- `TRANSPILER_DIR :=` the absolute directory containing this Makefile,
+  resolved immediately from `$(lastword $(MAKEFILE_LIST))`
+- `PACKAGE_DIR ?= $(TRANSPILER_DIR)`
+- `PACKAGE_JSON ?= $(PACKAGE_DIR)/package.json`
+- `BUILD_COMMAND ?= $(PACKAGE_MANAGER) vite build --config vite.config.ts`
+- `TEST_FILTER ?= $(PACKAGE_DIR)`
+- `ESLINT_TARGET ?= .`
+- `PRETTIER_TARGET ?= .`
+- `PACKAGE_METADATA_FILES ?= package.json README.md README LICENSE LICENSE.md`
+
+Every variable except `TRANSPILER_DIR` remains caller-overridable.
+
+# build
+
+After defining package variables, include:
+
+`$(TRANSPILER_DIR)/../../presets/scripts/index.mk`
+
+The absolute include path must work both from `packages/transpiler` and when
+the Makefile is selected from another working directory with `make -f`.
+
+The shared include provides these implementation targets:
+
+- `clean-build-js` - remove only this package's staged release directory
+- `build-js` - build ESM JavaScript and declarations with
+  {ViteConfiguration}, then stage package metadata
+- `verify-package-js` - rebuild and verify the staged npm package with
+  `npm pack --dry-run`
+- `pack-js` - produce a local package archive under the monorepo release
+  archive directory
+- `test-js` - run this package's Vitest tests without watch mode
+- `coverage-js` - run this package's tests with coverage
+- `lint-js` - check this package with ESLint
+- `fix-js` - apply safe ESLint fixes
+- `format-js` - format this package with Prettier
+- `refresh-js` - format first, then apply ESLint fixes
+- `check-release-js` - build, pack-check, validate the public manifest, and
+  verify npm authentication
+- `release-dry-run-js` - validate the exact npm publish operation without
+  publishing
+- `release-js` - publish the staged package to the configured npm registry
+
+# action help
+
+Declare `help` phony and set it as `.DEFAULT_GOAL` after the shared include.
+
+Print a stable command list:
+
+- `build` - build the library into its staged release directory
+- `check` - run lint, tests, and npm package verification
+- `test` - run package tests
+- `coverage` - run package tests with coverage
+- `lint` - check ESLint rules
+- `fix` - apply ESLint fixes
+- `format` - apply Prettier formatting
+- `refresh` - format and apply ESLint fixes
+- `pack` - build and create a local npm archive
+- `release-check` - verify build, package metadata, and npm authentication
+- `release-dry-run` - simulate publishing to npm
+- `release` - publish the staged package
+- `clean` - remove this package's staged build
+
+Do not derive the output by parsing the Makefile.
+
+# action build
+
+Declare `build` phony. Its recipe invokes:
+
+`$(MAKE) -f "$(TRANSPILER_DIR)/makefile" build-js`
+
+# action test
+
+Declare `test` phony. Its recipe invokes:
+
+`$(MAKE) -f "$(TRANSPILER_DIR)/makefile" test-js`
+
+# action coverage
+
+Declare `coverage` phony. Its recipe invokes:
+
+`$(MAKE) -f "$(TRANSPILER_DIR)/makefile" coverage-js`
+
+# action lint
+
+Declare `lint` phony. Its recipe invokes:
+
+`$(MAKE) -f "$(TRANSPILER_DIR)/makefile" lint-js`
+
+# action fix
+
+Declare `fix` phony. Its recipe invokes:
+
+`$(MAKE) -f "$(TRANSPILER_DIR)/makefile" fix-js`
+
+# action format
+
+Declare `format` phony. Its recipe invokes:
+
+`$(MAKE) -f "$(TRANSPILER_DIR)/makefile" format-js`
+
+# action refresh
+
+Declare `refresh` phony. Its recipe invokes:
+
+`$(MAKE) -f "$(TRANSPILER_DIR)/makefile" refresh-js`
+
+# action pack
+
+Declare `pack` phony. Its recipe invokes:
+
+`$(MAKE) -f "$(TRANSPILER_DIR)/makefile" pack-js`
+
+# action clean
+
+Declare `clean` phony. Its recipe invokes:
+
+`$(MAKE) -f "$(TRANSPILER_DIR)/makefile" clean-build-js`
+
+# action check
+
+Declare `check` phony. Invoke these recursive Make commands in strict order:
+
+1. `$(MAKE) -f "$(TRANSPILER_DIR)/makefile" lint-js`
+2. `$(MAKE) -f "$(TRANSPILER_DIR)/makefile" test-js`
+3. `$(MAKE) -f "$(TRANSPILER_DIR)/makefile" verify-package-js`
+
+Use recipe commands rather than ordinary prerequisites so ordering remains
+deterministic under parallel Make execution and later stages do not run after
+a failure.
+
+# action releaseCheck
+
+Declare `release-check` phony. Invoke these commands in strict order:
+
+1. `$(MAKE) -f "$(TRANSPILER_DIR)/makefile" test-js`
+2. `$(MAKE) -f "$(TRANSPILER_DIR)/makefile" check-release-js`
+
+The test stage includes the packed-consumer regression suite. Do not continue
+to npm authentication checks after a consumer failure.
+
+# action releaseDryRun
+
+Declare `release-dry-run` phony. Invoke these commands in strict order:
+
+1. `$(MAKE) -f "$(TRANSPILER_DIR)/makefile" test-js`
+2. `$(MAKE) -f "$(TRANSPILER_DIR)/makefile" release-dry-run-js`
+
+# action release
+
+Declare `release` phony. Invoke these commands in strict order:
+
+1. `$(MAKE) -f "$(TRANSPILER_DIR)/makefile" test-js`
+2. `$(MAKE) -f "$(TRANSPILER_DIR)/makefile" release-js`
+
+Never publish when the packed-consumer test fails.
+
+{PackageManifest} is a public package manifest. Preserve the shared release
+guard: `release-check`, `release-dry-run`, and `release` must fail whenever a
+future manifest sets `private` to `true`. Never rewrite the staged manifest or
+bypass this protection during release.
+
+# rule
+
+- Run package commands from `$(PACKAGE_DIR)` through the shared targets.
+- Keep the generated output at
+  `$(MONOREPO_ROOT)/release/@openhint/transpiler`.
+- Do not copy source `.hint` specifications into the npm artifact unless the
+  package manifest explicitly declares them as published files.
+- Do not invent a passing test when Vitest finds no tests; preserve the test
+  runner's exit status.
+- Do not publish from the source directory. Build, validate, pack, and publish
+  only the staged `$(RELEASE_DIR)`.
+- Package-level `check` and every release alias must run the packed-consumer
+  regression test that validates Node ESM root imports, the keywords subpath,
+  and TypeScript NodeNext declarations from the exact archive.
+- Do not install dependencies from package targets.
+- Do not modify package versions, privacy, npm tags, Git commits, or Git tags.
+- Preserve all shared command-line overrides, including test filters, npm
+  registry, npm tag, access, provenance, and publish arguments.
+- Recipe command lines use literal tab characters.

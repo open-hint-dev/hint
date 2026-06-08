@@ -1,5 +1,5 @@
 {
-    "extends": "@openhint/preset-typescript/isomorphic.json",
+    "extends": "@openhint/preset-typescript/node.json",
     "include": [
         "."
     ],

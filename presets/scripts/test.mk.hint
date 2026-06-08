@@ -1,0 +1,74 @@
+# read {presets/scripts/index.mk.hint} as ScriptDefaults
+
+Use the shared package and monorepo paths defined by {ScriptDefaults}.
+
+# module testMakefile
+
+Reusable GNU Make include fragment for package-scoped tests, coverage, linting,
+and formatting in a JavaScript or TypeScript monorepo. It must not define the
+default goal.
+
+# entity TestVariables
+
+Every command and argument list is overrideable with `?=`:
+
+- `VITEST_COMMAND ?= $(PACKAGE_MANAGER) vitest`
+- `VITEST_CONFIG ?= $(MONOREPO_ROOT)/vitest.config.ts`
+- `TEST_FILTER ?= $(PACKAGE_DIR)`
+- `TEST_ARGS ?= run`
+- `COVERAGE_ARGS ?= run --coverage`
+- `ESLINT_COMMAND ?= $(PACKAGE_MANAGER) eslint`
+- `ESLINT_TARGET ?= .`
+- `PRETTIER_COMMAND ?= $(PACKAGE_MANAGER) prettier`
+- `PRETTIER_TARGET ?= .`
+
+`TEST_FILTER` is a Vitest positional path filter. Its package-directory default
+prevents every Turbo package task from rerunning the complete monorepo suite.
+Callers may set it to a narrower file, glob, or test name supported by Vitest.
+
+# action test-js
+
+Declare `test-js` phony. From `$(PACKAGE_DIR)`, run:
+
+`$(VITEST_COMMAND) $(TEST_ARGS) --config "$(VITEST_CONFIG)" "$(TEST_FILTER)"`
+
+Do not enable watch mode by default.
+
+# action coverage-js
+
+Declare `coverage-js` phony. From `$(PACKAGE_DIR)`, run:
+
+`$(VITEST_COMMAND) $(COVERAGE_ARGS) --config "$(VITEST_CONFIG)" "$(TEST_FILTER)"`
+
+# action lint-js
+
+Declare `lint-js` phony. From `$(PACKAGE_DIR)`, run:
+
+`$(ESLINT_COMMAND) "$(ESLINT_TARGET)"`
+
+# action fix-js
+
+Declare `fix-js` phony. From `$(PACKAGE_DIR)`, run:
+
+`$(ESLINT_COMMAND) "$(ESLINT_TARGET)" --fix`
+
+# action format-js
+
+Declare `format-js` phony. From `$(PACKAGE_DIR)`, run:
+
+`$(PRETTIER_COMMAND) --write "$(PRETTIER_TARGET)"`
+
+# action refresh-js
+
+Declare `refresh-js` phony and make it depend on `format-js`. Its recipe then
+invokes `$(MAKE) fix-js`. This guarantees formatting completes before ESLint
+fixes even when the parent Make process uses parallel execution. It is the
+package-level normalization target used by existing npm scripts.
+
+# rule
+
+- Each recipe fails when its underlying tool fails.
+- Commands execute against one package by default, not the entire monorepo.
+- Tool binaries resolve through the workspace package manager.
+- CI can append tool-specific options by overriding the corresponding `*_ARGS`
+  variable without editing this shared fragment.

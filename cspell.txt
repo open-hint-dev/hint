@@ -5,4 +5,5 @@ makefiles
 neprel
 openhint
 testdata
+vite
 wroud
