@@ -1,6 +1,6 @@
-export * from './compiler';
-export * from './error';
-export * from './parser';
+export * from './compiler.js';
+export * from './error.js';
+export * from './parser.js';
 export {
     directives,
     footer,
@@ -13,5 +13,5 @@ export {
     renderKeyword,
     splitSubBlocks,
     validateKeyword,
-} from './keywords';
-export type { KeywordDefinition, KeywordInput, MergePolicy, NamePolicy, SubBlock } from './keywords';
+} from './keywords/index.js';
+export type { KeywordDefinition, KeywordInput, MergePolicy, NamePolicy, SubBlock } from './keywords/index.js';

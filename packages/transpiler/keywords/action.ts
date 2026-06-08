@@ -1,4 +1,4 @@
-import { templateKeyword } from './keyword';
+import { templateKeyword } from './keyword.js';
 
 export const action = templateKeyword({
     directive: 'action',

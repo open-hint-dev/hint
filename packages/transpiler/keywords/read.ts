@@ -1,5 +1,5 @@
-import { ErrorCode, fire } from '../error';
-import { defineKeyword, interpolate } from './keyword';
+import { ErrorCode, fire } from '../error.js';
+import { defineKeyword, interpolate } from './keyword.js';
 
 const template = `<repository_file name="{{name}}" path="{{glob}}">
 

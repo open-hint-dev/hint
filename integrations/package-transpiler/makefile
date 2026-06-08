@@ -1,3 +1,1 @@
 include ../../presets/scripts/index.mk
-
-TEST_ARGS := run --passWithNoTests
