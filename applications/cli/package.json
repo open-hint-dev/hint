@@ -6,12 +6,12 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/neprel/hint.git",
+        "url": "git+https://github.com/open-hint/hint.git",
         "directory": "applications/cli"
     },
-    "homepage": "https://github.com/neprel/hint#readme",
+    "homepage": "https://github.com/open-hint/hint#readme",
     "bugs": {
-        "url": "https://github.com/neprel/hint/issues"
+        "url": "https://github.com/open-hint/hint/issues"
     },
     "engines": {
         "node": ">=22"

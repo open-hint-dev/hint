@@ -31,10 +31,10 @@ directory or implicit-index lookup.
 - description: concise public description of parsing HINT specifications and compiling them into implementation prompts
 - license: `"MIT"`
 - repository.type: `"git"`
-- repository.url: `"git+https://github.com/neprel/hint.git"`
+- repository.url: `"git+https://github.com/open-hint/hint.git"`
 - repository.directory: `"packages/transpiler"`
-- homepage: `"https://github.com/neprel/hint#readme"`
-- bugs.url: `"https://github.com/neprel/hint/issues"`
+- homepage: `"https://github.com/open-hint/hint#readme"`
+- bugs.url: `"https://github.com/open-hint/hint/issues"`
 - engines.node: `">=22"`
 - sideEffects: `false`
 - publishConfig.access: `"public"`

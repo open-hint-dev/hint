@@ -125,6 +125,6 @@ try {
 
 ---
 
-For HINT syntax documentation, directive reference, and CLI usage see the [repository README](https://github.com/neprel/hint#readme).
+For HINT syntax documentation, directive reference, and CLI usage see the [repository README](https://github.com/open-hint/hint#readme).
 
 MIT License — Copyright (c) 2026 Andrei Neprel

@@ -50,9 +50,9 @@ hint config
 
 ## Links
 
-- [Documentation](https://github.com/neprel/hint)
-- [HINT Syntax Reference](https://github.com/neprel/hint/blob/main/docs/03-syntax.md)
-- [Issues](https://github.com/neprel/hint/issues)
+- [Documentation](https://github.com/open-hint/hint)
+- [HINT Syntax Reference](https://github.com/open-hint/hint/blob/main/docs/03-syntax.md)
+- [Issues](https://github.com/open-hint/hint/issues)
 
 ## License
 
