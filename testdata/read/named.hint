@@ -1,0 +1,3 @@
+# read {src/infrastructure/logger.ts} as AppLogger
+
+This is the base utility used for error trace logging and system audits. It maps directly to our production cloud monitoring dashboard payloads.

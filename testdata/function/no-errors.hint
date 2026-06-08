@@ -1,0 +1,14 @@
+# function buildCartSummary
+
+## arg cart: {ShoppingCart}
+The cart to summarize.
+
+## return {CartSummary}
+A read-only snapshot of the cart's current item count, subtotal, and applied coupon.
+
+## flow
+
+1. Count the total number of items across all cart entries.
+2. Sum priceInCents multiplied by quantity for each item.
+3. Check whether a couponCode is set and include its label if present.
+4. Return a CartSummary record with itemCount, subtotalInCents, and couponLabel.

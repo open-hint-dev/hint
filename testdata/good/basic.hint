@@ -1,0 +1,4 @@
+# good
+
+- Always wrap DB query logic inside a database transaction to prevent race conditions.
+- Ensure all pricing computations operate strictly on whole integers to avoid floating point errors.
