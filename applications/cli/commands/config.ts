@@ -10,7 +10,7 @@ const AGENT_FILE_NAMES = [
     'CLAUDE.md',
 ];
 
-const DEFAULT_HINTBOOK = 'npm://@openhint/hintbooks-software-engineer';
+const DEFAULT_HINTBOOK = 'npm://@openhint/hintbook-software-engineer';
 
 const CONFIG_PROMPT_HEADER = `Configure this project's AI agent context files: ${AGENT_FILE_NAMES.join(' and ')} in the project root.
 

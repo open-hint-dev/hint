@@ -15,14 +15,14 @@ HINT deliberately has **no built-in keywords**. The transpiler core understands 
 - **Files**: a `.hint` file is a companion specification — `src/auth/login.ts.hint` defines `src/auth/login.ts`, `contracts/nda.md.hint` defines `contracts/nda.md`, and a folder's `_.hint` defines context for everything beneath it.
 - **Headings**: every markdown heading is a typed block — `# entity PaymentData {#payment_data}` has a keyword (`entity`), a name (`PaymentData`), an optional stable id (`payment_data`), and a body that runs until the next heading. Heading depth nests blocks into a tree.
 
-What each keyword *means* — and what prompt text it produces — is defined by **hintbooks**: installable packages of instruction templates. A hintbook maps keywords like `entity`, `flow`, or `bad` to rendered prompt blocks, defines per-mode role wrappers (implement / fix / review), and ships the system glossary that teaches the agent how to read the compiled output.
+What each keyword _means_ — and what prompt text it produces — is defined by **hintbooks**: installable packages of instruction templates. A hintbook maps keywords like `entity`, `flow`, or `bad` to rendered prompt blocks, defines per-mode role wrappers (implement / fix / review), and ships the system glossary that teaches the agent how to read the compiled output.
 
 This split keeps the core honest and the vocabulary open:
 
 - The transpiler never hard-codes what an `entity` is. Swap or extend the hintbook and the same `.hint` files compile into a different contract dialect.
-- Teams can publish their own hintbooks (npm packages, git repositories, or plain folders) with vocabulary tuned to their stack — and the vocabulary does not even have to be about code: [`@openhint/hintbooks-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) drafts legal documents from `party`, `clause`, and `obligation` blocks. HINT serves anyone whose work demands strict structured thinking.
+- Teams can publish their own hintbooks (npm packages, git repositories, or plain folders) with vocabulary tuned to their stack — and the vocabulary does not even have to be about code: [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) drafts legal documents from `party`, `clause`, and `obligation` blocks. HINT serves anyone whose work demands strict structured thinking.
 - Authoring a hintbook requires no programming. Instructions are pure markdown files with `{name}`-style placeholders; the HTML-like tags the official books render are a helpful convention for AI agents, not a requirement. If you can write markdown, you can build and publish the vocabulary for your profession.
-- The official starting point is [`@openhint/hintbooks-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer), a general-purpose software engineering vocabulary.
+- The official starting point is [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer), a general-purpose software engineering vocabulary.
 
 ## Why HINT?
 
@@ -36,12 +36,12 @@ As a professional, you already know exactly what needs to be produced — the en
 
 ## The toolchain
 
-| Piece | What it is |
-| --- | --- |
-| [`@openhint/cli`](../applications/cli/README.md) | The `hint` binary: compiles specs, configures projects, installs hintbooks. |
-| [`@openhint/transpiler`](../packages/transpiler/README.md) | The library behind the CLI: find → parse → compile pipeline and hintbook loading. |
-| [`@openhint/hintbooks-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) | The software-engineering vocabulary — building, fixing, and reviewing code. |
-| [`@openhint/hintbooks-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) | The legal vocabulary — drafting, revising, and auditing documents. |
+| Piece                                                                                                 | What it is                                                                        |
+| ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [`@openhint/cli`](../applications/cli/README.md)                                                      | The `hint` binary: compiles specs, configures projects, installs hintbooks.       |
+| [`@openhint/transpiler`](../packages/transpiler/README.md)                                            | The library behind the CLI: find → parse → compile pipeline and hintbook loading. |
+| [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) | The software-engineering vocabulary — building, fixing, and reviewing code.       |
+| [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer)                       | The legal vocabulary — drafting, revising, and auditing documents.                |
 
 ## Where to go next
 

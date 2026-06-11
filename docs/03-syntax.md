@@ -14,15 +14,15 @@ A HINT project is marked by a `hint.yml` (or `hint.yaml`) at its root:
 name: my-project
 description: What this project is about
 books:
-    - npm://@openhint/hintbooks-software-engineer
+    - npm://@openhint/hintbook-software-engineer
     - file://hintbooks/team-conventions
 ```
 
-| Field | Meaning |
-| --- | --- |
-| `name`, `description` | Project identity, available to tooling. |
-| `books` | Hintbooks providing the keyword vocabulary. `file://` paths resolve relative to the project root; `npm://` names resolve through local then global `node_modules`. |
-| `ignore` | Reserved for path exclusion patterns. |
+| Field                 | Meaning                                                                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `name`, `description` | Project identity, available to tooling.                                                                                                                            |
+| `books`               | Hintbooks providing the keyword vocabulary. `file://` paths resolve relative to the project root; `npm://` names resolve through local then global `node_modules`. |
+| `ignore`              | Reserved for path exclusion patterns.                                                                                                                              |
 
 Two kinds of specification files live in the tree:
 
@@ -35,12 +35,12 @@ When compiling, every requested hint is wrapped in its full folder chain down fr
 
 Arguments passed to `hint` are resolved against the project root:
 
-| You pass | Compiles |
-| --- | --- |
-| `src/login.ts.hint` | that hint file |
-| `src/login.ts` | `src/login.ts.hint` (companion lookup) |
-| `src` (a folder) | `src/_.hint` |
-| `src/**/*.hint` | every glob match |
+| You pass            | Compiles                               |
+| ------------------- | -------------------------------------- |
+| `src/login.ts.hint` | that hint file                         |
+| `src/login.ts`      | `src/login.ts.hint` (companion lookup) |
+| `src` (a folder)    | `src/_.hint`                           |
+| `src/**/*.hint`     | every glob match                       |
 
 Paths outside the project root are ignored. Hints that do not exist are skipped silently — or fail the compilation when `--dry-run` is set.
 
@@ -69,11 +69,15 @@ A block's body is everything between its heading and the next heading of **any**
 Heading depth builds the tree. A deeper heading becomes a child of the nearest shallower one:
 
 ```markdown
-# entity Invoice            ← level 1
-## field total              ← child of Invoice
-### rule precision          ← child of total
-## field currency           ← child of Invoice
-# func validateInvoice      ← sibling of Invoice
+# entity Invoice ← level 1
+
+## field total ← child of Invoice
+
+### rule precision ← child of total
+
+## field currency ← child of Invoice
+
+# func validateInvoice ← sibling of Invoice
 ```
 
 There is no fixed meaning to any level — `##` under an `entity` is whatever your hintbook says it is. Content before the first heading of a file is the file's own preamble context.

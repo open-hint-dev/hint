@@ -14,7 +14,7 @@ Register books in the `books` array of `hint.yml` — or let `hint install` do i
 
 ```yaml
 books:
-    - npm://@openhint/hintbooks-software-engineer
+    - npm://@openhint/hintbook-software-engineer
     - file://hintbooks/team-conventions
 ```
 
@@ -135,7 +135,7 @@ Names of the form `__name__` are **running instructions** — structural slots t
 A hintbook is just files — distribute it any way `hint install` can fetch it:
 
 ```bash
-hint install @openhint/hintbooks-lawyer                   # npm (use -g for a global install)
+hint install @openhint/hintbook-lawyer                   # npm (use -g for a global install)
 hint install https://github.com/acme/hintbooks-platform   # git → cloned into hintbooks/<repo>
 hint install file://hintbooks/team-conventions            # local folder, validated only
 ```
@@ -144,5 +144,5 @@ For npm distribution, publish the package with `hintbook.json` and the keyword f
 
 ## Reference implementations
 
-- [`@openhint/hintbooks-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) is the official general-purpose vocabulary and the best example to copy from: ~30 keywords across data, behavior, UI, and constraint declarations, three modes, and a complete system glossary.
-- [`@openhint/hintbooks-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) shows the same machinery applied outside software entirely — legal document drafting with `party`, `clause`, `obligation`, and red-line vocabulary. Use it as the template when your domain is not code.
+- [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) is the official general-purpose vocabulary and the best example to copy from: ~30 keywords across data, behavior, UI, and constraint declarations, three modes, and a complete system glossary.
+- [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) shows the same machinery applied outside software entirely — legal document drafting with `party`, `clause`, `obligation`, and red-line vocabulary. Use it as the template when your domain is not code.

@@ -19,7 +19,7 @@ I built HINT because I got tired of watching AI turn small tasks into sprawling 
 
 I want the speed without giving up control.
 
-Then it became clear the problem is not about code at all. Every professional who hands work to an AI faces the same trade: speed for control. A lawyer gets a contract with clauses nobody asked for. An analyst gets a report with invented numbers. **HINT is designed for professionals seeking a structured, systematic approach to working with AI to achieve predictable results.** Software engineering is just the first vocabulary — engineers get [`@openhint/hintbooks-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer), lawyers get [`@openhint/hintbooks-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer), and any profession can publish its own.
+Then it became clear the problem is not about code at all. Every professional who hands work to an AI faces the same trade: speed for control. A lawyer gets a contract with clauses nobody asked for. An analyst gets a report with invented numbers. **HINT is designed for professionals seeking a structured, systematic approach to working with AI to achieve predictable results.** Software engineering is just the first vocabulary — engineers get [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer), lawyers get [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer), and any profession can publish its own.
 
 ### A language you already speak
 
@@ -37,11 +37,11 @@ Think of `.hint` as closer to `.py`, `.ts`, or a signed term sheet than to a tic
 
 For software, compare it with spec-driven development tools:
 
-| Approach                                              | What it controls                                                          |
-| ----------------------------------------------------- | ------------------------------------------------------------------------- |
-| [OpenSpec](https://github.com/Fission-AI/OpenSpec)    | Proposals, behavioral specs, tasks, and spec changes                      |
-| [GitHub Spec Kit](https://github.com/github/spec-kit) | The workflow from feature spec to plan, tasks, and implementation         |
-| **HINT**                                              | The source boundary: what exists, where it lives, and how it must behave  |
+| Approach                                              | What it controls                                                         |
+| ----------------------------------------------------- | ------------------------------------------------------------------------ |
+| [OpenSpec](https://github.com/Fission-AI/OpenSpec)    | Proposals, behavioral specs, tasks, and spec changes                     |
+| [GitHub Spec Kit](https://github.com/github/spec-kit) | The workflow from feature spec to plan, tasks, and implementation        |
+| **HINT**                                              | The source boundary: what exists, where it lives, and how it must behave |
 
 You still ask an AI agent to produce the final work. But you do not hand it a vague prompt and hope its decisions match yours. HINT compiles your declarations and rules into a strict, deterministic prompt — the same specs and the same vocabulary always produce the same contract.
 
@@ -126,7 +126,7 @@ The Receiving Party shall not disclose Confidential Information to any third par
 - No non-compete or non-solicit obligations in this NDA.
 ```
 
-The compiled prompt makes the assistant draft inside those borders — defined terms used with total discipline, no invented facts, figures, or citations, gaps reported instead of filled. See [`@openhint/hintbooks-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer).
+The compiled prompt makes the assistant draft inside those borders — defined terms used with total discipline, no invented facts, figures, or citations, gaps reported instead of filled. See [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer).
 
 ---
 
@@ -137,8 +137,8 @@ The compiled prompt makes the assistant draft inside those borders — defined t
 ```bash
 npm install -g @openhint/cli
 hint config | claude -p
-hint install @openhint/hintbooks-software-engineer   # building software
-hint install @openhint/hintbooks-lawyer              # drafting legal documents
+hint install @openhint/hintbook-software-engineer   # building software
+hint install @openhint/hintbook-lawyer              # drafting legal documents
 ```
 
 Install the hintbook for your profession — or both, or your own.
@@ -189,39 +189,39 @@ Each hintbook defines the enforcement that matters in its profession — for the
 
 The transpiler core has **no built-in keywords** — it understands files, headings (`# keyword Name {#id}`), nesting, and `@include`. The vocabulary comes from **hintbooks**: installable instruction packages registered in `hint.yml`, one per profession or per team.
 
-### Software engineering — [`@openhint/hintbooks-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer)
+### Software engineering — [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer)
 
-| Keywords                                                         | Purpose                                                                     |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `lang` / `dep` / `build`                                         | Language, dependency whitelist, build & test pipelines                      |
-| `app` / `lib` / `namespace` / `module`                           | Architectural scope: app, library, namespace/package boundary, single file |
-| `entity` (`field`) / `table` (`column`, `row`)                   | Data models, schemas, tabular structures                                    |
-| `func` (`arg` / `result` / `error` / `flow`)                     | Typed implementation contracts                                              |
-| `ui` (`form` / `block` / `image`)                                | UI surfaces                                                                 |
-| `action`                                                          | Reusable macro behaviors                                                    |
-| `res` / `rule`                                                    | Static assets / non-negotiable mandates                                     |
-| `good` / `bad`                                                    | Required patterns / prohibited anti-patterns                                |
-| `example` / `test`                                                | Few-shot examples / verification criteria                                   |
-| `notes`                                                           | Private scratchpad — stripped at compile                                    |
-| `read` / `@include`                                               | LLM reads a file at run time / inline a file at compile time                |
+| Keywords                                       | Purpose                                                                    |
+| ---------------------------------------------- | -------------------------------------------------------------------------- |
+| `lang` / `dep` / `build`                       | Language, dependency whitelist, build & test pipelines                     |
+| `app` / `lib` / `namespace` / `module`         | Architectural scope: app, library, namespace/package boundary, single file |
+| `entity` (`field`) / `table` (`column`, `row`) | Data models, schemas, tabular structures                                   |
+| `func` (`arg` / `result` / `error` / `flow`)   | Typed implementation contracts                                             |
+| `ui` (`form` / `block` / `image`)              | UI surfaces                                                                |
+| `action`                                       | Reusable macro behaviors                                                   |
+| `res` / `rule`                                 | Static assets / non-negotiable mandates                                    |
+| `good` / `bad`                                 | Required patterns / prohibited anti-patterns                               |
+| `example` / `test`                             | Few-shot examples / verification criteria                                  |
+| `notes`                                        | Private scratchpad — stripped at compile                                   |
+| `read` / `@include`                            | LLM reads a file at run time / inline a file at compile time               |
 
 Modes: implement (default), `fix` (repair code against the spec), `review` (audit and report). Keyword reference → [keywords.md](https://github.com/open-hint-dev/hintbook-software-engineer/blob/main/docs/keywords.md).
 
-### Legal drafting — [`@openhint/hintbooks-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer)
+### Legal drafting — [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer)
 
-| Keywords                                                         | Purpose                                                                     |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `matter` / `jurisdiction` / `party`                              | The matter, governing law & forum, parties with exact legal names           |
-| `definition` / `recital` / `fact`                                | Defined terms, recitals, established facts of the matter                    |
-| `clause` (`obligation` / `right` / `condition` / `deadline`)     | Operative provisions: duties, entitlements, conditions, time periods        |
-| `representation` / `remedy` / `indemnity` / `liability`          | Reps & warranties, remedies, indemnification, liability caps and carve-outs |
-| `termination` / `payment` / `notice` / `dispute`                 | Term & termination, money, notices, dispute resolution                      |
-| `exhibit` / `signature`                                           | Attachments / execution formalities                                         |
-| `claim` / `argument` / `authority`                                | Litigation: causes of action, legal arguments, citations — never invented   |
-| `rule` / `prohibition` / `standard`                               | Client red lines / content that must never appear / required boilerplate    |
-| `risk` / `checklist`                                              | Risks the document must address / items verified before finishing           |
-| `notes`                                                           | Private scratchpad — stripped at compile                                    |
-| `read` / `precedent` / `style`                                    | Read source documents / model documents to replicate / drafting style       |
+| Keywords                                                     | Purpose                                                                     |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| `matter` / `jurisdiction` / `party`                          | The matter, governing law & forum, parties with exact legal names           |
+| `definition` / `recital` / `fact`                            | Defined terms, recitals, established facts of the matter                    |
+| `clause` (`obligation` / `right` / `condition` / `deadline`) | Operative provisions: duties, entitlements, conditions, time periods        |
+| `representation` / `remedy` / `indemnity` / `liability`      | Reps & warranties, remedies, indemnification, liability caps and carve-outs |
+| `termination` / `payment` / `notice` / `dispute`             | Term & termination, money, notices, dispute resolution                      |
+| `exhibit` / `signature`                                      | Attachments / execution formalities                                         |
+| `claim` / `argument` / `authority`                           | Litigation: causes of action, legal arguments, citations — never invented   |
+| `rule` / `prohibition` / `standard`                          | Client red lines / content that must never appear / required boilerplate    |
+| `risk` / `checklist`                                         | Risks the document must address / items verified before finishing           |
+| `notes`                                                      | Private scratchpad — stripped at compile                                    |
+| `read` / `precedent` / `style`                               | Read source documents / model documents to replicate / drafting style       |
 
 Modes: draft (default), `fix` (revise a deviating document), `review` (audit with quoted findings). Every footer notes the output still requires licensed counsel. Keyword reference → [keywords.md](https://github.com/open-hint-dev/hintbook-lawyer/blob/main/docs/keywords.md).
 
