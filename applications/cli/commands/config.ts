@@ -1,71 +1,98 @@
-import { readFile, stat, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import * as Path from 'node:path';
 
-import { ErrorCode, create } from '@openhint/transpiler';
+import * as Transpiler from '@openhint/transpiler';
 
-export const CONFIG_INSTRUCTION = `## HINT
+import { openTerminal } from '../terminal.js';
+import type { ICommand } from './command.js';
 
-When you encounter \`.hint\` files in this repository: run \`hint <file>\` to compile the specification into an AI-ready implementation prompt. Use the compiled output as your primary implementation context instead of reading the raw \`.hint\` file directly.
+const AGENT_FILE_NAMES = [
+    'AGENTS.md',
+    'CLAUDE.md',
+];
 
-If \`hint\` is not installed globally, use \`npx @openhint/cli <file>\` instead.`;
+const DEFAULT_HINTBOOK = 'npm://@openhint/hintbooks-software-engineer';
 
-async function findProjectRoot(startDir: string = process.cwd()): Promise<string> {
-    let current = resolve(startDir);
-    for (;;) {
-        for (const marker of ['hint.yml', 'hint.yaml']) {
-            const markerPath = join(current, marker);
-            try {
-                const stats = await stat(markerPath);
-                if (stats.isFile()) {
-                    return current;
-                }
-            } catch (err: unknown) {
-                const e = err as NodeJS.ErrnoException;
-                if (e.code !== 'ENOENT') {
-                    throw create(ErrorCode.IO_ERROR, `Failed to inspect '${markerPath}': ${e.message}`);
-                }
-            }
-        }
-        const parent = dirname(current);
-        if (parent === current) {
-            throw create(ErrorCode.IO_ERROR, 'No hint.yml found — not inside a HINT project');
-        }
-        current = parent;
+const CONFIG_PROMPT_HEADER = `Configure this project's AI agent context files: ${AGENT_FILE_NAMES.join(' and ')} in the project root.
+
+For every <instruction> block below, check whether each file already contains it — match by the block's first line. Then:
+
+- If a file does not exist, create it.
+- If a block is missing from a file, append the block content verbatim (without the <instruction> wrapper), separated from existing content by a blank line.
+- If a block is already present, leave it untouched — do not duplicate, rewrite, or reformat it.
+
+Do not change anything else in these files.`;
+
+export class ConfigCommand implements ICommand {
+    static new(): ConfigCommand {
+        return new ConfigCommand();
+    }
+
+    async execute(): Promise<void> {
+        const projectRootPath = (await Transpiler.findProjectRoot(process.cwd())) ?? process.cwd();
+
+        const config = (await Transpiler.loadConfig(projectRootPath)) ?? (await initConfig(projectRootPath));
+        const instructions = await collectInstructions(projectRootPath, config);
+
+        process.stdout.write(`${buildConfigPrompt(instructions)}\n`);
     }
 }
 
-async function appendInstruction(projectRoot: string, filename: string): Promise<void> {
-    const filePath = join(projectRoot, filename);
-    let content: string;
+function buildConfigPrompt(instructions: string[]): string {
+    const blocks = instructions.map((instruction) => `<instruction>\n\n${instruction}\n\n</instruction>`);
+
+    return [
+        CONFIG_PROMPT_HEADER,
+        ...blocks,
+    ].join('\n\n');
+}
+
+async function initConfig(projectRootPath: string): Promise<Transpiler.ConfigData> {
+    const terminal = openTerminal();
+
     try {
-        content = await readFile(filePath, 'utf8');
-    } catch (err: unknown) {
-        const e = err as NodeJS.ErrnoException;
-        if (e.code === 'ENOENT') {
-            try {
-                await writeFile(filePath, CONFIG_INSTRUCTION, 'utf8');
-            } catch (writeErr: unknown) {
-                throw create(ErrorCode.IO_ERROR, `Failed to write '${filePath}': ${(writeErr as Error).message}`);
-            }
-            return;
-        }
-        throw create(ErrorCode.IO_ERROR, `Failed to read '${filePath}': ${(err as Error).message}`);
-    }
-    if (content.includes('## HINT')) {
-        return;
-    }
-    try {
-        await writeFile(filePath, `${content}\n\n${CONFIG_INSTRUCTION}`, 'utf8');
-    } catch (writeErr: unknown) {
-        throw create(ErrorCode.IO_ERROR, `Failed to write '${filePath}': ${(writeErr as Error).message}`);
+        const defaultName = Path.basename(projectRootPath);
+        const name = (await terminal.ask(`Project name (${defaultName}): `)).trim() || defaultName;
+        const description = (await terminal.ask('Project description: ')).trim();
+        const useDefaultHintbook = (await terminal.ask(`Use ${DEFAULT_HINTBOOK} as the default hintbook? [Y/n]: `)).trim().toLowerCase() !== 'n';
+
+        const config: Transpiler.ConfigData = {
+            name,
+            description,
+            books: useDefaultHintbook ? [DEFAULT_HINTBOOK] : [],
+        };
+
+        await Transpiler.saveConfig(projectRootPath, config);
+        process.stderr.write(`Created ${Transpiler.CONFIG_FILE_YML} in ${projectRootPath}\n`);
+
+        return config;
+    } finally {
+        terminal.close();
     }
 }
 
-export async function executeConfig(projectRoot?: string): Promise<void> {
-    const root =
-        projectRoot !== undefined
-            ? resolve(process.cwd(), projectRoot)
-            : await findProjectRoot(process.cwd());
-    await appendInstruction(root, 'AGENTS.md');
-    await appendInstruction(root, 'CLAUDE.md');
+async function collectInstructions(projectRootPath: string, config: Transpiler.ConfigData): Promise<string[]> {
+    const instructions = [Transpiler.CONFIG_INSTRUCTION.trim()];
+
+    for (const book of config.books ?? []) {
+        const hintbookPaths = await Transpiler.resolveHintbookPaths(projectRootPath, book);
+
+        if (hintbookPaths.length === 0) {
+            process.stderr.write(`Skipping hintbook '${book}': not found\n`);
+            continue;
+        }
+
+        for (const hintbookPath of hintbookPaths) {
+            const hintbook = await Transpiler.loadHintbook(hintbookPath);
+            const system = hintbook.modes[Transpiler.INSTRUCTION_MODE_DEFAULT]?.instructions.find(
+                (instruction) => instruction.name === Transpiler.RUNNING_SYSTEM,
+            );
+            const content = system?.content.trim();
+
+            if (content) {
+                instructions.push(content);
+            }
+        }
+    }
+
+    return instructions;
 }

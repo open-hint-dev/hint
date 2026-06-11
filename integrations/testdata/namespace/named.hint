@@ -1,3 +1,0 @@
-# namespace billing
-
-Everything under this namespace handles invoicing and payment capture. Code here may reference {payments} but nothing under it may be imported by the {catalog} namespace.

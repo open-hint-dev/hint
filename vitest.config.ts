@@ -9,7 +9,7 @@ export default defineConfig({
     test: {
         projects: [
             'applications',
-            'integrations',
+            'testdata',
             'packages',
             'presets',
             'sites',

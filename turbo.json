@@ -1,6 +1,10 @@
 {
     "$schema": "https://turbo.build/schema.json",
+    "globalEnv": ["VERSION"],
     "tasks": {
+        "clean": {
+            "dependsOn": ["^clean"]
+        },
         "coverage": {
             "dependsOn": ["^coverage"]
         },
@@ -10,11 +14,12 @@
         "lint": {
             "dependsOn": ["^lint"]
         },
+        "publish": {
+            "dependsOn": ["release", "^publish"],
+            "cache": false
+        },
         "refresh": {
             "dependsOn": ["^refresh"]
-        },
-        "refresh-react": {
-            "dependsOn": ["^refresh-react"]
         },
         "release": {
             "dependsOn": ["^release"]

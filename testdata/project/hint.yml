@@ -1,0 +1,4 @@
+name: testdata
+description: Sample project covering HINT specification cases
+books:
+    - file://../hintbook
