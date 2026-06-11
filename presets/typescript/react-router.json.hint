@@ -1,8 +1,0 @@
-# lang
-
-JSON (RFC 8259 / TSConfig schema)
-
-# res reactRouterTsConfig
-
-Extends {baseTsConfig}, adds `types: ["node", "vite/client"]`.
-Use for fullstack React Router projects that need both server-side Node.js globals and Vite's `import.meta.env` client types within the same project.

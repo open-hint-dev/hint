@@ -1,8 +1,0 @@
-# lang
-
-JSON (RFC 8259 / TSConfig schema)
-
-# res astroTsConfig
-
-Extends upstream `astro/tsconfigs/base` (not {baseTsConfig}) to respect Astro's own baseline, then overrides `jsx: react-jsx` and `jsxImportSource: react`.
-Use for Astro projects that embed React islands.

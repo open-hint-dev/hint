@@ -1,0 +1,7 @@
+# deps
+
+- vitest
+
+# rule
+
+Use `vitest` library for testing TypeScript-based functionality

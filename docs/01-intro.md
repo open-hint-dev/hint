@@ -2,43 +2,51 @@
 
 ## What is HINT?
 
-HINT (Human Intent Native Transpiler) is a markdown-native, structural engineering language designed specifically for senior developers. It allows you to declare application architecture, domain models, and algorithmic flows in plain human intent without touching traditional code syntax.
+HINT (Human Intent Native Transpiler) is a markdown-native specification language for professionals who work with AI and want predictable results. You declare what must be produced — application architecture and domain models, or the parties and clauses of a contract — in plain human intent, next to the artifacts those declarations govern, and HINT compiles them into a deterministic, high-density prompt payload for AI assistants and autonomous agents (Claude Code, Codex, Cursor, and similar tools).
 
-The name is deliberate on three levels. As a backronym it expands to **Human Intent Native Transpiler**. Read aloud it is **H**uman **INT**ent — the thing the tool exists to capture. And it is simply the word _hint_: a clue you give to guide someone to the right answer. That last meaning is the model itself — you hint at the architecture with precise borders, and the LLM fills in the code that honors them.
+The premise: AI gives professionals speed, but unstructured prompts trade away control — you ask for one thing and get plausible improvisation around it. HINT keeps both. Your declarations become binding borders; the AI produces the work inside them; gaps and conflicts come back to you as reports instead of silent decisions. Software engineering is the first and most complete vocabulary, but it is one example, not the definition.
 
-Instead of compiling into a binary or runtime bytecode, HINT compiles into a deterministic, high-density, context-aware prompt payload. This payload is optimized to feed directly into LLM coding assistants and autonomous development agents (such as Claude Code, Cursor, or specialized AI tools).
+The name is deliberate on three levels. As a backronym it expands to **Human Intent Native Transpiler**. Read aloud it is **H**uman **INT**ent — the thing the tool exists to capture. And it is simply the word _hint_: a clue you give to guide someone to the right answer. That last meaning is the model itself — you hint at the result with precise borders, and the AI fills in the work that honors them.
+
+## The architecture: a small core, extensible vocabulary
+
+HINT deliberately has **no built-in keywords**. The transpiler core understands only structure:
+
+- **Files**: a `.hint` file is a companion specification — `src/auth/login.ts.hint` defines `src/auth/login.ts`, `contracts/nda.md.hint` defines `contracts/nda.md`, and a folder's `_.hint` defines context for everything beneath it.
+- **Headings**: every markdown heading is a typed block — `# entity PaymentData {#payment_data}` has a keyword (`entity`), a name (`PaymentData`), an optional stable id (`payment_data`), and a body that runs until the next heading. Heading depth nests blocks into a tree.
+
+What each keyword *means* — and what prompt text it produces — is defined by **hintbooks**: installable packages of instruction templates. A hintbook maps keywords like `entity`, `flow`, or `bad` to rendered prompt blocks, defines per-mode role wrappers (implement / fix / review), and ships the system glossary that teaches the agent how to read the compiled output.
+
+This split keeps the core honest and the vocabulary open:
+
+- The transpiler never hard-codes what an `entity` is. Swap or extend the hintbook and the same `.hint` files compile into a different contract dialect.
+- Teams can publish their own hintbooks (npm packages, git repositories, or plain folders) with vocabulary tuned to their stack — and the vocabulary does not even have to be about code: [`@openhint/hintbooks-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) drafts legal documents from `party`, `clause`, and `obligation` blocks. HINT serves anyone whose work demands strict structured thinking.
+- Authoring a hintbook requires no programming. Instructions are pure markdown files with `{name}`-style placeholders; the HTML-like tags the official books render are a helpful convention for AI agents, not a requirement. If you can write markdown, you can build and publish the vocabulary for your profession.
+- The official starting point is [`@openhint/hintbooks-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer), a general-purpose software engineering vocabulary.
 
 ## Why HINT?
 
-As a senior programmer, you already know exactly what needs to be built. Writing the boilerplate, setting up routers, handling imports, and managing syntax configurations is just mechanical typing. HINT serves as an accelerator to eliminate the boring parts of software development:
+As a professional, you already know exactly what needs to be produced — the engineer knows the architecture, the lawyer knows the deal. The mechanical production is what AI is for; the decisions are what it must never make for you. HINT eliminates the boring parts while keeping you in control of the parts that matter:
 
-- **Zero Syntax Friction**: Writing a `*.hint` file is writing pure markdown. There is no new syntax to learn, and files are instantly readable by humans and AI alike.
-- **Context Preservation**: HINT's directory hierarchy resolves code dependencies and configuration boundaries automatically. It ensures your AI assistant stays bound to your project's styling and utility requirements.
-- **Architecture First**: You retain absolute control over business logic, data boundaries, and test parameters while letting the transpiler act as your fingers.
-- **Borders, Not Boilerplate**: HINT is built for engineers who want to design the architecture and delegate the mechanical fill — not for generating code at any quality. You declare the borders (contracts, constraints, prohibitions, data shapes); the model implements strictly inside them. The compiled prompt spends most of its weight fencing what the model must _not_ do — no unspecified surface, no new abstractions, no scope drift, no stubs — so your codebase grows only along the lines you drew and never degrades into uncontrolled "vibe code."
-- **Gaps Are Surfaced, Not Filled**: When your specification is silent on something, the compiled prompt forces the model to flag it rather than quietly invent a detail. Every assumption it makes is marked in-code and reported back to you, turning each compile into a feedback loop that tightens your specification over time.
-- **Universal Execution**: Because HINT is pure markdown, a `*.hint` file is fully readable and executable by an LLM as a direct prompt even without using the HINT compiler tool.
+- **Zero syntax friction**: a `.hint` file is pure markdown. There is no new syntax to learn, and files are instantly readable by humans and AI alike.
+- **Specs live with the work**: companion files sit next to their targets and travel through the same reviews, branches, and history.
+- **Deterministic compilation**: the same specs and the same hintbook always produce the same prompt. No hidden prompt engineering.
+- **Borders, not vibes**: the compiled prompt tells the AI exactly what exists, what it must contain, what it must do, and what it must never do.
+- **Gaps come back, not guesses**: missing decisions are reported to you instead of being filled with something plausible.
 
-## The HINT CLI
+## The toolchain
 
-The `hint` binary (available as `npx @openhint/cli`) compiles one or more `.hint` files into a ready-to-use AI prompt. It supports several sub-commands that control what happens with the compiled output:
+| Piece | What it is |
+| --- | --- |
+| [`@openhint/cli`](../applications/cli/README.md) | The `hint` binary: compiles specs, configures projects, installs hintbooks. |
+| [`@openhint/transpiler`](../packages/transpiler/README.md) | The library behind the CLI: find → parse → compile pipeline and hintbook loading. |
+| [`@openhint/hintbooks-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) | The software-engineering vocabulary — building, fixing, and reviewing code. |
+| [`@openhint/hintbooks-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) | The legal vocabulary — drafting, revising, and auditing documents. |
 
-| Command | Invocation | What it does |
-|---|---|---|
-| *(default)* | `hint <file>` | Compiles and writes the prompt to stdout. |
-| `validate` | `hint validate <file>` | Prepends a spec-review directive; prompts the LLM to critique the spec rather than implement it. |
-| `claude` | `hint claude <file>` | Compiles and pipes the prompt to the `claude` CLI in print mode. |
-| `codex` | `hint codex <file>` | Compiles and pipes the prompt to the `codex` CLI via stdin. |
-| `config` | `hint config` | Appends HINT integration instructions to `AGENTS.md` and `CLAUDE.md` at the project root so AI agents automatically know to use the `hint` CLI when they encounter `.hint` files. |
+## Where to go next
 
-The `validate` command is the recommended first step when a specification is complete: run it before handing the spec to an implementation agent to surface ambiguities and underspecified clauses while they are still cheap to fix.
-
-## File Context Hierarchy & Resolution
-
-When you run the HINT compiler against a target file, it performs a cascading, upward directory scan to merge specifications deterministically:
-
-1. **Project Root Marker**: The engine locates the project root by finding a `hint.yml` (or `hint.yaml`) file there. Its optional `ignore` array contains gitignore-style, project-relative patterns. Ignored targets, context files, includes, and read references are excluded from compilation.
-2. **Folder-Level Cascading**: The engine climbs the parent directories, merging each folder's `_.hint` baseline. Nearer folders take priority over those further up, and the **root `_.hint`** holds your global baselines (`# lang`, `# deps`, `# build`) that everything below inherits.
-3. **File-Specific Primacy**: A file-specific specification (e.g., `auth.ts.hint` sitting right next to `auth.ts`) takes absolute precedence, establishing the final constraint boundaries.
-
-Prefer `# read {path} as Name` for reusable contracts and source context: the compiled prompt carries one file reference and the AI can read it once, retain it, and reuse it through `{Name}`. Use `@include` only when another HINT fragment must be physically spliced into the current token stream so its blocks participate in parsing, cascade merging, or overrides. There is no automatic wildcard merging.
+- [Quick Start](02-quick-start.md) — set up a project and compile your first prompt in minutes.
+- [Syntax](03-syntax.md) — the complete structural grammar of `.hint` files.
+- [How It Works](04-how-it-works.md) — the compilation pipeline in detail.
+- [Hintbooks](05-hintbooks.md) — using, authoring, and distributing keyword vocabularies.
+- [CLI Reference](06-cli.md) — every command and flag.

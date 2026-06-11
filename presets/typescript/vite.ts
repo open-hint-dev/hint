@@ -1,19 +1,23 @@
-import { resolve } from 'path';
+/// <reference types="vitest/config" />
 
-import type { UserConfig } from 'vite';
-import { reactRouter } from '@react-router/dev/vite';
+import * as Fs from 'node:fs';
+import * as Module from 'node:module';
+import * as Path from 'path';
+
 import { tscPlugin } from '@wroud/vite-plugin-tsc';
 import { nodeExternals } from 'rollup-plugin-node-externals';
-import { defineConfig } from 'vite';
+import * as Vite from 'vite';
 import noBundlePlugin from 'vite-plugin-no-bundle';
-import tsconfigPaths from 'vite-tsconfig-paths';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 
-import { packageReleaseDir } from './package';
+import { packageReleaseDir, rootDir } from './package';
+
+const tscProject = Fs.existsSync(Path.resolve(process.cwd(), 'tsconfig.release.json')) ? './tsconfig.release.json' : './tsconfig.json';
 
 const pluginTsc = tscPlugin({
     tscArgs: [
         '--project',
-        './tsconfig.json',
+        tscProject,
         '--declaration',
         '--declarationMap',
         '--emitDeclarationOnly',
@@ -22,12 +26,40 @@ const pluginTsc = tscPlugin({
         '--outDir',
         packageReleaseDir(),
     ],
+    packageManager: 'yarn',
     prebuild: true,
 });
 
-const pluginTsConfigPaths = tsconfigPaths();
+// environment defaults to 'client'; SSR builds (CliBuildConfig) run in the
+// 'ssr' environment, where the plugin would otherwise skip copying
+const pluginCopyReleaseFiles = (files: string[], environment = 'client') =>
+    viteStaticCopy({
+        targets: [
+            {
+                src: files,
+                dest: './',
+            },
+        ],
+        environment,
+    });
 
-const pluginReactRouter = reactRouter();
+// viteStaticCopy cannot flatten files matched above the package root (the
+// ../.. structure leaks into the destination), so the root LICENSE is copied
+// with a dedicated plugin
+const pluginCopyRootLicense = (): Vite.PluginOption => ({
+    name: 'copy-root-license',
+    closeBundle() {
+        Fs.copyFileSync(Path.join(rootDir(), 'LICENSE'), Path.join(packageReleaseDir(), 'LICENSE'));
+    },
+});
+
+const TestBaseConfig = () =>
+    ({
+        globals: true,
+        include: ['**/*_test.ts'],
+        exclude: ['**/node_modules/**'],
+        passWithNoTests: true,
+    }) satisfies Vite.UserConfig['test'];
 
 const NodeBuildBaseConfig = () =>
     ({
@@ -35,46 +67,73 @@ const NodeBuildBaseConfig = () =>
             outDir: packageReleaseDir(),
             emptyOutDir: false,
             lib: {
-                entry: ['./index.ts'].map((entryFile) => resolve(process.cwd(), entryFile)),
+                entry: ['./index.ts'].map((entryFile) => Path.resolve(process.cwd(), entryFile)),
                 formats: ['es'],
             },
         },
         esbuild: {
             target: 'ES2024',
         },
-    }) satisfies UserConfig;
+        test: TestBaseConfig(),
+    }) satisfies Vite.UserConfig;
 
 export const NodeBuildConfig = () =>
-    defineConfig({
+    Vite.defineConfig({
         ...NodeBuildBaseConfig(),
         plugins: [
             nodeExternals(),
             pluginTsc,
             noBundlePlugin() as any,
+            pluginCopyReleaseFiles(['README.md']),
+            pluginCopyRootLicense(),
         ],
     });
 
 export const IsomorphicBuildConfig = () =>
-    defineConfig({
+    Vite.defineConfig({
         ...NodeBuildBaseConfig(),
         plugins: [
             pluginTsc,
+            pluginCopyReleaseFiles(['README.md']),
+            pluginCopyRootLicense(),
         ],
     });
 
-export const ReactRouterBuildConfig = () =>
-    defineConfig({
-        optimizeDeps: {
-            esbuildOptions: {
-                define: {
-                    'process.env': '{}',
-                    'process.versions': '{}',
-                    'process.platform': '"browser"',
+export const CliBuildConfig = () =>
+    Vite.defineConfig({
+        build: {
+            outDir: packageReleaseDir(),
+            emptyOutDir: false,
+            ssr: Path.resolve(process.cwd(), './index.ts'),
+            rollupOptions: {
+                external: [
+                    /^node:/,
+                    ...Module.builtinModules,
+                ],
+                output: {
+                    banner: '#!/usr/bin/env node',
+                    entryFileNames: 'index.js',
                 },
             },
         },
+        ssr: {
+            noExternal: true,
+        },
+        esbuild: {
+            target: 'ES2024',
+        },
+        test: TestBaseConfig(),
         plugins: [
-            pluginReactRouter,
-            pluginTsConfigPaths,
+            tscPlugin({
+                tscArgs: [
+                    '--project',
+                    './tsconfig.json',
+                    '--noEmit',
+                ],
+                packageManager: 'yarn',
+                prebuild: true,
+            }),
+            pluginCopyReleaseFiles(['README.md'], 'ssr'),
+            pluginCopyRootLicense(),
         ],
     });

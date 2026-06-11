@@ -1,5 +1,0 @@
-@read ./node.ts
-
-# module node
-
-ESLint flat config for packages that run exclusively in Node.js. Extends {base} and injects `globals.node` into `languageOptions.globals`, making all Node.js built-in globals available without lint errors.

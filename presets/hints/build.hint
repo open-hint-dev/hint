@@ -1,0 +1,7 @@
+# deps
+
+- vite
+
+# rule
+
+Use `vite` library to build TypeScript-based functionality

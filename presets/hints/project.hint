@@ -1,0 +1,48 @@
+# rule
+
+TypeScript dependencies management:
+
+- Use yarn with `node-modules` node linker to manage project with workspaces and dependencies
+- When adding third-party: add it with "\*" version in the library or application `package.json`, pin the version in the root `package.json` in `resolutions`
+- When adding new application or library to the project: add path to `workspaces` in the root `package.json`
+- When referencing project member use `workspace:*` version in the current `package.json`
+
+# example
+
+Library package.json:
+
+```json
+{
+    ...
+    "dependencies":
+        ...
+        "@mylib/shared-contracts": "workspace:*",
+        ...
+        "grpc-tools": "*",
+        ...
+    }
+    ...
+}
+```
+
+# example
+
+Root package.json:
+
+```json
+{
+    ...
+    "workspaces": [
+        ...
+        "packages/**/*",
+        ...
+    ],
+    ...
+    "resolutions": {
+        ...
+        "grpc-tools": "1.13.1",
+        ...
+    }
+    ...
+}
+```
