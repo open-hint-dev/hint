@@ -1,7 +1,0 @@
-# entity OrderLine
-
-- id: string (uuidv4)
-- cart: {ShoppingCart}
-- product: {Product}
-- quantity: number (positive integer, min 1)
-- priceInCents: number (snapshot at time of add)

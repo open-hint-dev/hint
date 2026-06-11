@@ -1,0 +1,29 @@
+{
+    "name": "",
+    "version": "",
+    "type": "module",
+    "description": "",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/open-hint-dev/hint.git",
+        "directory": ""
+    },
+    "homepage": "https://github.com/open-hint-dev/hint#readme",
+    "bugs": {
+        "url": "https://github.com/open-hint-dev/hint/issues"
+    },
+    "engines": {
+        "node": ">=24"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "main": "./index.js",
+    "types": "./index.d.ts",
+    "exports": {},
+    "files": [
+        "*"
+    ],
+    "dependencies": {}
+}

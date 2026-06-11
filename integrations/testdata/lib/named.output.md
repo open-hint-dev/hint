@@ -1,5 +1,0 @@
-<system_context type="LIB" name="PricingUtils">
-
-Shared pricing calculation library used by the cart, checkout, and subscription services. Exposes discount, tax, and rounding helpers only — no I/O or side effects.
-
-</system_context>

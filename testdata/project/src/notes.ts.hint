@@ -1,0 +1,7 @@
+# notes
+
+internal notes that must never reach the compiled prompt
+
+# customkeyword Something
+
+custom keyword body passes through unchanged

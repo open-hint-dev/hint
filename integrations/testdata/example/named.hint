@@ -1,6 +1,0 @@
-# example validCouponRequest
-
-{
-  "cartId": "uuid-1234",
-  "couponCode": "SAVE20"
-}

@@ -1,50 +1,30 @@
 {
     "name": "@openhint/cli",
-    "version": "0.1.0",
+    "version": "0.0.0",
+    "private": true,
+    "description": "The hint command — compile markdown-native HINT specifications into deterministic, AI-ready prompts.",
     "type": "module",
-    "description": "Compile HINT specifications into AI-ready implementation prompts.",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/open-hint/hint.git",
-        "directory": "applications/cli"
-    },
-    "homepage": "https://github.com/open-hint/hint#readme",
-    "bugs": {
-        "url": "https://github.com/open-hint/hint/issues"
-    },
-    "engines": {
-        "node": ">=22"
-    },
-    "publishConfig": {
-        "access": "public"
-    },
     "bin": {
         "hint": "./index.js"
     },
-    "files": [
-        "index.js",
-        "README.md",
-        "LICENSE"
-    ],
     "scripts": {
-        "build": "make build-js",
-        "check": "make lint-js && make test-js && make verify-package-js",
         "coverage": "make coverage-js",
         "fix": "make fix-js",
         "lint": "make lint-js",
-        "pack": "make pack-js",
+        "publish": "make publish-js",
         "refresh": "make refresh-js",
         "release": "make release-js",
         "test": "make test-js"
     },
+    "dependencies": {
+        "@openhint/transpiler": "workspace:*",
+        "commander": "*"
+    },
     "devDependencies": {
         "@openhint/preset-eslint": "workspace:*",
         "@openhint/preset-typescript": "workspace:*",
-        "@openhint/transpiler": "workspace:*",
         "eslint": "*",
         "typescript": "*",
-        "vite": "*",
-        "vitest": "*"
+        "vite": "*"
     }
 }

@@ -1,88 +1,71 @@
-# How HINT Works: Core Engine & Usage Manual
+# How HINT Works: The Compilation Pipeline
 
-This document outlines the internal mechanics of the HINT (Human Intent Native Transpiler) engine. It details how files are resolved, parsed, and compiled, along with critical best practices for developers.
+This document describes the internal mechanics of the HINT engine — how files are found, parsed, and compiled into the final prompt. The pipeline lives in [`@openhint/transpiler`](../packages/transpiler/README.md) and runs in three stages:
 
----
-
-## 1. The Compilation Lifecycle
-
-Executing the HINT command expects an array of files or glob targets passed directly into the binary terminal interface:
-
-```text
-hint file1.hint path/to/file2.hint src/**/*.hint
+```
+paths ──► find ──► HintFileData tree ──► parse ──► HintData tree ──► compile ──► prompt
+                                                            ▲
+                                              hintbooks ────┘
 ```
 
-The engine runs this target pipeline against every unique file matched across the command arguments:
-
-1. **Cascade Discovery (Context Inheritance & Resolution Priority)**
-    - For every target file argument (e.g., target file `src/domain/auth/auth.ts`), the engine isolates its path directory and establishes a strict, bottom-up priority resolution tree to inherit and merge context specifications.
-    - The lookup hierarchy behaves with the following strict sequence, checking files locally before recursively climbing parent folders up to the root (the root is the folder containing `hint.yml`):
-        ```text
-        [HIGHEST PRIORITY - Overrides all below]
-        ├── 1. Specific Companion File  : auth.ts.hint (In current folder)
-        ├── 2. Direct Match File        : auth.hint (In current folder)
-        ├── 3. Local Baseline Match     : _.hint (In current folder)
-        │
-        │   [CASCADE UPWARD LOOP - Repeats at each parent folder level]
-        ├── 4. Parent Baseline Match    : ../_.hint -> ../../_.hint -> ...
-        │
-        │   [REPOSITORY CONTAINER ROOT - marked by hint.yml]
-        └── 5. Root Baseline            : _.hint (In the hint.yml project root)
-        [LOWEST PRIORITY - Global baseline defaults]
-        ```
-    - `hint.yml` (or `hint.yaml`) itself carries no HINT directives. It marks the project root and may define an `ignore` array using gitignore-style patterns relative to that root. The parser applies it to targets, cascaded HINT files, includes, and `# read` matches; the compiler defensively filters ignored sources again. The global baselines live in the root `_.hint`.
-    - Ignored explicit targets are skipped, including targets produced by directory or shell-glob batches. An `@include` resolving to an ignored file is replaced with empty content without reading it. For `# read` globs, ignored matches are removed and the block is omitted when nothing remains.
-    - **Sharing context across files** is explicit. Prefer `# read {common.hint} as CommonContract` for reusable contracts so the AI reads the file once and reuses `{CommonContract}` without duplicating its contents in the prompt. Use `@include common.hint` only when the included HINT blocks must be parsed and merged as part of the current specification. There is no automatic wildcard merging.
-    - Later instruction blocks inside the high-priority override chain completely replace earlier blocks if they share the exact same header signature (e.g., matching `# lang` or matching `# entity User`). Unmatched blocks append smoothly into the master localized compilation pipeline buffer.
-
-2. **Preprocessing & Context Instructions**
-    - `@include <glob>`: A compile-time preprocessor macro — the engine resolves it first, before parsing. The compiler fetches the target file, reads its raw contents, and copies them as-is directly into the active text stream.
-    - `# read {glob} as [name]`: A structural directive, not a preprocessor action. The compiler does **not** inline the file; it emits an instruction directing the LLM assistant to load, parse, and analyze the physical file(s) matching the glob pattern before writing code, and binds them to the given reference name (the `as [name]` clause is optional). The lines immediately following it describe the file's architectural significance.
-
-3. **AST Generation & Sanitization**
-    - The combined stream splits into structural tokens using line-by-line inspection (e.g., identifying lines starting with `# ` or `## ` headers).
-    - Each keyword is normalized to its canonical form: matching is case-insensitive and full-word aliases collapse to the short keyword (e.g. `# Application` and `# APP` both become `# app`, `## argument` becomes `## arg`). Normalization happens before emission, so the compiled prompt is identical regardless of which spelling was used in the source.
-    - The parser actively strips out any `# notes` block at this stage.
-    - If a line matching exactly `---` is encountered, the parser truncates the stream for that module instantly, ignoring everything below it.
-
-4. **Token Linking & Emission**
-    - The compiler scans all text paths for curly brace variable blocks `{name}`. It verifies that `name` corresponds to a defined `# entity`, `# function`, `# action`, `# app`, `# lib`, `# module`, `# ui`, `# res`, or an asset explicitly designated to be read via `# read`.
-    - If verified, it builds internal reference associations so the LLM understands the system dependencies.
-    - If a token is unresolvable, compilation breaks immediately with a `ReferenceError`.
-    - The compiler wraps the assembled body unconditionally: a **PROMPT HEADER** (role + border contract + assumption protocol) is prepended, and a **PROMPT FOOTER** (pre-implementation verification gate, scope/footprint fence, and the verification checklist) is appended. These wrappers are not triggered by any directive — they exist to keep generated code inside the architecture you declared and to force the model to surface gaps instead of inventing. See the Prompt Mapping Specification for their exact text.
-    - Finally, it formats the unified data structures into an ultra-dense, hierarchical markdown prompt layout sent to stdout or a designated prompt payload file.
-
 ---
 
-## 2. Crucial Guidelines for HINT Users
+## Stage 1 — Find
 
-To maximize your velocity and get flawless code generation from AI tools, follow these core behavioral guidelines:
+`findHints(projectRootPath, paths)` turns the requested paths into a tree of hint files.
 
-### Rule A: Put Environment Setup in the Root
+1. **Normalization.** Each argument is resolved against the project root (arguments escaping the root are dropped). Globs are expanded. A folder becomes its `_.hint`; a source file becomes its `<file>.hint` companion; a path that does not exist is still kept — specs can define files before they are created.
+2. **Sorting.** Paths are ordered folder-first, parents before children, `_.hint` before its siblings — so the tree builds deterministically regardless of argument order. Duplicates are removed.
+3. **Tree building.** Every file is attached to its folder's `_.hint` node, and missing intermediate folder hints are synthesized up to the project root. The result is always rooted at the project's `_.hint`, mirroring how context inherits.
 
-Never copy-paste your `# lang`, `# deps`, or `# build` setups into individual module files. Declare them exactly once in your root `_.hint` (the one beside `hint.yml`). The cascade engine guarantees that every sub-file companion inherits these configurations automatically.
+## Stage 2 — Parse
 
-### Rule B: Function Contracts Must Be Strict
+`parseHints(projectRootPath, paths, dryRun)` reads each node of the tree and produces `HintData` — the typed block tree.
 
-When mapping out a `# function`, do not lazily skip signature keys. Explicitly write out your `## arg`, `## return`, and `## error` parameters before detailing the `## flow`. Providing strict typing boundaries and explicit error conditions prevents the LLM from writing loose code or guessing error-handling logic.
+**Reading.** Existing files are read; a missing `_.hint` counts as empty (the folder still wraps its children); a missing companion hint is skipped silently, or throws if `dryRun` is set.
 
-### Rule C: Code Logic vs. Actions
+**Markdown processing.** Each file's content runs through a remark pipeline: parse → extract `{#id}` heading ids → expand `@include` directives (resolved relative to the hint file's folder).
 
-- Use `# function` when describing traditional implementation logic that is bound to strict inputs, returns, and standard code architecture.
-- Use `# action` for wide operational commands, processes, automation workflows, macro tasks, or runtime steps (e.g., invoking `hint CleanAndBuild` to step through a pipeline, or declaring a background task pattern to trigger if a condition is met). Actions are things the LLM should memorize by its name and perform only when prompted.
+**Block extraction.** Top-level nodes are walked once with a heading stack:
 
-### Rule D: Capitalize References
+- A heading becomes a `HintData` with `level` (heading depth), `keyword` (first word), `name` (the rest), `id`, and an empty body. It is pushed as a child of the nearest shallower heading.
+- Non-heading nodes accumulate and flush as the **previous** heading's `body` when the next heading (of any level) or end of file arrives — serialized back to markdown.
+- Content before the first heading becomes the file node's own body.
 
-Always capitalize your structural entity names (e.g., `# entity UserProfile`) and wrap their references in curly braces `{UserProfile}` throughout your logic flows. This creates explicit semantic hooks that the HINT parser validates and the LLM easily contextualizes.
+**Wrapping.** Each file becomes a `HintData` with a *running keyword*: `__file__` for companion hints, `__folder__` for `_.hint` — with `name` set to the target path relative to the project root (the `.hint` extension stripped; the folder path for folder hints; `.` for the root). Parsed headings come first in `children`, followed by recursively parsed child files.
 
-### Rule E: The Native Fallback Strategy
+## Stage 3 — Compile
 
-Always remember that HINT is designed to be **universally readable**. If you are away from your development terminal or working inside a basic LLM chat interface, you can pass a raw `*.hint` file directly to the browser window. Because it is pure Markdown, the model can interpret your design intents and execute requirements flawlessly even without the HINT command-line engine.
+`compileHints(hints, hintbooks, mode)` renders the block tree to the final prompt string.
 
-### Rule F: Define Borders, Not Implementations
+**Instruction lookup.** For every block, the compiler searches the requested mode's instructions across all hintbooks in order, falling back to the default mode (`compile`). An instruction matches by `name` or by one of its `synonyms`. Running keywords (`__file__`, `__folder__`, `__header__`, `__footer__`) resolve through exactly the same lookup — they are ordinary instructions.
 
-HINT is not Natural Language programming where you describe code in prose. It is a tool for declaring the _borders_ — contracts, constraints, data shapes, prohibitions — and delegating the mechanical fill to the model. Write what must hold true and what must never happen; leave "how to write the loop" to the assistant. The compiled prompt is built to keep the model strictly inside those borders, so the more precisely you fence the scope, the less uncontrolled code you get back. Specify the edges; delegate the interior.
+**Rendering.** Children are compiled first and joined with blank lines. Then the block's instruction template is interpolated:
 
-### Rule G: Read the ASSUMPTIONS Block
+| Placeholder | Value |
+| --- | --- |
+| `{id}` | the block's id |
+| `{name}` | the block's name |
+| `{body}` | the block's body markdown |
+| `{children}` | the compiled children |
 
-The compiled prompt forces the model to declare any underspecified clause at the verification gate and to mark every gap-fill inline as an `ASSUMPTION`, collected in a block at the end of its output. Treat that block as a report on your specification, not noise from the model. Each assumption is a place where your `.hint` file was thin enough that the model had to choose. Fold the resolution back into the spec — add the missing type, default, or branch — and the next compile produces tighter code with fewer assumptions. This is how you keep a finger on the pulse without reading every line the model writes.
+Special cases:
+
+- An instruction with `exclude: true` front matter drops the block — and everything beneath it — from the output.
+- A keyword with no instruction passes through: body and compiled children, no wrapper.
+
+**Wrapping.** The compiled roots are joined and framed by the mode's `__header__` and `__footer__` instructions — the role definition and closing checklist that turn rendered specs into an actionable prompt.
+
+## Hintbook resolution
+
+Books listed in `hint.yml` resolve to instruction folders before compilation:
+
+1. The prefix picks the **base directories**: `file://<path>` resolves relative to the project root; `npm://<name>` tries the project's `node_modules/<name>` first, then global installs. A bare path behaves like `file://`.
+2. Within the first base that exists, every directory containing a `hintbook.json` is a hintbook — one book entry may therefore yield several (a package can ship a collection).
+3. Each discovered folder is loaded: `hintbook.json` provides identity, every `*.md` file becomes an instruction, and a `.{mode}.md` suffix assigns it to a mode (no suffix means the default `compile` mode).
+
+See [Hintbooks](05-hintbooks.md) for the authoring guide.
+
+## Determinism
+
+Every stage is deterministic: sorted traversal, stable tree synthesis, ordered hintbook lookup, and pure template interpolation. The same specs, hintbooks, and mode always produce byte-identical output — which makes compiled prompts reviewable and diffable artifacts.

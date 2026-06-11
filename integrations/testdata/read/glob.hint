@@ -1,3 +1,0 @@
-# read {src/domain/**/*.ts} as DomainLayer
-
-All domain entities and value objects. Any generated code that creates or mutates domain state must follow the patterns established in these files.
