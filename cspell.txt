@@ -1,10 +1,9 @@
+hintbook
+hintbooks
 ianvs
-inlines
-isbot
-makefiles
 neprel
 openhint
 testdata
-underspecified
 vite
+vitest
 wroud

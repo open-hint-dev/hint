@@ -1,0 +1,23 @@
+Payment module specification.
+
+# entity PaymentData {#payment_data}
+
+this entity describes payment data contract
+
+## field timestamp {#payment_timestamp}
+
+unix epoch milliseconds
+
+### rule precision
+
+store with millisecond precision
+
+## field amount
+
+decimal string, two fraction digits
+
+# action validatePayment {#validate_payment}
+
+validate the payment fields before persisting
+
+@include "../shared/context.md"

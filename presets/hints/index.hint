@@ -1,0 +1,6 @@
+Top-level exporter of the package functionality
+
+# rule
+
+- Export all components from the current folder like `export * from './common';`
+- Do not export `eslint.config.ts`, `vite.config.ts`

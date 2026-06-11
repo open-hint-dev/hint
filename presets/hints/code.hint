@@ -1,0 +1,88 @@
+# rule
+
+Common code style:
+
+- Braces always, never one-line `if/else`
+- Blank lines between logical blocks inside functions
+
+Import style:
+
+- Import order: stdlib -> third-party -> project members -> local, blank line between groups
+- No import aliases for stdlib or PascalCase in case of collision
+- PascalCase import aliases for third-parties
+- PascalCase import aliases for project members
+- lowerCamelCase import aliases for local members
+
+Naming:
+
+- Constants are always `UPPER_CASE`
+- Function arguments and variable name after the type, dropping noise suffixes unless needed to disambiguate. `tlsConfig: TlsConfigData` — not `tls`, not `tlsConfigData`.
+
+JSON:
+
+- JSON mapped fields are always snake_case
+
+Stability:
+
+- All types are correctly declared and that the updated code compiles without errors
+
+---
+
+# lang
+
+TypeScript for UI and frontend related functionality
+
+@include code.hint
+
+# rule
+
+Naming:
+
+- Functions, methods, variables are lowerCamelCase
+- Classes, types and interfaces are PascalCase
+- Private member or non-exported variable and function name is started with \_
+
+Typing:
+
+- Always use strict type hints
+- No typing errors and mismatch
+- Use `?` value type to define optional fields, for example optional field is `content?: string`, required field is `content: string`
+
+New instance creation:
+
+- No arguments in \_\_init\_\_() function
+- \_\_init\_\_() explicitly define typings for class members
+- Instantiate through static new() method where create instance of the class and assign its members
+
+# example
+
+```typescript
+import * as Crypto from 'crypto-lib';
+
+import * as SharedContracts from '@mylib/shared-contracts';
+import * as SharedUtils from '@mylib/shared-utils';
+
+import * as contracts from '../contracts';
+
+export const ERROR_CODE_FAIL = SharedContracts.ErrorCodeKind('error_fail');
+
+export class ExampleUtil {
+    private content: string;
+
+    constructor() {}
+
+    static new(content: string): ExampleUtil {
+        const exampleUtil = new ExampleUtil();
+
+        exampleUtil.content = content;
+
+        return exampleUtil;
+    }
+
+    function dumpErrorSignature() {
+        const errorSignature = Crypto.sign(SharedUtils.ErrorResponse(ERROR_CODE_FAIL, contracts.APPLICATION, this.content));
+
+        console.log(errorSignature);
+    }
+}
+```

@@ -1,5 +1,0 @@
-# test
-
-- Empty cart: assert buildCartSummary returns itemCount 0 and subtotalInCents 0.
-- Single item: assert subtotalInCents equals priceInCents times quantity.
-- Coupon applied: assert couponLabel is present when couponCode is set.

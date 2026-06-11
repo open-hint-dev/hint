@@ -1,9 +1,0 @@
-# lang
-
-TypeScript (Node.js v22+ / ESM)
-
-# deps
-
-- Prisma ORM for database connectivity
-- Redis client for ephemeral session state
-- Avoid heavy external math libraries; use native integer arithmetic.

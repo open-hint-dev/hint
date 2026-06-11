@@ -1,58 +1,84 @@
 # @openhint/cli
 
-Compile HINT specification files into AI-ready implementation prompts and dispatch them to AI coding agents.
+The `hint` command — compile [HINT](https://github.com/open-hint-dev/hint#readme) specifications into AI-ready prompts.
 
-**Requirements:** Node.js 22 or newer.
+HINT is a markdown-native specification language for professionals who want structured, strict AI collaboration with predictable results. `.hint` files live next to the work they define (`src/auth/login.ts.hint` defines `src/auth/login.ts`; `contracts/nda.md.hint` defines `contracts/nda.md`), declare intent and constraints in plain markdown, and compile into deterministic prompts for AI agents. The keyword vocabulary is supplied by installable **hintbooks** — one per profession or team: [software engineering](https://www.npmjs.com/package/@openhint/hintbooks-software-engineer), [legal drafting](https://github.com/open-hint-dev/hintbook-lawyer), or your own.
 
 ## Installation
 
-```sh
+```bash
 npm install -g @openhint/cli
 ```
 
-Or run without installing:
+Or ad hoc: `npx @openhint/cli <paths...>`.
 
-```sh
-npx @openhint/cli <file>
+## Quick start
+
+```bash
+# 1. Initialize: creates hint.yml, prints the agent-context setup prompt
+hint config | claude -p
+
+# 2. Install a keyword vocabulary (registered in hint.yml automatically)
+hint install @openhint/hintbooks-software-engineer
+
+# 3. Write specs — a root _.hint and companion <file>.hint files — then compile
+hint src/billing/invoice.ts | claude -p
 ```
 
-## Usage
+## Commands
 
-```
-hint [command] [file ...]
-```
+### `hint <paths...>` — compile
 
-### Commands
+Compiles specs to stdout, wrapped in their folder-context chain plus the active mode's role header and verification footer:
 
-| Command | Description |
-|---|---|
-| *(default)* | Compile `.hint` files and write the prompt to stdout. |
-| `validate` | Compile and prepend a spec-review directive — prompts the AI to critique the spec rather than implement it. |
-| `claude` | Compile and pipe the prompt to the `claude` CLI (`--print` mode). |
-| `codex` | Compile and pipe the prompt to the `codex` CLI via stdin. |
-| `config` | Append HINT integration instructions to `AGENTS.md` and `CLAUDE.md` at the project root. |
-
-### Examples
-
-```sh
-# Compile a single spec and write the prompt to stdout
-hint src/domain/auth/login.ts
-
-# Review a spec before implementing
-hint validate src/domain/auth/login.ts.hint
-
-# Compile and send directly to Claude
-hint claude src/domain/auth/login.ts.hint
-
-# Register HINT with AI agent config files
-hint config
+```bash
+hint src/login.ts.hint            # a hint file
+hint src/login.ts                 # its companion hint — even if login.ts doesn't exist yet
+hint src                          # a folder's _.hint
+hint 'src/**/*.hint'              # globs
 ```
 
-## Links
+| Option          | Effect                                                                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--mode <mode>` | Compile for a hintbook mode, e.g. `--mode fix` (repair against spec) or `--mode review` (audit against spec). Default is the implementation mode. |
+| `--dry-run`     | Fail on unresolvable hint files instead of skipping them — use in CI to validate specs.                                                           |
 
-- [Documentation](https://github.com/open-hint/hint)
-- [HINT Syntax Reference](https://github.com/open-hint/hint/blob/main/docs/03-syntax.md)
-- [Issues](https://github.com/open-hint/hint/issues)
+### `hint config` — initialize the project
+
+Creates `hint.yml` (interactively, if missing) and prints an AI agent prompt that sets up `AGENTS.md` and `CLAUDE.md` with the HINT workflow keywords and each hintbook's system glossary. The files are never modified directly — pipe the output to your agent:
+
+```bash
+hint config | claude -p
+```
+
+### `hint install <books...>` — install hintbooks
+
+Fetches hintbooks, validates them (a `hintbook.json` must be present), and registers them in `hint.yml`:
+
+```bash
+hint install @openhint/hintbooks-software-engineer        # npm package (-g/--global for global install)
+hint install https://github.com/acme/hintbooks-platform   # git repo → cloned into hintbooks/
+hint install file://hintbooks/team-conventions            # local folder
+```
+
+## Project configuration
+
+`hint.yml` marks the project root and registers the vocabulary:
+
+```yaml
+name: my-project
+description: What this project is about
+books:
+    - npm://@openhint/hintbooks-software-engineer
+    - file://hintbooks/team-conventions
+```
+
+## Documentation
+
+- [Introduction](https://github.com/open-hint-dev/hint/blob/main/docs/01-intro.md)
+- [Quick Start](https://github.com/open-hint-dev/hint/blob/main/docs/02-quick-start.md)
+- [Syntax](https://github.com/open-hint-dev/hint/blob/main/docs/03-syntax.md)
+- [CLI Reference](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md)
 
 ## License
 

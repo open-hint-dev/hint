@@ -1,5 +1,0 @@
-@read ./isomorphic.ts
-
-# module isomorphic
-
-ESLint flat config for packages that run in both browser and Node.js environments. Extends {base} and injects `globals.browser` plus explicit `React: true` and `JSX: true` globals into `languageOptions.globals`, covering React JSX references without requiring a separate React import.

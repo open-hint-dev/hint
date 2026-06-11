@@ -1,125 +1,218 @@
-/// <reference types="node" />
-/// <reference types="vitest/globals" />
+import * as Path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { resolve } from 'node:path';
+import type { HintData } from './parser.js';
+import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
+import { findHints, parseHints } from './parser.js';
 
-import { ErrorCode, is } from './error';
-import { createIgnoreMatcher, extractReads, loadProjectConfig, parse, tokenize } from './parser';
+const here = Path.dirname(fileURLToPath(import.meta.url));
+const projectRootPath = Path.resolve(here, '../../testdata/project');
+
+function inProject(path: string): string {
+    return Path.join(projectRootPath, path);
+}
 
 describe('parser', () => {
-    const roots: string[] = [];
+    describe('findHints', () => {
+        it('builds the hint file tree with folder hints as nodes', async () => {
+            const hints = await findHints(projectRootPath, [
+                '_.hint',
+                'src/_.hint',
+                'src/payment.ts.hint',
+                'src/notes.ts.hint',
+            ]);
 
-    afterEach(async () => {
-        await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
-    });
+            expect(hints).toEqual([
+                {
+                    path: inProject('_.hint'),
+                    children: [
+                        {
+                            path: inProject('src/_.hint'),
+                            children: [
+                                { path: inProject('src/notes.ts.hint'), children: [] },
+                                { path: inProject('src/payment.ts.hint'), children: [] },
+                            ],
+                        },
+                    ],
+                },
+            ]);
+        });
 
-    async function project(config = ''): Promise<string> {
-        const root = await mkdtemp(resolve(tmpdir(), 'hint-parser-'));
-        roots.push(root);
-        await writeFile(resolve(root, 'hint.yml'), config);
-        return root;
-    }
+        it('synthesizes missing folder hints up to the project root', async () => {
+            const hints = await findHints(projectRootPath, ['deep/nested/feature.ts.hint']);
 
-    it('loads the supported project configuration', async () => {
-        const root = await project('ignore:\n  - \'testdata/\'\n  - "**/*.generated.hint"\n');
+            expect(hints).toEqual([
+                {
+                    path: inProject('_.hint'),
+                    children: [
+                        {
+                            path: inProject('deep/_.hint'),
+                            children: [
+                                {
+                                    path: inProject('deep/nested/_.hint'),
+                                    children: [{ path: inProject('deep/nested/feature.ts.hint'), children: [] }],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ]);
+        });
 
-        await expect(loadProjectConfig(root)).resolves.toEqual({
-            ignore: [
-                'testdata/',
-                '**/*.generated.hint',
-            ],
+        it('normalizes a folder path to its folder hint', async () => {
+            const hints = await findHints(projectRootPath, ['src']);
+
+            expect(hints).toEqual([
+                {
+                    path: inProject('_.hint'),
+                    children: [{ path: inProject('src/_.hint'), children: [] }],
+                },
+            ]);
+        });
+
+        it('normalizes a source file path to its companion hint', async () => {
+            const hints = await findHints(projectRootPath, ['src/payment.ts']);
+
+            expect(hints[0]!.children[0]!.children).toEqual([{ path: inProject('src/payment.ts.hint'), children: [] }]);
+        });
+
+        it('keeps hints for files that do not exist yet', async () => {
+            const hints = await findHints(projectRootPath, ['src/upcoming.ts']);
+
+            expect(hints[0]!.children[0]!.children).toEqual([{ path: inProject('src/upcoming.ts.hint'), children: [] }]);
+        });
+
+        it('expands glob patterns', async () => {
+            const hints = await findHints(projectRootPath, ['src/*.hint']);
+
+            const paths = hints[0]!.children[0]!.children.map((hint) => hint.path);
+
+            expect(hints[0]!.children[0]!.path).toBe(inProject('src/_.hint'));
+            expect(paths).toEqual([
+                inProject('src/notes.ts.hint'),
+                inProject('src/payment.ts.hint'),
+            ]);
+        });
+
+        it('deduplicates repeated paths', async () => {
+            const hints = await findHints(projectRootPath, [
+                'src/payment.ts.hint',
+                'src/payment.ts',
+                'src/*.hint',
+            ]);
+
+            const paths = hints[0]!.children[0]!.children.map((hint) => hint.path);
+
+            expect(paths.filter((path) => path === inProject('src/payment.ts.hint'))).toHaveLength(1);
+        });
+
+        it('ignores paths outside of the project root', async () => {
+            expect(await findHints(projectRootPath, ['../outside.hint'])).toEqual([]);
         });
     });
 
-    it('rejects unsupported project configuration', async () => {
-        const root = await project('unknown: true\n');
+    describe('parseHints', () => {
+        it('wraps files and folders into running hints', async () => {
+            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
 
-        await expect(loadProjectConfig(root)).rejects.toSatisfy((error: unknown) => is(error, ErrorCode.PARSE_ERROR));
-    });
+            const root = hints[0]!;
+            expect(root.keyword).toBe(RUNNING_FOLDER);
+            expect(root.name).toBe('.');
+            expect(root.body).toBe('This is the testdata project baseline context.');
 
-    it('applies ordered gitignore rules without affecting outside paths', () => {
-        const matcher = createIgnoreMatcher('/repo', [
-            '**/*.generated.hint',
-            '!src/keep.generated.hint',
-            '/build/',
-        ]);
+            const src = root.children.find((hint) => hint.keyword === RUNNING_FOLDER)!;
+            expect(src.name).toBe('src');
+            expect(src.body).toBe('Shared context for source files.');
 
-        expect(matcher.matches('/repo/src/drop.generated.hint')).toBe(true);
-        expect(matcher.matches('/repo/src/keep.generated.hint')).toBe(false);
-        expect(matcher.matches('/repo/build/output.hint')).toBe(true);
-        expect(matcher.matches('/repo/nested/build/output.hint')).toBe(false);
-        expect(matcher.matches('/outside/drop.generated.hint')).toBe(false);
+            const file = src.children.find((hint) => hint.keyword === RUNNING_FILE)!;
+            expect(file.name).toBe('src/payment.ts');
+            expect(file.body).toBe('Payment module specification.');
+        });
 
-        const blockedParent = createIgnoreMatcher('/repo', [
-            'private/',
-            '!private/keep.hint',
-        ]);
-        expect(blockedParent.matches('/repo/private/keep.hint')).toBe(true);
-    });
+        it('parses headings into nested hints with keyword, name, and id', async () => {
+            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
 
-    it('filters ignored matches from structural reads', async () => {
-        const root = await project();
-        await mkdir(resolve(root, 'src'), { recursive: true });
-        await writeFile(resolve(root, 'src/keep.ts'), '');
-        await writeFile(resolve(root, 'src/drop.ts'), '');
-        const matcher = createIgnoreMatcher(root, ['src/drop.ts']);
+            const file = hints[0]!.children.find((hint) => hint.keyword === RUNNING_FOLDER)!.children[0]!;
+            const [
+                entity,
+                action,
+            ] = file.children as [HintData, HintData];
 
-        const result = extractReads('# read {src/*.ts} as [Sources]\n\nArchitecture sources.', root, matcher);
+            expect(entity).toMatchObject({
+                level: 1,
+                keyword: 'entity',
+                name: 'PaymentData',
+                id: 'payment_data',
+                body: 'this entity describes payment data contract',
+            });
 
-        expect(result.reads).toEqual([
-            {
-                name: 'Sources',
-                glob: 'src/keep.ts',
-                description: 'Architecture sources.',
-            },
-        ]);
-        expect(result.content).toContain('# read {src/keep.ts} as [Sources]');
-    });
+            const [
+                timestamp,
+                amount,
+            ] = entity.children as [HintData, HintData];
 
-    it('normalizes aliases, test targets, and strips notes', () => {
-        const blocks = tokenize(
-            '# language\n\nTypeScript\n# model User\n\n- id: string\n# test for createUser\n\n- works\n# notes\n\nprivate',
-            '/repo/user.ts.hint',
-            'file',
-        );
+            expect(timestamp).toMatchObject({
+                level: 2,
+                keyword: 'field',
+                name: 'timestamp',
+                id: 'payment_timestamp',
+                body: 'unix epoch milliseconds',
+            });
 
-        expect(blocks.map(({ directive, name }) => ({ directive, name }))).toEqual([
-            { directive: 'lang', name: undefined },
-            { directive: 'entity', name: 'User' },
-            { directive: 'test', name: 'createUser' },
-        ]);
-    });
+            expect(timestamp.children[0]).toMatchObject({
+                level: 3,
+                keyword: 'rule',
+                name: 'precision',
+                id: '',
+                body: 'store with millisecond precision',
+            });
 
-    it('assembles the cascade once and skips ignored includes and reads', async () => {
-        const root = await project('ignore:\n  - src/ignored.hint\n  - src/private.ts\n');
-        await mkdir(resolve(root, 'src'), { recursive: true });
-        await writeFile(resolve(root, '_.hint'), '# lang\n\nTypeScript');
-        await writeFile(resolve(root, 'src/_.hint'), '# rule\n\n- Local rule.');
-        await writeFile(resolve(root, 'src/user.hint'), '# entity Shared\n\n- id: string');
-        await writeFile(resolve(root, 'src/ignored.hint'), '# bad\n\n- hidden');
-        await writeFile(resolve(root, 'src/private.ts'), '');
-        await writeFile(
-            resolve(root, 'src/user.ts.hint'),
-            '@include ./ignored.hint\n# read {src/private.ts} as [Private]\n\nHidden.\n# module user\n\nUses {Shared}.',
-        );
+            expect(amount).toMatchObject({
+                level: 2,
+                keyword: 'field',
+                name: 'amount',
+                body: 'decimal string, two fraction digits',
+            });
 
-        const result = await parse([resolve(root, 'src/user.ts')]);
+            expect(action.keyword).toBe('action');
+            expect(action.id).toBe('validate_payment');
+        });
 
-        expect(result.targetPaths).toEqual([resolve(root, 'src/user.ts.hint')]);
-        expect(result.files.map((file) => file.sourceKind)).toEqual([
-            'baseline',
-            'baseline',
-            'direct',
-            'file',
-        ]);
-        expect(result.blocks.map((block) => block.directive)).toEqual([
-            'lang',
-            'rule',
-            'entity',
-            'module',
-        ]);
-        expect(result.reads.size).toBe(0);
+        it('expands include directives into the body', async () => {
+            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
+
+            const file = hints[0]!.children.find((hint) => hint.keyword === RUNNING_FOLDER)!.children[0]!;
+            const action = file.children.at(-1)!;
+
+            expect(action.body).toBe('validate the payment fields before persisting\n\nshared **markdown** context');
+        });
+
+        it('parses synthesized folder hints with empty bodies', async () => {
+            const hints = await parseHints(projectRootPath, ['deep/nested/feature.ts.hint'], false);
+
+            const deep = hints[0]!.children.find((hint) => hint.keyword === RUNNING_FOLDER)!;
+            expect(deep.name).toBe('deep');
+            expect(deep.body).toBe('');
+
+            const nested = deep.children[0]!;
+            expect(nested.name).toBe('deep/nested');
+            expect(nested.children[0]!.children[0]!).toMatchObject({
+                keyword: 'entity',
+                name: 'Feature',
+                id: 'feature',
+            });
+        });
+
+        it('silently skips missing hint files', async () => {
+            const hints = await parseHints(projectRootPath, ['missing.ts'], false);
+
+            const root = hints[0]!;
+            expect(root.keyword).toBe(RUNNING_FOLDER);
+            expect(root.children.some((hint) => hint.keyword === RUNNING_FILE)).toBe(false);
+        });
+
+        it('throws on missing hint files in dry run', async () => {
+            await expect(parseHints(projectRootPath, ['missing.ts'], true)).rejects.toThrow(`Hint file not found: ${inProject('missing.ts.hint')}`);
+        });
     });
 });

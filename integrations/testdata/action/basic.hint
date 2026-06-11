@@ -1,3 +1,0 @@
-# action invalidateSessionCache
-
-Whenever a user logs out, closes their tab explicitly, or completes a checkout sequence, find their session token inside our Redis store and purge it instantly.

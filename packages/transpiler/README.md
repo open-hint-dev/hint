@@ -1,130 +1,70 @@
 # @openhint/transpiler
 
-Parse HINT specification files and compile them into implementation prompts for AI coding agents.
+The engine behind [HINT](https://github.com/open-hint-dev/hint#readme) — a markdown-native specification language for professionals who want to work with AI in a structured, strict way and get predictable results. It compiles human intent into deterministic, high-density prompts for AI agents; software code and legal documents are two of its vocabularies.
 
-**Requirements:** Node.js 22 or newer, ESM only. Not compatible with CommonJS or browser environments — the parser and compiler use Node.js filesystem APIs.
+This package is the library; the command-line interface lives in [`@openhint/cli`](https://www.npmjs.com/package/@openhint/cli).
 
-## Installation
+## What it does
 
-```sh
-npm install @openhint/transpiler
+The transpiler has no built-in keyword vocabulary. It implements the structural pipeline —
+
 ```
+paths ──► findHints ──► parseHints ──► compileHints ──► prompt string
+                                            ▲
+                            loadHintbooks ──┘
+```
+
+— and renders every block through instruction templates supplied by **hintbooks**, installable keyword vocabularies such as [`@openhint/hintbooks-software-engineer`](https://www.npmjs.com/package/@openhint/hintbooks-software-engineer).
 
 ## Usage
 
-### Parse and compile
+```ts
+import { compileHints, findProjectRoot, loadConfig, loadHintbooks, parseHints } from '@openhint/transpiler';
 
-The standard pipeline: parse one or more HINT specification files, then compile the result into a prompt string.
+const projectRootPath = await findProjectRoot(process.cwd());
+const config = await loadConfig(projectRootPath);
 
-```js
-import { parse, compile } from '@openhint/transpiler';
+const hintbooks = await loadHintbooks(projectRootPath, config?.books ?? []);
+const hints = await parseHints(projectRootPath, ['src/billing/invoice.ts'], false);
 
-const result = await parse(['src/auth/login.ts.hint']);
-
-const prompt = await compile({
-    projectRoot: result.projectRoot,
-    targetPaths: result.targetPaths,
-    ignore: result.config.ignore,
-    blocks: result.blocks,
-    reads: result.reads,
-});
-
-console.log(prompt);
+const prompt = await compileHints(hints, hintbooks, 'compile');
 ```
-
-### Programmatic compiler input
-
-Construct `CompilerInput` directly when you have your own block source:
-
-```js
-import { compile } from '@openhint/transpiler';
-
-const prompt = await compile({
-    projectRoot: '/path/to/project',
-    targetPaths: ['src/auth/login.ts.hint'],
-    ignore: [],
-    blocks: [
-        {
-            directive: 'lang',
-            name: undefined,
-            body: 'TypeScript (Node.js 22+ / ESM)',
-            sourcePath: '_.hint',
-            sourceKind: 'baseline',
-        },
-    ],
-    reads: new Map(),
-});
-```
-
-### Error handling
-
-```js
-import { is, ErrorCode, serialize } from '@openhint/transpiler';
-
-try {
-    await parse(['missing.hint']);
-} catch (error) {
-    if (is(error, ErrorCode.IO_ERROR)) {
-        console.error('File not found:', serialize(error));
-    } else if (is(error, ErrorCode.PARSE_ERROR)) {
-        console.error('Malformed specification:', serialize(error));
-    } else {
-        throw error;
-    }
-}
-```
-
-## Entry points
-
-| Import path | Contents |
-|---|---|
-| `@openhint/transpiler` | Parser, compiler, error utilities, and keyword registry |
-| `@openhint/transpiler/keywords` | Keyword registry, directive list, render helpers |
 
 ## API
 
-### Parser
+### Pipeline
 
-- `parse(paths)` — parse HINT files and return a `ParseResult`
-- `findProjectRoot(startDir)` — locate the `hint.yml` / `hint.yaml` project root
-- `normalizeInputPaths(paths)` — append `.hint` where missing
-- `createIgnoreMatcher(projectRoot, patterns)` — build a gitignore-style path filter
+| Export                                       | Purpose                                                                                                                                                                                                                                          |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `findHints(projectRootPath, paths)`          | Resolve paths (companions, folders, globs) into a `HintFileData` tree rooted at the project's `_.hint`, synthesizing missing folder hints.                                                                                                       |
+| `parseHints(projectRootPath, paths, dryRun)` | Read and parse the tree into typed `HintData` blocks: heading keyword/name/`{#id}`, markdown bodies, nesting by heading depth, `@include` expansion. `dryRun` turns missing hint files into errors instead of skips.                             |
+| `compileHints(hints, hintbooks, mode)`       | Render blocks through hintbook keywords (mode lookup with fallback to `compile`, synonym matching, `exclude` handling, `{id}` / `{name}` / `{body}` / `{children}` interpolation) and wrap the result in the mode's `__header__` / `__footer__`. |
 
-### Compiler
+### Hintbooks
 
-- `compile(input)` — render a `CompilerInput` into a complete prompt string
-- `filterIgnored(input)` — apply project ignore patterns before rendering
-- `buildRepositoryContext(input)` — build the path manifest section
-- `renderRepositoryContext(context)` — render the XML context block
-- `renderSourceMarker(sourceIds)` — render a `<source_ref>` tag
+| Export                                        | Purpose                                                                                                                                  |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolveHintbookPaths(projectRootPath, book)` | Resolve a book reference (`file://` path, `npm://` package, or bare path) to every contained folder holding a `hintbook.json`.           |
+| `loadHintbook(path)`                          | Load one instruction folder into `HintbookData` — keywords keyed by file name, modes by `.{mode}.md` suffix, metadata from front matter. |
+| `loadHintbooks(projectRootPath, books)`       | Resolve and load a `books` list; throws on entries that resolve to nothing.                                                              |
 
-### Errors
+### Project configuration
 
-- `ErrorCode` — `PARSE_ERROR | REFERENCE_ERROR | IO_ERROR | UNKNOWN_ERROR`
-- `create(code, message, options?)` — create a structured `AppError`
-- `wrap(raw, code?, meta?)` — wrap any caught value into an `AppError`
-- `is(value, code?)` — type-guard check for `AppError`
-- `serialize(error)` — convert to a plain loggable object
-- `fire(code, message, options?)` — create and throw immediately
+| Export                                   | Purpose                                                                                        |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `findProjectRoot(startPath)`             | Walk up to the nearest `hint.yml` / `hint.yaml`.                                               |
+| `findConfig`, `loadConfig`, `saveConfig` | Locate, read, and write the project's `ConfigData` (`name`, `description`, `books`, `ignore`). |
+| `CONFIG_INSTRUCTION`                     | The AGENTS.md / CLAUDE.md workflow instruction block emitted by `hint config`.                 |
 
-### Keywords
+Constants for the running vocabulary (`RUNNING_FILE`, `RUNNING_FOLDER`, `RUNNING_HEADER`, `RUNNING_FOOTER`, `RUNNING_SYSTEM`), placeholders (`PLACEHOLDER_ID`, `PLACEHOLDER_NAME`, `PLACEHOLDER_BODY`, `PLACEHOLDER_CHILDREN`), book prefixes (`URL_FILE_PREFIX`, `URL_NPM_PREFIX`), and the default mode (`INSTRUCTION_MODE_DEFAULT`) are exported alongside the types `HintData`, `HintFileData`, `HintbookData`, `InstructionData`, `ModeData`, and `ConfigData`.
 
-- `keywordRegistry` — `Map<Directive, KeywordDefinition>` of all registered directives
-- `keywordOrder` — canonical rendering order for directive groups
-- `normalizeDirective(value)` — resolve aliases to canonical directive names
-- `renderKeyword(block, body, reads)` — render one block to a markdown section
-- `getKeyword(directive)` — look up a `KeywordDefinition` by directive
-- `validateKeyword(definition, block)` — enforce name and body policies
-- `interpolate(template, fields)` — Mustache-style `{{field}}` substitution
-- `splitSubBlocks(body)` — extract `## kind label` sub-sections from a block body
-- `header` / `footer` — static prompt wrapper strings
+## Documentation
 
-### Types
+- [Introduction](https://github.com/open-hint-dev/hint/blob/main/docs/01-intro.md)
+- [Syntax specification](https://github.com/open-hint-dev/hint/blob/main/docs/03-syntax.md)
+- [How the pipeline works](https://github.com/open-hint-dev/hint/blob/main/docs/04-how-it-works.md)
+- [Authoring hintbooks](https://github.com/open-hint-dev/hint/blob/main/docs/05-hintbooks.md)
 
-`ParseResult`, `ParsedFile`, `ProjectConfig`, `IgnoreMatcher`, `CompilerInput`, `FilteredCompilerInput`, `RepositoryContext`, `AppError`, `SerializedError`, `ErrorCode`, `RawBlock`, `ReadRef`, `Directive`, `SourceKind`, `KeywordDefinition`, `KeywordInput`, `NamePolicy`, `MergePolicy`, `SubBlock`
+## License
 
----
-
-For HINT syntax documentation, directive reference, and CLI usage see the [repository README](https://github.com/open-hint/hint#readme).
-
-MIT License — Copyright (c) 2026 Andrei Neprel
+MIT

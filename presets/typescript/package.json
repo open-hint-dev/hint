@@ -4,19 +4,19 @@
     "private": true,
     "type": "module",
     "dependencies": {
-        "@react-router/dev": "*",
         "@types/node": "*",
         "@wroud/vite-plugin-tsc": "*",
         "esbuild-plugin-tsc": "*",
         "eslint": "*",
         "react": "*",
-        "react-router": "*",
         "rollup": "*",
         "rollup-plugin-node-externals": "*",
         "typescript": "*",
         "vite": "*",
         "vite-node": "*",
         "vite-plugin-no-bundle": "*",
-        "vite-tsconfig-paths": "*"
+        "vite-plugin-static-copy": "*",
+        "vite-tsconfig-paths": "*",
+        "vitest": "*"
     }
 }

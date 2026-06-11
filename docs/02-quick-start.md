@@ -1,174 +1,146 @@
 # HINT Quick Start Guide
 
-Get up and running with HINT (Human Intent Native Transpiler) in less than 5 minutes. This guide walks you through setting up your project root baseline, creating a local module companion specification, and compiling high-density AI prompts.
+Get up and running with HINT in less than five minutes: initialize a project, install a hintbook, write your first specs, and compile a prompt for your AI agent.
+
+This walkthrough builds software with the [software-engineer hintbook](https://github.com/open-hint-dev/hintbook-software-engineer). The workflow is identical for any other profession — register the [lawyer hintbook](https://github.com/open-hint-dev/hintbook-lawyer) instead and the same steps draft contracts rather than code.
 
 ---
 
-## 1. Global Setup (`hint.yml` + root `_.hint`)
-
-Every HINT project has two pieces at its root. A `hint.yml` (or `hint.yaml`) file **marks the project root** and may exclude paths through a gitignore-style `ignore` array. A root-level `_.hint` holds the **global baseline instructions** (`# lang`, `# deps`, `# build`) that every sub-directory and companion file inherits.
-
-Create `hint.yml` in your repository root, then a root `_.hint` next to it:
-
-```yaml
-ignore:
-    - node_modules/
-    - dist/
-    - '*.generated.hint'
-    - '!src/contracts/generated.hint'
-```
-
-Patterns are evaluated relative to the project root in declaration order using gitignore semantics; the last matching pattern wins. Explicit CLI targets do not override ignored paths.
-
-```markdown
-# lang
-
-TypeScript (Node.js v22+ / ESM)
-
-# deps
-
-- Express.js for local HTTP service routing
-- Zod for runtime request boundary validation
-- Avoid bloated external utilities; rely on native JavaScript modules wherever possible.
-
-# build
-
-- npm run build to run tsc compiler checks
-- make test to fire local vitest suites
-```
-
----
-
-## 2. Local Setup (Companion Files)
-
-HINT context lives exactly where your code lives. For any script file you intend to create or modify, simply place a companion `*.hint` file right next to it in the directory tree.
-
-Imagine you are building an authentication domain. Inside `src/domain/auth/`, create your target logical contract file named `login.ts.hint`:
-
-```markdown
-# read {src/infrastructure/security/tokens.ts} as TokenEngine
-
-This is our core localized encryption wrapper module. It manages jwt token signing operations.
-
-# module loginFlow
-
-This module coordinates the system login sequence and verifies user identities against our security parameters.
-
-# entity Credentials
-
-- username: string (must be an authenticated email pattern)
-- password: string (min 8 characters, checked against argon2 hashes)
-
-# function executeLogin
-
-## arg inputs: {Credentials}
-
-The incoming payload from the login route.
-
-## return string
-
-A signed, cryptographically stable bearer session token.
-
-## error InvalidCredentialsException
-
-Thrown if user is missing or password match fails.
-
-## flow
-
-1. Lookup the username in the database to fetch the associated secure profile record.
-2. If profile is missing, break early and throw an InvalidCredentialsException.
-3. Compare incoming password inputs against the database argon2 password hash field.
-4. If comparison checks pass cleanly, pass the profile ID to the {TokenEngine} to sign a token wrapper.
-5. Return the resulting string payload back to the client interface buffer.
-
-# good
-
-- Always sanitize username inputs by converting them to lowercase strings before querying.
-- Return explicit HTTP status codes (401 Unauthorized) when catching failure states.
-
-# bad
-
-- Never leak structural data details or user existence states in generic failure message returns.
-
-# notes
-
-- TODO: Add support for multi-factor authentication (MFA) redirects inside the flow block next quarter.
-```
-
----
-
-## 3. Compiling the Prompt Payload
-
-HINT does away with complex sub-command boilerplate. To transpile, simply fire the `hint` CLI binary tool directly passing target files, directories, or wild glob patterns:
+## 1. Install the CLI
 
 ```bash
-# Compile a single file specification
-hint src/domain/auth/login.ts.hint
-
-# Compile multiple disjointed specifications simultaneously
-hint src/domain/auth/login.ts.hint src/assets/configs/settings.json.hint
-
-# Batch compile all specification file variations using standard terminal glob selectors
-hint src/domain/**/*.hint
+npm install -g @openhint/cli
 ```
 
-The transpiler immediately initiates its four-stage lifecycle:
+Or run it ad hoc with `npx @openhint/cli`.
 
-1. Locates `hint.yml` to find the project root, then walks the `_.hint` cascade from that root down to your file, loading language, deps, and build parameters.
-2. Resolves context directives: inlines any `@include` files, and emits read instructions for each `# read` (e.g. directing the model to read the `{TokenEngine}` source) without embedding their contents.
-3. Chains local data entities, rule sets, and function constraints, dropping `# notes` scratchpads dynamically.
-4. Validates cross-referenced tokens and wraps the result in a border contract — a header that fences the model to your architecture and forbids unspecified scope, and a footer that makes the model verify every clause and surface any assumptions before it writes code — then prints the optimized markdown prompt directly to `stdout`.
+## 2. Initialize the project
 
----
-
-## 4. CLI Commands
-
-Beyond the default compile-and-output flow, the `hint` CLI provides four additional commands.
-
-### `validate` — spec review before implementation
-
-Before handing a spec to an implementation agent, run `validate` to surface ambiguities, contradictions, missing error paths, and scope gaps:
-
-```bash
-hint validate src/domain/auth/login.ts.hint
-```
-
-The output is the same compiled prompt prefixed with a structured review directive. The LLM produces a critique with cited findings and an `## OPEN QUESTIONS` block — not code. Fix the questions it raises, then compile with the default command.
-
-### `claude` — compile and send to Claude
-
-Compile and pipe the prompt directly to the `claude` CLI in one step:
-
-```bash
-hint claude src/domain/auth/login.ts.hint
-```
-
-Requires `claude` to be installed (`npm install -g @anthropic-ai/claude-code`). Claude's response streams to your terminal in real time.
-
-### `codex` — compile and send to Codex
-
-Same pattern for the OpenAI Codex CLI:
-
-```bash
-hint codex src/domain/auth/login.ts.hint
-```
-
-Requires `codex` to be on PATH (`npm install -g @openai/codex`).
-
-### `config` — register HINT with your AI agents
-
-Run `config` once per project to add a short integration instruction to `AGENTS.md` and `CLAUDE.md` at the project root:
+From your repository root:
 
 ```bash
 hint config
 ```
 
-After this, AI coding agents (Claude Code, Codex, etc.) that read these files will automatically know to run `hint <file>` when they encounter `.hint` files, rather than reading the raw specification directly.
+This does two things:
 
----
+1. **Creates `hint.yml`** (if missing) — it asks for a project name and description, and offers to register the default hintbook. `hint.yml` marks the project root; every path in a compilation is resolved against it.
+2. **Prints an AI agent prompt to stdout** that instructs an agent to add the HINT workflow instructions (and each hintbook's system glossary) to your `AGENTS.md` and `CLAUDE.md`. The command never edits those files itself — pipe the output to your agent to apply it:
 
-## 5. Bypassing the CLI (The Native Fallback)
+```bash
+hint config | claude -p
+```
 
-If you are traveling, working away from your dev terminal, or interacting with a basic LLM browser interface (like Claude Web or ChatGPT), **you do not need the HINT CLI**.
+The resulting `hint.yml` looks like this:
 
-Because your `login.ts.hint` and `_.hint` specifications are written in pure standard Markdown, you can copy, paste, or upload the raw text profiles straight to the AI chat window. The assistant will naturally interpret your strict structural intent boundaries out-of-the-box.
+```yaml
+name: my-project
+description: What this project is about
+books:
+    - npm://@openhint/hintbooks-software-engineer
+```
+
+## 3. Install a hintbook
+
+If you skipped the default during `hint config`, or want additional vocabularies:
+
+```bash
+hint install @openhint/hintbooks-software-engineer       # npm package
+hint install https://github.com/acme/hintbooks-platform  # git: your org's shared platform standards
+hint install file://hintbooks/team-conventions           # in-repo: your team's own vocabulary
+```
+
+Each installed book is fetched, validated (it must contain a `hintbook.json`), and registered in the `books` array of `hint.yml`. See the [CLI Reference](06-cli.md) for details.
+
+## 4. Write the root baseline
+
+A root-level `_.hint` holds the global context every sub-directory and companion file inherits — the stack, the build pipeline, the dependency policy:
+
+```markdown
+A REST API for invoice management.
+
+# lang TypeScript
+
+Node.js 22, ES modules, strict TypeScript. No CommonJS.
+
+# build
+
+- `npm run build` to compile
+- `npm test` to run the vitest suites
+
+# bad GlobalState
+
+Never store request state in module-level variables.
+```
+
+Every heading is `# keyword Name` — the keyword vocabulary (`lang`, `build`, `bad`, …) comes from your installed hintbook.
+
+## 5. Write a companion spec
+
+A `.hint` file next to a source file defines that file. `src/billing/invoice.ts.hint` defines `src/billing/invoice.ts` — whether or not the target exists yet:
+
+```markdown
+Invoice domain model and validation.
+
+# entity Invoice {#invoice}
+
+The persisted invoice record.
+
+## field id
+
+UUID v7, generated at creation.
+
+## field total
+
+Decimal string with two fraction digits. Never use floating point.
+
+# func validateInvoice
+
+Validates an Invoice before persisting.
+
+## arg invoice
+
+The Invoice to validate.
+
+## result
+
+Returns the validated Invoice; throws ValidationError on the first violated rule.
+```
+
+Heading depth nests blocks: the `field` blocks belong to the `entity`, the `arg`/`result` blocks to the `func`.
+
+## 6. Compile
+
+```bash
+hint src/billing/invoice.ts          # one file (companion resolved automatically)
+hint src/billing                     # a folder
+hint 'src/**/*.hint'                 # globs
+```
+
+The compiled prompt goes to stdout: a mode header (the agent's role), your specs rendered through the hintbook's templates — each file wrapped in its folder chain so context inheritance is explicit — and a closing checklist footer. Pipe it straight to an agent:
+
+```bash
+hint src/billing/invoice.ts | claude -p
+```
+
+### Modes
+
+The default mode compiles an **implementation** prompt. Hintbooks can define others — the software-engineer book ships `fix` and `review`:
+
+```bash
+hint --mode fix src/billing/invoice.ts      # repair code that violates the spec
+hint --mode review src/billing/invoice.ts   # audit code against the spec, report findings
+```
+
+### Validating specs
+
+`--dry-run` makes compilation fail loudly on hint files that cannot be resolved instead of silently skipping them:
+
+```bash
+hint --dry-run 'src/**/*.hint'
+```
+
+## Where to go next
+
+- [Syntax](03-syntax.md) — folder hints, ids, includes, and the full structural grammar.
+- [Hintbooks](05-hintbooks.md) — what your keywords compile into, and how to write your own vocabulary.

@@ -1,4 +1,0 @@
-# deps
-
-- express for HTTP routing
-- zod for runtime schema validation

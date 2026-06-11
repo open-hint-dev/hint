@@ -1,6 +1,0 @@
-# entity ShoppingCart
-
-- id: string (uuidv4)
-- userId: string | null (supports anonymous checkouts)
-- items: Array<CartItem>
-- couponCode: string | null

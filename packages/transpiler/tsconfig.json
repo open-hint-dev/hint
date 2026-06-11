@@ -10,7 +10,6 @@
     "exclude": [
         "eslint.config.ts",
         "node_modules",
-        "vite.config.ts",
-        "**/*_test.*"
+        "vite.config.ts"
     ]
 }
