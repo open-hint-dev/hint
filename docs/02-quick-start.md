@@ -37,7 +37,7 @@ The resulting `hint.yml` looks like this:
 name: my-project
 description: What this project is about
 books:
-    - npm://@openhint/hintbooks-software-engineer
+    - npm://@openhint/hintbook-software-engineer
 ```
 
 ## 3. Install a hintbook
@@ -45,7 +45,7 @@ books:
 If you skipped the default during `hint config`, or want additional vocabularies:
 
 ```bash
-hint install @openhint/hintbooks-software-engineer       # npm package
+hint install @openhint/hintbook-software-engineer       # npm package
 hint install https://github.com/acme/hintbooks-platform  # git: your org's shared platform standards
 hint install file://hintbooks/team-conventions           # in-repo: your team's own vocabulary
 ```

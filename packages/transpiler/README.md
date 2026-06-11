@@ -14,7 +14,7 @@ paths ──► findHints ──► parseHints ──► compileHints ──► 
                             loadHintbooks ──┘
 ```
 
-— and renders every block through instruction templates supplied by **hintbooks**, installable keyword vocabularies such as [`@openhint/hintbooks-software-engineer`](https://www.npmjs.com/package/@openhint/hintbooks-software-engineer).
+— and renders every block through instruction templates supplied by **hintbooks**, installable keyword vocabularies such as [`@openhint/hintbook-software-engineer`](https://www.npmjs.com/package/@openhint/hintbook-software-engineer).
 
 ## Usage
 
