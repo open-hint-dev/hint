@@ -5,17 +5,18 @@ import * as Path from 'node:path';
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
+import { printAgentPrompt } from './config.js';
 
 const HINTBOOKS_FOLDER = 'hintbooks';
 
-export class InstallCommand implements ICommand {
+export class AddCommand implements ICommand {
     private books: string[] = [];
     private global: boolean = false;
 
     constructor() {}
 
-    static new(books: string[], global: boolean): InstallCommand {
-        const command = new InstallCommand();
+    static new(books: string[], global: boolean): AddCommand {
+        const command = new AddCommand();
 
         command.books = books;
         command.global = global;
@@ -45,6 +46,8 @@ export class InstallCommand implements ICommand {
 
         config.books = books;
         await Transpiler.saveConfig(projectRootPath, config);
+
+        await printAgentPrompt(projectRootPath, config);
     }
 }
 
