@@ -10,7 +10,7 @@ This document covers using hintbooks, authoring your own, and distributing them.
 
 ## Using hintbooks
 
-Register books in the `books` array of `hint.yml` — or let `hint install` do it for you:
+Register books in the `books` array of `hint.yml` — or let `hint add` do it for you:
 
 ```yaml
 books:
@@ -54,7 +54,7 @@ The discovery marker and identity:
 }
 ```
 
-A folder without `hintbook.json` is not a hintbook — resolution and `hint install` validation both key on this file.
+A folder without `hintbook.json` is not a hintbook — resolution and `hint add` validation both key on this file.
 
 ### Instruction files
 
@@ -132,12 +132,12 @@ Names of the form `__name__` are **running instructions** — structural slots t
 
 ## Distributing
 
-A hintbook is just files — distribute it any way `hint install` can fetch it:
+A hintbook is just files — distribute it any way `hint add` can fetch it:
 
 ```bash
-hint install @openhint/hintbook-lawyer                   # npm (use -g for a global install)
-hint install https://github.com/acme/hintbooks-platform   # git → cloned into hintbooks/<repo>
-hint install file://hintbooks/team-conventions            # local folder, validated only
+hint add @openhint/hintbook-lawyer                   # npm (use -g for a global install)
+hint add https://github.com/acme/hintbooks-platform   # git → cloned into hintbooks/<repo>
+hint add file://hintbooks/team-conventions            # local folder, validated only
 ```
 
 For npm distribution, publish the package with `hintbook.json` and the keyword files included (an `keywords/` subfolder is conventional). For git, any repository containing hintbooks works — every `hintbook.json` in the clone is discovered.

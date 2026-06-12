@@ -1,6 +1,6 @@
 # HINT CLI Reference
 
-The `hint` binary is the primary interface to the HINT transpiler. It compiles `.hint` specifications into AI-ready prompts, initializes projects, and installs hintbooks.
+The `hint` binary is the primary interface to the HINT transpiler. It compiles `.hint` specifications into AI-ready prompts, initializes projects, and manages hintbooks.
 
 ---
 
@@ -63,8 +63,8 @@ hint --dry-run 'src/**/*.hint'                 # validate that every spec resolv
 hint config
 ```
 
-1. If no `hint.yml` exists, asks for a project name and description and offers to register the default hintbook (`npm://@openhint/hintbook-software-engineer`), then writes `hint.yml`.
-2. Prints an **AI agent prompt** to stdout that instructs an agent to add the HINT workflow instructions — and each registered hintbook's `__system__` glossary — to `AGENTS.md` and `CLAUDE.md`, creating them if needed and skipping blocks already present.
+1. If no `hint.yml` exists, writes one in the current folder and proceeds. In a terminal it asks for a project name and description and offers to register the default hintbook (`npm://@openhint/hintbook-software-engineer`); when stdin is not a terminal it uses those defaults silently.
+2. Prints an **AI agent prompt** to stdout that instructs an agent to maintain a single `<hint>...</hint>` block in `AGENTS.md` and `CLAUDE.md`. The block wraps the base HINT workflow instructions plus each registered hintbook's `__system__` glossary in `<system_instructions_from_<hintbook-id>>` tags. The agent creates the files if needed, appends the block if missing, and otherwise replaces the existing `<hint>` block wholesale — so updated, added, or removed hintbooks propagate on every run. The prompt states explicitly that these are the only HINT instructions allowed in the files; anything HINT-related outside the block is removed.
 
 The command never edits `AGENTS.md` / `CLAUDE.md` itself. Apply the printed prompt with your agent:
 
@@ -76,16 +76,16 @@ Interactive questions and status messages go to stderr, so the pipe stays clean.
 
 ---
 
-## `hint install <books...>` — install hintbooks
+## `hint add <books...>` — install hintbooks
 
-Fetches each book, validates that it actually contains a hintbook (a `hintbook.json` must be discoverable), and registers it in the `books` array of `hint.yml`:
+Fetches each book, validates that it actually contains a hintbook (a `hintbook.json` must be discoverable), registers it in the `books` array of `hint.yml`, and prints the updated agent prompt to stdout — so one pipe installs the book and refreshes `AGENTS.md` / `CLAUDE.md`:
 
 ```bash
-hint install @openhint/hintbook-software-engineer
-hint install -g @openhint/hintbook-lawyer
-hint install https://github.com/acme/hintbooks-platform.git
-hint install git@github.com:acme/hintbooks-platform.git
-hint install file://hintbooks/team-conventions
+hint add @openhint/hintbook-software-engineer | claude -p
+hint add -g @openhint/hintbook-lawyer
+hint add https://github.com/acme/hintbooks-platform.git
+hint add git@github.com:acme/hintbooks-platform.git
+hint add file://hintbooks/team-conventions
 ```
 
 The source type is detected from the argument:
@@ -96,12 +96,49 @@ The source type is detected from the argument:
 | git URL (`git@…`, `ssh://…`, `git://…`, `http(s)://…`) | cloned into `hintbooks/<repo-name>` at the project root                              | `file://hintbooks/<repo-name>` |
 | anything else                                          | `npm install <name>` in the project (or `npm install --global` with `-g`/`--global`) | `npm://<name>`                 |
 
-A book that installs but contains no `hintbook.json` fails with `No hintbook found` and is not registered. Entries are deduplicated — installing the same book twice is safe.
+A book that installs but contains no `hintbook.json` fails with `No hintbook found` and is not registered. Entries are deduplicated — adding the same book twice is safe.
+
+`npm://` books are resolved through the project's `node_modules` first, then through the global npm root (`npm root -g`) — a book installed manually with `npm install -g` is picked up without re-adding it.
+
+---
+
+## `hint remove <books...>` — unregister hintbooks
+
+Removes each book from the `books` array of `hint.yml` and prints the updated agent prompt to stdout. Nothing is uninstalled — npm packages and cloned folders stay on disk:
+
+```bash
+hint remove @openhint/hintbook-lawyer | claude -p    # npm:// prefix may be omitted
+hint remove npm://@openhint/hintbook-lawyer
+hint remove file://hintbooks/team-conventions
+```
+
+A book that is not registered fails with `Hintbook not registered` and leaves `hint.yml` untouched.
+
+---
+
+## `hint version` — show versions
+
+Prints the CLI version, followed by each hintbook registered in `hint.yml` and its installed version:
+
+```
+@openhint/cli 1.0.1
+npm://@openhint/hintbook-lawyer 1.0.1
+file://hintbooks/team-conventions (version unknown)
+npm://@openhint/hintbook-chef (not installed)
+```
+
+The hintbook version is read from the book's `package.json` (or a `version` field in `hintbook.json`). Outside a HINT project only the CLI version is printed.
+
+---
+
+## `hint help` — show usage
+
+Prints the command overview with usage examples. The same text is available via `hint --help`, and `hint <command> --help` shows the options of a single command.
 
 ---
 
 ## Exit codes and streams
 
-- **stdout** carries exactly one thing per command: the compiled prompt (`hint`), or the agent prompt (`hint config`).
+- **stdout** carries exactly one thing per command: the compiled prompt (`hint`), the agent prompt (`hint config`, `hint add`, `hint remove`), or the version report (`hint version`).
 - **stderr** carries prompts, progress, warnings, and errors.
 - Exit code `0` on success, `1` on any failure (unresolvable specs under `--dry-run`, missing project, failed installs, invalid hintbooks).
