@@ -18,8 +18,6 @@ Examples:
 - Existing files: \`hint docs/intro.md src/utils/*.py src/cli/command/fix.py\`
 - A file to create: \`hint src/cli/command/new_feature.py\`
 - A folder to explore: \`hint src/cli/command\`
-
----
 `;
 
 export const CONFIG_FILE_YML = 'hint.yml';

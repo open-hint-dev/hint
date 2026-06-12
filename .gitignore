@@ -1,9 +1,6 @@
-*.egg-info
 .astro/
 .DS_Store
 .npmrc
-.react-router/
-.ruff_cache/
 .turbo/
 .yarn/cache/
 .yarn/unplugged/

@@ -1,5 +1,7 @@
+import { execFile } from 'node:child_process';
 import * as FsPromises from 'node:fs/promises';
 import * as Path from 'node:path';
+import { promisify } from 'node:util';
 
 import { VFile } from 'vfile';
 import { matter } from 'vfile-matter';
@@ -44,6 +46,7 @@ export type ModeData = {
 };
 
 export type HintbookData = {
+    id?: string;
     name?: string;
     description?: string;
     modes: Record<string, ModeData>;
@@ -80,6 +83,7 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
         if (file === HINTBOOK_FILE_NAME) {
             const hintbookJson = JSON.parse(await FsPromises.readFile(Path.join(hintbookPath, file), 'utf-8'));
 
+            data.id = hintbookJson.id || '';
             data.name = hintbookJson.name || '';
             data.description = hintbookJson.description || '';
 
@@ -151,8 +155,32 @@ async function findHintbookFolders(baseFolderPath: string): Promise<string[]> {
     return hintbookFolders.sort();
 }
 
-export async function resolveHintbookPaths(projectRootPath: string, book: string): Promise<string[]> {
+let npmGlobalRootPromise: Promise<string | null> | undefined;
+
+function findNpmGlobalRoot(): Promise<string | null> {
+    npmGlobalRootPromise ??= promisify(execFile)('npm', ['root', '--global'], { shell: process.platform === 'win32' })
+        .then(({ stdout }) => stdout.trim() || null)
+        .catch(() => null);
+
+    return npmGlobalRootPromise;
+}
+
+async function* hintbookSearchFolders(projectRootPath: string, book: string): AsyncGenerator<string> {
     for (const baseFolderPath of hintbookBaseFolders(projectRootPath, book)) {
+        yield baseFolderPath;
+    }
+
+    if (book.startsWith(URL_NPM_PREFIX)) {
+        const npmGlobalRoot = await findNpmGlobalRoot();
+
+        if (npmGlobalRoot) {
+            yield Path.join(npmGlobalRoot, book.slice(URL_NPM_PREFIX.length));
+        }
+    }
+}
+
+export async function resolveHintbookPaths(projectRootPath: string, book: string): Promise<string[]> {
+    for await (const baseFolderPath of hintbookSearchFolders(projectRootPath, book)) {
         const hintbookPaths = await findHintbookFolders(baseFolderPath);
 
         if (hintbookPaths.length > 0) {
@@ -161,6 +189,33 @@ export async function resolveHintbookPaths(projectRootPath: string, book: string
     }
 
     return [];
+}
+
+async function readVersion(filePath: string): Promise<string | null> {
+    try {
+        const data = JSON.parse(await FsPromises.readFile(filePath, 'utf8'));
+
+        return typeof data.version === 'string' && data.version ? data.version : null;
+    } catch {
+        return null;
+    }
+}
+
+export async function resolveHintbookVersion(projectRootPath: string, book: string): Promise<string | null> {
+    for await (const baseFolderPath of hintbookSearchFolders(projectRootPath, book)) {
+        const hintbookPaths = await findHintbookFolders(baseFolderPath);
+
+        if (hintbookPaths.length === 0) {
+            continue;
+        }
+
+        return (
+            (await readVersion(Path.join(baseFolderPath, 'package.json'))) ??
+            (await readVersion(Path.join(baseFolderPath, HINTBOOK_FILE_NAME)))
+        );
+    }
+
+    return null;
 }
 
 export async function loadHintbooks(projectRootPath: string, books: string[]): Promise<HintbookData[]> {

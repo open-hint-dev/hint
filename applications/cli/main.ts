@@ -1,16 +1,18 @@
 import * as Transpiler from '@openhint/transpiler';
 import { Command } from 'commander';
 
+import { AddCommand } from './commands/add.js';
 import { CompileCommand } from './commands/compile.js';
 import { ConfigCommand } from './commands/config.js';
-import { InstallCommand } from './commands/install.js';
+import { RemoveCommand } from './commands/remove.js';
+import { VersionCommand } from './commands/version.js';
 
 type CompileOptions = {
     mode?: string;
     dryRun: boolean;
 };
 
-type InstallOptions = {
+type AddOptions = {
     global: boolean;
 };
 
@@ -38,13 +40,53 @@ export async function main(): Promise<void> {
         });
 
     program
-        .command('install')
-        .description(`Install hintbooks and register them in ${Transpiler.CONFIG_FILE_YML}.`)
-        .argument('<books...>', 'hintbooks to install: a file:// path, a git repository URL, or an npm package name')
+        .command('add')
+        .description(
+            `Install hintbooks, register them in ${Transpiler.CONFIG_FILE_YML} and print the updated AI agent prompt, ` +
+                `e.g. 'hint add @openhint/hintbook-lawyer | claude -p'.`,
+        )
+        .argument('<books...>', 'hintbooks to add: a file:// path, a git repository URL, or an npm package name')
         .option('-g, --global', 'install npm hintbooks globally', false)
-        .action(async (books: string[], options: InstallOptions) => {
-            await InstallCommand.new(books, options.global).execute();
+        .action(async (books: string[], options: AddOptions) => {
+            await AddCommand.new(books, options.global).execute();
         });
+
+    program
+        .command('remove')
+        .description(
+            `Remove hintbooks from ${Transpiler.CONFIG_FILE_YML} without uninstalling them and print the updated AI agent prompt, ` +
+                `e.g. 'hint remove @openhint/hintbook-lawyer | claude -p'.`,
+        )
+        .argument('<books...>', 'hintbooks to remove, as listed in the books array (the npm:// or file:// prefix may be omitted)')
+        .action(async (books: string[]) => {
+            await RemoveCommand.new(books).execute();
+        });
+
+    program
+        .command('version')
+        .description(`Print the CLI version and the versions of the hintbooks registered in ${Transpiler.CONFIG_FILE_YML}.`)
+        .action(async () => {
+            await VersionCommand.new().execute();
+        });
+
+    program
+        .command('help')
+        .description('Show usage for the hint CLI and its commands.')
+        .action(() => {
+            program.outputHelp();
+        });
+
+    program.addHelpText(
+        'after',
+        `
+Examples:
+  hint config | claude -p                            initialize the project and set up AGENTS.md / CLAUDE.md
+  hint add @openhint/hintbook-lawyer | claude -p     install a hintbook and refresh the agent files
+  hint remove @openhint/hintbook-lawyer | claude -p  unregister a hintbook and refresh the agent files
+  hint src/billing/invoice.ts | claude -p            compile the spec for a file and pipe it to an agent
+  hint --mode review src/billing | claude -p         audit existing code against the spec
+  hint version                                       show CLI and hintbook versions`,
+    );
 
     try {
         await program.parseAsync();
