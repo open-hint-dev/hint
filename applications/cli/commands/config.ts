@@ -18,6 +18,7 @@ const CONFIG_PROMPT_HEADER = `Configure this project's AI agent context files: $
 
 The <${HINT_TAG}>...</${HINT_TAG}> block below is the complete and only set of HINT instructions these files may contain. It is regenerated every time, so hintbook instructions inside it may have been added, updated, or removed since the last run. For each file:
 
+- If CLAUDE.md contains an @AGENTS.md reference, AGENTS.md is already included into CLAUDE.md as is — apply the steps below to AGENTS.md only, and remove any <${HINT_TAG}> block from CLAUDE.md so the instructions are not duplicated.
 - If the file does not exist, create it with exactly the <${HINT_TAG}> block below as its content.
 - If the file exists but contains no <${HINT_TAG}> block, append the block below verbatim, separated from the existing content by a blank line.
 - If the file already contains a <${HINT_TAG}>...</${HINT_TAG}> block, replace that entire block — including the tags — with the block below, even if the contents look similar. Do not merge, keep, or reformat anything from the old block.

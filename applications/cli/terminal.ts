@@ -32,8 +32,6 @@ export function openTerminal(): Terminal {
 
     return {
         ask(question: string): Promise<string> {
-            process.stderr.write(question);
-
             const bufferedLine = bufferedLines.shift();
 
             if (bufferedLine !== undefined) {
@@ -43,6 +41,9 @@ export function openTerminal(): Terminal {
             if (closed) {
                 return Promise.resolve('');
             }
+
+            readline.setPrompt(question);
+            readline.prompt();
 
             return new Promise((resolve) => waiters.push(resolve));
         },
