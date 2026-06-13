@@ -1,0 +1,1088 @@
+# HINT — Human Intent Native Transpiler — Full Documentation
+
+> HINT is a Markdown-native specification language that compiles human intent into deterministic, high-density prompts for AI agents. This file concatenates the complete HINT documentation and both official hintbook references for LLM consumption.
+> Website: https://openhint.dev  ·  Source: https://github.com/open-hint-dev/hint
+
+---
+
+
+
+<!-- ============================================================ -->
+<!-- CORE DOCS — Introduction -->
+<!-- ============================================================ -->
+
+# Human Intent Native Transpiler (HINT)
+
+## What is HINT?
+
+HINT (Human Intent Native Transpiler) is a markdown-native specification language for professionals who work with AI and want predictable results. You declare what must be produced — application architecture and domain models, or the parties and clauses of a contract — in plain human intent, next to the artifacts those declarations govern, and HINT compiles them into a deterministic, high-density prompt payload for AI assistants and autonomous agents (Claude Code, Codex, Cursor, and similar tools).
+
+The premise: AI gives professionals speed, but unstructured prompts trade away control — you ask for one thing and get plausible improvisation around it. HINT keeps both. Your declarations become binding borders; the AI produces the work inside them; gaps and conflicts come back to you as reports instead of silent decisions. Software engineering is the first and most complete vocabulary, but it is one example, not the definition.
+
+The name is deliberate on three levels. As a backronym it expands to **Human Intent Native Transpiler**. Read aloud it is **H**uman **INT**ent — the thing the tool exists to capture. And it is simply the word _hint_: a clue you give to guide someone to the right answer. That last meaning is the model itself — you hint at the result with precise borders, and the AI fills in the work that honors them.
+
+## The architecture: a small core, extensible vocabulary
+
+HINT deliberately has **no built-in keywords**. The transpiler core understands only structure:
+
+- **Files**: a `.hint` file is a companion specification — `src/auth/login.ts.hint` defines `src/auth/login.ts`, `contracts/nda.md.hint` defines `contracts/nda.md`, and a folder's `_.hint` defines context for everything beneath it.
+- **Headings**: every markdown heading is a typed block — `# entity PaymentData {#payment_data}` has a keyword (`entity`), a name (`PaymentData`), an optional stable id (`payment_data`), and a body that runs until the next heading. Heading depth nests blocks into a tree.
+
+What each keyword _means_ — and what prompt text it produces — is defined by **hintbooks**: installable packages of instruction templates. A hintbook maps keywords like `entity`, `flow`, or `bad` to rendered prompt blocks, defines per-mode role wrappers (implement / fix / review), and ships the system glossary that teaches the agent how to read the compiled output.
+
+This split keeps the core honest and the vocabulary open:
+
+- The transpiler never hard-codes what an `entity` is. Swap or extend the hintbook and the same `.hint` files compile into a different contract dialect.
+- Teams can publish their own hintbooks (npm packages, git repositories, or plain folders) with vocabulary tuned to their stack — and the vocabulary does not even have to be about code: [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) drafts legal documents from `party`, `clause`, and `obligation` blocks. HINT serves anyone whose work demands strict structured thinking.
+- Authoring a hintbook requires no programming. Instructions are pure markdown files with `{name}`-style placeholders; the HTML-like tags the official books render are a helpful convention for AI agents, not a requirement. If you can write markdown, you can build and publish the vocabulary for your profession.
+- The official starting point is [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer), a general-purpose software engineering vocabulary.
+
+## Why HINT?
+
+As a professional, you already know exactly what needs to be produced — the engineer knows the architecture, the lawyer knows the deal. The mechanical production is what AI is for; the decisions are what it must never make for you. HINT eliminates the boring parts while keeping you in control of the parts that matter:
+
+- **Zero syntax friction**: a `.hint` file is pure markdown. There is no new syntax to learn, and files are instantly readable by humans and AI alike.
+- **Specs live with the work**: companion files sit next to their targets and travel through the same reviews, branches, and history.
+- **Deterministic compilation**: the same specs and the same hintbook always produce the same prompt. No hidden prompt engineering.
+- **Borders, not vibes**: the compiled prompt tells the AI exactly what exists, what it must contain, what it must do, and what it must never do.
+- **Gaps come back, not guesses**: missing decisions are reported to you instead of being filled with something plausible.
+
+## The toolchain
+
+| Piece                                                                                                 | What it is                                                                        |
+| ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [`@openhint/cli`](../applications/cli/README.md)                                                      | The `hint` binary: compiles specs, configures projects, installs hintbooks.       |
+| [`@openhint/transpiler`](../packages/transpiler/README.md)                                            | The library behind the CLI: find → parse → compile pipeline and hintbook loading. |
+| [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) | The software-engineering vocabulary — building, fixing, and reviewing code.       |
+| [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer)                       | The legal vocabulary — drafting, revising, and auditing documents.                |
+
+## Where to go next
+
+- [Quick Start](02-quick-start.md) — set up a project and compile your first prompt in minutes.
+- [Syntax](03-syntax.md) — the complete structural grammar of `.hint` files.
+- [How It Works](04-how-it-works.md) — the compilation pipeline in detail.
+- [Hintbooks](05-hintbooks.md) — using, authoring, and distributing keyword vocabularies.
+- [CLI Reference](06-cli.md) — every command and flag.
+
+
+<!-- ============================================================ -->
+<!-- CORE DOCS — Quick Start -->
+<!-- ============================================================ -->
+
+# HINT Quick Start Guide
+
+Get up and running with HINT in less than five minutes: initialize a project, install a hintbook, write your first specs, and compile a prompt for your AI agent.
+
+This walkthrough builds software with the [software-engineer hintbook](https://github.com/open-hint-dev/hintbook-software-engineer). The workflow is identical for any other profession — register the [lawyer hintbook](https://github.com/open-hint-dev/hintbook-lawyer) instead and the same steps draft contracts rather than code.
+
+---
+
+## 1. Install the CLI
+
+```bash
+npm install -g @openhint/cli
+```
+
+Or run it ad hoc with `npx @openhint/cli`.
+
+## 2. Initialize the project
+
+From your repository root:
+
+```bash
+hint config
+```
+
+This does two things:
+
+1. **Creates `hint.yml`** (if missing) — it asks for a project name and description, and offers to register the default hintbook. `hint.yml` marks the project root; every path in a compilation is resolved against it.
+2. **Prints an AI agent prompt to stdout** that instructs an agent to add the HINT workflow instructions (and each hintbook's system glossary) to your `AGENTS.md` and `CLAUDE.md`. The command never edits those files itself — pipe the output to your agent to apply it:
+
+```bash
+hint config | claude -p
+```
+
+The resulting `hint.yml` looks like this:
+
+```yaml
+name: my-project
+description: What this project is about
+books:
+    - npm://@openhint/hintbook-software-engineer
+```
+
+## 3. Install a hintbook
+
+If you skipped the default during `hint config`, or want additional vocabularies:
+
+```bash
+hint add @openhint/hintbook-software-engineer       # npm package
+hint add https://github.com/acme/hintbooks-platform  # git: your org's shared platform standards
+hint add file://hintbooks/team-conventions           # in-repo: your team's own vocabulary
+```
+
+Each installed book is fetched, validated (it must contain a `hintbook.json`), and registered in the `books` array of `hint.yml`. See the [CLI Reference](06-cli.md) for details.
+
+## 4. Write the root baseline
+
+A root-level `_.hint` holds the global context every sub-directory and companion file inherits — the stack, the build pipeline, the dependency policy:
+
+```markdown
+A REST API for invoice management.
+
+# lang TypeScript
+
+Node.js 22, ES modules, strict TypeScript. No CommonJS.
+
+# build
+
+- `npm run build` to compile
+- `npm test` to run the vitest suites
+
+# bad GlobalState
+
+Never store request state in module-level variables.
+```
+
+Every heading is `# keyword Name` — the keyword vocabulary (`lang`, `build`, `bad`, …) comes from your installed hintbook.
+
+## 5. Write a companion spec
+
+A `.hint` file next to a source file defines that file. `src/billing/invoice.ts.hint` defines `src/billing/invoice.ts` — whether or not the target exists yet:
+
+```markdown
+Invoice domain model and validation.
+
+# entity Invoice {#invoice}
+
+The persisted invoice record.
+
+## field id
+
+UUID v7, generated at creation.
+
+## field total
+
+Decimal string with two fraction digits. Never use floating point.
+
+# func validateInvoice
+
+Validates an Invoice before persisting.
+
+## arg invoice
+
+The Invoice to validate.
+
+## result
+
+Returns the validated Invoice; throws ValidationError on the first violated rule.
+```
+
+Heading depth nests blocks: the `field` blocks belong to the `entity`, the `arg`/`result` blocks to the `func`.
+
+## 6. Compile
+
+```bash
+hint src/billing/invoice.ts          # one file (companion resolved automatically)
+hint src/billing                     # a folder
+hint 'src/**/*.hint'                 # globs
+```
+
+The compiled prompt goes to stdout: a mode header (the agent's role), your specs rendered through the hintbook's templates — each file wrapped in its folder chain so context inheritance is explicit — and a closing checklist footer. Pipe it straight to an agent:
+
+```bash
+hint src/billing/invoice.ts | claude -p
+```
+
+### Modes
+
+The default mode compiles an **implementation** prompt. Hintbooks can define others — the software-engineer book ships `fix` and `review`:
+
+```bash
+hint --mode fix src/billing/invoice.ts      # repair code that violates the spec
+hint --mode review src/billing/invoice.ts   # audit code against the spec, report findings
+```
+
+### Validating specs
+
+`--dry-run` makes compilation fail loudly on hint files that cannot be resolved instead of silently skipping them:
+
+```bash
+hint --dry-run 'src/**/*.hint'
+```
+
+## Where to go next
+
+- [Syntax](03-syntax.md) — folder hints, ids, includes, and the full structural grammar.
+- [Hintbooks](05-hintbooks.md) — what your keywords compile into, and how to write your own vocabulary.
+
+
+<!-- ============================================================ -->
+<!-- CORE DOCS — Syntax Specification -->
+<!-- ============================================================ -->
+
+# HINT Syntax Specification
+
+HINT files are 100% valid Markdown. They can be read by any standard editor, giving you native syntax highlighting, markdown preview, and code folding out of the box.
+
+The grammar below is everything the transpiler itself defines. Deliberately, **keywords are not part of it** — what `entity` or `flow` means is supplied by the hintbook(s) registered in `hint.yml` (see [Hintbooks](05-hintbooks.md)). The core only understands files, headings, bodies, ids, and includes.
+
+---
+
+## Project layout
+
+A HINT project is marked by a `hint.yml` (or `hint.yaml`) at its root:
+
+```yaml
+name: my-project
+description: What this project is about
+books:
+    - npm://@openhint/hintbook-software-engineer
+    - file://hintbooks/team-conventions
+```
+
+| Field                 | Meaning                                                                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `name`, `description` | Project identity, available to tooling.                                                                                                                            |
+| `books`               | Hintbooks providing the keyword vocabulary. `file://` paths resolve relative to the project root; `npm://` names resolve through local then global `node_modules`. |
+| `ignore`              | Reserved for path exclusion patterns.                                                                                                                              |
+
+Two kinds of specification files live in the tree:
+
+- **Folder hints** — a file named `_.hint` declares context for its folder and everything beneath it. The root `_.hint` is the global baseline.
+- **Companion hints** — `<path>.hint` declares the file at `<path>`: `src/auth/login.ts.hint` defines `src/auth/login.ts`, `contracts/nda.md.hint` defines `contracts/nda.md`. The target file does not need to exist yet; the spec is keyed to the path, not to its presence on disk.
+
+When compiling, every requested hint is wrapped in its full folder chain down from the project root, so folder context visibly encloses file context in the output. Folders without an `_.hint` still appear in the chain — with empty context.
+
+## Path resolution
+
+Arguments passed to `hint` are resolved against the project root:
+
+| You pass            | Compiles                               |
+| ------------------- | -------------------------------------- |
+| `src/login.ts.hint` | that hint file                         |
+| `src/login.ts`      | `src/login.ts.hint` (companion lookup) |
+| `src` (a folder)    | `src/_.hint`                           |
+| `src/**/*.hint`     | every glob match                       |
+
+Paths outside the project root are ignored. Hints that do not exist are skipped silently — or fail the compilation when `--dry-run` is set.
+
+## Heading blocks
+
+Every markdown heading opens a typed block:
+
+```markdown
+# entity PaymentData {#payment_data}
+
+this entity describes the payment data contract
+```
+
+A heading has three parts:
+
+- **Keyword** — the first word (`entity`). Matched against the instruction names and synonyms of your hintbooks; case matters, so write keywords the way the hintbook declares them.
+- **Name** — everything after the first word (`PaymentData`). May be empty.
+- **Id** — an optional `{#stable_id}` suffix. Ids give blocks a stable handle that survives renames; hintbook templates typically render them as `id="..."` attributes so other blocks and agents can reference them.
+
+### Body
+
+A block's body is everything between its heading and the next heading of **any** level — plain markdown: paragraphs, lists, code fences, tables, emphasis. The body is passed to the keyword's template verbatim (re-serialized as markdown).
+
+### Nesting
+
+Heading depth builds the tree. A deeper heading becomes a child of the nearest shallower one:
+
+```markdown
+# entity Invoice ← level 1
+
+## field total ← child of Invoice
+
+### rule precision ← child of total
+
+## field currency ← child of Invoice
+
+# func validateInvoice ← sibling of Invoice
+```
+
+There is no fixed meaning to any level — `##` under an `entity` is whatever your hintbook says it is. Content before the first heading of a file is the file's own preamble context.
+
+## Includes
+
+A paragraph consisting of a single `@include` directive inlines another file at compile time:
+
+```markdown
+@include "../shared/error-policy.md"
+```
+
+- The path resolves relative to the folder of the hint file being compiled.
+- `.md` / `.mdx` files are parsed and merged as markdown — their content becomes part of the surrounding body. Includes may nest.
+- Any other file type is embedded as a fenced code block tagged with its extension — useful for inlining real schemas or configs.
+
+Use includes for shared fragments that multiple specs must state identically.
+
+## Unknown keywords
+
+A heading whose keyword no registered hintbook recognizes is not an error: its body and children pass through to the output as plain markdown. This keeps specs forward-compatible — but prefer declared vocabulary, since only it carries the binding template language the agent is trained on by the system glossary.
+
+## A complete example
+
+```markdown
+Payment module specification.
+
+# entity PaymentData {#payment_data}
+
+this entity describes the payment data contract
+
+## field timestamp {#payment_timestamp}
+
+unix epoch milliseconds
+
+### rule precision
+
+store with millisecond precision
+
+## field amount
+
+decimal string, two fraction digits
+
+# action validatePayment {#validate_payment}
+
+validate the payment fields before persisting
+
+@include "../shared/context.md"
+```
+
+
+<!-- ============================================================ -->
+<!-- CORE DOCS — How It Works (Compilation Pipeline) -->
+<!-- ============================================================ -->
+
+# How HINT Works: The Compilation Pipeline
+
+This document describes the internal mechanics of the HINT engine — how files are found, parsed, and compiled into the final prompt. The pipeline lives in [`@openhint/transpiler`](../packages/transpiler/README.md) and runs in three stages:
+
+```
+paths ──► find ──► HintFileData tree ──► parse ──► HintData tree ──► compile ──► prompt
+                                                            ▲
+                                              hintbooks ────┘
+```
+
+---
+
+## Stage 1 — Find
+
+`findHints(projectRootPath, paths)` turns the requested paths into a tree of hint files.
+
+1. **Normalization.** Each argument is resolved against the project root (arguments escaping the root are dropped). Globs are expanded. A folder becomes its `_.hint`; a source file becomes its `<file>.hint` companion; a path that does not exist is still kept — specs can define files before they are created.
+2. **Sorting.** Paths are ordered folder-first, parents before children, `_.hint` before its siblings — so the tree builds deterministically regardless of argument order. Duplicates are removed.
+3. **Tree building.** Every file is attached to its folder's `_.hint` node, and missing intermediate folder hints are synthesized up to the project root. The result is always rooted at the project's `_.hint`, mirroring how context inherits.
+
+## Stage 2 — Parse
+
+`parseHints(projectRootPath, paths, dryRun)` reads each node of the tree and produces `HintData` — the typed block tree.
+
+**Reading.** Existing files are read; a missing `_.hint` counts as empty (the folder still wraps its children); a missing companion hint is skipped silently, or throws if `dryRun` is set.
+
+**Markdown processing.** Each file's content runs through a remark pipeline: parse → extract `{#id}` heading ids → expand `@include` directives (resolved relative to the hint file's folder).
+
+**Block extraction.** Top-level nodes are walked once with a heading stack:
+
+- A heading becomes a `HintData` with `level` (heading depth), `keyword` (first word), `name` (the rest), `id`, and an empty body. It is pushed as a child of the nearest shallower heading.
+- Non-heading nodes accumulate and flush as the **previous** heading's `body` when the next heading (of any level) or end of file arrives — serialized back to markdown.
+- Content before the first heading becomes the file node's own body.
+
+**Wrapping.** Each file becomes a `HintData` with a *running keyword*: `__file__` for companion hints, `__folder__` for `_.hint` — with `name` set to the target path relative to the project root (the `.hint` extension stripped; the folder path for folder hints; `.` for the root). Parsed headings come first in `children`, followed by recursively parsed child files.
+
+## Stage 3 — Compile
+
+`compileHints(hints, hintbooks, mode)` renders the block tree to the final prompt string.
+
+**Instruction lookup.** For every block, the compiler searches the requested mode's instructions across all hintbooks in order, falling back to the default mode (`compile`). An instruction matches by `name` or by one of its `synonyms`. Running keywords (`__file__`, `__folder__`, `__header__`, `__footer__`) resolve through exactly the same lookup — they are ordinary instructions.
+
+**Rendering.** Children are compiled first and joined with blank lines. Then the block's instruction template is interpolated:
+
+| Placeholder | Value |
+| --- | --- |
+| `{id}` | the block's id |
+| `{name}` | the block's name |
+| `{body}` | the block's body markdown |
+| `{children}` | the compiled children |
+
+Special cases:
+
+- An instruction with `exclude: true` front matter drops the block — and everything beneath it — from the output.
+- A keyword with no instruction passes through: body and compiled children, no wrapper.
+
+**Wrapping.** The compiled roots are joined and framed by the mode's `__header__` and `__footer__` instructions — the role definition and closing checklist that turn rendered specs into an actionable prompt.
+
+## Hintbook resolution
+
+Books listed in `hint.yml` resolve to instruction folders before compilation:
+
+1. The prefix picks the **base directories**: `file://<path>` resolves relative to the project root; `npm://<name>` tries the project's `node_modules/<name>` first, then global installs. A bare path behaves like `file://`.
+2. Within the first base that exists, every directory containing a `hintbook.json` is a hintbook — one book entry may therefore yield several (a package can ship a collection).
+3. Each discovered folder is loaded: `hintbook.json` provides identity, every `*.md` file becomes an instruction, and a `.{mode}.md` suffix assigns it to a mode (no suffix means the default `compile` mode).
+
+See [Hintbooks](05-hintbooks.md) for the authoring guide.
+
+## Determinism
+
+Every stage is deterministic: sorted traversal, stable tree synthesis, ordered hintbook lookup, and pure template interpolation. The same specs, hintbooks, and mode always produce byte-identical output — which makes compiled prompts reviewable and diffable artifacts.
+
+
+<!-- ============================================================ -->
+<!-- CORE DOCS — Hintbooks (Authoring & Distribution) -->
+<!-- ============================================================ -->
+
+# Hintbooks: The Keyword Vocabulary
+
+A **hintbook** is an installable package of instruction templates that gives `.hint` keywords their meaning. The transpiler core has no built-in vocabulary — every keyword you write in a heading is rendered by an instruction from a hintbook registered in `hint.yml`.
+
+Hintbooks are also how HINT adapts to a profession: the same core compiles software specifications or legal documents depending on the vocabulary you register. A hintbook is one profession's (or one team's) answer to the question "what may be declared, and what does the AI owe each declaration?"
+
+This document covers using hintbooks, authoring your own, and distributing them.
+
+---
+
+## Using hintbooks
+
+Register books in the `books` array of `hint.yml` — or let `hint add` do it for you:
+
+```yaml
+books:
+    - npm://@openhint/hintbook-software-engineer
+    - file://hintbooks/team-conventions
+```
+
+- `file://<path>` — a folder, resolved relative to the project root.
+- `npm://<name>` — an npm package, resolved through the project's `node_modules` first, then global installs.
+- A bare path behaves like `file://`.
+
+A book entry points at a **base directory**; every directory inside it containing a `hintbook.json` is loaded as a hintbook. One entry can therefore provide a whole collection.
+
+When several hintbooks define the same keyword, the first one in `books` order wins.
+
+## Anatomy of a hintbook
+
+```
+my-hintbook/
+├── hintbook.json          ← identity: marks this folder as a hintbook
+├── __system__.md          ← tag glossary, injected into AGENTS.md / CLAUDE.md by `hint config`
+├── __header__.md          ← role definition that opens every compiled prompt
+├── __footer__.md          ← closing checklist that ends every compiled prompt
+├── __header__.fix.md      ← header for `--mode fix`
+├── __footer__.fix.md
+├── __file__.md            ← wrapper for companion hint files
+├── __folder__.md          ← wrapper for folder hints (_.hint)
+├── entity.md              ← keyword instruction
+├── flow.md
+└── ...
+```
+
+### hintbook.json
+
+The discovery marker and identity:
+
+```json
+{
+    "id": "my-hintbook",
+    "description": "What this vocabulary is for"
+}
+```
+
+A folder without `hintbook.json` is not a hintbook — resolution and `hint add` validation both key on this file.
+
+### Instruction files
+
+Every `*.md` file is one instruction. The file name is the keyword; the content is the template rendered for blocks using it:
+
+```markdown
+<data_structure name="{name}" id="{id}">
+
+{body}
+
+{children}
+
+</data_structure>
+```
+
+Four placeholders are available — `{id}`, `{name}`, `{body}`, and `{children}` (the block's already-rendered child blocks). Every occurrence is replaced.
+
+**The HTML-like tags are a convention, not a requirement.** An instruction is a pure markdown file, and the compiler does nothing but placeholder replacement — a template can be plain prose just as well:
+
+```markdown
+The section "{name}" must state the following, exactly and completely:
+
+{body}
+
+{children}
+```
+
+The official books wrap output in named tags because explicit delimiters and a glossary work well for AI agents — if you use tags, document them in `__system__.md` so the agent treats them as binding directives rather than decoration. But no part of authoring a hintbook involves code: if you can write a markdown document, you can build the vocabulary for your profession. HINT is for professionals, not just programmers — a lawyer, an analyst, or an editor can author and publish a hintbook without any programming experience.
+
+### Front matter metadata
+
+Instructions accept YAML front matter:
+
+```markdown
+---
+synonyms:
+    - application
+exclude: false
+---
+
+<application_context name="{name}" id="{id}">
+...
+```
+
+| Key        | Effect                                                                                                                          |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `synonyms` | Additional keywords that resolve to this instruction (`# application` → `app.md`).                                              |
+| `exclude`  | When `true`, blocks with this keyword are dropped from the output entirely — children included. Useful for spec-internal notes. |
+
+### Modes
+
+A `.{mode}.md` suffix in the file name assigns an instruction to a mode: `__header__.fix.md` is the `__header__` instruction of the `fix` mode. No suffix means the default mode, `compile`.
+
+At compile time, lookup tries the requested mode first and falls back to the default — so a mode only needs to override what actually differs (typically the header and footer; keyword templates are usually shared).
+
+### Running instructions
+
+Names of the form `__name__` are **running instructions** — structural slots the compiler and tooling fill, resolved through the same lookup as keywords:
+
+| Name         | Role                                                                                                                                                   |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `__header__` | Opens the compiled prompt: the agent's role and operating rules for the mode.                                                                          |
+| `__footer__` | Closes the prompt: verification checklist and report format.                                                                                           |
+| `__file__`   | Template wrapping each companion hint file; `{name}` is the target path, `{body}` the file preamble, `{children}` the rendered blocks.                 |
+| `__folder__` | Same for folder hints; `{name}` is the folder path (`.` for the project root).                                                                         |
+| `__system__` | Not used during compilation — `hint config` emits it for the agent context files (AGENTS.md / CLAUDE.md). Put the tag glossary and reading rules here. |
+
+## Authoring guidelines
+
+- **One concept per keyword.** Small, sharply-defined vocabulary beats a sprawling one — every keyword is something a spec author must remember and an agent must obey.
+- **Make templates binding.** Render into explicit tags with imperative bodies ("implement exactly", "do not rename") and define each tag in `__system__.md` in the same authoritative voice.
+- **Keep `{children}` in every structural template.** Forgetting it silently swallows nested blocks.
+- **Short keywords, generous synonyms.** `dep` with synonyms `deps`, `dependency`, `dependencies` keeps specs natural to write.
+- **Test against real specs.** Compile representative `.hint` files and read the output as if you were the agent.
+
+## Distributing
+
+A hintbook is just files — distribute it any way `hint add` can fetch it:
+
+```bash
+hint add @openhint/hintbook-lawyer                   # npm (use -g for a global install)
+hint add https://github.com/acme/hintbooks-platform   # git → cloned into hintbooks/<repo>
+hint add file://hintbooks/team-conventions            # local folder, validated only
+```
+
+For npm distribution, publish the package with `hintbook.json` and the keyword files included (an `keywords/` subfolder is conventional). For git, any repository containing hintbooks works — every `hintbook.json` in the clone is discovered.
+
+## Reference implementations
+
+- [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) is the official general-purpose vocabulary and the best example to copy from: ~30 keywords across data, behavior, UI, and constraint declarations, three modes, and a complete system glossary.
+- [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) shows the same machinery applied outside software entirely — legal document drafting with `party`, `clause`, `obligation`, and red-line vocabulary. Use it as the template when your domain is not code.
+
+
+<!-- ============================================================ -->
+<!-- CORE DOCS — CLI Reference -->
+<!-- ============================================================ -->
+
+# HINT CLI Reference
+
+The `hint` binary is the primary interface to the HINT transpiler. It compiles `.hint` specifications into AI-ready prompts, initializes projects, and manages hintbooks.
+
+---
+
+## Installation
+
+**Global install** (recommended for daily use):
+
+```bash
+npm install -g @openhint/cli
+hint --help
+```
+
+**Ad hoc** without installing:
+
+```bash
+npx @openhint/cli <paths...>
+```
+
+All commands locate the project root by walking up from the current directory to the nearest `hint.yml` / `hint.yaml`.
+
+---
+
+## `hint <paths...>` — compile
+
+The default command. Compiles the given specs and writes the prompt to **stdout** (all diagnostics go to stderr), so output pipes cleanly into agents and files:
+
+```bash
+hint src/billing/invoice.ts | claude -p
+hint 'src/**/*.hint' > prompt.md
+```
+
+### Path arguments
+
+| You pass            | Compiles                                                                      |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `src/login.ts.hint` | that hint file                                                                |
+| `src/login.ts`      | its companion `src/login.ts.hint` — even if `src/login.ts` does not exist yet |
+| `src`               | the folder's `src/_.hint`                                                     |
+| `'src/**/*.hint'`   | every glob match (quote globs to keep your shell out of it)                   |
+
+Every compiled file is wrapped in its folder-hint chain down from the project root, so inherited context is part of the output.
+
+### Options
+
+| Option          | Effect                                                                                                                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--mode <mode>` | Compile with the given hintbook mode (e.g. `fix`, `review`). Defaults to the implementation mode, `compile`. Instructions missing from the mode fall back to the default mode. |
+| `--dry-run`     | Fail with a non-zero exit on hint files that cannot be resolved, instead of skipping them silently. Use it to validate specs in CI.                                            |
+
+```bash
+hint --mode review src/billing | claude -p     # audit code against the spec
+hint --dry-run 'src/**/*.hint'                 # validate that every spec resolves
+```
+
+---
+
+## `hint config` — initialize the project
+
+```bash
+hint config
+```
+
+1. If no `hint.yml` exists, writes one in the current folder and proceeds. In a terminal it asks for a project name and description and offers to register the default hintbook (`npm://@openhint/hintbook-software-engineer`); when stdin is not a terminal it uses those defaults silently.
+2. Prints an **AI agent prompt** to stdout that instructs an agent to maintain a single `<hint>...</hint>` block in `AGENTS.md` and `CLAUDE.md`. The block wraps the base HINT workflow instructions plus each registered hintbook's `__system__` glossary in `<system_instructions_from_<hintbook-id>>` tags. The agent creates the files if needed, appends the block if missing, and otherwise replaces the existing `<hint>` block wholesale — so updated, added, or removed hintbooks propagate on every run. The prompt states explicitly that these are the only HINT instructions allowed in the files; anything HINT-related outside the block is removed.
+
+The command never edits `AGENTS.md` / `CLAUDE.md` itself. Apply the printed prompt with your agent:
+
+```bash
+hint config | claude -p
+```
+
+Interactive questions and status messages go to stderr, so the pipe stays clean.
+
+---
+
+## `hint add <books...>` — install hintbooks
+
+Fetches each book, validates that it actually contains a hintbook (a `hintbook.json` must be discoverable), registers it in the `books` array of `hint.yml`, and prints the updated agent prompt to stdout — so one pipe installs the book and refreshes `AGENTS.md` / `CLAUDE.md`:
+
+```bash
+hint add @openhint/hintbook-software-engineer | claude -p
+hint add -g @openhint/hintbook-lawyer
+hint add https://github.com/acme/hintbooks-platform.git
+hint add git@github.com:acme/hintbooks-platform.git
+hint add file://hintbooks/team-conventions
+```
+
+The source type is detected from the argument:
+
+| Argument                                               | Action                                                                               | Registered as                  |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------ |
+| `file://<path>`                                        | validated only — nothing is fetched                                                  | `file://<path>`                |
+| git URL (`git@…`, `ssh://…`, `git://…`, `http(s)://…`) | cloned into `hintbooks/<repo-name>` at the project root                              | `file://hintbooks/<repo-name>` |
+| anything else                                          | `npm install <name>` in the project (or `npm install --global` with `-g`/`--global`) | `npm://<name>`                 |
+
+A book that installs but contains no `hintbook.json` fails with `No hintbook found` and is not registered. Entries are deduplicated — adding the same book twice is safe.
+
+`npm://` books are resolved through the project's `node_modules` first, then through the global npm root (`npm root -g`) — a book installed manually with `npm install -g` is picked up without re-adding it.
+
+---
+
+## `hint remove <books...>` — unregister hintbooks
+
+Removes each book from the `books` array of `hint.yml` and prints the updated agent prompt to stdout. Nothing is uninstalled — npm packages and cloned folders stay on disk:
+
+```bash
+hint remove @openhint/hintbook-lawyer | claude -p    # npm:// prefix may be omitted
+hint remove npm://@openhint/hintbook-lawyer
+hint remove file://hintbooks/team-conventions
+```
+
+A book that is not registered fails with `Hintbook not registered` and leaves `hint.yml` untouched.
+
+---
+
+## `hint version` — show versions
+
+Prints the CLI version, followed by each hintbook registered in `hint.yml` and its installed version:
+
+```
+@openhint/cli 1.0.1
+npm://@openhint/hintbook-lawyer 1.0.1
+file://hintbooks/team-conventions (version unknown)
+npm://@openhint/hintbook-chef (not installed)
+```
+
+The hintbook version is read from the book's `package.json` (or a `version` field in `hintbook.json`). Outside a HINT project only the CLI version is printed.
+
+---
+
+## `hint help` — show usage
+
+Prints the command overview with usage examples. The same text is available via `hint --help`, and `hint <command> --help` shows the options of a single command.
+
+---
+
+## Exit codes and streams
+
+- **stdout** carries exactly one thing per command: the compiled prompt (`hint`), the agent prompt (`hint config`, `hint add`, `hint remove`), or the version report (`hint version`).
+- **stderr** carries prompts, progress, warnings, and errors.
+- Exit code `0` on success, `1` on any failure (unresolvable specs under `--dry-run`, missing project, failed installs, invalid hintbooks).
+
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: software-engineer — Keyword Reference -->
+<!-- ============================================================ -->
+
+# Keyword Reference
+
+Every keyword in this hintbook, the tag it compiles into, and how to use it. Write keywords as markdown headings — `# keyword Name {#optional_id}` — at any nesting level; heading depth nests blocks into their parents.
+
+All templates render the block's name and id as attributes and place the body before the compiled children, so nested declarations stay visibly inside their parent's scope.
+
+---
+
+## Project context
+
+| Keyword | Synonyms | Compiles to | Use it for |
+| --- | --- | --- | --- |
+| `app` | `application` | `<application_context>` | The domain, purpose, and overall structure of the application. Informs naming, architecture, and behavioral decisions everywhere. |
+| `lang` | `language` | `<environment_runtime_and_language>` | The language and runtime target. The agent must use only syntax, APIs, and idioms belonging to it. |
+| `build` | | `<compilation_and_testing_pipeline>` | Build and test commands. Generated code must never break these pipelines. |
+| `dep` | `deps`, `dependency`, `dependencies` | `<approved_dependency_whitelist>` | The approved dependency list. The agent is forbidden from installing or importing anything outside it without asking. |
+| `module` | | `<reusable_module_context>` | A reusable module in the codebase: responsibilities, exports, consumers. The agent must reuse it, not duplicate it. |
+| `lib` | `library` | `<reusable_library_context>` | A shared library (internal or external): API surface, version constraints, usage patterns. |
+| `namespace` | | `<reusable_namespace_context>` | The namespace/package/module path all code in scope must be emitted under. |
+| `res` | `resource`, `resources` | `<static_asset>` | A data asset definition — structure and access patterns. |
+| `read` | | `<read_it>` | Files the agent must open and read before writing code that touches them — mirroring their formatting, exports, and error handling. |
+
+## Data
+
+| Keyword | Synonyms | Compiles to | Use it for |
+| --- | --- | --- | --- |
+| `entity` | | `<data_structure>` | A data model with an exact schema. No renamed fields, changed types, extra or missing fields. |
+| `field` | | `<field>` | One named property of an entity or form: type, optionality, validation. Implement exactly as declared. |
+| `table` | | `<table>` | A tabular structure or UI table: columns, row shape, persistence/display behavior. |
+| `column` | | `<table_column>` | One column: name, type, label, constraints. |
+| `row` | | `<table_row>` | The shape and content of a single row. |
+
+## Behavior
+
+| Keyword | Synonyms | Compiles to | Use it for |
+| --- | --- | --- | --- |
+| `func` | `function` | `<function_contract>` | A binding function contract: arguments, return, errors, and logic flow are all mandatory. |
+| `arg` | `argument` | `<argument>` | One input: name, type, constraints, defaults — honored exactly. |
+| `result` | `return` | `<return>` | The output: declared type and shape exactly, on every code path. |
+| `flow` | | `<logic_flow>` | A step-by-step logical sequence the implementation must follow without skipping validations. |
+| `action` | | `<reusable_automation_script>` | A macro behavior: when the described condition is met (or the action is referenced by name), execute its steps exactly. |
+| `error` | | `<error>` | Exact error types under exact conditions — never substituted, wrapped, or renamed; each one backed by a regression test. |
+
+## Constraints
+
+| Keyword | Synonyms | Compiles to | Use it for |
+| --- | --- | --- | --- |
+| `rule` | `rules` | `<critical_system_mandates>` | Non-negotiable system-level constraints every function, data access, and error path must satisfy. |
+| `good` | | `<enforced_patterns>` | Required patterns and practices, applied without exception or substitution. |
+| `bad` | | `<prohibited_anti_patterns>` | Unconditional prohibitions — real past failures the agent must never reintroduce, even if examples seem to suggest them. |
+| `test` | | `<verification_and_unit_test_criteria>` | Test scenarios that must all appear in the test output: edge cases, mock shapes, assertions. |
+| `example` | | `<few_shot_example>` | A demonstration of the required pattern — structure, naming, and style to replicate exactly. |
+
+## User interface
+
+| Keyword | Synonyms | Compiles to | Use it for |
+| --- | --- | --- | --- |
+| `ui` | | `<user_interface_surface>` | A UI surface built exactly as specified — only the declared elements, all of the declared elements. |
+| `form` | | `<user_interface_form>` | A form: every field, label, validation rule, and submission behavior as described. |
+| `block` | | `<user_interface_block>` | A named reusable component or layout section (card, panel, sidebar). |
+| `image` | | `<user_interface_image>` | An image element: exact source, alt text, dimensions, display properties. |
+
+## Spec-internal
+
+| Keyword | Synonyms | Compiles to | Use it for |
+| --- | --- | --- | --- |
+| `notes` | | *(nothing — excluded)* | Author-facing notes that must never reach the compiled prompt. The block and everything nested under it are dropped. |
+
+---
+
+## Choosing keywords
+
+- **Reach for the most specific keyword.** `field` inside an `entity` beats a bullet list in the entity body — the agent gets a named, binding block it cannot gloss over.
+- **Give ids to anything referenced elsewhere.** `# entity PaymentData {#payment_data}` keeps a stable handle through renames.
+- **State prohibitions with `bad`, not prose.** Its template adds the strongest enforcement language in the book.
+- **Unknown keywords don't fail** — the transpiler passes their bodies through as plain markdown — but only declared keywords carry the binding tag language defined in the system glossary.
+
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: software-engineer — Modes -->
+<!-- ============================================================ -->
+
+# Modes
+
+A mode selects the role wrapper around the compiled specification — who the agent is and what "done" means. The keyword templates are shared across modes; what changes is the `__header__` that opens the prompt and the `__footer__` that closes it.
+
+Select a mode with the CLI:
+
+```bash
+hint <paths>                  # compile (default)
+hint --mode fix <paths>
+hint --mode review <paths>
+```
+
+Any instruction missing from a mode falls back to the default mode, so each mode only defines what differs.
+
+---
+
+## `compile` — implement (default)
+
+The agent is a **senior software engineer implementing a project from a binding specification**.
+
+- Read the entire specification before writing code; implement in dependency order.
+- Implement exactly what is specified; fill silence with codebase conventions, never invented features.
+- Reuse declared modules and libraries instead of duplicating them.
+- Production-quality output only — no placeholders, stubs, or TODOs.
+- Conflicts between blocks: the more specific block wins, and the conflict must be reported.
+
+The footer is a completion checklist: every block implemented, no prohibited patterns, exact names and types, build and tests passing — followed by a summary that maps the code back to the specification blocks it satisfies.
+
+## `fix` — repair
+
+The agent is a **senior software engineer fixing defects in an existing implementation**, anchored on one principle: _where the code and the specification disagree, the code is wrong_.
+
+- Diagnose first: reproduce the defect, find the root cause, identify the violated specification block.
+- Make the smallest change that restores conformance — no drive-by refactoring.
+- Preserve behavior that already conforms.
+- If the specification itself turns out to be the defect, stop and report the contradiction.
+
+The footer demands a regression test that fails without the fix, and a report of root cause → violated block → exact change → verification.
+
+## `review` — audit
+
+The agent is a **senior software engineer reviewing an implementation against its binding specification** — it produces findings, never patches.
+
+- Walk the specification block by block and check every declaration against the code.
+- Hunt declared anti-patterns explicitly; judge by the spec, not personal taste.
+- Confirm every finding in the actual source before reporting it.
+
+The footer defines the report format: findings ordered by severity (`violation` / `gap` / `risk`) with file ranges, the related specification block, and the minimal correcting change — closed by an explicit conforms / does-not-conform verdict.
+
+---
+
+## Running keywords
+
+Beyond headers and footers, the book defines the structural templates used in every mode:
+
+| Instruction  | Renders                                                                                                                                                         |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `__file__`   | `<file_context path="...">` around each companion hint file — `path` is the target file (e.g. `src/login.ts`).                                                  |
+| `__folder__` | `<folder_context path="...">` around each folder hint — `path` is the folder (`.` for the project root). Folder context visibly encloses everything beneath it. |
+| `__system__` | The tag glossary. Not part of compiled prompts — `hint config` emits it for `AGENTS.md` / `CLAUDE.md`, teaching agents that every tag is a binding directive.   |
+
+## Adding a mode
+
+Create `__header__.<mode>.md` and `__footer__.<mode>.md` in `keywords/` — the file-name suffix is the mode name. Override individual keywords per mode the same way (`entity.review.md`) when a mode needs different rendering; otherwise the default-mode templates apply.
+
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: lawyer — Keyword Reference -->
+<!-- ============================================================ -->
+
+# Keyword Reference
+
+Every keyword in this hintbook, the tag it compiles into, and how to use it. Write keywords as markdown headings — `# keyword Name {#optional_id}` — at any nesting level; heading depth nests blocks into their parents (an `obligation` under a `clause`, a `deadline` under an `obligation`).
+
+---
+
+## Matter context
+
+| Keyword | Synonyms | Compiles to | Use it for |
+| --- | --- | --- | --- |
+| `matter` | `case`, `engagement` | `<matter_overview>` | The matter itself: parties' goals, deal background, scope of engagement. Informs every drafting decision. |
+| `jurisdiction` | `law` | `<governing_law_and_jurisdiction>` | Governing law and forum. Drafting follows its conventions and mandatory rules; unenforceable requests get flagged. |
+| `party` | `parties` | `<party>` | A party: exact legal name, role, capacity — used consistently, never varied. |
+| `definition` | `term`, `terms`, `definitions` | `<defined_term>` | A defined term: defined once, capitalized as defined, no synonyms for the concept. |
+| `recital` | `whereas`, `background` | `<recital>` | Background for the recitals — context and intent, never operative obligations. |
+| `fact` | `facts` | `<established_fact>` | A fact of the matter: relied on as stated, never contradicted or embellished. |
+| `read` | | `<read_it>` | Documents the assistant must open and read before drafting anything that relies on them. |
+| `precedent` | `template`, `model` | `<drafting_precedent>` | A model document or fragment whose structure, numbering, and style must be replicated. |
+| `style` | `tone`, `voice` | `<drafting_style>` | Style and tone requirements for all drafted text. |
+
+## Document structure
+
+| Keyword | Synonyms | Compiles to | Use it for |
+| --- | --- | --- | --- |
+| `clause` | `provision`, `section`, `article` | `<clause>` | A contractual provision drafted exactly as specified — scope, carve-outs, cross-references. |
+| `obligation` | `obligations`, `duty`, `covenant` | `<binding_obligation>` | What a party must do: clear mandatory language, unambiguous who/what/when. |
+| `prohibition` | `prohibitions`, `restriction`, `restrictions` | `<prohibited_conduct>` | What a party must not do: clear prohibitory language ("shall not"), unambiguous who is bound and what is prohibited. |
+| `right` | `rights`, `entitlement` | `<granted_right>` | A right granted: holder, scope, conditions, duration — neither broadened nor narrowed. |
+| `condition` | `conditions` | `<condition>` | A condition precedent or subsequent: trigger, effect, consequence of failure. |
+| `exception` | `carveout`, `carve-out`, `proviso`, `unless`, `notwithstanding` | `<exception>` | A narrow carve-out to the enclosing obligation, prohibition, right, or clause. Applies exactly as stated — never swallows the rule it qualifies. |
+| `breach` | `violation`, `default` | `<breach>` | What constitutes breach of the enclosing provision. Nest a `remedy` inside to declare the consequence. |
+| `source` | `basis`, `statute`, `regulation` | `<legal_basis>` | The law or rule the enclosing provision exists to satisfy. Conflicts between spec and source get flagged, never silently resolved. |
+| `representation` | `warranty`, `warranties` | `<representation_and_warranty>` | A rep or warranty with its knowledge/materiality qualifiers exactly as declared. |
+| `remedy` | `remedies` | `<remedy>` | Remedies for the described breach — none added, none waived. |
+| `indemnity` | `indemnification` | `<indemnification>` | Who indemnifies whom, covered losses, exclusions, procedure. |
+| `liability` | `limitation` | `<liability_allocation>` | Caps, exclusions, carve-outs — declared amounts only. |
+| `termination` | | `<termination_provision>` | Grounds, notice, and effects of termination. |
+| `payment` | `fee`, `fees`, `consideration` | `<payment_terms>` | Amounts, currency, schedule, late-payment consequences. Missing figures are gaps, not blanks to fill. |
+| `deadline` | `period`, `periods`, `timing` | `<time_provision>` | Deadlines and periods: exact durations, triggers, business vs calendar days. |
+| `notice` | `notices` | `<notice_requirements>` | How notices are validly given: addressees, channels, deemed receipt. |
+| `dispute` | `arbitration` | `<dispute_resolution>` | Forum and process: courts or arbitration, seat, rules, language. |
+| `exhibit` | `schedule`, `annex`, `appendix`, `attachment` | `<exhibit>` | An attachment, referenced in the body under its declared designation. |
+| `signature` | `execution` | `<execution_block>` | Execution requirements: signatories, capacity, witnesses, notarization. |
+
+## Litigation & argument
+
+| Keyword | Synonyms | Compiles to | Use it for |
+| --- | --- | --- | --- |
+| `claim` | `claims`, `count` | `<claim>` | A cause of action: its elements and supporting facts as declared, and only those. |
+| `argument` | `arguments` | `<legal_argument>` | An argument developed issue → rule → application → conclusion from the declared body. |
+| `authority` | `citation`, `citations`, `caselaw` | `<legal_authority>` | Authorities to cite — precisely, only for the stated point. Unverifiable citations are reported, never invented. |
+
+## Positions & constraints
+
+| Keyword | Synonyms | Compiles to | Use it for |
+| --- | --- | --- | --- |
+| `redline` | `redlines`, `rule`, `rules` | `<non_negotiable_position>` | Client red lines, honored without exception in every provision. The template carries explicit never-trade-away language. |
+| `never` | `forbidden`, `banned` | `<strict_prohibition>` | Content that must never appear in or be permitted by the document — enforced with the strongest language in the book. |
+| `fallback` | `fallbacks`, `alternative` | `<fallback_position>` | An ordered negotiation fallback to the enclosing position. Conceded in declared order, never past the last one, never across a red line. |
+| `standard` | `standards`, `boilerplate` | `<required_drafting_standards>` | Required boilerplate and drafting standards, applied without substitution. |
+| `risk` | `risks` | `<risk_to_mitigate>` | A known risk the document must address — the report must say which provision mitigates it. |
+| `checklist` | `verification` | `<verification_checklist>` | Items that must each hold true in the final document, verified explicitly. |
+
+## Drafting discipline
+
+Cross-cutting guardrails that keep the assistant inside strict borders:
+
+| Keyword | Synonyms | Compiles to | Use it for |
+| --- | --- | --- | --- |
+| `example` | `examples`, `sample` | `<drafting_example>` | A worked example of the expected output — form to match, not substance to copy. |
+| `good` | `prefer`, `preferred` | `<enforced_drafting_patterns>` | Mandatory drafting patterns, applied consistently in every provision. |
+| `bad` | `avoid` | `<prohibited_drafting_patterns>` | Drafting patterns that must never be used — absolute, even where a precedent uses them. |
+| `action` | `procedure`, `procedures` | `<reusable_procedure>` | A step-by-step procedure executed exactly as written when invoked — conflict checks, defined-term sweeps, filing routines. |
+| `res` | `resource`, `resources` | `<static_asset>` | Material used verbatim — letterhead, riders, standard schedules. Never retyped, paraphrased, or "improved". |
+
+## Spec-internal
+
+| Keyword | Synonyms | Compiles to | Use it for |
+| --- | --- | --- | --- |
+| `notes` | | *(nothing — excluded)* | Author-facing notes — open questions for the client, reminders — that must never reach the compiled prompt. |
+
+---
+
+## Nesting patterns
+
+The whole anatomy of a legal norm is expressed by nesting — no new syntax, just heading depth:
+
+```markdown
+# clause NonCompete
+
+## prohibition Restraint
+
+The Employee shall not engage in any Competing Business.
+
+### condition Scope
+
+Applies within the Territory during the Restricted Period.
+
+### exception ExistingHoldings
+
+Passive holdings of less than 3% in listed companies.
+
+### breach
+
+Any breach of the Restraint, directly or through affiliates.
+
+#### remedy
+
+Injunctive relief without proof of damages.
+
+### source
+
+Enforceability limits on restraints of trade under the governing law.
+```
+
+| Pattern | Meaning |
+| --- | --- |
+| `condition` under a provision | when the provision applies — its trigger. |
+| `exception` under a provision | a carve-out — applies exactly as stated, never swallows the rule. |
+| `breach` → `remedy` chain | what breaks the provision, and what follows when it breaks. |
+| `source` under a provision | why the provision exists — the law it must satisfy; conflicts get flagged. |
+| `fallback` under a position | the negotiation order — concede in sequence, never past the last fallback. |
+
+## Choosing keywords
+
+- **Declare terms before you use them.** A `definition` block per defined term gives the assistant something it can enforce mechanically — consistent capitalization, no synonyms.
+- **Name the bound party.** Every `obligation`, `prohibition`, and `right` should say which declared `party` performs, refrains, or holds it — a deontic block with no identifiable bearer is reported as a gap.
+- **Duties not to act go in `prohibition`; banned document content goes in `never`; client red lines go in `redline`.** All three carry explicit enforcement language; prose buried in a clause body does not.
+- **Figures belong in `payment` and `deadline` blocks.** The glossary forbids inventing amounts and dates — but only declared blocks make a missing figure visibly a gap.
+- **Use `authority` for anything cited, `source` for anything complied with.** `authority` is what the document argues from; `source` is what a provision answers to. Both are anti-hallucination guards: cite precisely or report the gap.
+- **Unknown keywords don't fail** — their bodies pass through as plain markdown — but only declared vocabulary carries the binding tag language defined in the system glossary.
+
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: lawyer — Modes -->
+<!-- ============================================================ -->
+
+# Modes
+
+A mode selects the role wrapper around the compiled specification — who the assistant is and what "done" means. The keyword templates are shared across modes; what changes is the `__header__` that opens the prompt and the `__footer__` that closes it.
+
+```bash
+hint <paths>                  # compile (default) — draft
+hint --mode fix <paths>       # revise
+hint --mode review <paths>    # audit
+```
+
+Any instruction missing from a mode falls back to the default mode, so each mode only defines what differs.
+
+---
+
+## `compile` — draft (default)
+
+The assistant is a **senior attorney drafting a legal document from a binding specification**.
+
+- Read the whole specification first: parties, defined terms, governing law, red lines.
+- Draft exactly what is specified; fill silence with the conventions of the declared governing law and document type — never with invented rights, obligations, or qualifiers.
+- Total defined-term discipline; no invented facts, names, amounts, dates, or citations — gaps are reported, not filled.
+- Complete documents only: no bracketed stubs unless the spec declares them.
+- Conflicts between blocks: the more specific block wins, and the conflict is reported.
+
+The footer is a verification checklist — every block reflected, defined terms consistent, figures exact, prohibitions absent, cross-references resolving — followed by a report mapping document sections to specification blocks, listing gaps with their risk, and noting that the draft requires review by licensed counsel.
+
+## `fix` — revise
+
+The assistant is a **senior attorney revising an existing document against the specification**, anchored on one principle: _where the document and the specification disagree, the document is wrong_.
+
+- Diagnose each deviation and its violated block before proposing language.
+- Smallest conforming revision; structure, numbering, defined terms, and style preserved.
+- Conforming provisions are never broken; gaps are never papered over with invented content.
+- A defective specification — unlawful, contradictory, unenforceable — stops the revision and gets reported.
+
+The footer requires each revision reported as: violated block → original language → revised language → rationale, plus confirmation that nothing else changed.
+
+## `review` — audit
+
+The assistant is a **senior attorney reviewing a document against the specification** — findings, never redlines.
+
+- Walks the specification block by block; quotes the document's exact language in every finding.
+- Hunts prohibited content and red-line violations explicitly.
+- Judges against the spec and the mandatory rules of the declared governing law — not drafting taste.
+
+The footer defines the report: findings ordered by severity (`violation` / `gap` / `risk`) with document section, quoted language, related block, and minimal correcting language — closed by an explicit conforms / does-not-conform verdict.
+
+---
+
+## Running instructions
+
+| Instruction  | Renders                                                                                                                                                                    |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `__file__`   | `<document_context path="...">` around each document spec — `path` is the target document (e.g. `contracts/nda.md`).                                                       |
+| `__folder__` | `<matter_context path="...">` around each folder — `path` is the folder (`.` for the matter root). Matter context visibly encloses every document beneath it.              |
+| `__system__` | The tag glossary. Not part of compiled prompts — `hint config` emits it for `AGENTS.md` / `CLAUDE.md`, teaching assistants that every tag is a binding drafting directive. |
+
+## Adding a mode
+
+Create `__header__.<mode>.md` and `__footer__.<mode>.md` in `keywords/` — the file-name suffix is the mode name (e.g. `__header__.negotiate.md` for a `--mode negotiate` that drafts counter-positions). Override individual keywords per mode the same way when one needs different rendering; otherwise the default-mode templates apply.

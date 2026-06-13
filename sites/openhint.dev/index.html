@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-host>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HINT — Human Intent Native Transpiler</title>
+<meta name="description" content="HINT is a Markdown-native specification language that compiles human intent into deterministic, high-density prompts for AI agents. Borders, not vibes." />
+<link rel="stylesheet" href="styles.css" />
+<style>
+/* ---------- Landing-specific ---------- */
+.hero { padding-top: clamp(48px, 6vw, 88px); padding-bottom: clamp(56px, 7vw, 96px); position: relative; overflow: hidden; }
+.hero__grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.05fr); gap: clamp(36px, 5vw, 80px); align-items: center; }
+.hero__kicker { margin-bottom: 26px; }
+.hero h1 { margin-bottom: 24px; }
+.hero h1 .em { color: var(--accent); }
+.hero .lede { max-width: 40ch; margin-bottom: 32px; }
+.hero__cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 26px; }
+.install {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: var(--font-mono); font-size: 0.86rem; color: var(--on-surface);
+  background: var(--surface); border-radius: 6px; padding: 11px 14px; border: 1px solid rgba(255,255,255,0.08);
+}
+.install .pr { color: var(--accent-bright); }
+.install button { margin-left: 4px; color: var(--on-surface-mut); font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; transition: color .18s; }
+.install button:hover { color: var(--on-surface); }
+.hero__note { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3); letter-spacing: 0.01em; }
+
+/* demo */
+.demo__switch { display: inline-flex; gap: 4px; padding: 4px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 100px; margin-bottom: 16px; flex-wrap: wrap; }
+.demo__switch button {
+  font-family: var(--font-mono); font-size: 0.78rem; font-weight: 500;
+  padding: 7px 14px; border-radius: 100px; color: var(--ink-3); display: inline-flex; align-items: center; gap: 7px;
+  transition: all .18s;
+}
+.demo__switch button.is-active { background: var(--ink); color: var(--paper); }
+.demo__switch button:not(.is-active):not(:disabled):hover { color: var(--ink); }
+.demo__switch button:disabled { opacity: 0.55; cursor: not-allowed; }
+.demo__switch .dot-ok { background: currentColor; opacity: 0.8; }
+.demo__stack { display: grid; gap: 0; position: relative; }
+.demo__connector { display: flex; align-items: center; gap: 12px; padding: 13px 4px; }
+.demo__connector .ln { flex: 1; height: 1px; background: var(--line); }
+.demo__connector .chip {
+  font-family: var(--font-mono); font-size: 0.74rem; color: var(--accent); display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 12px; border: 1px solid var(--accent-line); border-radius: 100px; background: var(--accent-soft); white-space: nowrap;
+}
+.demo__connector .chip svg { width: 13px; height: 13px; }
+[data-prof-panel][hidden] { display: none; }
+.swap-in { animation: swapIn .42s cubic-bezier(.2,.7,.2,1); }
+@keyframes swapIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.demo .code__body { font-size: 0.76rem; line-height: 1.65; }
+
+/* agents strip */
+.agents { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; padding-block: 22px; }
+.agents span { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3); letter-spacing: 0.04em; }
+.agents b { color: var(--ink-2); font-weight: 600; }
+
+/* value cards */
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.feat__ico { width: 38px; height: 38px; color: var(--accent); margin-bottom: 18px; }
+.feat h3 { margin-bottom: 9px; }
+.feat p { color: var(--ink-2); font-size: 0.96rem; }
+
+/* steps */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; counter-reset: s; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); }
+.step { padding: 32px 30px; border-right: 1px solid var(--line); position: relative; }
+.step:last-child { border-right: none; }
+.step__n { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); letter-spacing: 0.1em; margin-bottom: 16px; }
+.step h3 { font-size: 1.18rem; margin-bottom: 8px; }
+.step p { color: var(--ink-2); font-size: 0.92rem; }
+.step code.inl { margin-top: 12px; display: inline-block; }
+
+/* profession grid */
+.profgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.proftile {
+  border: 1px solid var(--line); border-radius: 8px; padding: 22px; background: var(--paper);
+  display: flex; flex-direction: column; gap: 14px; min-height: 158px;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+}
+.proftile--live { cursor: pointer; }
+.proftile--live:hover { border-color: var(--ink); transform: translateY(-3px); box-shadow: 0 16px 36px -24px rgba(16,18,24,0.35); }
+.proftile__ico { width: 30px; height: 30px; color: var(--ink); }
+.proftile--soon { background: transparent; border-style: dashed; }
+.proftile--soon .proftile__ico { color: var(--ink-3); }
+.proftile h4 { font-size: 1.05rem; }
+.proftile p { font-size: 0.85rem; color: var(--ink-3); margin-top: -6px; }
+.proftile__go { margin-top: auto; font-family: var(--font-mono); font-size: 0.76rem; color: var(--accent); display: inline-flex; align-items: center; gap: 6px; }
+.proftile__soon { margin-top: auto; font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-3); letter-spacing: 0.04em; }
+
+/* coming-soon grid */
+.soongrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.soontile { border: 1px solid var(--line); border-style: dashed; border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 5px; min-height: 96px; background: transparent; transition: border-color .2s, transform .2s; }
+.soontile:hover { border-color: var(--ink-3); transform: translateY(-2px); }
+.soontile h4 { font-size: 0.98rem; letter-spacing: -0.01em; }
+.soontile p { font-size: 0.79rem; color: var(--ink-3); line-height: 1.4; }
+.soontile__tag { margin-top: auto; font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); padding-top: 8px; }
+.soontile--author { border-style: solid; background: var(--accent-soft); border-color: var(--accent-line); }
+.soontile--author h4, .soontile--author .soontile__tag, .soontile--author p { color: var(--accent); }
+.soontile--author p { color: var(--ink-2); }
+
+/* intent layer band */
+.intentlayer { margin: 44px 0; padding: clamp(26px, 3vw, 40px); border: 1px solid var(--line); border-radius: 12px; background: var(--paper-2); display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(24px, 4vw, 56px); align-items: center; }
+.intentlayer h3 { font-size: clamp(1.4rem, 2.2vw, 1.9rem); margin-bottom: 12px; }
+.intentlayer p { color: var(--ink-2); font-size: 0.96rem; }
+.intentlayer p b { color: var(--ink); }
+.artifacts { display: flex; flex-wrap: wrap; gap: 8px; }
+.artifact { font-family: var(--font-mono); font-size: 0.76rem; color: var(--ink-2); padding: 6px 12px; border: 1px solid var(--line); border-radius: 100px; background: var(--paper); }
+.artifact--strong { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+/* agent dialogue callout */
+.callout { display: flex; gap: 18px; align-items: flex-start; margin-top: 24px; padding: 24px 26px; border: 1px solid var(--accent-line); background: var(--accent-soft); border-radius: 12px; }
+.callout > svg { width: 26px; height: 26px; color: var(--accent); flex: none; margin-top: 2px; }
+.callout h4 { font-size: 1.14rem; margin-bottom: 6px; }
+.callout p { color: var(--ink-2); font-size: 0.97rem; }
+
+/* principles dark band */
+.band { background: var(--surface); color: var(--on-surface); }
+.band .eyebrow { color: var(--accent-bright); }
+.band .eyebrow::before { background: var(--accent-bright); }
+.band h2 { color: var(--on-surface); }
+.principles { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); border-radius: 10px; overflow: hidden; }
+.principle { background: var(--surface); padding: 34px 32px; }
+.principle__k { font-family: var(--font-mono); font-size: 0.74rem; color: var(--accent-bright); letter-spacing: 0.08em; margin-bottom: 14px; text-transform: uppercase; }
+.principle h3 { color: var(--on-surface); font-size: 1.4rem; margin-bottom: 10px; }
+.principle p { color: var(--on-surface-mut); font-size: 0.96rem; }
+
+/* compare */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.vocab { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.vocab__head { padding: 18px 22px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); }
+.vocab__head h4 { font-size: 1.05rem; }
+.vocab__head .pill { margin-left: auto; }
+.vocab__ico { width: 26px; height: 26px; color: var(--accent); }
+.vocab__body { padding: 20px 22px; display: flex; flex-wrap: wrap; gap: 7px; }
+.vocab__body .kw { background: var(--paper-2); color: var(--accent); border-color: var(--accent-line); }
+.vocab__foot { padding: 0 22px 20px; font-size: 0.88rem; color: var(--ink-2); }
+
+/* cta band */
+.cta-final { text-align: center; }
+.cta-final h2 { margin-bottom: 18px; }
+.cta-final .lede { max-width: 52ch; margin: 0 auto 30px; }
+.cta-final__btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* quickstart */
+.qs { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.qsstep { display: flex; flex-direction: column; gap: 14px; }
+.qsstep__h { display: flex; align-items: baseline; gap: 12px; }
+.qsstep__n { font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent); }
+.qsstep h3 { font-size: 1.12rem; }
+.qsstep p { color: var(--ink-2); font-size: 0.92rem; }
+
+/* mobile menu */
+.nav__menu-btn { display: none; }
+.mobile-menu { display: none; }
+@media (max-width: 960px) {
+  .hero__grid { grid-template-columns: 1fr; gap: 40px; }
+  .hero .lede { max-width: none; }
+  .grid-3, .steps { grid-template-columns: 1fr; }
+  .step { border-right: none; border-bottom: 1px solid var(--line); }
+  .step:last-child { border-bottom: none; }
+  .profgrid { grid-template-columns: 1fr 1fr; }
+  .soongrid { grid-template-columns: 1fr 1fr; }
+  .intentlayer { grid-template-columns: 1fr; }
+  .principles, .compare, .qs, .grid-2 { grid-template-columns: 1fr; }
+  .nav__menu-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; color: var(--ink); margin-left: auto; border: 1px solid var(--line); border-radius: 6px; }
+  .mobile-menu { display: block; position: fixed; inset: 64px 0 0; background: var(--paper); z-index: 49; padding: 28px 24px; transform: translateY(-12px); opacity: 0; pointer-events: none; transition: opacity .22s, transform .22s; }
+  .mobile-menu.open { opacity: 1; transform: none; pointer-events: auto; }
+  .mobile-menu a { display: block; font-family: var(--font-display); font-size: 1.5rem; padding: 14px 0; border-bottom: 1px solid var(--line); }
+}
+@media (max-width: 520px) { .profgrid, .soongrid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="wrap nav__inner">
+    <a class="logo" href="index.html" aria-label="hint — openhint.dev home">
+      <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
+    </a>
+    <div class="nav__links">
+      <a class="nav__link" href="index.html#how">How it works</a>
+      <a class="nav__link" href="index.html#professions">Professions</a>
+      <a class="nav__link" href="for-software-engineers.html">For Engineers</a>
+      <a class="nav__link" href="for-lawyers.html">For Lawyers</a>
+      <a class="nav__link" href="index.html#quickstart">Quick start</a>
+    </div>
+    <div class="nav__cta">
+      <a class="nav__github" href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.7c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
+        <span>GitHub</span>
+      </a>
+      <a class="btn btn--primary" href="index.html#quickstart">Get started</a>
+    </div>
+    <button class="nav__menu-btn" aria-label="Menu" aria-expanded="false">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 5h16M2 10h16M2 15h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</nav>
+<div class="mobile-menu">
+  <a href="index.html#how">How it works</a>
+  <a href="index.html#professions">Professions</a>
+  <a href="for-software-engineers.html">For Engineers</a>
+  <a href="for-lawyers.html">For Lawyers</a>
+  <a href="index.html#quickstart">Quick start</a>
+  <a href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">GitHub ↗</a>
+</div>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="wrap hero__grid">
+    <div class="hero__text">
+      <div class="eyebrow hero__kicker">Human · Intent · Native · Transpiler</div>
+      <h1 class="display">You hint at the result.<br />AI honors the <span class="em">borders</span>.</h1>
+      <p class="lede">HINT is a Markdown-native specification language. Declare what must be produced — in plain human intent, right next to the work — and HINT compiles it into a deterministic, high-density prompt your AI agent can't improvise around.</p>
+      <div class="hero__cta">
+        <a class="btn btn--primary" href="#quickstart">
+          Quick start
+          <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h9M8 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn btn--ghost" href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+      <div class="install">
+        <span><span class="pr">$</span> npm install -g @openhint/cli</span>
+        <button data-copy data-copy-text="npm install -g @openhint/cli">Copy</button>
+      </div>
+      <p class="hero__note" style="margin-top:16px;">Compiles to prompts for Claude Code, Codex, Cursor &amp; friends.</p>
+    </div>
+
+    <!-- DEMO -->
+    <div class="demo" data-switcher>
+      <div class="demo__switch" role="tablist" aria-label="Choose a profession">
+        <button data-prof="se" data-accent="" class="is-active"><span class="dot-ok"></span>Software</button>
+        <button data-prof="law" data-accent="law"><span class="dot-ok"></span>Law</button>
+        <button disabled>+ more soon</button>
+      </div>
+
+      <!-- SE panel -->
+      <div data-prof-panel="se" class="demo__stack">
+        <div class="code-wrap">
+          <div class="code demo__src">
+            <div class="code__bar">
+              <span class="code__dots"><i></i><i></i><i></i></span>
+              <span class="code__file"><b>src/api/invoice.ts.hint</b></span>
+              <span class="code__tag">Markdown</span>
+            </div>
+<div class="code__body"><span class="t-h"># </span><span class="t-kw">entity</span> <span class="t-nm">Invoice</span> <span class="t-id">{#invoice}</span>
+
+<span class="t-bd">Persisted invoice record.</span>
+
+<span class="t-h">## </span><span class="t-kw">field</span> <span class="t-nm">total</span>
+
+<span class="t-bd">Decimal string, 2 places. Never float.</span>
+
+<span class="t-h"># </span><span class="t-kw">func</span> <span class="t-nm">validateInvoice</span>
+
+<span class="t-h">## </span><span class="t-kw">bad</span> <span class="t-nm">SilentDefaults</span>
+
+<span class="t-bd">Never coerce an invalid Invoice valid.</span></div>
+          </div>
+        </div>
+        <div class="demo__connector">
+          <span class="ln"></span>
+          <span class="chip"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>hint compile</span>
+          <span class="ln"></span>
+        </div>
+        <div class="code-wrap">
+          <div class="code">
+            <div class="code__bar">
+              <span class="code__dots"><i></i><i></i><i></i></span>
+              <span class="code__file">compiled prompt → <b>agent</b></span>
+              <span class="code__tag">deterministic</span>
+            </div>
+<div class="code__body"><span class="t-mut">&lt;</span><span class="t-tag">file_context</span> <span class="t-at">path</span>=<span class="t-str">"src/api/invoice.ts"</span><span class="t-mut">&gt;</span>
+  <span class="t-mut">&lt;</span><span class="t-tag">data_structure</span> <span class="t-at">name</span>=<span class="t-str">"Invoice"</span> <span class="t-at">id</span>=<span class="t-str">"invoice"</span><span class="t-mut">&gt;</span>
+    <span class="t-bd">Persisted invoice record.</span>
+    <span class="t-mut">&lt;</span><span class="t-tag">field</span> <span class="t-at">name</span>=<span class="t-str">"total"</span><span class="t-mut">&gt;</span>
+      <span class="t-bd">Decimal string, 2 places. Never float.</span>
+    <span class="t-mut">&lt;/</span><span class="t-tag">field</span><span class="t-mut">&gt;</span>
+  <span class="t-mut">&lt;/</span><span class="t-tag">data_structure</span><span class="t-mut">&gt;</span>
+  <span class="t-mut">&lt;</span><span class="t-tag">function_contract</span> <span class="t-at">name</span>=<span class="t-str">"validateInvoice"</span><span class="t-mut">&gt;</span>
+    <span class="t-mut">&lt;</span><span class="t-tag">prohibited_anti_patterns</span> <span class="t-at">name</span>=<span class="t-str">"SilentDefaults"</span><span class="t-mut">&gt;</span>
+      <span class="t-bd">Never coerce an invalid Invoice valid.</span>
+    <span class="t-mut">&lt;/</span><span class="t-tag">prohibited_anti_patterns</span><span class="t-mut">&gt;</span>
+  <span class="t-mut">&lt;/</span><span class="t-tag">function_contract</span><span class="t-mut">&gt;</span>
+<span class="t-mut">&lt;/</span><span class="t-tag">file_context</span><span class="t-mut">&gt;</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LAW panel -->
+      <div data-prof-panel="law" class="demo__stack" hidden>
+        <div class="code-wrap">
+          <div class="code demo__src">
+            <div class="code__bar">
+              <span class="code__dots"><i></i><i></i><i></i></span>
+              <span class="code__file"><b>contracts/nda.md.hint</b></span>
+              <span class="code__tag">Markdown</span>
+            </div>
+<div class="code__body"><span class="t-h"># </span><span class="t-kw">party</span> <span class="t-nm">Receiving</span> <span class="t-id">{#receiving}</span>
+
+<span class="t-bd">Hooli, Inc., a Delaware corporation.</span>
+
+<span class="t-h"># </span><span class="t-kw">clause</span> <span class="t-nm">Confidentiality</span>
+
+<span class="t-h">## </span><span class="t-kw">obligation</span> <span class="t-nm">Protect</span>
+
+<span class="t-bd">Protect all Confidential Information.</span>
+
+<span class="t-h">## </span><span class="t-kw">redline</span> <span class="t-nm">Survival</span>
+
+<span class="t-bd">Terminates 5 yrs out — never perpetual.</span></div>
+          </div>
+        </div>
+        <div class="demo__connector">
+          <span class="ln"></span>
+          <span class="chip"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>hint compile</span>
+          <span class="ln"></span>
+        </div>
+        <div class="code-wrap">
+          <div class="code">
+            <div class="code__bar">
+              <span class="code__dots"><i></i><i></i><i></i></span>
+              <span class="code__file">compiled prompt → <b>agent</b></span>
+              <span class="code__tag">deterministic</span>
+            </div>
+<div class="code__body"><span class="t-mut">&lt;</span><span class="t-tag">matter_context</span> <span class="t-at">path</span>=<span class="t-str">"contracts"</span><span class="t-mut">&gt;</span>
+  <span class="t-mut">&lt;</span><span class="t-tag">party</span> <span class="t-at">name</span>=<span class="t-str">"Receiving"</span> <span class="t-at">id</span>=<span class="t-str">"receiving"</span><span class="t-mut">&gt;</span>
+    <span class="t-bd">Hooli, Inc., a Delaware corporation.</span>
+  <span class="t-mut">&lt;/</span><span class="t-tag">party</span><span class="t-mut">&gt;</span>
+  <span class="t-mut">&lt;</span><span class="t-tag">clause</span> <span class="t-at">name</span>=<span class="t-str">"Confidentiality"</span><span class="t-mut">&gt;</span>
+    <span class="t-mut">&lt;</span><span class="t-tag">binding_obligation</span> <span class="t-at">name</span>=<span class="t-str">"Protect"</span><span class="t-mut">&gt;</span>
+      <span class="t-bd">Protect all Confidential Information.</span>
+    <span class="t-mut">&lt;/</span><span class="t-tag">binding_obligation</span><span class="t-mut">&gt;</span>
+    <span class="t-mut">&lt;</span><span class="t-tag">non_negotiable_position</span> <span class="t-at">name</span>=<span class="t-str">"Survival"</span><span class="t-mut">&gt;</span>
+      <span class="t-bd">Terminates 5 yrs out — never perpetual.</span>
+    <span class="t-mut">&lt;/</span><span class="t-tag">non_negotiable_position</span><span class="t-mut">&gt;</span>
+  <span class="t-mut">&lt;/</span><span class="t-tag">clause</span><span class="t-mut">&gt;</span>
+<span class="t-mut">&lt;/</span><span class="t-tag">matter_context</span><span class="t-mut">&gt;</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- AGENTS STRIP -->
+<div class="divider"></div>
+<div class="wrap">
+  <div class="agents">
+    <span>Same spec. Same hintbook. <b>Byte-identical output, every time.</b></span>
+    <span style="margin-left:auto;">No new syntax — <b>100% valid Markdown</b></span>
+  </div>
+</div>
+<div class="divider"></div>
+
+<!-- WHAT IS HINT -->
+<section class="section" id="what">
+  <div class="wrap">
+    <div class="reveal" style="max-width:64ch; margin-bottom:48px;">
+      <div class="eyebrow" style="margin-bottom:22px;">What is HINT</div>
+      <h2 class="h2">AI gives you speed. Raw prompts quietly take away control.</h2>
+      <p class="lede" style="margin-top:18px;">You ask for one thing and get plausible improvisation around it. HINT keeps both — your declarations become binding borders, the AI produces the work inside them, and gaps come back to you as reports instead of silent decisions.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card feat reveal" data-d="1">
+        <svg class="feat__ico" viewBox="0 0 32 32" fill="none"><path d="M6 8h20M6 16h20M6 24h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <h3 class="h3">Zero syntax friction</h3>
+        <p>A <code class="inl">.hint</code> file is pure Markdown. Nothing new to learn, instantly readable by humans and AI alike, with native highlighting in any editor.</p>
+      </div>
+      <div class="card feat reveal" data-d="2">
+        <svg class="feat__ico" viewBox="0 0 32 32" fill="none"><path d="M10 4h8l6 6v18H8V4h2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M17 4v7h7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        <h3 class="h3">Specs live with the work</h3>
+        <p>Companion files sit next to their targets — <code class="inl">login.ts.hint</code> beside <code class="inl">login.ts</code> — and travel through the same reviews, branches, and history.</p>
+      </div>
+      <div class="card feat reveal" data-d="3">
+        <svg class="feat__ico" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="currentColor" stroke-width="2"/><path d="M11 16l3.5 3.5L21 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3 class="h3">Deterministic compilation</h3>
+        <p>The same specs and the same hintbook always produce the same prompt. No hidden prompt engineering — compiled prompts are reviewable, diffable artifacts.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section divider" id="how">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:44px;">
+      <div class="eyebrow" style="margin-bottom:22px;">How it works</div>
+      <h2 class="h2">Write intent. Compile borders. Ship the work.</h2>
+    </div>
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step__n">01 / WRITE</div>
+        <h3>Declare in Markdown</h3>
+        <p>Every heading is a typed block — <code class="inl">entity</code>, <code class="inl">clause</code>, <code class="inl">bad</code>. Keyword, name, body. Heading depth nests the structure into a tree.</p>
+      </div>
+      <div class="step">
+        <div class="step__n">02 / COMPILE</div>
+        <h3>Run <code class="inl" style="font-size:0.92em">hint</code></h3>
+        <p>The transpiler walks <em>find → parse → compile</em>, renders each block through your hintbook's templates, and wraps it in a role header and verification footer.</p>
+      </div>
+      <div class="step">
+        <div class="step__n">03 / EXECUTE</div>
+        <h3>Pipe to your agent</h3>
+        <p>The high-density prompt tells the AI exactly what exists, what it must contain, what it must do, and what it must <em>never</em> do. Gaps come back, not guesses.</p>
+      </div>
+    </div>
+    <div class="reveal" style="margin-top:18px; font-family:var(--font-mono); font-size:0.84rem; color:var(--ink-3); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <code class="inl">hint src/api/invoice.ts | claude -p</code>
+      <span>— one pipe, spec to working code.</span>
+    </div>
+    <div class="callout reveal">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v12H8.5L4 19.5V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <div>
+        <h4>Or never run it by hand at all.</h4>
+        <p><code class="inl">hint config</code> writes the HINT workflow into your <code class="inl">AGENTS.md</code> and <code class="inl">CLAUDE.md</code>. After that, just keep working in normal dialogue — Claude Code, Codex, and Cursor read those instructions and call <code class="inl">hint</code> themselves whenever a <code class="inl">.hint</code> spec is relevant. You stay in the conversation; the borders come along automatically.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRINCIPLES (dark band) -->
+<section class="section band">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:42px; max-width:60ch;">
+      <div class="eyebrow" style="margin-bottom:22px;">The contract</div>
+      <h2 class="h2">A small, honest core. An open, extensible vocabulary.</h2>
+      <p class="lede" style="color:var(--on-surface-mut); margin-top:16px;">The transpiler understands only structure — files, headings, bodies. What each keyword <em>means</em> is supplied by <strong style="color:var(--on-surface)">hintbooks</strong>: installable packages of instruction templates. Swap the book, and the same files compile into a different profession's language.</p>
+    </div>
+    <div class="principles reveal">
+      <div class="principle">
+        <div class="principle__k">Borders, not vibes</div>
+        <h3>The prompt states the rules</h3>
+        <p>Compiled output spells out exactly what exists, what it must contain, what it must do, and what it must never do — in explicit, binding tags.</p>
+      </div>
+      <div class="principle">
+        <div class="principle__k">Gaps come back</div>
+        <h3>Missing decisions are reported</h3>
+        <p>A missing figure, party, or type is surfaced to you as a gap with its risk — never quietly filled with something plausible.</p>
+      </div>
+      <div class="principle">
+        <div class="principle__k">No built-in keywords</div>
+        <h3>The vocabulary is yours</h3>
+        <p>Publish your own hintbook as an npm package, a git repo, or a plain folder. Authoring one needs no code — if you can write Markdown, you can build it.</p>
+      </div>
+      <div class="principle">
+        <div class="principle__k">Deterministic</div>
+        <h3>Same input, same output</h3>
+        <p>Sorted traversal, stable trees, pure template interpolation. Compiled prompts are reviewable, diffable artifacts you can trust in CI.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROFESSIONS -->
+<section class="section" id="professions">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:42px; max-width:62ch;">
+      <div class="eyebrow" style="margin-bottom:22px;">Built for every profession</div>
+      <h2 class="h2">Software is the first vocabulary — not the definition.</h2>
+      <p class="lede" style="margin-top:16px;">HINT isn't just a language for programmers — it's a professional <strong>intent layer over AI</strong>. It serves anyone whose work demands strict, structured thinking: the engineer knows the architecture, the lawyer knows the deal. HINT eliminates the mechanical production while keeping the decisions yours.</p>
+    </div>
+
+    <div class="profgrid reveal" style="grid-template-columns:1fr 1fr; margin-bottom:14px;">
+      <a class="proftile proftile--live" href="for-software-engineers.html">
+        <svg class="proftile__ico" viewBox="0 0 32 32" fill="none"><path d="M11 11l-5 5 5 5M21 11l5 5-5 5M18 8l-4 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <h4>Software Engineers</h4>
+          <p>Architecture, data models, function contracts, anti-patterns</p>
+        </div>
+        <span class="proftile__go">Explore <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h9M8 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+      <a class="proftile proftile--live" href="for-lawyers.html">
+        <svg class="proftile__ico" viewBox="0 0 32 32" fill="none"><path d="M16 5v22M8 27h16M16 5l-9 4 3 6a4 4 0 0 1-6 0l3-6M16 5l9 4-3 6a4 4 0 0 0 6 0l-3-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <h4>Lawyers</h4>
+          <p>Contracts, clauses, obligations, red lines</p>
+        </div>
+        <span class="proftile__go">Explore <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h9M8 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </div>
+
+    <div class="reveal" style="display:flex; align-items:center; gap:14px; margin:30px 0 16px; flex-wrap:wrap;">
+      <span class="eyebrow" style="margin:0;">Coming soon</span>
+      <span style="font-size:0.92rem; color:var(--ink-3);">the same machinery, one new vocabulary at a time</span>
+    </div>
+
+    <div class="soongrid reveal">
+      <div class="soontile"><h4>Business Analysts</h4><p>Requirements, scenarios, edge cases</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>Product Managers</h4><p>User stories, acceptance criteria, scope</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>QA Engineers</h4><p>Test cases, negative paths, expected behavior</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>Financial Analysts</h4><p>Models, assumptions, no invented numbers</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>Compliance &amp; Risk</h4><p>Policies, controls, red flags</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>Auditors</h4><p>Scope, evidence, findings, severity</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>Procurement</h4><p>RFPs, scoring matrices, requirements</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>Technical Writers</h4><p>Doc structure, terminology, required sections</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>Data &amp; BI Analysts</h4><p>Metric definitions, formulas, constraints</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>Customer Support</h4><p>Answer policy, escalation, prohibited replies</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>Sales &amp; Proposals</h4><p>RFP responses, value props, exclusions</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>Clinical Operations</h4><p>Protocols, patient routing, checklists</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>Educational Designers</h4><p>Modules, objectives, grading rubrics</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>Policy Analysts</h4><p>Regulations, justifications, constraints</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile"><h4>Marketing &amp; Brand</h4><p>Tone of voice, claims, brand safety</p><span class="soontile__tag">soon</span></div>
+      <div class="soontile soontile--author"><h4>Your profession</h4><p>Author a hintbook — no code required</p><span class="soontile__tag">open vocabulary</span></div>
+    </div>
+
+    <div class="intentlayer reveal">
+      <div>
+        <h3>Not just for programmers — an intent layer over AI.</h3>
+        <p>HINT pays off most wherever a wrong answer is expensive: <b>analytics, compliance, finance, procurement, medicine, government, QA, documentation, and product</b>. Anywhere the job means repeatable, high-stakes artifacts.</p>
+      </div>
+      <div class="artifacts">
+        <span class="artifact artifact--strong">Contracts</span>
+        <span class="artifact">Policies</span>
+        <span class="artifact">Requirements</span>
+        <span class="artifact">Specs</span>
+        <span class="artifact">Reports</span>
+        <span class="artifact">Audits</span>
+        <span class="artifact">Test cases</span>
+        <span class="artifact">Checklists</span>
+        <span class="artifact">RFPs</span>
+        <span class="artifact">Proposals</span>
+        <span class="artifact">Documentation</span>
+        <span class="artifact">SOPs</span>
+        <span class="artifact">Acceptance criteria</span>
+      </div>
+    </div>
+
+    <!-- compare vocab -->
+    <div class="compare reveal">
+      <div class="vocab">
+        <div class="vocab__head">
+          <svg class="vocab__ico" viewBox="0 0 32 32" fill="none"><path d="M11 11l-5 5 5 5M21 11l5 5-5 5M18 8l-4 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <h4>hintbook-software-engineer</h4>
+          <span class="pill pill--on"><span class="dot-ok"></span>live</span>
+        </div>
+        <div class="vocab__body">
+          <span class="kw">entity</span><span class="kw">field</span><span class="kw">func</span><span class="kw">flow</span><span class="kw">arg</span><span class="kw">error</span><span class="kw">rule</span><span class="kw">bad</span><span class="kw">test</span><span class="kw">ui</span><span class="kw">dep</span>
+        </div>
+        <p class="vocab__foot">~30 keywords across data, behavior, UI &amp; constraints. Three modes: <strong>implement</strong>, <strong>fix</strong>, <strong>review</strong>.</p>
+      </div>
+      <div class="vocab" data-accent="law">
+        <div class="vocab__head">
+          <svg class="vocab__ico" viewBox="0 0 32 32" fill="none"><path d="M16 5v22M8 27h16M16 5l-9 4 3 6a4 4 0 0 1-6 0l3-6M16 5l9 4-3 6a4 4 0 0 0 6 0l-3-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <h4>hintbook-lawyer</h4>
+          <span class="pill pill--on"><span class="dot-ok"></span>live</span>
+        </div>
+        <div class="vocab__body">
+          <span class="kw">party</span><span class="kw">clause</span><span class="kw">obligation</span><span class="kw">redline</span><span class="kw">never</span><span class="kw">exception</span><span class="kw">remedy</span><span class="kw">authority</span><span class="kw">fallback</span><span class="kw">payment</span>
+        </div>
+        <p class="vocab__foot">Drafting vocabulary with the same machinery. Three modes: <strong>draft</strong>, <strong>revise</strong>, <strong>audit</strong>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- QUICK START -->
+<section class="section divider band" id="quickstart">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:42px;">
+      <div class="eyebrow" style="margin-bottom:22px;">Quick start</div>
+      <h2 class="h2">From zero to a compiled prompt in five minutes.</h2>
+    </div>
+    <div class="qs">
+      <div class="qsstep reveal">
+        <div class="qsstep__h"><span class="qsstep__n">01</span><h3 style="color:var(--on-surface)">Install &amp; initialize</h3></div>
+        <p style="color:var(--on-surface-mut)">Install the CLI, then mark the project root. <code class="inl">hint config</code> writes <code class="inl">hint.yml</code> and prints an agent prompt to wire up your <code class="inl">AGENTS.md</code> / <code class="inl">CLAUDE.md</code>.</p>
+        <div class="code-wrap on-dark">
+          <button class="code__copy" data-copy data-copy-text="npm install -g @openhint/cli&#10;hint config | claude -p&#10;hint add @openhint/hintbook-software-engineer | claude -p">Copy</button>
+          <div class="code">
+<div class="code__body"><span class="t-mut"># install the transpiler</span>
+<span class="t-bd">npm install -g @openhint/cli</span>
+
+<span class="t-mut"># scaffold + register a hintbook</span>
+<span class="t-bd">hint config | claude -p</span>
+<span class="t-bd">hint add @openhint/hintbook-software-engineer \
+  | claude -p</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="qsstep reveal" data-d="1">
+        <div class="qsstep__h"><span class="qsstep__n">02</span><h3 style="color:var(--on-surface)">Write a spec &amp; compile</h3></div>
+        <p style="color:var(--on-surface-mut)">Drop a <code class="inl">.hint</code> companion next to any file, then compile and pipe straight to your agent. Swap the hintbook and the same flow drafts contracts instead of code.</p>
+        <div class="code-wrap on-dark">
+          <button class="code__copy" data-copy data-copy-text="hint src/billing/invoice.ts | claude -p&#10;hint --mode review src/billing | claude -p&#10;hint --dry-run 'src/**/*.hint'">Copy</button>
+          <div class="code">
+<div class="code__body"><span class="t-mut"># compile one file (companion auto-resolved)</span>
+<span class="t-bd">hint src/billing/invoice.ts | claude -p</span>
+
+<span class="t-mut"># audit existing code against the spec</span>
+<span class="t-bd">hint --mode review src/billing | claude -p</span>
+
+<span class="t-mut"># validate every spec in CI</span>
+<span class="t-bd">hint --dry-run 'src/**/*.hint'</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="section">
+  <div class="wrap cta-final reveal">
+    <h2 class="h2">Stop prompting. Start specifying.</h2>
+    <p class="lede">Keep the speed of AI and the control of a specification. Borders, not vibes.</p>
+    <div class="cta-final__btns">
+      <a class="btn btn--primary" href="#quickstart">Get started</a>
+      <a class="btn btn--ghost" href="for-software-engineers.html">For engineers</a>
+      <a class="btn btn--ghost" href="for-lawyers.html">For lawyers</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div class="footer__brand footer__col">
+        <div class="logo footer__logo">
+          <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
+        </div>
+        <p>Human Intent Native Transpiler. A Markdown-native specification language for professionals who work with AI and want predictable results.</p>
+      </div>
+      <div class="footer__col">
+        <h5>Product</h5>
+        <ul>
+          <li><a href="index.html#how">How it works</a></li>
+          <li><a href="index.html#quickstart">Quick start</a></li>
+          <li><a href="index.html#professions">Professions</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h5>Professions</h5>
+        <ul>
+          <li><a href="for-software-engineers.html">For Engineers</a></li>
+          <li><a href="for-lawyers.html">For Lawyers</a></li>
+          <li><a href="index.html#professions">More soon</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h5>Source</h5>
+        <ul>
+          <li><a href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">hint ↗</a></li>
+          <li><a href="https://github.com/open-hint-dev/hintbook-software-engineer" target="_blank" rel="noopener">hintbook-software-engineer ↗</a></li>
+          <li><a href="https://github.com/open-hint-dev/hintbook-lawyer" target="_blank" rel="noopener">hintbook-lawyer ↗</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2026 openhint.dev · MIT licensed</span>
+      <span>Borders, not vibes.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>

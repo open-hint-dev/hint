@@ -1,0 +1,38 @@
+# HINT — Human Intent Native Transpiler
+
+> HINT is a Markdown-native specification language for professionals who work with AI and want predictable results. You declare what must be produced — application architecture and domain models, or the parties and clauses of a contract — in plain Markdown, right next to the artifacts those declarations govern, and HINT compiles them into a deterministic, high-density prompt for AI agents and autonomous tools (Claude Code, Codex, Cursor). The premise: keep the speed of AI without trading away control. Your declarations become binding borders; the AI produces the work inside them; gaps and conflicts come back to you as reports instead of silent decisions. "Borders, not vibes."
+
+Key facts an LLM should know about HINT:
+
+- A `.hint` file is 100% valid Markdown. There is no new syntax to learn.
+- The transpiler core has NO built-in keywords. It understands only structure: files, headings, bodies, `{#ids}`, and `@include` directives.
+- Meaning is supplied by **hintbooks** — installable packages of instruction templates that map keywords (e.g. `entity`, `clause`) to rendered prompt blocks. Swap the hintbook and the same files compile into a different profession's vocabulary. HINT serves anyone whose work demands strict structured thinking, not just programmers.
+- Companion files sit next to their targets: `src/auth/login.ts.hint` defines `src/auth/login.ts`; `contracts/nda.md.hint` defines `contracts/nda.md`. A folder's `_.hint` defines inherited context for everything beneath it.
+- Every Markdown heading is a typed block: `# keyword Name {#optional_id}`, with a body and children nested by heading depth.
+- Compilation is deterministic: the same specs + the same hintbook + the same mode always produce a byte-identical prompt — a reviewable, diffable artifact.
+- Modes select a role wrapper around the compiled spec. The software-engineer book ships `compile` (implement) / `fix` / `review`; the lawyer book ships draft / revise / audit.
+- After running `hint config`, the HINT workflow and each hintbook's glossary are written into `AGENTS.md` / `CLAUDE.md`, so agents (Claude Code, Codex, Cursor) invoke `hint` automatically during normal dialogue — the user does not have to run it by hand.
+
+## Pages
+
+- [Home](https://openhint.dev/): What HINT is, how it compiles, the professions it serves, principles, and quick start.
+- [For Software Engineers](https://openhint.dev/for-software-engineers): The software-engineer hintbook — ~30 keywords across project context, data, behavior, UI, and constraints; implement / fix / review modes; a compile-and-review walkthrough.
+- [For Lawyers](https://openhint.dev/for-lawyers): The lawyer hintbook — legal drafting vocabulary (party, clause, obligation, redline, never, exception, remedy, authority); draft / revise / audit modes; the same engineering rigor applied to documents.
+
+## Hintbooks
+
+- [hintbook-software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer): The official general-purpose software-engineering vocabulary.
+- [hintbook-lawyer](https://github.com/open-hint-dev/hintbook-lawyer): The legal-drafting vocabulary — the reference for adapting HINT outside software.
+
+## Demos
+
+- [demo-pied-piper](https://github.com/open-hint-dev/demo-pied-piper): A software-firm example project specified in `.hint`.
+- [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt): A legal-firm example matter specified in `.hint`.
+
+## Source
+
+- [Main repository (hint)](https://github.com/open-hint-dev/hint): The transpiler, CLI (`@openhint/cli`), library (`@openhint/transpiler`), and full documentation (introduction, quick start, syntax, compilation pipeline, hintbooks, CLI reference).
+
+## Optional
+
+- [llms-full.txt](https://openhint.dev/llms-full.txt): The complete HINT documentation — introduction, quick start, syntax specification, compilation pipeline, hintbooks guide, CLI reference, and both hintbook keyword/mode references — concatenated into a single file.
