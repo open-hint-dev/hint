@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HINT for Software Engineers — Specs that compile to prompts</title>
+<meta name="description" content="The software-engineer hintbook gives HINT a ~30-keyword vocabulary for architecture, data models, behavior, and constraints — compiled into binding prompts for implement, fix, and review." />
+<link rel="stylesheet" href="styles.css" />
+<style>
+.subhero { padding-top: clamp(40px, 5vw, 72px); padding-bottom: clamp(40px, 5vw, 64px); }
+.crumb { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3); margin-bottom: 26px; letter-spacing: 0.02em; }
+.crumb a { color: var(--ink-3); } .crumb a:hover { color: var(--ink); }
+.crumb .sep { margin-inline: 8px; opacity: 0.5; }
+.subhero__grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.02fr); gap: clamp(36px,5vw,72px); align-items: center; }
+.subhero h1 { font-size: clamp(2.4rem, 5vw, 4rem); letter-spacing: -0.035em; line-height: 1; margin-bottom: 22px; }
+.subhero h1 .em { color: var(--accent); }
+.subhero .lede { max-width: 44ch; margin-bottom: 28px; }
+.subhero__cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.bookline { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-2); margin-bottom: 28px; background: var(--paper-2); border: 1px solid var(--line); padding: 8px 13px; border-radius: 100px; }
+.bookline .dot-ok { background: var(--accent-2); }
+
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+
+/* vocab */
+.kwgroup { margin-bottom: 40px; }
+.kwgroup__h { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; display: flex; align-items: center; gap: 12px; }
+.kwgroup__h::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.kwrow { display: grid; grid-template-columns: 210px 1fr; gap: 24px; padding: 15px 0; border-top: 1px solid var(--line); align-items: start; }
+.kwrow:first-of-type { border-top: none; }
+.kwrow__k { display: flex; flex-direction: column; gap: 6px; }
+.kwrow__k small { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-3); }
+.kwrow__d { color: var(--ink-2); font-size: 0.95rem; }
+.kwrow__d b { color: var(--ink); font-weight: 600; }
+.kw--lg { font-size: 0.86rem; padding: 4px 10px; align-self: flex-start; }
+
+/* tabs */
+.tabs { display: inline-flex; gap: 4px; padding: 4px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.tabs button { font-family: var(--font-mono); font-size: 0.8rem; padding: 8px 15px; border-radius: 5px; color: var(--ink-3); transition: all .16s; }
+.tabs button.is-active { background: var(--ink); color: var(--paper); }
+.tabs button:not(.is-active):hover { color: var(--ink); }
+[data-panel] { display: none; }
+[data-panel].is-active { display: block; }
+
+/* modes */
+.mode { padding: 28px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); display: flex; flex-direction: column; gap: 12px; }
+.mode__k { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.mode h3 { font-size: 1.3rem; }
+.mode p { color: var(--ink-2); font-size: 0.93rem; }
+.mode__cmd { margin-top: auto; }
+.mode__role { font-size: 0.86rem; color: var(--ink-3); font-style: italic; border-left: 2px solid var(--accent-line); padding-left: 12px; }
+
+/* band */
+.band { background: var(--surface); color: var(--on-surface); }
+.band .eyebrow { color: var(--accent-bright); } .band .eyebrow::before { background: var(--accent-bright); }
+.band h2, .band h3 { color: var(--on-surface); }
+.band .lede { color: var(--on-surface-mut); }
+
+/* scenario */
+.scenario { display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(32px,4vw,56px); align-items: center; }
+.scenario__steps { display: flex; flex-direction: column; gap: 22px; }
+.scstep { display: flex; gap: 16px; }
+.scstep__n { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-bright); flex: none; width: 28px; padding-top: 2px; }
+.scstep h4 { font-size: 1.08rem; color: var(--on-surface); margin-bottom: 4px; }
+.scstep p { color: var(--on-surface-mut); font-size: 0.92rem; }
+.scstep code.inl { background: rgba(255,255,255,0.08); color: var(--on-surface); border-color: rgba(255,255,255,0.1); }
+
+/* report */
+.finding { border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px 18px; margin-bottom: 10px; background: var(--surface-2); }
+.finding__h { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-family: var(--font-mono); font-size: 0.78rem; }
+.sev { padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.sev--v { background: rgba(232,126,141,0.16); color: #E87E8D; }
+.sev--g { background: rgba(212,178,124,0.16); color: var(--tok-str); }
+.sev--r { background: rgba(95,208,194,0.14); color: var(--tok-id); }
+.finding__loc { color: var(--on-surface-mut); }
+.finding p { font-size: 0.9rem; color: var(--tok-body); }
+.finding p b { color: var(--on-surface); }
+
+.cta-final { text-align: center; }
+.cta-final .lede { max-width: 50ch; margin: 0 auto 28px; }
+.cta-final__btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+.nav__menu-btn { display: none; }
+.mobile-menu { display: none; }
+@media (max-width: 960px) {
+  .subhero__grid, .grid-3, .grid-2, .scenario { grid-template-columns: 1fr; }
+  .kwrow { grid-template-columns: 1fr; gap: 8px; }
+  .nav__menu-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; color: var(--ink); margin-left: auto; border: 1px solid var(--line); border-radius: 6px; }
+  .mobile-menu { display: block; position: fixed; inset: 64px 0 0; background: var(--paper); z-index: 49; padding: 28px 24px; transform: translateY(-12px); opacity: 0; pointer-events: none; transition: opacity .22s, transform .22s; }
+  .mobile-menu.open { opacity: 1; transform: none; pointer-events: auto; }
+  .mobile-menu a { display: block; font-family: var(--font-display); font-size: 1.5rem; padding: 14px 0; border-bottom: 1px solid var(--line); }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="wrap nav__inner">
+    <a class="logo" href="index.html" aria-label="hint — openhint.dev home">
+      <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
+    </a>
+    <div class="nav__links">
+      <a class="nav__link" href="index.html#how">How it works</a>
+      <a class="nav__link" href="index.html#professions">Professions</a>
+      <a class="nav__link nav__link--active" href="for-software-engineers.html">For Engineers</a>
+      <a class="nav__link" href="for-lawyers.html">For Lawyers</a>
+      <a class="nav__link" href="index.html#quickstart">Quick start</a>
+    </div>
+    <div class="nav__cta">
+      <a class="nav__github" href="https://github.com/open-hint-dev/hintbook-software-engineer" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.7c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
+        <span>hintbook</span>
+      </a>
+      <a class="btn btn--primary" href="#quickstart">Get started</a>
+    </div>
+    <button class="nav__menu-btn" aria-label="Menu" aria-expanded="false">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 5h16M2 10h16M2 15h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</nav>
+<div class="mobile-menu">
+  <a href="index.html#how">How it works</a>
+  <a href="index.html#professions">Professions</a>
+  <a href="for-software-engineers.html">For Engineers</a>
+  <a href="for-lawyers.html">For Lawyers</a>
+  <a href="index.html#quickstart">Quick start</a>
+</div>
+
+<!-- SUBHERO -->
+<header class="subhero">
+  <div class="wrap">
+    <div class="crumb"><a href="index.html">hint</a><span class="sep">/</span><a href="index.html#professions">professions</a><span class="sep">/</span><span style="color:var(--ink)">for software engineers</span></div>
+    <div class="subhero__grid">
+      <div>
+        <span class="bookline"><span class="dot-ok"></span>@openhint/hintbook-software-engineer</span>
+        <h1>Ship code that obeys the <span class="em">spec</span> — not the vibe.</h1>
+        <p class="lede">The software-engineer hintbook gives your <code class="inl">.hint</code> files a precise vocabulary for architecture, data models, behavior, and constraints. Compile it into a binding prompt and your agent implements exactly what you declared — in dependency order, with no stubs, no invented features.</p>
+        <div class="subhero__cta">
+          <a class="btn btn--primary" href="#quickstart">Quick start</a>
+          <a class="btn btn--ghost" href="https://github.com/open-hint-dev/hintbook-software-engineer" target="_blank" rel="noopener">View hintbook ↗</a>
+        </div>
+      </div>
+      <div class="code-wrap">
+        <div class="code code--scroll">
+          <div class="code__bar">
+            <span class="code__dots"><i></i><i></i><i></i></span>
+            <span class="code__file"><b>src/compression/middleout.ts.hint</b></span>
+            <span class="code__tag">Markdown</span>
+          </div>
+<div class="code__body"><span class="t-bd">Middle-out compression core for Pied Piper.</span>
+
+<span class="t-h"># </span><span class="t-kw">entity</span> <span class="t-nm">CompressionResult</span> <span class="t-id">{#result}</span>
+
+<span class="t-h">## </span><span class="t-kw">field</span> <span class="t-nm">weissmanScore</span>
+
+<span class="t-bd">Decimal string, two places. Never float.</span>
+
+<span class="t-h"># </span><span class="t-kw">func</span> <span class="t-nm">compress</span> <span class="t-id">{#compress}</span>
+
+<span class="t-h">## </span><span class="t-kw">arg</span> <span class="t-nm">input</span>
+
+<span class="t-bd">The raw byte buffer. Must not be mutated.</span>
+
+<span class="t-h">## </span><span class="t-kw">result</span>
+
+<span class="t-bd">A CompressionResult; throws on empty input.</span>
+
+<span class="t-h">## </span><span class="t-kw">flow</span>
+
+<span class="t-bd">1. Reject empty input with CompressionError.
+2. Run the middle-out pass.
+3. Compute the Weissman score.</span>
+
+<span class="t-h">## </span><span class="t-kw">bad</span> <span class="t-nm">LossyFallback</span>
+
+<span class="t-bd">Never silently fall back to lossy.</span>
+
+<span class="t-h"># </span><span class="t-kw">rule</span> <span class="t-nm">Determinism</span>
+
+<span class="t-bd">Same input → byte-identical output.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- VALUE -->
+<section class="section divider">
+  <div class="wrap">
+    <div class="grid-3">
+      <div class="card reveal">
+        <h3 class="h3" style="margin-bottom:8px;">Schema, not suggestion</h3>
+        <p class="muted" style="font-size:0.95rem; color:var(--ink-2);">An <code class="inl">entity</code> compiles to a binding data contract — no renamed fields, no changed types, nothing extra or missing.</p>
+      </div>
+      <div class="card reveal" data-d="1">
+        <h3 class="h3" style="margin-bottom:8px;">Anti-patterns enforced</h3>
+        <p style="font-size:0.95rem; color:var(--ink-2);">A <code class="inl">bad</code> block carries the strongest enforcement language in the book — real past failures the agent must never reintroduce.</p>
+      </div>
+      <div class="card reveal" data-d="2">
+        <h3 class="h3" style="margin-bottom:8px;">Context inherits</h3>
+        <p style="font-size:0.95rem; color:var(--ink-2);">A folder's <code class="inl">_.hint</code> wraps everything beneath it, so stack, build pipeline, and dependency policy are always in scope.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VOCABULARY -->
+<section class="section divider" id="vocabulary">
+  <div class="wrap">
+    <div class="reveal" style="max-width:60ch; margin-bottom:44px;">
+      <div class="eyebrow" style="margin-bottom:22px;">The vocabulary</div>
+      <h2 class="h2">~30 keywords across data, behavior, UI &amp; constraints.</h2>
+      <p class="lede" style="margin-top:16px;">Every keyword is a markdown heading that compiles into an explicit, named tag the agent is trained to obey. Reach for the most specific one — a <code class="inl">field</code> inside an <code class="inl">entity</code> beats a bullet list in prose.</p>
+    </div>
+
+    <div class="reveal">
+      <div class="kwgroup">
+        <div class="kwgroup__h">Project context</div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">app</span><small>application</small></div><div class="kwrow__d">The domain, purpose, and overall structure — <b>informs naming and architecture everywhere</b>.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">lang</span><small>language</small></div><div class="kwrow__d">Language and runtime target. Only its syntax, APIs, and idioms are allowed.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">dep</span><small>deps · dependency</small></div><div class="kwrow__d">The approved dependency whitelist. Nothing outside it gets installed or imported without asking.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">build</span></div><div class="kwrow__d">Build and test commands. Generated code must never break these pipelines.</div></div>
+      </div>
+
+      <div class="kwgroup">
+        <div class="kwgroup__h">Data</div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">entity</span></div><div class="kwrow__d">A data model with an exact schema — <b>no renamed fields, changed types, extra or missing fields</b>.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">field</span></div><div class="kwrow__d">One named property: type, optionality, validation. Implemented exactly as declared.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">table</span> <span class="kw kw--lg">column</span></div><div class="kwrow__d">Tabular structures and their columns: names, types, labels, constraints.</div></div>
+      </div>
+
+      <div class="kwgroup">
+        <div class="kwgroup__h">Behavior</div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">func</span><small>function</small></div><div class="kwrow__d">A binding function contract — <b>arguments, return, errors, and logic flow are all mandatory</b>.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">arg</span> <span class="kw kw--lg">result</span></div><div class="kwrow__d">Inputs and output: declared types and shapes, honored on every code path.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">flow</span></div><div class="kwrow__d">A step-by-step sequence the implementation must follow without skipping validations.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">error</span></div><div class="kwrow__d">Exact error types under exact conditions — never substituted, wrapped, or renamed.</div></div>
+      </div>
+
+      <div class="kwgroup">
+        <div class="kwgroup__h">Constraints &amp; tests</div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">rule</span></div><div class="kwrow__d">Non-negotiable system-level mandates every function and data path must satisfy.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">bad</span></div><div class="kwrow__d"><b>Unconditional prohibitions</b> — real past failures, never reintroduced even if examples suggest them.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">good</span> <span class="kw kw--lg">example</span></div><div class="kwrow__d">Required patterns and few-shot demonstrations to replicate exactly.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">test</span></div><div class="kwrow__d">Scenarios that must all appear in the test output: edge cases, mock shapes, assertions.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">ui</span> <span class="kw kw--lg">form</span> <span class="kw kw--lg">block</span></div><div class="kwrow__d">UI surfaces, forms, and reusable components — only the declared elements, all of them.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEE IT COMPILE -->
+<section class="section divider band" id="compile">
+  <div class="wrap">
+    <div class="reveal" style="max-width:60ch; margin-bottom:36px;">
+      <div class="eyebrow" style="margin-bottom:22px;">See it compile</div>
+      <h2 class="h2">One spec. A binding prompt. A reviewable report.</h2>
+      <p class="lede" style="margin-top:16px;">The same <code class="inl">.hint</code> file drives every mode. Watch the compression spec become a deterministic implementation prompt — then an audit report when run with <code class="inl">--mode review</code>.</p>
+    </div>
+
+    <div class="reveal" data-tabs>
+      <div class="tabs">
+        <button data-tab="src" class="is-active">.hint source</button>
+        <button data-tab="out">compiled prompt</button>
+        <button data-tab="rep">review report</button>
+      </div>
+
+      <div data-panel="src" class="is-active code-wrap on-dark">
+        <button class="code__copy" data-copy>Copy</button>
+        <div class="code">
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file"><b>src/compression/middleout.ts.hint</b></span></div>
+<div class="code__body"><span class="t-h"># </span><span class="t-kw">func</span> <span class="t-nm">compress</span> <span class="t-id">{#compress}</span>
+
+<span class="t-bd">Compresses a buffer middle-out.</span>
+
+<span class="t-h">## </span><span class="t-kw">arg</span> <span class="t-nm">input</span>
+
+<span class="t-bd">The raw byte buffer. Must not be mutated.</span>
+
+<span class="t-h">## </span><span class="t-kw">result</span>
+
+<span class="t-bd">A CompressionResult; throws CompressionError on empty input.</span>
+
+<span class="t-h">## </span><span class="t-kw">flow</span>
+
+<span class="t-bd">1. Reject empty input with CompressionError.
+2. Run the middle-out pass.
+3. Compute the Weissman score.</span>
+
+<span class="t-h">## </span><span class="t-kw">bad</span> <span class="t-nm">LossyFallback</span>
+
+<span class="t-bd">Never silently fall back to lossy compression.</span></div>
+        </div>
+      </div>
+
+      <div data-panel="out" class="code-wrap on-dark">
+        <button class="code__copy" data-copy>Copy</button>
+        <div class="code">
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">hint src/compression/middleout.ts</span><span class="code__tag">implement</span></div>
+<div class="code__body"><span class="t-mut">&lt;</span><span class="t-tag">function_contract</span> <span class="t-at">name</span>=<span class="t-str">"compress"</span> <span class="t-at">id</span>=<span class="t-str">"compress"</span><span class="t-mut">&gt;</span>
+  <span class="t-bd">Compresses a buffer middle-out.</span>
+  <span class="t-mut">&lt;</span><span class="t-tag">argument</span> <span class="t-at">name</span>=<span class="t-str">"input"</span><span class="t-mut">&gt;</span>
+    <span class="t-bd">The raw byte buffer. Must not be mutated.</span>
+  <span class="t-mut">&lt;/</span><span class="t-tag">argument</span><span class="t-mut">&gt;</span>
+  <span class="t-mut">&lt;</span><span class="t-tag">return</span><span class="t-mut">&gt;</span>
+    <span class="t-bd">A CompressionResult; throws CompressionError on empty input.</span>
+  <span class="t-mut">&lt;/</span><span class="t-tag">return</span><span class="t-mut">&gt;</span>
+  <span class="t-mut">&lt;</span><span class="t-tag">logic_flow</span><span class="t-mut">&gt;</span>
+    <span class="t-bd">1. Reject empty input with CompressionError.
+    2. Run the middle-out pass.
+    3. Compute the Weissman score.</span>
+  <span class="t-mut">&lt;/</span><span class="t-tag">logic_flow</span><span class="t-mut">&gt;</span>
+  <span class="t-mut">&lt;</span><span class="t-tag">prohibited_anti_patterns</span> <span class="t-at">name</span>=<span class="t-str">"LossyFallback"</span><span class="t-mut">&gt;</span>
+    <span class="t-bd">Never silently fall back to lossy compression.</span>
+  <span class="t-mut">&lt;/</span><span class="t-tag">prohibited_anti_patterns</span><span class="t-mut">&gt;</span>
+<span class="t-mut">&lt;/</span><span class="t-tag">function_contract</span><span class="t-mut">&gt;</span></div>
+        </div>
+      </div>
+
+      <div data-panel="rep" class="reveal">
+        <p style="color:var(--on-surface-mut); font-family:var(--font-mono); font-size:0.82rem; margin-bottom:16px;">$ hint --mode review src/compression/middleout.ts | claude -p</p>
+        <div class="finding">
+          <div class="finding__h"><span class="sev sev--v">violation</span><span class="finding__loc">middleout.ts · L41–48 → bad LossyFallback</span></div>
+          <p><b>The catch block falls back to <code class="inl">gzip()</code> on a failed pass.</b> The <code class="inl">LossyFallback</code> prohibition forbids any silent fallback. Minimal fix: re-throw <code class="inl">CompressionError</code>.</p>
+        </div>
+        <div class="finding">
+          <div class="finding__h"><span class="sev sev--g">gap</span><span class="finding__loc">middleout.ts · return → result</span></div>
+          <p><b>Empty input returns an empty buffer instead of throwing.</b> The <code class="inl">result</code> contract requires <code class="inl">CompressionError</code> on empty input — currently unhandled.</p>
+        </div>
+        <div class="finding">
+          <div class="finding__h"><span class="sev sev--r">risk</span><span class="finding__loc">middleout.ts · L12 → arg input</span></div>
+          <p><b><code class="inl">input.sort()</code> mutates the argument.</b> The <code class="inl">input</code> arg states it must not be mutated. Operate on a copy.</p>
+        </div>
+        <p style="color:var(--on-surface-mut); font-size:0.88rem; margin-top:14px;">Verdict: <strong style="color:#E87E8D;">does not conform</strong> — 1 violation, 1 gap, 1 risk.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODES -->
+<section class="section divider" id="modes">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:42px;">
+      <div class="eyebrow" style="margin-bottom:22px;">Three modes</div>
+      <h2 class="h2">Same spec. Different job.</h2>
+    </div>
+    <div class="grid-3 reveal">
+      <div class="mode">
+        <div class="mode__k">compile · default</div>
+        <h3>Implement</h3>
+        <p class="mode__role">A senior engineer implementing the project from a binding specification.</p>
+        <p>Read it all, implement in dependency order, reuse declared modules, ship production quality — no placeholders, stubs, or TODOs.</p>
+        <code class="inl mode__cmd">hint src/...</code>
+      </div>
+      <div class="mode">
+        <div class="mode__k">--mode fix</div>
+        <h3>Repair</h3>
+        <p class="mode__role">Where the code and the spec disagree, the code is wrong.</p>
+        <p>Diagnose the root cause, make the smallest conforming change, and ship a regression test that fails without the fix.</p>
+        <code class="inl mode__cmd">hint --mode fix</code>
+      </div>
+      <div class="mode">
+        <div class="mode__k">--mode review</div>
+        <h3>Audit</h3>
+        <p class="mode__role">Findings, never patches.</p>
+        <p>Walk the spec block by block, hunt declared anti-patterns, and report findings by severity with file ranges and minimal corrections.</p>
+        <code class="inl mode__cmd">hint --mode review</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCENARIO / DEMO -->
+<section class="section divider band">
+  <div class="wrap">
+    <div class="reveal" style="max-width:56ch; margin-bottom:40px;">
+      <div class="eyebrow" style="margin-bottom:22px;">In practice · demo-pied-piper</div>
+      <h2 class="h2">A compression engine, specified before it's written.</h2>
+      <p class="lede" style="margin-top:16px;">The Pied Piper demo repo shows a whole module declared in <code class="inl">.hint</code> first — then built, fixed, and reviewed entirely from the compiled prompts.</p>
+    </div>
+    <div class="scenario reveal">
+      <div class="scenario__steps">
+        <div class="scstep"><span class="scstep__n">01</span><div><h4>Lay the baseline</h4><p>A root <code class="inl">_.hint</code> declares <code class="inl">lang</code> TypeScript, the <code class="inl">build</code> pipeline, and a <code class="inl">bad GlobalState</code> rule every file inherits.</p></div></div>
+        <div class="scstep"><span class="scstep__n">02</span><div><h4>Specify the module</h4><p>Companion hints define the <code class="inl">CompressionResult</code> entity, the <code class="inl">compress</code> contract, its <code class="inl">flow</code>, and the <code class="inl">LossyFallback</code> prohibition.</p></div></div>
+        <div class="scstep"><span class="scstep__n">03</span><div><h4>Compile &amp; implement</h4><p><code class="inl">hint src/compression | claude -p</code> emits the implementation prompt; the agent writes code in dependency order with the Weissman score exact.</p></div></div>
+        <div class="scstep"><span class="scstep__n">04</span><div><h4>Review every PR</h4><p><code class="inl">--mode review</code> in CI audits each change against the same spec — the lossy fallback never lands without a flagged violation.</p></div></div>
+      </div>
+      <div class="code-wrap">
+        <div class="code">
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file"><b>_.hint</b> · project root</span></div>
+<div class="code__body"><span class="t-bd">Middle-out compression for Pied Piper.</span>
+
+<span class="t-h"># </span><span class="t-kw">lang</span> <span class="t-nm">TypeScript</span>
+
+<span class="t-bd">Node 22, ES modules, strict. No CommonJS.</span>
+
+<span class="t-h"># </span><span class="t-kw">build</span>
+
+<span class="t-bd">- npm run build to compile
+- npm test runs the vitest suites</span>
+
+<span class="t-h"># </span><span class="t-kw">bad</span> <span class="t-nm">GlobalState</span>
+
+<span class="t-bd">Never store request state in module-level
+variables.</span>
+
+<span class="t-h"># </span><span class="t-kw">dep</span> <span class="t-nm">Whitelist</span>
+
+<span class="t-bd">Only the packages in package.json. Ask
+before adding anything new.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- QUICK START -->
+<section class="section divider" id="quickstart">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:36px;">
+      <div class="eyebrow" style="margin-bottom:22px;">Quick start</div>
+      <h2 class="h2">Wire it into your repo.</h2>
+    </div>
+    <div class="grid-2 reveal">
+      <div class="code-wrap">
+        <button class="code__copy" data-copy data-copy-text="npm install -g @openhint/cli&#10;hint config | claude -p&#10;hint add @openhint/hintbook-software-engineer | claude -p">Copy</button>
+        <div class="code">
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">1 · install &amp; register</span></div>
+<div class="code__body"><span class="t-mut"># from your repo root</span>
+<span class="t-bd">npm install -g @openhint/cli</span>
+<span class="t-bd">hint config | claude -p</span>
+<span class="t-bd">hint add @openhint/hintbook-software-engineer \
+  | claude -p</span></div>
+        </div>
+      </div>
+      <div class="code-wrap">
+        <button class="code__copy" data-copy data-copy-text="hint src/billing/invoice.ts | claude -p&#10;hint --mode fix src/billing/invoice.ts | claude -p&#10;hint --dry-run 'src/**/*.hint'">Copy</button>
+        <div class="code">
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">2 · compile &amp; ship</span></div>
+<div class="code__body"><span class="t-mut"># implement from the spec</span>
+<span class="t-bd">hint src/billing/invoice.ts | claude -p</span>
+
+<span class="t-mut"># repair against the spec</span>
+<span class="t-bd">hint --mode fix src/billing/invoice.ts \
+  | claude -p</span>
+
+<span class="t-mut"># validate every spec in CI</span>
+<span class="t-bd">hint --dry-run 'src/**/*.hint'</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="reveal" style="margin-top:22px; display:flex; gap:14px; align-items:flex-start; padding:20px 24px; border:1px solid var(--accent-line); background:var(--accent-soft); border-radius:12px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="color:var(--accent); flex:none; margin-top:2px;"><path d="M4 4h16v12H8.5L4 19.5V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <p style="font-size:0.96rem; color:var(--ink-2); margin:0;"><strong>Then just keep talking to your agent.</strong> <code class="inl">hint config</code> writes the HINT workflow into your <code class="inl">AGENTS.md</code> and <code class="inl">CLAUDE.md</code> — so Claude Code, Codex, and Cursor call <code class="inl">hint</code> on their own whenever a <code class="inl">.hint</code> spec is relevant. No need to run it by hand.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="section divider">
+  <div class="wrap cta-final reveal">
+    <h2 class="h2">Borders around your codebase.</h2>
+    <p class="lede">Declare the architecture once. Let the agent build, fix, and review inside it — forever.</p>
+    <div class="cta-final__btns">
+      <a class="btn btn--primary" href="#quickstart">Get started</a>
+      <a class="btn btn--ghost" href="for-lawyers.html">See it for lawyers →</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div class="footer__brand footer__col">
+        <div class="logo footer__logo">
+          <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
+        </div>
+        <p>Human Intent Native Transpiler. A Markdown-native specification language for professionals who work with AI and want predictable results.</p>
+      </div>
+      <div class="footer__col">
+        <h5>Product</h5>
+        <ul>
+          <li><a href="index.html#how">How it works</a></li>
+          <li><a href="#vocabulary">Vocabulary</a></li>
+          <li><a href="#modes">Modes</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h5>Professions</h5>
+        <ul>
+          <li><a href="for-software-engineers.html">For Engineers</a></li>
+          <li><a href="for-lawyers.html">For Lawyers</a></li>
+          <li><a href="index.html#professions">More soon</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h5>Source</h5>
+        <ul>
+          <li><a href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">hint ↗</a></li>
+          <li><a href="https://github.com/open-hint-dev/hintbook-software-engineer" target="_blank" rel="noopener">hintbook-software-engineer ↗</a></li>
+          <li><a href="https://github.com/open-hint-dev/demo-pied-piper" target="_blank" rel="noopener">demo-pied-piper ↗</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2026 openhint.dev · MIT licensed</span>
+      <span>Borders, not vibes.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>
