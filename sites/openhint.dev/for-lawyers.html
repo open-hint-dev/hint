@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en" data-accent="law">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HINT for Lawyers — Specifications that draft, revise &amp; audit documents</title>
+<meta name="description" content="The lawyer hintbook gives HINT a drafting vocabulary — party, clause, obligation, redline — compiled into binding prompts for a senior attorney to draft, revise, and audit documents." />
+<link rel="stylesheet" href="styles.css" />
+<style>
+.subhero { padding-top: clamp(40px, 5vw, 72px); padding-bottom: clamp(40px, 5vw, 64px); }
+.crumb { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3); margin-bottom: 26px; letter-spacing: 0.02em; }
+.crumb a { color: var(--ink-3); } .crumb a:hover { color: var(--ink); }
+.crumb .sep { margin-inline: 8px; opacity: 0.5; }
+.subhero__grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.02fr); gap: clamp(36px,5vw,72px); align-items: center; }
+.subhero h1 { font-size: clamp(2.4rem, 5vw, 4rem); letter-spacing: -0.035em; line-height: 1; margin-bottom: 22px; }
+.subhero h1 .em { color: var(--accent); }
+.subhero .lede { max-width: 44ch; margin-bottom: 28px; }
+.subhero__cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.bookline { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-2); margin-bottom: 28px; background: var(--paper-2); border: 1px solid var(--line); padding: 8px 13px; border-radius: 100px; }
+.bookline .dot-ok { background: var(--accent-2); }
+
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+
+.kwgroup { margin-bottom: 40px; }
+.kwgroup__h { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; display: flex; align-items: center; gap: 12px; }
+.kwgroup__h::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.kwrow { display: grid; grid-template-columns: 210px 1fr; gap: 24px; padding: 15px 0; border-top: 1px solid var(--line); align-items: start; }
+.kwrow:first-of-type { border-top: none; }
+.kwrow__k { display: flex; flex-direction: column; gap: 6px; }
+.kwrow__k small { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-3); }
+.kwrow__d { color: var(--ink-2); font-size: 0.95rem; }
+.kwrow__d b { color: var(--ink); font-weight: 600; }
+.kw--lg { font-size: 0.86rem; padding: 4px 10px; align-self: flex-start; }
+
+.tabs { display: inline-flex; gap: 4px; padding: 4px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.tabs button { font-family: var(--font-mono); font-size: 0.8rem; padding: 8px 15px; border-radius: 5px; color: var(--ink-3); transition: all .16s; }
+.tabs button.is-active { background: var(--ink); color: var(--paper); }
+.tabs button:not(.is-active):hover { color: var(--ink); }
+[data-panel] { display: none; }
+[data-panel].is-active { display: block; }
+
+.mode { padding: 28px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); display: flex; flex-direction: column; gap: 12px; }
+.mode__k { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.mode h3 { font-size: 1.3rem; }
+.mode p { color: var(--ink-2); font-size: 0.93rem; }
+.mode__cmd { margin-top: auto; }
+.mode__role { font-size: 0.86rem; color: var(--ink-3); font-style: italic; border-left: 2px solid var(--accent-line); padding-left: 12px; }
+
+.band { background: var(--surface); color: var(--on-surface); }
+.band .eyebrow { color: var(--accent-bright); } .band .eyebrow::before { background: var(--accent-bright); }
+.band h2, .band h3 { color: var(--on-surface); }
+.band .lede { color: var(--on-surface-mut); }
+
+.scenario { display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(32px,4vw,56px); align-items: center; }
+.scenario__steps { display: flex; flex-direction: column; gap: 22px; }
+.scstep { display: flex; gap: 16px; }
+.scstep__n { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-bright); flex: none; width: 28px; padding-top: 2px; }
+.scstep h4 { font-size: 1.08rem; color: var(--on-surface); margin-bottom: 4px; }
+.scstep p { color: var(--on-surface-mut); font-size: 0.92rem; }
+.scstep code.inl { background: rgba(255,255,255,0.08); color: var(--on-surface); border-color: rgba(255,255,255,0.1); }
+
+.finding { border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px 18px; margin-bottom: 10px; background: var(--surface-2); }
+.finding__h { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-family: var(--font-mono); font-size: 0.78rem; }
+.sev { padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.sev--v { background: rgba(226,104,95,0.18); color: #ED8278; }
+.sev--g { background: rgba(196,154,76,0.18); color: var(--accent-2); }
+.sev--r { background: rgba(90,168,214,0.16); color: #74B6DE; }
+.finding__loc { color: var(--on-surface-mut); }
+.finding p { font-size: 0.9rem; color: var(--tok-body); }
+.finding p b { color: var(--on-surface); }
+
+.cta-final { text-align: center; }
+.cta-final .lede { max-width: 50ch; margin: 0 auto 28px; }
+.cta-final__btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+.disclaimer { font-size: 0.86rem; color: var(--ink-3); border: 1px solid var(--line); border-radius: 8px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; background: var(--paper-2); }
+.disclaimer svg { width: 18px; height: 18px; flex: none; color: var(--accent); margin-top: 2px; }
+
+.nav__menu-btn { display: none; }
+.mobile-menu { display: none; }
+@media (max-width: 960px) {
+  .subhero__grid, .grid-3, .grid-2, .scenario { grid-template-columns: 1fr; }
+  .kwrow { grid-template-columns: 1fr; gap: 8px; }
+  .nav__menu-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; color: var(--ink); margin-left: auto; border: 1px solid var(--line); border-radius: 6px; }
+  .mobile-menu { display: block; position: fixed; inset: 64px 0 0; background: var(--paper); z-index: 49; padding: 28px 24px; transform: translateY(-12px); opacity: 0; pointer-events: none; transition: opacity .22s, transform .22s; }
+  .mobile-menu.open { opacity: 1; transform: none; pointer-events: auto; }
+  .mobile-menu a { display: block; font-family: var(--font-display); font-size: 1.5rem; padding: 14px 0; border-bottom: 1px solid var(--line); }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="wrap nav__inner">
+    <a class="logo" href="index.html" aria-label="hint — openhint.dev home">
+      <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
+    </a>
+    <div class="nav__links">
+      <a class="nav__link" href="index.html#how">How it works</a>
+      <a class="nav__link" href="index.html#professions">Professions</a>
+      <a class="nav__link" href="for-software-engineers.html">For Engineers</a>
+      <a class="nav__link nav__link--active" href="for-lawyers.html">For Lawyers</a>
+      <a class="nav__link" href="index.html#quickstart">Quick start</a>
+    </div>
+    <div class="nav__cta">
+      <a class="nav__github" href="https://github.com/open-hint-dev/hintbook-lawyer" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.7c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
+        <span>hintbook</span>
+      </a>
+      <a class="btn btn--primary" href="#quickstart">Get started</a>
+    </div>
+    <button class="nav__menu-btn" aria-label="Menu" aria-expanded="false">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 5h16M2 10h16M2 15h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</nav>
+<div class="mobile-menu">
+  <a href="index.html#how">How it works</a>
+  <a href="index.html#professions">Professions</a>
+  <a href="for-software-engineers.html">For Engineers</a>
+  <a href="for-lawyers.html">For Lawyers</a>
+  <a href="index.html#quickstart">Quick start</a>
+</div>
+
+<!-- SUBHERO -->
+<header class="subhero">
+  <div class="wrap">
+    <div class="crumb"><a href="index.html">hint</a><span class="sep">/</span><a href="index.html#professions">professions</a><span class="sep">/</span><span style="color:var(--ink)">for lawyers</span></div>
+    <div class="subhero__grid">
+      <div>
+        <span class="bookline"><span class="dot-ok"></span>@openhint/hintbook-lawyer</span>
+        <h1>Draft documents that hold the <span class="em">line</span>.</h1>
+        <p class="lede">No code. The lawyer hintbook applies the same machinery to legal drafting: declare the parties, clauses, obligations, and red lines in plain Markdown, and HINT compiles a binding brief for a senior attorney persona that drafts, revises, or audits — inventing no facts, names, amounts, dates, or citations.</p>
+        <div class="subhero__cta">
+          <a class="btn btn--primary" href="#quickstart">Quick start</a>
+          <a class="btn btn--ghost" href="https://github.com/open-hint-dev/hintbook-lawyer" target="_blank" rel="noopener">View hintbook ↗</a>
+        </div>
+      </div>
+      <div class="code-wrap">
+        <div class="code code--scroll">
+          <div class="code__bar">
+            <span class="code__dots"><i></i><i></i><i></i></span>
+            <span class="code__file"><b>contracts/nda.md.hint</b></span>
+            <span class="code__tag">Markdown</span>
+          </div>
+<div class="code__body"><span class="t-bd">Mutual NDA — Pearson Specter Litt matter.</span>
+
+<span class="t-h"># </span><span class="t-kw">jurisdiction</span> <span class="t-nm">NewYork</span>
+
+<span class="t-bd">Governed by the laws of New York.</span>
+
+<span class="t-h"># </span><span class="t-kw">party</span> <span class="t-nm">Receiving</span> <span class="t-id">{#receiving}</span>
+
+<span class="t-bd">Hooli, Inc., a Delaware corporation.</span>
+
+<span class="t-h"># </span><span class="t-kw">clause</span> <span class="t-nm">Confidentiality</span>
+
+<span class="t-h">## </span><span class="t-kw">obligation</span> <span class="t-nm">Protect</span>
+
+<span class="t-bd">Protect all Confidential Information with
+reasonable care.</span>
+
+<span class="t-h">## </span><span class="t-kw">exception</span> <span class="t-nm">Compelled</span>
+
+<span class="t-bd">Disclosure compelled by law, on prior
+notice to the Disclosing Party.</span>
+
+<span class="t-h">## </span><span class="t-kw">redline</span> <span class="t-nm">Survival</span>
+
+<span class="t-bd">Survives 5 years — never perpetual.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- VALUE -->
+<section class="section divider">
+  <div class="wrap">
+    <div class="grid-3">
+      <div class="card reveal">
+        <h3 class="h3" style="margin-bottom:8px;">Defined-term discipline</h3>
+        <p style="font-size:0.95rem; color:var(--ink-2);">A <code class="inl">definition</code> is defined once, capitalized as defined, with no synonyms — the assistant enforces it mechanically across every provision.</p>
+      </div>
+      <div class="card reveal" data-d="1">
+        <h3 class="h3" style="margin-bottom:8px;">Red lines never trade away</h3>
+        <p style="font-size:0.95rem; color:var(--ink-2);">A <code class="inl">redline</code> carries explicit never-concede language; a <code class="inl">never</code> block is enforced with the strongest wording in the book.</p>
+      </div>
+      <div class="card reveal" data-d="2">
+        <h3 class="h3" style="margin-bottom:8px;">Gaps, not guesses</h3>
+        <p style="font-size:0.95rem; color:var(--ink-2);">Missing figures, dates, and citations come back as reported gaps with their risk — never filled with something plausible.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SAME POWER -->
+<section class="section divider">
+  <div class="wrap">
+    <div class="reveal" style="max-width:64ch; margin-bottom:40px;">
+      <div class="eyebrow" style="margin-bottom:22px;">The same power</div>
+      <h2 class="h2">The rigor software engineers have for code — now for your documents.</h2>
+      <p class="lede" style="margin-top:16px;">For decades, software teams kept their work inside hard borders: a written spec, versioned in the repo, reviewed line by line, built the same way every time. HINT brings that exact discipline to drafting. Your parties, clauses, and red lines become a specification that lives beside the document, travels through the same review, and compiles identically on every run.</p>
+    </div>
+    <div class="grid-2 reveal" style="align-items:stretch;">
+      <div class="card" style="display:flex; flex-direction:column;">
+        <div style="font-family:var(--font-mono); font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-3); margin-bottom:20px;">What software engineers have had</div>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:15px; margin:0; padding:0;">
+          <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink-2); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--ink-3);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Specifications that bind the build</li>
+          <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink-2); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--ink-3);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Specs versioned in the repo, beside the code</li>
+          <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink-2); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--ink-3);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Pull-request review against the spec</li>
+          <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink-2); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--ink-3);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Deterministic builds — identical every time</li>
+          <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink-2); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--ink-3);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Anti-patterns the pipeline refuses</li>
+        </ul>
+      </div>
+      <div class="card" style="display:flex; flex-direction:column; border-color:var(--accent-line); background:var(--accent-soft);">
+        <div style="font-family:var(--font-mono); font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); margin-bottom:20px;">What you have now</div>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:15px; margin:0; padding:0;">
+          <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--accent);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><code class="inl">.hint</code> specs that bind the draft</li>
+          <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--accent);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Specs versioned in your matter, beside the document</li>
+          <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--accent);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><code class="inl">--mode review</code> audits the document against the spec</li>
+          <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--accent);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Deterministic compiles — byte-identical drafts</li>
+          <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--accent);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Red lines the draft can never cross</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VOCABULARY -->
+<section class="section divider" id="vocabulary">
+  <div class="wrap">
+    <div class="reveal" style="max-width:60ch; margin-bottom:44px;">
+      <div class="eyebrow" style="margin-bottom:22px;">The vocabulary</div>
+      <h2 class="h2">The whole anatomy of a legal norm — as heading depth.</h2>
+      <p class="lede" style="margin-top:16px;">No new syntax. An <code class="inl">obligation</code> under a <code class="inl">clause</code>, a <code class="inl">remedy</code> under a <code class="inl">breach</code>, a <code class="inl">fallback</code> under a position — nesting expresses the structure, and each keyword compiles into a binding drafting directive.</p>
+    </div>
+
+    <div class="reveal">
+      <div class="kwgroup">
+        <div class="kwgroup__h">Matter context</div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">matter</span><small>case · engagement</small></div><div class="kwrow__d">The matter itself: parties' goals, deal background, scope — <b>informs every drafting decision</b>.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">party</span><small>parties</small></div><div class="kwrow__d">A party: exact legal name, role, capacity — used consistently, never varied.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">jurisdiction</span><small>law</small></div><div class="kwrow__d">Governing law and forum. Drafting follows its conventions; unenforceable requests get flagged.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">definition</span><small>term · defined</small></div><div class="kwrow__d">A defined term: defined once, capitalized as defined, no synonyms for the concept.</div></div>
+      </div>
+
+      <div class="kwgroup">
+        <div class="kwgroup__h">Provisions</div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">clause</span><small>provision · section</small></div><div class="kwrow__d">A contractual provision drafted exactly as specified — scope, carve-outs, cross-references.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">obligation</span><small>duty · covenant</small></div><div class="kwrow__d">What a party must do: clear mandatory language, unambiguous who / what / when.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">prohibition</span><small>restriction</small></div><div class="kwrow__d">What a party must not do: clear "shall not" language, unambiguous who is bound.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">exception</span><small>carve-out · proviso</small></div><div class="kwrow__d">A narrow carve-out applied exactly as stated — <b>never swallows the rule it qualifies</b>.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">breach</span> <span class="kw kw--lg">remedy</span></div><div class="kwrow__d">What constitutes breach, and the consequence that follows — none added, none waived.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">payment</span> <span class="kw kw--lg">deadline</span></div><div class="kwrow__d">Amounts, currency, schedule, durations, triggers. Missing figures are gaps, not blanks to fill.</div></div>
+      </div>
+
+      <div class="kwgroup">
+        <div class="kwgroup__h">Positions &amp; red lines</div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">redline</span><small>rule</small></div><div class="kwrow__d">Client red lines, honored without exception — <b>explicit never-trade-away language</b>.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">never</span><small>forbidden · banned</small></div><div class="kwrow__d">Content that must never appear — enforced with the strongest language in the book.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">fallback</span><small>alternative</small></div><div class="kwrow__d">An ordered negotiation fallback: conceded in declared order, never past the last, never across a red line.</div></div>
+      </div>
+
+      <div class="kwgroup">
+        <div class="kwgroup__h">Argument &amp; authority</div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">claim</span> <span class="kw kw--lg">argument</span></div><div class="kwrow__d">A cause of action and a developed argument — issue → rule → application → conclusion.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">authority</span><small>citation · caselaw</small></div><div class="kwrow__d">Authorities cited precisely, only for the stated point. <b>Unverifiable citations are reported, never invented.</b></div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">source</span><small>statute · basis</small></div><div class="kwrow__d">The law a provision must satisfy. Conflicts between spec and source get flagged, never silently resolved.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEE IT COMPILE -->
+<section class="section divider band" id="compile">
+  <div class="wrap">
+    <div class="reveal" style="max-width:60ch; margin-bottom:36px;">
+      <div class="eyebrow" style="margin-bottom:22px;">See it compile</div>
+      <h2 class="h2">One spec. A binding brief. A severity-ranked audit.</h2>
+      <p class="lede" style="margin-top:16px;">The confidentiality clause becomes a draft prompt for a senior-attorney persona — then, under <code class="inl">--mode review</code>, a findings report that quotes the document's exact language against each block.</p>
+    </div>
+
+    <div class="reveal" data-tabs>
+      <div class="tabs">
+        <button data-tab="src" class="is-active">.hint source</button>
+        <button data-tab="out">compiled brief</button>
+        <button data-tab="rep">audit report</button>
+      </div>
+
+      <div data-panel="src" class="is-active code-wrap on-dark">
+        <button class="code__copy" data-copy>Copy</button>
+        <div class="code">
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file"><b>contracts/nda.md.hint</b></span></div>
+<div class="code__body"><span class="t-h"># </span><span class="t-kw">clause</span> <span class="t-nm">Confidentiality</span>
+
+<span class="t-h">## </span><span class="t-kw">obligation</span> <span class="t-nm">Protect</span>
+
+<span class="t-bd">The Receiving Party shall protect all Confidential Information with reasonable care.</span>
+
+<span class="t-h">## </span><span class="t-kw">exception</span> <span class="t-nm">Compelled</span>
+
+<span class="t-bd">Disclosure compelled by law, on prior notice to the Disclosing Party.</span>
+
+<span class="t-h">## </span><span class="t-kw">redline</span> <span class="t-nm">Survival</span>
+
+<span class="t-bd">Confidentiality survives 5 years after disclosure — never perpetual.</span></div>
+        </div>
+      </div>
+
+      <div data-panel="out" class="code-wrap on-dark">
+        <button class="code__copy" data-copy>Copy</button>
+        <div class="code">
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">hint contracts/nda.md</span><span class="code__tag">draft</span></div>
+<div class="code__body"><span class="t-mut">&lt;</span><span class="t-tag">clause</span> <span class="t-at">name</span>=<span class="t-str">"Confidentiality"</span><span class="t-mut">&gt;</span>
+  <span class="t-mut">&lt;</span><span class="t-tag">binding_obligation</span> <span class="t-at">name</span>=<span class="t-str">"Protect"</span><span class="t-mut">&gt;</span>
+    <span class="t-bd">The Receiving Party shall protect all
+    Confidential Information with reasonable care.</span>
+  <span class="t-mut">&lt;/</span><span class="t-tag">binding_obligation</span><span class="t-mut">&gt;</span>
+  <span class="t-mut">&lt;</span><span class="t-tag">exception</span> <span class="t-at">name</span>=<span class="t-str">"Compelled"</span><span class="t-mut">&gt;</span>
+    <span class="t-bd">Disclosure compelled by law, on prior
+    notice to the Disclosing Party.</span>
+  <span class="t-mut">&lt;/</span><span class="t-tag">exception</span><span class="t-mut">&gt;</span>
+  <span class="t-mut">&lt;</span><span class="t-tag">non_negotiable_position</span> <span class="t-at">name</span>=<span class="t-str">"Survival"</span><span class="t-mut">&gt;</span>
+    <span class="t-bd">Confidentiality survives 5 years after
+    disclosure — never perpetual.</span>
+  <span class="t-mut">&lt;/</span><span class="t-tag">non_negotiable_position</span><span class="t-mut">&gt;</span>
+<span class="t-mut">&lt;/</span><span class="t-tag">clause</span><span class="t-mut">&gt;</span></div>
+        </div>
+      </div>
+
+      <div data-panel="rep" class="reveal">
+        <p style="color:var(--on-surface-mut); font-family:var(--font-mono); font-size:0.82rem; margin-bottom:16px;">$ hint --mode review contracts/nda.md | claude -p</p>
+        <div class="finding">
+          <div class="finding__h"><span class="sev sev--v">violation</span><span class="finding__loc">§ 4.2 → redline Survival</span></div>
+          <p><b>Quoted: "…shall survive in perpetuity."</b> Directly violates the <code class="inl">Survival</code> red line (5 years, never perpetual). Correcting language: "…shall survive for five (5) years following disclosure."</p>
+        </div>
+        <div class="finding">
+          <div class="finding__h"><span class="sev sev--g">gap</span><span class="finding__loc">§ 4 → exception Compelled</span></div>
+          <p><b>No carve-out for legally compelled disclosure.</b> The <code class="inl">Compelled</code> exception is declared but absent from the draft. Add it with the prior-notice requirement.</p>
+        </div>
+        <div class="finding">
+          <div class="finding__h"><span class="sev sev--r">risk</span><span class="finding__loc">§ 1.3 → definition Confidential Information</span></div>
+          <p><b>"confidential information" appears lower-cased.</b> The defined term must be capitalized consistently throughout to remain enforceable.</p>
+        </div>
+        <p style="color:var(--on-surface-mut); font-size:0.88rem; margin-top:14px;">Verdict: <strong style="color:#ED8278;">does not conform</strong> — 1 violation, 1 gap, 1 risk.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODES -->
+<section class="section divider" id="modes">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:42px;">
+      <div class="eyebrow" style="margin-bottom:22px;">Three modes</div>
+      <h2 class="h2">Same spec. A senior attorney for each task.</h2>
+    </div>
+    <div class="grid-3 reveal">
+      <div class="mode">
+        <div class="mode__k">compile · default</div>
+        <h3>Draft</h3>
+        <p class="mode__role">A senior attorney drafting from a binding specification.</p>
+        <p>Read parties, defined terms, governing law, and red lines first; draft complete documents — no bracketed stubs unless declared.</p>
+        <code class="inl mode__cmd">hint contracts/...</code>
+      </div>
+      <div class="mode">
+        <div class="mode__k">--mode fix</div>
+        <h3>Revise</h3>
+        <p class="mode__role">Where the document and the spec disagree, the document is wrong.</p>
+        <p>Smallest conforming revision; structure, numbering, defined terms, and style preserved; each change reported with its rationale.</p>
+        <code class="inl mode__cmd">hint --mode fix</code>
+      </div>
+      <div class="mode">
+        <div class="mode__k">--mode review</div>
+        <h3>Audit</h3>
+        <p class="mode__role">Findings, never redlines.</p>
+        <p>Walk the spec block by block, quote the document's exact language, hunt prohibited content and red-line breaches, rank by severity.</p>
+        <code class="inl mode__cmd">hint --mode review</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCENARIO / DEMO -->
+<section class="section divider band">
+  <div class="wrap">
+    <div class="reveal" style="max-width:56ch; margin-bottom:40px;">
+      <div class="eyebrow" style="margin-bottom:22px;">In practice · demo-pearson-specter-litt</div>
+      <h2 class="h2">An employment agreement, specified before it's drafted.</h2>
+      <p class="lede" style="margin-top:16px;">The Pearson Specter Litt demo keeps the matter's parties, positions, and red lines in <code class="inl">.hint</code> files — so every draft, revision, and review answers to the same source of truth.</p>
+    </div>
+    <div class="scenario reveal">
+      <div class="scenario__steps">
+        <div class="scstep"><span class="scstep__n">01</span><div><h4>Set the matter baseline</h4><p>A folder <code class="inl">_.hint</code> declares the <code class="inl">jurisdiction</code>, the <code class="inl">party</code> names, and the firm's drafting <code class="inl">style</code> — inherited by every document.</p></div></div>
+        <div class="scstep"><span class="scstep__n">02</span><div><h4>Declare the positions</h4><p>The non-compete spec nests a <code class="inl">prohibition</code>, its <code class="inl">condition</code> and <code class="inl">exception</code>, a <code class="inl">breach → remedy</code> chain, and the <code class="inl">source</code> on restraint-of-trade limits.</p></div></div>
+        <div class="scstep"><span class="scstep__n">03</span><div><h4>Compile &amp; draft</h4><p><code class="inl">hint contracts/employment.md | claude -p</code> produces a complete first draft with defined terms consistent and no invented figures.</p></div></div>
+        <div class="scstep"><span class="scstep__n">04</span><div><h4>Audit the counterparty's redline</h4><p><code class="inl">--mode review</code> checks their markup against your red lines — the perpetual-survival edit comes back as a flagged violation, not a missed one.</p></div></div>
+      </div>
+      <div class="code-wrap">
+        <div class="code">
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file"><b>contracts/employment.md.hint</b></span></div>
+<div class="code__body"><span class="t-h"># </span><span class="t-kw">clause</span> <span class="t-nm">NonCompete</span>
+
+<span class="t-h">## </span><span class="t-kw">prohibition</span> <span class="t-nm">Restraint</span>
+
+<span class="t-bd">The Employee shall not engage in any
+Competing Business.</span>
+
+<span class="t-h">### </span><span class="t-kw">condition</span> <span class="t-nm">Scope</span>
+
+<span class="t-bd">Within the Territory during the
+Restricted Period.</span>
+
+<span class="t-h">### </span><span class="t-kw">exception</span> <span class="t-nm">Passive</span>
+
+<span class="t-bd">Holdings under 3% in listed companies.</span>
+
+<span class="t-h">### </span><span class="t-kw">source</span>
+
+<span class="t-bd">Enforceability limits on restraints of
+trade under the governing law.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- QUICK START -->
+<section class="section divider" id="quickstart">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:36px;">
+      <div class="eyebrow" style="margin-bottom:22px;">Quick start</div>
+      <h2 class="h2">Set up a matter.</h2>
+    </div>
+    <div class="grid-2 reveal" style="margin-bottom:24px;">
+      <div class="code-wrap">
+        <button class="code__copy" data-copy data-copy-text="npm install -g @openhint/cli&#10;hint config | claude -p&#10;hint add @openhint/hintbook-lawyer | claude -p">Copy</button>
+        <div class="code">
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">1 · install &amp; register</span></div>
+<div class="code__body"><span class="t-mut"># in the matter folder</span>
+<span class="t-bd">npm install -g @openhint/cli</span>
+<span class="t-bd">hint config | claude -p</span>
+<span class="t-bd">hint add @openhint/hintbook-lawyer \
+  | claude -p</span></div>
+        </div>
+      </div>
+      <div class="code-wrap">
+        <button class="code__copy" data-copy data-copy-text="hint contracts/nda.md | claude -p&#10;hint --mode fix contracts/nda.md | claude -p&#10;hint --mode review contracts/nda.md | claude -p">Copy</button>
+        <div class="code">
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">2 · draft, revise, audit</span></div>
+<div class="code__body"><span class="t-mut"># draft from the spec</span>
+<span class="t-bd">hint contracts/nda.md | claude -p</span>
+
+<span class="t-mut"># revise an existing document</span>
+<span class="t-bd">hint --mode fix contracts/nda.md | claude -p</span>
+
+<span class="t-mut"># audit against the spec</span>
+<span class="t-bd">hint --mode review contracts/nda.md | claude -p</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="reveal" style="margin:0 0 16px; display:flex; gap:14px; align-items:flex-start; padding:20px 24px; border:1px solid var(--accent-line); background:var(--accent-soft); border-radius:12px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="color:var(--accent); flex:none; margin-top:2px;"><path d="M4 4h16v12H8.5L4 19.5V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <p style="font-size:0.96rem; color:var(--ink-2); margin:0;"><strong>Then just keep talking to your assistant.</strong> <code class="inl">hint config</code> writes the HINT workflow into your <code class="inl">AGENTS.md</code> and <code class="inl">CLAUDE.md</code> — so Claude Code, Codex, and Cursor call <code class="inl">hint</code> on their own whenever a matter’s <code class="inl">.hint</code> spec is relevant. No need to run it by hand.</p>
+    </div>
+    <div class="disclaimer reveal">
+      <svg viewBox="0 0 20 20" fill="none"><path d="M10 7v4m0 3h.01M10 2l8 14H2L10 2z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>HINT compiles prompts; it does not practice law. Every draft is produced for and requires review by licensed counsel — the <code class="inl">draft</code> mode footer states this explicitly in its output.</span>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="section divider">
+  <div class="wrap cta-final reveal">
+    <h2 class="h2">Red lines the AI can't cross.</h2>
+    <p class="lede">Declare the deal once. Draft, revise, and audit every document against the same binding specification.</p>
+    <div class="cta-final__btns">
+      <a class="btn btn--primary" href="#quickstart">Get started</a>
+      <a class="btn btn--ghost" href="for-software-engineers.html">See it for engineers →</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div class="footer__brand footer__col">
+        <div class="logo footer__logo">
+          <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
+        </div>
+        <p>Human Intent Native Transpiler. A Markdown-native specification language for professionals who work with AI and want predictable results.</p>
+      </div>
+      <div class="footer__col">
+        <h5>Product</h5>
+        <ul>
+          <li><a href="index.html#how">How it works</a></li>
+          <li><a href="#vocabulary">Vocabulary</a></li>
+          <li><a href="#modes">Modes</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h5>Professions</h5>
+        <ul>
+          <li><a href="for-software-engineers.html">For Engineers</a></li>
+          <li><a href="for-lawyers.html">For Lawyers</a></li>
+          <li><a href="index.html#professions">More soon</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h5>Source</h5>
+        <ul>
+          <li><a href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">hint ↗</a></li>
+          <li><a href="https://github.com/open-hint-dev/hintbook-lawyer" target="_blank" rel="noopener">hintbook-lawyer ↗</a></li>
+          <li><a href="https://github.com/open-hint-dev/demo-pearson-specter-litt" target="_blank" rel="noopener">demo-pearson-specter-litt ↗</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2026 openhint.dev · MIT licensed</span>
+      <span>Borders, not vibes.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>
