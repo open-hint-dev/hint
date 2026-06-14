@@ -82,10 +82,10 @@ Fetches each book, validates that it actually contains a hintbook (a `hintbook.j
 
 ```bash
 hint add @openhint/hintbook-software-engineer | claude -p
-hint add -g @openhint/hintbook-lawyer
-hint add https://github.com/acme/hintbooks-platform.git
-hint add git@github.com:acme/hintbooks-platform.git
-hint add file://hintbooks/team-conventions
+hint add -g @openhint/hintbook-lawyer | claude -p
+hint add https://github.com/acme/hintbooks-platform.git | claude -p
+hint add git@github.com:acme/hintbooks-platform.git | claude -p
+hint add file://hintbooks/team-conventions | claude -p
 ```
 
 The source type is detected from the argument:
