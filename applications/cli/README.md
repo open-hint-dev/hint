@@ -19,7 +19,7 @@ Or ad hoc: `npx @openhint/cli <paths...>`.
 hint config | claude -p
 
 # 2. Install a keyword vocabulary (registered in hint.yml automatically)
-hint add @openhint/hintbook-software-engineer
+hint add @openhint/hintbook-software-engineer | claude -p
 
 # 3. Write specs — a root _.hint and companion <file>.hint files — then compile
 hint src/billing/invoice.ts | claude -p
@@ -56,9 +56,9 @@ hint config | claude -p
 Fetches hintbooks, validates them (a `hintbook.json` must be present), and registers them in `hint.yml`:
 
 ```bash
-hint add @openhint/hintbook-software-engineer        # npm package (-g/--global for global install)
-hint add https://github.com/acme/hintbooks-platform   # git repo → cloned into hintbooks/
-hint add file://hintbooks/team-conventions            # local folder
+hint add @openhint/hintbook-software-engineer | claude -p         # npm package (-g/--global for global install)
+hint add https://github.com/acme/hintbooks-platform | claude -p   # git repo → cloned into hintbooks/
+hint add file://hintbooks/team-conventions | claude -p            # local folder
 ```
 
 ## Project configuration

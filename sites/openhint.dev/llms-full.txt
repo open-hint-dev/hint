@@ -116,7 +116,7 @@ books:
 If you skipped the default during `hint config`, or want additional vocabularies:
 
 ```bash
-hint add @openhint/hintbook-software-engineer       # npm package
+hint add @openhint/hintbook-software-engineer        # npm package
 hint add https://github.com/acme/hintbooks-platform  # git: your org's shared platform standards
 hint add file://hintbooks/team-conventions           # in-repo: your team's own vocabulary
 ```
@@ -570,7 +570,7 @@ Names of the form `__name__` are **running instructions** — structural slots t
 A hintbook is just files — distribute it any way `hint add` can fetch it:
 
 ```bash
-hint add @openhint/hintbook-lawyer                   # npm (use -g for a global install)
+hint add @openhint/hintbook-lawyer                    # npm (use -g for a global install)
 hint add https://github.com/acme/hintbooks-platform   # git → cloned into hintbooks/<repo>
 hint add file://hintbooks/team-conventions            # local folder, validated only
 ```
@@ -671,10 +671,10 @@ Fetches each book, validates that it actually contains a hintbook (a `hintbook.j
 
 ```bash
 hint add @openhint/hintbook-software-engineer | claude -p
-hint add -g @openhint/hintbook-lawyer
-hint add https://github.com/acme/hintbooks-platform.git
-hint add git@github.com:acme/hintbooks-platform.git
-hint add file://hintbooks/team-conventions
+hint add -g @openhint/hintbook-lawyer | claude -p
+hint add https://github.com/acme/hintbooks-platform.git | claude -p
+hint add git@github.com:acme/hintbooks-platform.git | claude -p
+hint add file://hintbooks/team-conventions | claude -p
 ```
 
 The source type is detected from the argument:

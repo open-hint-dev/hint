@@ -45,9 +45,9 @@ books:
 If you skipped the default during `hint config`, or want additional vocabularies:
 
 ```bash
-hint add @openhint/hintbook-software-engineer       # npm package
-hint add https://github.com/acme/hintbooks-platform  # git: your org's shared platform standards
-hint add file://hintbooks/team-conventions           # in-repo: your team's own vocabulary
+hint add @openhint/hintbook-software-engineer | claude -p        # npm package
+hint add https://github.com/acme/hintbooks-platform | claude -p  # git: your org's shared platform standards
+hint add file://hintbooks/team-conventions | claude -p           # in-repo: your team's own vocabulary
 ```
 
 Each installed book is fetched, validated (it must contain a `hintbook.json`), and registered in the `books` array of `hint.yml`. See the [CLI Reference](06-cli.md) for details.

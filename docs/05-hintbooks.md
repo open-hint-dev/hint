@@ -135,9 +135,9 @@ Names of the form `__name__` are **running instructions** — structural slots t
 A hintbook is just files — distribute it any way `hint add` can fetch it:
 
 ```bash
-hint add @openhint/hintbook-lawyer                   # npm (use -g for a global install)
-hint add https://github.com/acme/hintbooks-platform   # git → cloned into hintbooks/<repo>
-hint add file://hintbooks/team-conventions            # local folder, validated only
+hint add @openhint/hintbook-lawyer | claude -p                   # npm (use -g for a global install)
+hint add https://github.com/acme/hintbooks-platform | claude -p   # git → cloned into hintbooks/<repo>
+hint add file://hintbooks/team-conventions | claude -p            # local folder, validated only
 ```
 
 For npm distribution, publish the package with `hintbook.json` and the keyword files included (an `keywords/` subfolder is conventional). For git, any repository containing hintbooks works — every `hintbook.json` in the clone is discovered.

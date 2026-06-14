@@ -137,8 +137,8 @@ The compiled prompt makes the assistant draft inside those borders — defined t
 ```bash
 npm install -g @openhint/cli
 hint config | claude -p
-hint add @openhint/hintbook-software-engineer   # building software
-hint add @openhint/hintbook-lawyer              # drafting legal documents
+hint add @openhint/hintbook-software-engineer | claude -p   # building software
+hint add @openhint/hintbook-lawyer | claude -p              # drafting legal documents
 ```
 
 Install the hintbook for your profession — or both, or your own.
