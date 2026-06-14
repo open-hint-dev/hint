@@ -183,6 +183,7 @@ strong { font-weight: 600; color: var(--ink); }
 .code__dots i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.14); }
 .code__file { font-size: 0.78rem; color: var(--on-surface-mut); letter-spacing: 0.01em; }
 .code__file b { color: var(--on-surface); font-weight: 500; }
+.code__bar:has(.code__tag) { padding-right: 80px; }
 .code__tag {
   margin-left: auto; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--accent-bright); padding: 3px 9px; border: 1px solid var(--accent-line);
