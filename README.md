@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="sites/openhint.dev/public/logo-full.png" alt="HINT" width="491">
+  <img src="sites/openhint.dev/assets/logo-full.png" alt="HINT" width="491">
 </p>
 
 <p align="center">
