@@ -3,6 +3,12 @@ import * as FsPromises from 'node:fs/promises';
 export const URL_FILE_PREFIX = 'file://';
 export const URL_NPM_PREFIX = 'npm://';
 
+// Project-local folder where the CLI stores fetched hintbooks: git clones land in
+// `hintbooks/<repo>`, and npm books are installed into `hintbooks/node_modules/<pkg>`
+// via an isolated npm prefix so the host project's package manager is never invoked.
+export const HINTBOOKS_FOLDER = 'hintbooks';
+export const NODE_MODULES_FOLDER = 'node_modules';
+
 export function interpolate(template: string, values: Record<string, any>): string {
     if (!template) return template;
 

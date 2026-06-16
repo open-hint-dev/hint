@@ -68,6 +68,22 @@ describe('hintbook', () => {
             }
         });
 
+        it('resolves an npm prefixed book from the isolated hintbooks store', async () => {
+            const tempPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-npm-'));
+
+            try {
+                const keywordsPath = Path.join(tempPath, 'hintbooks/node_modules/@openhint/hintbook-fixture/keywords');
+                await FsPromises.mkdir(keywordsPath, { recursive: true });
+                await FsPromises.copyFile(Path.join(instructionsPath, 'hintbook.json'), Path.join(keywordsPath, 'hintbook.json'));
+
+                const resolved = await resolveHintbookPaths(tempPath, 'npm://@openhint/hintbook-fixture');
+
+                expect(resolved).toEqual([keywordsPath]);
+            } finally {
+                await FsPromises.rm(tempPath, { recursive: true, force: true });
+            }
+        });
+
         it('finds every hintbook under a shared base folder', async () => {
             const resolved = await resolveHintbookPaths(repoRootPath, 'file://testdata/hintbooks');
 
