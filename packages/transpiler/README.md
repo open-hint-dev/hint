@@ -54,7 +54,7 @@ const prompt = await compileHints(hints, hintbooks, 'compile');
 | ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `findProjectRoot(startPath)`             | Walk up to the nearest `hint.yml` / `hint.yaml`.                                               |
 | `findConfig`, `loadConfig`, `saveConfig` | Locate, read, and write the project's `ConfigData` (`name`, `description`, `books`, `ignore`). |
-| `CONFIG_INSTRUCTION`                     | The AGENTS.md / CLAUDE.md workflow instruction block emitted by `hint config`.                 |
+| `CONFIG_INSTRUCTION`                     | The AGENTS.md / CLAUDE.md workflow instruction block emitted by `hint instruct`.               |
 
 Constants for the running vocabulary (`RUNNING_FILE`, `RUNNING_FOLDER`, `RUNNING_HEADER`, `RUNNING_FOOTER`, `RUNNING_SYSTEM`), placeholders (`PLACEHOLDER_ID`, `PLACEHOLDER_NAME`, `PLACEHOLDER_BODY`, `PLACEHOLDER_CHILDREN`), book prefixes (`URL_FILE_PREFIX`, `URL_NPM_PREFIX`), and the default mode (`INSTRUCTION_MODE_DEFAULT`) are exported alongside the types `HintData`, `HintFileData`, `HintbookData`, `InstructionData`, `ModeData`, and `ConfigData`.
 

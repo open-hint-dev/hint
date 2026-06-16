@@ -5,7 +5,6 @@ import * as Path from 'node:path';
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
-import { printAgentPrompt } from './config.js';
 
 const HINTBOOKS_FOLDER = 'hintbooks';
 
@@ -41,13 +40,13 @@ export class AddCommand implements ICommand {
                 books.push(entry);
             }
 
-            process.stderr.write(`Installed ${entry}\n`);
+            process.stdout.write(`Installed ${entry}\n`);
         }
 
         config.books = books;
         await Transpiler.saveConfig(projectRootPath, config);
 
-        await printAgentPrompt(projectRootPath, config);
+        process.stdout.write(`Run 'hint instruct | claude -p' to refresh AGENTS.md and CLAUDE.md.\n`);
     }
 }
 

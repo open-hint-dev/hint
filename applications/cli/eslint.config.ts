@@ -1,1 +1,1 @@
-export { default } from '@openhint/preset-eslint/isomorphic';
+export { default } from '@openhint/preset-eslint/node';

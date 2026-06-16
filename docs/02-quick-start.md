@@ -22,13 +22,12 @@ From your repository root:
 hint config
 ```
 
-This does two things:
+**Creates `hint.yml`** (if missing) — it asks for a project name and description, and offers to register the default hintbook. `hint.yml` marks the project root; every path in a compilation is resolved against it.
 
-1. **Creates `hint.yml`** (if missing) — it asks for a project name and description, and offers to register the default hintbook. `hint.yml` marks the project root; every path in a compilation is resolved against it.
-2. **Prints an AI agent prompt to stdout** that instructs an agent to add the HINT workflow instructions (and each hintbook's system glossary) to your `AGENTS.md` and `CLAUDE.md`. The command never edits those files itself — pipe the output to your agent to apply it:
+Then set up your agent context files with `hint instruct`, which prints an AI agent prompt to stdout that instructs an agent to add the HINT workflow instructions (and each hintbook's system glossary) to your `AGENTS.md` and `CLAUDE.md`. The command never edits those files itself — pipe the output to your agent to apply it:
 
 ```bash
-hint config | claude -p
+hint instruct | claude -p
 ```
 
 The resulting `hint.yml` looks like this:
@@ -45,12 +44,12 @@ books:
 If you skipped the default during `hint config`, or want additional vocabularies:
 
 ```bash
-hint add @openhint/hintbook-software-engineer | claude -p        # npm package
-hint add https://github.com/acme/hintbooks-platform | claude -p  # git: your org's shared platform standards
-hint add file://hintbooks/team-conventions | claude -p           # in-repo: your team's own vocabulary
+hint add @openhint/hintbook-software-engineer        # npm package
+hint add https://github.com/acme/hintbooks-platform  # git: your org's shared platform standards
+hint add file://hintbooks/team-conventions           # in-repo: your team's own vocabulary
 ```
 
-Each installed book is fetched, validated (it must contain a `hintbook.json`), and registered in the `books` array of `hint.yml`. See the [CLI Reference](06-cli.md) for details.
+Each installed book is fetched, validated (it must contain a `hintbook.json`), and registered in the `books` array of `hint.yml`. Run `hint instruct | claude -p` afterwards to refresh `AGENTS.md` / `CLAUDE.md` with the new vocabulary. See the [CLI Reference](06-cli.md) for details.
 
 ## 4. Write the root baseline
 

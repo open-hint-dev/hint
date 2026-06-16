@@ -107,8 +107,37 @@ describe('cli', () => {
     });
 
     describe('config', () => {
-        it('prints the agent prompt for an initialized project', async () => {
+        it('reports an existing config and points to instruct', async () => {
             const result = await runCli(['config']);
+
+            expect(result.exitCode).toBeUndefined();
+            expect(result.stdout).toContain('hint.yml already exists');
+            expect(result.stdout).toContain('hint instruct | claude -p');
+            expect(result.stdout).not.toContain('<hint>');
+        });
+
+        it('creates hint.yml in the current folder when none exists', async () => {
+            const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-cli-test-'));
+
+            try {
+                const result = await runCli(['config'], temporaryPath);
+
+                expect(result.exitCode).toBeUndefined();
+                expect(result.stdout).toContain('Created hint.yml');
+                expect(result.stdout).toContain('hint instruct | claude -p');
+                expect(result.stdout).not.toContain('<hint>');
+
+                const configContent = await FsPromises.readFile(Path.join(temporaryPath, 'hint.yml'), 'utf8');
+                expect(configContent).toContain(`name: ${Path.basename(temporaryPath)}`);
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
+    });
+
+    describe('instruct', () => {
+        it('prints the agent prompt for an initialized project', async () => {
+            const result = await runCli(['instruct']);
 
             expect(result.exitCode).toBeUndefined();
             expect(result.stdout).toContain('AGENTS.md and CLAUDE.md');
@@ -118,18 +147,14 @@ describe('cli', () => {
             expect(result.stdout).toContain('</system_instructions_from_hintbook-testdata>');
         });
 
-        it('creates hint.yml in the current folder and proceeds when none exists', async () => {
+        it('fails outside an initialized project', async () => {
             const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-cli-test-'));
 
             try {
-                const result = await runCli(['config'], temporaryPath);
+                const result = await runCli(['instruct'], temporaryPath);
 
-                expect(result.exitCode).toBeUndefined();
-                expect(result.stderr).toContain('Created hint.yml');
-                expect(result.stdout).toContain('<hint>');
-
-                const configContent = await FsPromises.readFile(Path.join(temporaryPath, 'hint.yml'), 'utf8');
-                expect(configContent).toContain(`name: ${Path.basename(temporaryPath)}`);
+                expect(result.exitCode).toBe(1);
+                expect(result.stderr).toContain('No hint.yml found');
             } finally {
                 await FsPromises.rm(temporaryPath, { recursive: true, force: true });
             }
@@ -157,8 +182,9 @@ describe('cli', () => {
                 ], temporaryPath);
 
                 expect(addResult.exitCode).toBeUndefined();
-                expect(addResult.stderr).toContain('Installed file://book');
-                expect(addResult.stdout).toContain('<hint>');
+                expect(addResult.stdout).toContain('Installed file://book');
+                expect(addResult.stdout).toContain('hint instruct | claude -p');
+                expect(addResult.stdout).not.toContain('<hint>');
                 expect(await FsPromises.readFile(Path.join(temporaryPath, 'hint.yml'), 'utf8')).toContain('file://book');
 
                 const removeResult = await runCli([
@@ -167,8 +193,9 @@ describe('cli', () => {
                 ], temporaryPath);
 
                 expect(removeResult.exitCode).toBeUndefined();
-                expect(removeResult.stderr).toContain('Removed file://book');
-                expect(removeResult.stdout).toContain('<hint>');
+                expect(removeResult.stdout).toContain('Removed file://book');
+                expect(removeResult.stdout).toContain('hint instruct | claude -p');
+                expect(removeResult.stdout).not.toContain('<hint>');
                 expect(await FsPromises.readFile(Path.join(temporaryPath, 'hint.yml'), 'utf8')).not.toContain('file://book');
             } finally {
                 await FsPromises.rm(temporaryPath, { recursive: true, force: true });
@@ -224,6 +251,7 @@ describe('cli', () => {
 
             for (const command of [
                 'config',
+                'instruct',
                 'add',
                 'remove',
                 'version',
