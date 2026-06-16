@@ -14,7 +14,7 @@ type CompileOptions = {
 };
 
 type AddOptions = {
-    global: boolean;
+    local: boolean;
 };
 
 export async function main(): Promise<void> {
@@ -57,9 +57,9 @@ export async function main(): Promise<void> {
                 `Run 'hint instruct | claude -p' afterwards to refresh AGENTS.md and CLAUDE.md.`,
         )
         .argument('<books...>', 'hintbooks to add: a file:// path, a git repository URL, or an npm package name')
-        .option('-g, --global', 'install npm hintbooks globally', false)
+        .option('--local', 'install npm hintbooks into the project-local hintbooks/ store instead of globally', false)
         .action(async (books: string[], options: AddOptions) => {
-            await AddCommand.new(books, options.global).execute();
+            await AddCommand.new(books, options.local).execute();
         });
 
     program

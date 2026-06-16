@@ -135,7 +135,7 @@ Names of the form `__name__` are **running instructions** — structural slots t
 A hintbook is just files — distribute it any way `hint add` can fetch it:
 
 ```bash
-hint add @openhint/hintbook-lawyer                   # npm (use -g for a global install)
+hint add @openhint/hintbook-lawyer                   # npm, installed globally (use --local for a project copy)
 hint add https://github.com/acme/hintbooks-platform   # git → cloned into hintbooks/<repo>
 hint add file://hintbooks/team-conventions            # local folder, validated only
 hint instruct | claude -p                             # refresh AGENTS.md / CLAUDE.md

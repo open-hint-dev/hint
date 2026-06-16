@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 import { VFile } from 'vfile';
 import { matter } from 'vfile-matter';
 
-import { isPathExists, isPathFolder, URL_FILE_PREFIX, URL_NPM_PREFIX } from './helper.js';
+import { HINTBOOKS_FOLDER, isPathExists, isPathFolder, NODE_MODULES_FOLDER, URL_FILE_PREFIX, URL_NPM_PREFIX } from './helper.js';
 
 export const INSTRUCTION_EXTENSION = '.md';
 
@@ -132,9 +132,10 @@ function hintbookBaseFolders(projectRootPath: string, book: string): string[] {
         const nodeFolderPath = Path.dirname(process.execPath);
 
         return [
-            Path.join(projectRootPath, 'node_modules', packageName),
-            Path.resolve(nodeFolderPath, '..', 'lib', 'node_modules', packageName),
-            Path.join(nodeFolderPath, 'node_modules', packageName),
+            Path.join(projectRootPath, HINTBOOKS_FOLDER, NODE_MODULES_FOLDER, packageName),
+            Path.join(projectRootPath, NODE_MODULES_FOLDER, packageName),
+            Path.resolve(nodeFolderPath, '..', 'lib', NODE_MODULES_FOLDER, packageName),
+            Path.join(nodeFolderPath, NODE_MODULES_FOLDER, packageName),
         ];
     }
 

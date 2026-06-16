@@ -94,7 +94,7 @@ Fetches each book, validates that it actually contains a hintbook (a `hintbook.j
 
 ```bash
 hint add @openhint/hintbook-software-engineer
-hint add -g @openhint/hintbook-lawyer
+hint add --local @openhint/hintbook-lawyer
 hint add https://github.com/acme/hintbooks-platform.git
 hint add git@github.com:acme/hintbooks-platform.git
 hint add file://hintbooks/team-conventions
@@ -103,15 +103,17 @@ hint instruct | claude -p
 
 The source type is detected from the argument:
 
-| Argument                                               | Action                                                                               | Registered as                  |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------ |
-| `file://<path>`                                        | validated only — nothing is fetched                                                  | `file://<path>`                |
-| git URL (`git@…`, `ssh://…`, `git://…`, `http(s)://…`) | cloned into `hintbooks/<repo-name>` at the project root                              | `file://hintbooks/<repo-name>` |
-| anything else                                          | `npm install <name>` in the project (or `npm install --global` with `-g`/`--global`) | `npm://<name>`                 |
+| Argument                                               | Action                                                                          | Registered as                  |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------- | ------------------------------ |
+| `file://<path>`                                        | validated only — nothing is fetched                                             | `file://<path>`                |
+| git URL (`git@…`, `ssh://…`, `git://…`, `http(s)://…`) | cloned into `hintbooks/<repo-name>` at the project root                         | `file://hintbooks/<repo-name>` |
+| anything else                                          | `npm install --global <name>` (or into the `hintbooks/` store with `--local`)   | `npm://<name>`                 |
 
 A book that installs but contains no `hintbook.json` fails with `No hintbook found` and is not registered. Entries are deduplicated — adding the same book twice is safe.
 
-`npm://` books are resolved through the project's `node_modules` first, then through the global npm root (`npm root -g`) — a book installed manually with `npm install -g` is picked up without re-adding it.
+**Where npm books are installed.** By default npm books are installed **globally** (`npm install --global`), so a single copy is shared across all your projects and your repository stays clean. Pass `--local` to install into a project-local store at `hintbooks/node_modules/` instead — useful for pinning a specific version per project or working offline from a checked-in copy. The local install uses an isolated npm prefix (`hintbooks/` gets its own private `package.json`), so the CLI never touches your project's `package.json`, lockfile, or `node_modules`; `hint add --local` therefore works the same in a plain project and inside a **yarn or pnpm workspace** — npm is never asked to parse the workspace's `workspace:*` dependencies, and you don't need yarn or pnpm installed. The `hintbooks/` folder is managed by HINT; add it to `.gitignore` if you don't want fetched books committed.
+
+`npm://` books are resolved from the project-local `hintbooks/node_modules/` first, then the project's `node_modules/`, then the global npm root (`npm root -g`) — so both `--local` and the default global install are picked up.
 
 ---
 
