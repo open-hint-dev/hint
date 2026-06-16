@@ -132,16 +132,17 @@ The compiled prompt makes the assistant draft inside those borders — defined t
 
 ## Quick start
 
-**1. Initialize** — `hint config` creates `hint.yml` (marks the project root) and prints a prompt that teaches your agent the workflow via `AGENTS.md` / `CLAUDE.md`:
+**1. Initialize** — `hint config` creates `hint.yml` (marks the project root); `hint instruct` then prints a prompt that teaches your agent the workflow via `AGENTS.md` / `CLAUDE.md`:
 
 ```bash
 npm install -g @openhint/cli
-hint config | claude -p
-hint add @openhint/hintbook-software-engineer | claude -p   # building software
-hint add @openhint/hintbook-lawyer | claude -p              # drafting legal documents
+hint config                                       # create hint.yml
+hint add @openhint/hintbook-software-engineer     # building software
+hint add @openhint/hintbook-lawyer                # drafting legal documents
+hint instruct | claude -p                         # wire up AGENTS.md / CLAUDE.md
 ```
 
-Install the hintbook for your profession — or both, or your own.
+Install the hintbook for your profession — or both, or your own. `hint config`, `hint add`, and `hint remove` only touch `hint.yml`; run `hint instruct | claude -p` once afterwards to apply the changes to your agent files.
 
 **2. Set baselines** — a root `_.hint` holds the global defaults every folder and file inherits:
 

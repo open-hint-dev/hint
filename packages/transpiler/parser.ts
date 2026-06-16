@@ -2,7 +2,7 @@ import * as FsPromises from 'node:fs/promises';
 import Path from 'node:path';
 
 import type { Heading, Root, RootContent } from 'mdast';
-// @ts-ignore - no types available
+// @ts-expect-error - no types available
 import { includeMarkdown } from '@hashicorp/platform-remark-plugins';
 import { toString as mdastToString } from 'mdast-util-to-string';
 import remarkCustomHeaderId from 'remark-custom-header-id';

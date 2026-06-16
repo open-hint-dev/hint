@@ -425,7 +425,7 @@
       <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v12H8.5L4 19.5V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
       <div>
         <h4>Or never run it by hand at all.</h4>
-        <p><code class="inl">hint config</code> writes the HINT workflow into your <code class="inl">AGENTS.md</code> and <code class="inl">CLAUDE.md</code>. After that, just keep working in normal dialogue — Claude Code, Codex, and Cursor read those instructions and call <code class="inl">hint</code> themselves whenever a <code class="inl">.hint</code> spec is relevant. You stay in the conversation; the borders come along automatically.</p>
+        <p><code class="inl">hint instruct</code> writes the HINT workflow into your <code class="inl">AGENTS.md</code> and <code class="inl">CLAUDE.md</code>. After that, just keep working in normal dialogue — Claude Code, Codex, and Cursor read those instructions and call <code class="inl">hint</code> themselves whenever a <code class="inl">.hint</code> spec is relevant. You stay in the conversation; the borders come along automatically.</p>
       </div>
     </div>
   </div>
@@ -576,17 +576,19 @@
     <div class="qs">
       <div class="qsstep reveal">
         <div class="qsstep__h"><span class="qsstep__n">01</span><h3 style="color:var(--on-surface)">Install &amp; initialize</h3></div>
-        <p style="color:var(--on-surface-mut)">Install the CLI, then mark the project root. <code class="inl">hint config</code> writes <code class="inl">hint.yml</code> and prints an agent prompt to wire up your <code class="inl">AGENTS.md</code> / <code class="inl">CLAUDE.md</code>.</p>
+        <p style="color:var(--on-surface-mut)">Install the CLI, then mark the project root. <code class="inl">hint config</code> writes <code class="inl">hint.yml</code>; <code class="inl">hint instruct</code> prints an agent prompt to wire up your <code class="inl">AGENTS.md</code> / <code class="inl">CLAUDE.md</code>.</p>
         <div class="code-wrap on-dark">
-          <button class="code__copy" data-copy data-copy-text="npm install -g @openhint/cli&#10;hint config | claude -p&#10;hint add @openhint/hintbook-software-engineer | claude -p">Copy</button>
+          <button class="code__copy" data-copy data-copy-text="npm install -g @openhint/cli&#10;hint config&#10;hint add @openhint/hintbook-software-engineer&#10;hint instruct | claude -p">Copy</button>
           <div class="code">
 <div class="code__body"><span class="t-mut"># install the transpiler</span>
 <span class="t-bd">npm install -g @openhint/cli</span>
 
 <span class="t-mut"># scaffold + register a hintbook</span>
-<span class="t-bd">hint config | claude -p</span>
-<span class="t-bd">hint add @openhint/hintbook-software-engineer \
-  | claude -p</span></div>
+<span class="t-bd">hint config</span>
+<span class="t-bd">hint add @openhint/hintbook-software-engineer</span>
+
+<span class="t-mut"># wire up AGENTS.md / CLAUDE.md</span>
+<span class="t-bd">hint instruct | claude -p</span></div>
           </div>
         </div>
       </div>
