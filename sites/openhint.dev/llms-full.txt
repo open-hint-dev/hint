@@ -95,10 +95,16 @@ hint config
 
 **Creates `hint.yml`** (if missing) — it asks for a project name and description, and offers to register the default hintbook. `hint.yml` marks the project root; every path in a compilation is resolved against it.
 
-Then set up your agent context files with `hint instruct`, which prints an AI agent prompt to stdout that instructs an agent to add the HINT workflow instructions (and each hintbook's system glossary) to your `AGENTS.md` and `CLAUDE.md`. The command never edits those files itself — pipe the output to your agent to apply it:
+Then set up your agent context files — the HINT workflow instructions (and each hintbook's system glossary) written into your `AGENTS.md` and `CLAUDE.md`. The simplest way is `hint apply`, which writes the files directly:
 
 ```bash
-hint instruct | claude -p
+hint apply
+```
+
+If you would rather have your own agent make the change, `hint instruct` prints the same content as a prompt to pipe instead (the `--permission-mode acceptEdits` flag lets the headless agent write the files without stopping to ask):
+
+```bash
+hint instruct | claude -p --permission-mode acceptEdits
 ```
 
 The resulting `hint.yml` looks like this:
@@ -120,7 +126,7 @@ hint add https://github.com/acme/hintbooks-platform  # git: your org's shared pl
 hint add file://hintbooks/team-conventions           # in-repo: your team's own vocabulary
 ```
 
-Each installed book is fetched, validated (it must contain a `hintbook.json`), and registered in the `books` array of `hint.yml`. Run `hint instruct | claude -p` afterwards to refresh `AGENTS.md` / `CLAUDE.md` with the new vocabulary. See the [CLI Reference](06-cli.md) for details.
+Each installed book is fetched, validated (it must contain a `hintbook.json`), and registered in the `books` array of `hint.yml`. Run `hint apply` afterwards to refresh `AGENTS.md` / `CLAUDE.md` with the new vocabulary. See the [CLI Reference](06-cli.md) for details.
 
 ## 4. Write the root baseline
 
@@ -572,7 +578,7 @@ A hintbook is just files — distribute it any way `hint add` can fetch it:
 hint add @openhint/hintbook-lawyer                   # npm, installed globally (use --local for a project copy)
 hint add https://github.com/acme/hintbooks-platform   # git → cloned into hintbooks/<repo>
 hint add file://hintbooks/team-conventions            # local folder, validated only
-hint instruct | claude -p                             # refresh AGENTS.md / CLAUDE.md
+hint apply                                            # refresh AGENTS.md / CLAUDE.md
 ```
 
 For npm distribution, publish the package with `hintbook.json` and the keyword files included (an `keywords/` subfolder is conventional). For git, any repository containing hintbooks works — every `hintbook.json` in the clone is discovered.
@@ -654,11 +660,11 @@ hint config
 
 If no `hint.yml` exists, writes one in the current folder and proceeds. In a terminal it asks for a project name and description and offers to register the default hintbook (`npm://@openhint/hintbook-software-engineer`); when stdin is not a terminal it uses those defaults silently. If `hint.yml` already exists, it reports that and does nothing else.
 
-`hint config` only manages `hint.yml` — it does **not** print the agent prompt. After initializing (and after any `hint add`/`hint remove`), run `hint instruct` to set up `AGENTS.md` / `CLAUDE.md`:
+`hint config` only manages `hint.yml` — it does **not** touch the agent files. After initializing (and after any `hint add`/`hint remove`), run `hint apply` to write `AGENTS.md` / `CLAUDE.md` (or `hint instruct | claude -p` to have an agent do it):
 
 ```bash
-hint config            # create hint.yml
-hint instruct | claude -p   # then wire up the agent files
+hint config   # create hint.yml
+hint apply    # then write the agent files
 ```
 
 ---
@@ -670,16 +676,35 @@ Prints an **AI agent prompt** to stdout that instructs an agent to maintain a si
 The command never edits `AGENTS.md` / `CLAUDE.md` itself. Apply the printed prompt with your agent, and re-run it whenever `hint.yml` changes:
 
 ```bash
-hint instruct | claude -p
+hint instruct | claude -p --permission-mode acceptEdits
 ```
 
 Warnings (e.g. an unresolved hintbook) go to stderr, so the pipe stays clean. Fails with `No hint.yml found` outside an initialized project.
+
+Because applying the prompt **writes** `AGENTS.md` / `CLAUDE.md`, a headless agent needs permission to edit files or it will stall asking for approval. With Claude Code, `--permission-mode acceptEdits` auto-approves those edits (`--dangerously-skip-permissions` bypasses all checks). See [Agent stalls on write approval](troubleshooting/11-agent-write-approval.md). To skip the agent entirely, use [`hint apply`](#hint-apply--write-the-agent-files-directly).
+
+---
+
+## `hint apply` — write the agent files directly
+
+```bash
+hint apply
+```
+
+Does what `hint instruct` asks an agent to do, but as a deterministic find-and-replace performed by the CLI itself — no agent, no piping, no permission prompt. Because the block is delimited by `<hint>...</hint>` tags, the CLI can locate and update it exactly. For each of `AGENTS.md` and `CLAUDE.md`:
+
+- If the file does not exist, it is created with the `<hint>` block as its content.
+- If it has no `<hint>` block, the block is appended after the existing content.
+- If it already has a `<hint>...</hint>` block, that block is replaced wholesale (re-running is idempotent and picks up added/removed/updated hintbooks).
+- If `CLAUDE.md` only `@AGENTS.md`-includes it, the block is written to `AGENTS.md` and any copy in `CLAUDE.md` is stripped to avoid duplication.
+
+It prints one short status line per file (`Created…`, `Updated the HINT block in…`, `…already up to date`). Use `hint instruct | claude -p` instead when you would rather an agent apply the changes. Fails with `No hint.yml found` outside an initialized project.
 
 ---
 
 ## `hint add <books...>` — install hintbooks
 
-Fetches each book, validates that it actually contains a hintbook (a `hintbook.json` must be discoverable), and registers it in the `books` array of `hint.yml`. Run `hint instruct | claude -p` afterwards to refresh `AGENTS.md` / `CLAUDE.md`:
+Fetches each book, validates that it actually contains a hintbook (a `hintbook.json` must be discoverable), and registers it in the `books` array of `hint.yml`. Run `hint apply` afterwards to refresh `AGENTS.md` / `CLAUDE.md`:
 
 ```bash
 hint add @openhint/hintbook-software-engineer
@@ -687,7 +712,7 @@ hint add --local @openhint/hintbook-lawyer
 hint add https://github.com/acme/hintbooks-platform.git
 hint add git@github.com:acme/hintbooks-platform.git
 hint add file://hintbooks/team-conventions
-hint instruct | claude -p
+hint apply
 ```
 
 The source type is detected from the argument:
@@ -708,13 +733,13 @@ A book that installs but contains no `hintbook.json` fails with `No hintbook fou
 
 ## `hint remove <books...>` — unregister hintbooks
 
-Removes each book from the `books` array of `hint.yml`. Nothing is uninstalled — npm packages and cloned folders stay on disk. Run `hint instruct | claude -p` afterwards to refresh `AGENTS.md` / `CLAUDE.md`:
+Removes each book from the `books` array of `hint.yml`. Nothing is uninstalled — npm packages and cloned folders stay on disk. Run `hint apply` afterwards to refresh `AGENTS.md` / `CLAUDE.md`:
 
 ```bash
 hint remove @openhint/hintbook-lawyer    # npm:// prefix may be omitted
 hint remove npm://@openhint/hintbook-lawyer
 hint remove file://hintbooks/team-conventions
-hint instruct | claude -p
+hint apply
 ```
 
 A book that is not registered fails with `Hintbook not registered` and leaves `hint.yml` untouched.
@@ -744,7 +769,7 @@ Prints the command overview with usage examples. The same text is available via 
 
 ## Exit codes and streams
 
-- **stdout** carries the command's primary output: the compiled prompt (`hint`), the agent prompt to pipe to your agent (`hint instruct`), status lines (`hint config`, `hint add`, `hint remove`), or the version report (`hint version`). Only `hint` and `hint instruct` are meant to be piped into an agent.
+- **stdout** carries the command's primary output: the compiled prompt (`hint`), the agent prompt to pipe to your agent (`hint instruct`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), or the version report (`hint version`). Only `hint` and `hint instruct` are meant to be piped into an agent.
 - **stderr** carries interactive prompts, subprocess (git/npm) output, warnings, and errors.
 - Exit code `0` on success, `1` on any failure (unresolvable specs under `--dry-run`, missing project, failed installs, invalid hintbooks).
 

@@ -138,7 +138,7 @@ A hintbook is just files — distribute it any way `hint add` can fetch it:
 hint add @openhint/hintbook-lawyer                   # npm, installed globally (use --local for a project copy)
 hint add https://github.com/acme/hintbooks-platform   # git → cloned into hintbooks/<repo>
 hint add file://hintbooks/team-conventions            # local folder, validated only
-hint instruct | claude -p                             # refresh AGENTS.md / CLAUDE.md
+hint apply                                            # refresh AGENTS.md / CLAUDE.md
 ```
 
 For npm distribution, publish the package with `hintbook.json` and the keyword files included (an `keywords/` subfolder is conventional). For git, any repository containing hintbooks works — every `hintbook.json` in the clone is discovered.

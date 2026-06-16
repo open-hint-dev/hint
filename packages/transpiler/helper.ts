@@ -46,3 +46,21 @@ export async function isPathExists(path: string): Promise<boolean> {
         return false;
     }
 }
+
+// Reads a UTF-8 file, returning null when it does not exist instead of throwing.
+export async function readFile(path: string): Promise<string | null> {
+    try {
+        return await FsPromises.readFile(path, 'utf8');
+    } catch (error: unknown) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            return null;
+        }
+
+        throw error;
+    }
+}
+
+// Writes a UTF-8 file.
+export async function writeFile(path: string, content: string): Promise<void> {
+    await FsPromises.writeFile(path, content, 'utf8');
+}

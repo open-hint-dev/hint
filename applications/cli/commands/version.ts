@@ -1,4 +1,3 @@
-import * as FsPromises from 'node:fs/promises';
 import * as Path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -41,18 +40,24 @@ async function findCliVersion(): Promise<string> {
     let folderPath = Path.dirname(fileURLToPath(import.meta.url));
 
     while (true) {
-        try {
-            const packageJson = JSON.parse(await FsPromises.readFile(Path.join(folderPath, 'package.json'), 'utf8'));
+        const content = await Transpiler.readFile(Path.join(folderPath, 'package.json'));
 
-            return typeof packageJson.version === 'string' && packageJson.version ? packageJson.version : 'unknown';
-        } catch {
-            const parentPath = Path.dirname(folderPath);
+        if (content !== null) {
+            try {
+                const packageJson = JSON.parse(content);
 
-            if (parentPath === folderPath) {
-                return 'unknown';
+                return typeof packageJson.version === 'string' && packageJson.version ? packageJson.version : 'unknown';
+            } catch {
+                // Malformed package.json — keep walking up.
             }
-
-            folderPath = parentPath;
         }
+
+        const parentPath = Path.dirname(folderPath);
+
+        if (parentPath === folderPath) {
+            return 'unknown';
+        }
+
+        folderPath = parentPath;
     }
 }

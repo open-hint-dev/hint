@@ -10,7 +10,7 @@ import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
 import * as Unified from 'unified';
 
-import { isGlobPattern, isPathExists, isPathFolder } from './helper.js';
+import { isGlobPattern, isPathExists, isPathFolder, readFile } from './helper.js';
 import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 
 const HINT_EXT = '.hint';
@@ -145,8 +145,10 @@ export async function findHints(projectRootPath: string, paths: string[]): Promi
 }
 
 async function readHintContent(path: string, dryRun: boolean): Promise<string | null> {
-    if (await isPathExists(path)) {
-        return FsPromises.readFile(path, 'utf-8');
+    const content = await readFile(path);
+
+    if (content !== null) {
+        return content;
     }
 
     if (Path.basename(path) === FOLDER_HINT) {

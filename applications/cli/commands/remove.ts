@@ -39,7 +39,7 @@ export class RemoveCommand implements ICommand {
         config.books = books;
         await Transpiler.saveConfig(projectRootPath, config);
 
-        process.stdout.write(`Run 'hint instruct | claude -p' to refresh AGENTS.md and CLAUDE.md.\n`);
+        process.stdout.write(`Run 'hint apply' to refresh AGENTS.md and CLAUDE.md.\n`);
     }
 }
 

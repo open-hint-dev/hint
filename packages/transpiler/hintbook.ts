@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 import { VFile } from 'vfile';
 import { matter } from 'vfile-matter';
 
-import { HINTBOOKS_FOLDER, isPathExists, isPathFolder, NODE_MODULES_FOLDER, URL_FILE_PREFIX, URL_NPM_PREFIX } from './helper.js';
+import { HINTBOOKS_FOLDER, isPathExists, isPathFolder, NODE_MODULES_FOLDER, readFile, URL_FILE_PREFIX, URL_NPM_PREFIX } from './helper.js';
 
 export const INSTRUCTION_EXTENSION = '.md';
 
@@ -81,7 +81,7 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
 
     for (const file of files) {
         if (file === HINTBOOK_FILE_NAME) {
-            const hintbookJson = JSON.parse(await FsPromises.readFile(Path.join(hintbookPath, file), 'utf-8'));
+            const hintbookJson = JSON.parse((await readFile(Path.join(hintbookPath, file))) ?? '{}');
 
             data.id = hintbookJson.id || '';
             data.name = hintbookJson.name || '';
@@ -103,7 +103,7 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
             data.modes[instructionFileData.mode] = mode;
         }
 
-        const content = await FsPromises.readFile(Path.join(hintbookPath, file), 'utf-8');
+        const content = (await readFile(Path.join(hintbookPath, file))) ?? '';
 
         const parsed = new VFile(content);
         matter(parsed, { strip: true });
@@ -201,7 +201,12 @@ export async function resolveHintbookPaths(projectRootPath: string, book: string
 
 async function readVersion(filePath: string): Promise<string | null> {
     try {
-        const data = JSON.parse(await FsPromises.readFile(filePath, 'utf8'));
+        const content = await readFile(filePath);
+        if (content === null) {
+            return null;
+        }
+
+        const data = JSON.parse(content);
 
         return typeof data.version === 'string' && data.version ? data.version : null;
     } catch {

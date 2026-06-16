@@ -112,7 +112,7 @@ describe('cli', () => {
 
             expect(result.exitCode).toBeUndefined();
             expect(result.stdout).toContain('hint.yml already exists');
-            expect(result.stdout).toContain('hint instruct | claude -p');
+            expect(result.stdout).toContain("hint apply");
             expect(result.stdout).not.toContain('<hint>');
         });
 
@@ -124,7 +124,7 @@ describe('cli', () => {
 
                 expect(result.exitCode).toBeUndefined();
                 expect(result.stdout).toContain('Created hint.yml');
-                expect(result.stdout).toContain('hint instruct | claude -p');
+                expect(result.stdout).toContain("hint apply");
                 expect(result.stdout).not.toContain('<hint>');
 
                 const configContent = await FsPromises.readFile(Path.join(temporaryPath, 'hint.yml'), 'utf8');
@@ -161,6 +161,81 @@ describe('cli', () => {
         });
     });
 
+    describe('apply', () => {
+        async function makeProject(): Promise<string> {
+            const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-cli-test-'));
+
+            await FsPromises.writeFile(Path.join(temporaryPath, 'hint.yml'), 'name: temp\nbooks:\n  - file://book\n', 'utf8');
+            await FsPromises.mkdir(Path.join(temporaryPath, 'book'));
+            await FsPromises.writeFile(Path.join(temporaryPath, 'book', 'hintbook.json'), '{ "id": "demo" }\n', 'utf8');
+            await FsPromises.writeFile(Path.join(temporaryPath, 'book', '__system__.md'), '# system\nDemo glossary.\n', 'utf8');
+
+            return temporaryPath;
+        }
+
+        it('writes the hint block into both files and is idempotent', async () => {
+            const temporaryPath = await makeProject();
+
+            try {
+                const first = await runCli(['apply'], temporaryPath);
+
+                expect(first.exitCode).toBeUndefined();
+                expect(first.stdout).toContain('Created AGENTS.md');
+                expect(first.stdout).toContain('Created CLAUDE.md');
+
+                for (const fileName of ['AGENTS.md', 'CLAUDE.md']) {
+                    const content = await FsPromises.readFile(Path.join(temporaryPath, fileName), 'utf8');
+                    expect(content.match(/<hint>/g)).toHaveLength(1);
+                    expect(content).toContain('<system_instructions_from_demo>');
+                }
+
+                const second = await runCli(['apply'], temporaryPath);
+                expect(second.stdout).toContain('already up to date');
+
+                const reapplied = await FsPromises.readFile(Path.join(temporaryPath, 'AGENTS.md'), 'utf8');
+                expect(reapplied.match(/<hint>/g)).toHaveLength(1);
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
+
+        it('keeps the block in AGENTS.md only when CLAUDE.md @-includes it', async () => {
+            const temporaryPath = await makeProject();
+
+            try {
+                await FsPromises.writeFile(Path.join(temporaryPath, 'CLAUDE.md'), '@AGENTS.md\n', 'utf8');
+                await FsPromises.writeFile(Path.join(temporaryPath, 'AGENTS.md'), '# Project\n\nNotes.\n', 'utf8');
+
+                const result = await runCli(['apply'], temporaryPath);
+
+                expect(result.exitCode).toBeUndefined();
+
+                const agents = await FsPromises.readFile(Path.join(temporaryPath, 'AGENTS.md'), 'utf8');
+                expect(agents).toContain('Notes.');
+                expect(agents).toContain('<hint>');
+
+                const claude = await FsPromises.readFile(Path.join(temporaryPath, 'CLAUDE.md'), 'utf8');
+                expect(claude).toBe('@AGENTS.md\n');
+                expect(claude).not.toContain('<hint>');
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
+
+        it('fails outside an initialized project', async () => {
+            const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-cli-test-'));
+
+            try {
+                const result = await runCli(['apply'], temporaryPath);
+
+                expect(result.exitCode).toBe(1);
+                expect(result.stderr).toContain('No hint.yml found');
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
+    });
+
     describe('add and remove', () => {
         async function makeProject(): Promise<string> {
             const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-cli-test-'));
@@ -183,7 +258,7 @@ describe('cli', () => {
 
                 expect(addResult.exitCode).toBeUndefined();
                 expect(addResult.stdout).toContain('Installed file://book');
-                expect(addResult.stdout).toContain('hint instruct | claude -p');
+                expect(addResult.stdout).toContain("hint apply");
                 expect(addResult.stdout).not.toContain('<hint>');
                 expect(await FsPromises.readFile(Path.join(temporaryPath, 'hint.yml'), 'utf8')).toContain('file://book');
 
@@ -194,7 +269,7 @@ describe('cli', () => {
 
                 expect(removeResult.exitCode).toBeUndefined();
                 expect(removeResult.stdout).toContain('Removed file://book');
-                expect(removeResult.stdout).toContain('hint instruct | claude -p');
+                expect(removeResult.stdout).toContain("hint apply");
                 expect(removeResult.stdout).not.toContain('<hint>');
                 expect(await FsPromises.readFile(Path.join(temporaryPath, 'hint.yml'), 'utf8')).not.toContain('file://book');
             } finally {
@@ -252,6 +327,7 @@ describe('cli', () => {
             for (const command of [
                 'config',
                 'instruct',
+                'apply',
                 'add',
                 'remove',
                 'version',

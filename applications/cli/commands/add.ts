@@ -46,7 +46,7 @@ export class AddCommand implements ICommand {
         config.books = books;
         await Transpiler.saveConfig(projectRootPath, config);
 
-        process.stdout.write(`Run 'hint instruct | claude -p' to refresh AGENTS.md and CLAUDE.md.\n`);
+        process.stdout.write(`Run 'hint apply' to refresh AGENTS.md and CLAUDE.md.\n`);
     }
 }
 
@@ -163,7 +163,7 @@ async function ensureNpmStore(projectRootPath: string): Promise<string> {
     if (!(await Transpiler.isPathExists(manifestPath))) {
         // A private manifest makes npm treat this folder as its own project root, so it does not
         // walk up into the host workspace when resolving where to install.
-        await FsPromises.writeFile(manifestPath, `${JSON.stringify({ name: 'hint-hintbooks', private: true }, null, 4)}\n`, 'utf8');
+        await Transpiler.writeFile(manifestPath, `${JSON.stringify({ name: 'hint-hintbooks', private: true }, null, 4)}\n`);
     }
 
     return storePath;
