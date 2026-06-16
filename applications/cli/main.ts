@@ -2,6 +2,7 @@ import * as Transpiler from '@openhint/transpiler';
 import { Command } from 'commander';
 
 import { AddCommand } from './commands/add.js';
+import { ApplyCommand } from './commands/apply.js';
 import { CompileCommand } from './commands/compile.js';
 import { ConfigCommand } from './commands/config.js';
 import { InstructCommand } from './commands/instruct.js';
@@ -34,7 +35,7 @@ export async function main(): Promise<void> {
         .command('config')
         .description(
             `Initialize ${Transpiler.CONFIG_FILE_YML} in the project root. ` +
-                `Run 'hint instruct | claude -p' afterwards to set up AGENTS.md and CLAUDE.md.`,
+                `Run 'hint apply' afterwards to set up AGENTS.md and CLAUDE.md.`,
         )
         .action(async () => {
             await ConfigCommand.new().execute();
@@ -44,17 +45,27 @@ export async function main(): Promise<void> {
         .command('instruct')
         .description(
             `Print an AI agent prompt that sets up AGENTS.md and CLAUDE.md from ${Transpiler.CONFIG_FILE_YML}. ` +
-                `The files are not modified directly — pipe the output to your agent to apply it, e.g. 'hint instruct | claude -p'.`,
+                `The files are not modified directly — pipe the output to your agent to apply it, e.g. 'hint instruct | claude -p --permission-mode acceptEdits'.`,
         )
         .action(async () => {
             await InstructCommand.new().execute();
         });
 
     program
+        .command('apply')
+        .description(
+            `Write the <hint> block from ${Transpiler.CONFIG_FILE_YML} directly into AGENTS.md and CLAUDE.md — ` +
+                `a deterministic find-and-replace on the <hint> tags, no agent needed. Use instead of 'hint instruct | claude -p'.`,
+        )
+        .action(async () => {
+            await ApplyCommand.new().execute();
+        });
+
+    program
         .command('add')
         .description(
             `Install hintbooks and register them in ${Transpiler.CONFIG_FILE_YML}. ` +
-                `Run 'hint instruct | claude -p' afterwards to refresh AGENTS.md and CLAUDE.md.`,
+                `Run 'hint apply' afterwards to refresh AGENTS.md and CLAUDE.md.`,
         )
         .argument('<books...>', 'hintbooks to add: a file:// path, a git repository URL, or an npm package name')
         .option('--local', 'install npm hintbooks into the project-local hintbooks/ store instead of globally', false)
@@ -66,7 +77,7 @@ export async function main(): Promise<void> {
         .command('remove')
         .description(
             `Remove hintbooks from ${Transpiler.CONFIG_FILE_YML} without uninstalling them. ` +
-                `Run 'hint instruct | claude -p' afterwards to refresh AGENTS.md and CLAUDE.md.`,
+                `Run 'hint apply' afterwards to refresh AGENTS.md and CLAUDE.md.`,
         )
         .argument('<books...>', 'hintbooks to remove, as listed in the books array (the npm:// or file:// prefix may be omitted)')
         .action(async (books: string[]) => {
@@ -91,13 +102,16 @@ export async function main(): Promise<void> {
         'after',
         `
 Examples:
-  hint config                                  initialize hint.yml in the project root
-  hint instruct | claude -p                    set up AGENTS.md / CLAUDE.md from hint.yml
-  hint add @openhint/hintbook-lawyer           install and register a hintbook
-  hint remove @openhint/hintbook-lawyer        unregister a hintbook
-  hint src/billing/invoice.ts | claude -p      compile the spec for a file and pipe it to an agent
-  hint --mode review src/billing | claude -p   audit existing code against the spec
-  hint version                                 show CLI and hintbook versions`,
+  hint config                                   initialize hint.yml in the project root
+  hint apply                                    write AGENTS.md / CLAUDE.md directly from hint.yml
+  hint instruct | claude -p --permission-mode acceptEdits   ...or have your agent do it
+  hint add @openhint/hintbook-lawyer            install and register a hintbook
+  hint remove @openhint/hintbook-lawyer         unregister a hintbook
+  hint src/billing/invoice.ts | claude -p       compile the spec for a file and pipe it to an agent
+  hint --mode review src/billing | claude -p    audit existing code against the spec
+  hint version                                  show CLI and hintbook versions
+
+Piping into 'claude -p' that should write files needs '--permission-mode acceptEdits' (or '--dangerously-skip-permissions').`,
     );
 
     try {

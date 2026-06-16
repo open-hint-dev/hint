@@ -20,7 +20,7 @@ export class ConfigCommand implements ICommand {
             await initConfig(projectRootPath);
         }
 
-        process.stdout.write(`Run 'hint instruct | claude -p' to set up AGENTS.md and CLAUDE.md.\n`);
+        process.stdout.write(`Run 'hint apply' to set up AGENTS.md and CLAUDE.md.\n`);
     }
 }
 

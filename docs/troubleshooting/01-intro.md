@@ -28,3 +28,4 @@ If no page matches, report the full error verbatim along with the command you ra
 | `Failed to read / access / write '<path>'`                              | [hint.yml read/write errors](08-config-file-errors.md)           |
 | `hint <paths...>` prints nothing unexpectedly                           | [Empty compile output](09-empty-output.md)                       |
 | `hint config` asks questions in a script                                | [Interactive prompts when scripting](10-interactive-prompts.md)  |
+| `hint instruct \| claude -p` stalls asking to approve a write            | [Agent stalls on write approval](11-agent-write-approval.md)     |

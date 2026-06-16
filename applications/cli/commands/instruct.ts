@@ -4,12 +4,12 @@ import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
 
-const AGENT_FILE_NAMES = [
+export const AGENT_FILE_NAMES = [
     'AGENTS.md',
     'CLAUDE.md',
 ];
 
-const HINT_TAG = 'hint';
+export const HINT_TAG = 'hint';
 
 const CONFIG_PROMPT_HEADER = `Configure this project's AI agent context files: ${AGENT_FILE_NAMES.join(' and ')} in the project root.
 
@@ -20,7 +20,9 @@ The <${HINT_TAG}>...</${HINT_TAG}> block below is the complete and only set of H
 - If the file exists but contains no <${HINT_TAG}> block, append the block below verbatim, separated from the existing content by a blank line.
 - If the file already contains a <${HINT_TAG}>...</${HINT_TAG}> block, replace that entire block — including the tags — with the block below, even if the contents look similar. Do not merge, keep, or reformat anything from the old block.
 - Remove any other HINT instructions found outside the <${HINT_TAG}> block (for example, leftovers from earlier runs that were not wrapped in <${HINT_TAG}> tags). Only the <${HINT_TAG}> block below may carry HINT instructions — do not add any of your own.
-- Do not change anything else in these files.`;
+- Do not change anything else in these files.
+
+When finished, reply to the user with one short sentence: HINT is set up and its usage instructions now live in ${AGENT_FILE_NAMES.join(' / ')}. Do not list the files you inspected, the per-file steps you took, or what was or was not changed.`;
 
 export class InstructCommand implements ICommand {
     static new(): InstructCommand {
@@ -45,12 +47,14 @@ export async function printAgentPrompt(projectRootPath: string, config: Transpil
     process.stdout.write(`${buildConfigPrompt(sections)}\n`);
 }
 
-type HintbookSection = {
+export type HintbookSection = {
     id: string;
     content: string;
 };
 
-function buildConfigPrompt(sections: HintbookSection[]): string {
+// The `<hint>...</hint>` block that lives verbatim in AGENTS.md / CLAUDE.md. `hint instruct` asks an
+// agent to write it; `hint apply` writes it directly. Same bytes either way.
+export function buildHintBlock(sections: HintbookSection[]): string {
     const parts = [Transpiler.CONFIG_INSTRUCTION.trim()];
 
     for (const section of sections) {
@@ -59,10 +63,11 @@ function buildConfigPrompt(sections: HintbookSection[]): string {
         parts.push(`<${tag}>\n\n${section.content}\n\n</${tag}>`);
     }
 
-    return [
-        CONFIG_PROMPT_HEADER,
-        `<${HINT_TAG}>\n\n${parts.join('\n\n')}\n\n</${HINT_TAG}>`,
-    ].join('\n\n');
+    return `<${HINT_TAG}>\n\n${parts.join('\n\n')}\n\n</${HINT_TAG}>`;
+}
+
+function buildConfigPrompt(sections: HintbookSection[]): string {
+    return [CONFIG_PROMPT_HEADER, buildHintBlock(sections)].join('\n\n');
 }
 
 function hintbookSectionId(hintbook: Transpiler.HintbookData, hintbookPath: string): string {
@@ -74,7 +79,7 @@ function hintbookSectionId(hintbook: Transpiler.HintbookData, hintbookPath: stri
         .replace(/^-+|-+$/g, '');
 }
 
-async function collectHintbookSections(projectRootPath: string, config: Transpiler.ConfigData): Promise<HintbookSection[]> {
+export async function collectHintbookSections(projectRootPath: string, config: Transpiler.ConfigData): Promise<HintbookSection[]> {
     const sections: HintbookSection[] = [];
 
     for (const book of config.books ?? []) {

@@ -24,10 +24,16 @@ hint config
 
 **Creates `hint.yml`** (if missing) — it asks for a project name and description, and offers to register the default hintbook. `hint.yml` marks the project root; every path in a compilation is resolved against it.
 
-Then set up your agent context files with `hint instruct`, which prints an AI agent prompt to stdout that instructs an agent to add the HINT workflow instructions (and each hintbook's system glossary) to your `AGENTS.md` and `CLAUDE.md`. The command never edits those files itself — pipe the output to your agent to apply it:
+Then set up your agent context files — the HINT workflow instructions (and each hintbook's system glossary) written into your `AGENTS.md` and `CLAUDE.md`. The simplest way is `hint apply`, which writes the files directly:
 
 ```bash
-hint instruct | claude -p
+hint apply
+```
+
+If you would rather have your own agent make the change, `hint instruct` prints the same content as a prompt to pipe instead (the `--permission-mode acceptEdits` flag lets the headless agent write the files without stopping to ask):
+
+```bash
+hint instruct | claude -p --permission-mode acceptEdits
 ```
 
 The resulting `hint.yml` looks like this:
@@ -49,7 +55,7 @@ hint add https://github.com/acme/hintbooks-platform  # git: your org's shared pl
 hint add file://hintbooks/team-conventions           # in-repo: your team's own vocabulary
 ```
 
-Each installed book is fetched, validated (it must contain a `hintbook.json`), and registered in the `books` array of `hint.yml`. Run `hint instruct | claude -p` afterwards to refresh `AGENTS.md` / `CLAUDE.md` with the new vocabulary. See the [CLI Reference](06-cli.md) for details.
+Each installed book is fetched, validated (it must contain a `hintbook.json`), and registered in the `books` array of `hint.yml`. Run `hint apply` afterwards to refresh `AGENTS.md` / `CLAUDE.md` with the new vocabulary. See the [CLI Reference](06-cli.md) for details.
 
 ## 4. Write the root baseline
 
