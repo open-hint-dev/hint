@@ -6,19 +6,19 @@ import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
 
-const HINTBOOKS_FOLDER = 'hintbooks';
+const HINTBOOKS_FOLDER = Transpiler.HINTBOOKS_FOLDER;
 
 export class AddCommand implements ICommand {
     private books: string[] = [];
-    private global: boolean = false;
+    private local: boolean = false;
 
     constructor() {}
 
-    static new(books: string[], global: boolean): AddCommand {
+    static new(books: string[], local: boolean): AddCommand {
         const command = new AddCommand();
 
         command.books = books;
-        command.global = global;
+        command.local = local;
 
         return command;
     }
@@ -34,7 +34,7 @@ export class AddCommand implements ICommand {
         const books = config.books ?? [];
 
         for (const book of this.books) {
-            const entry = await installBook(projectRootPath, book, this.global);
+            const entry = await installBook(projectRootPath, book, this.local);
 
             if (!books.includes(entry)) {
                 books.push(entry);
@@ -84,8 +84,8 @@ function run(command: string, args: string[], cwd: string): Promise<void> {
     });
 }
 
-async function installBook(projectRootPath: string, book: string, global: boolean): Promise<string> {
-    const entry = await fetchBook(projectRootPath, book, global);
+async function installBook(projectRootPath: string, book: string, local: boolean): Promise<string> {
+    const entry = await fetchBook(projectRootPath, book, local);
 
     if ((await Transpiler.resolveHintbookPaths(projectRootPath, entry)).length === 0) {
         throw new Error(`No hintbook found in '${book}'`);
@@ -94,7 +94,7 @@ async function installBook(projectRootPath: string, book: string, global: boolea
     return entry;
 }
 
-async function fetchBook(projectRootPath: string, book: string, global: boolean): Promise<string> {
+async function fetchBook(projectRootPath: string, book: string, local: boolean): Promise<string> {
     if (book.startsWith(Transpiler.URL_FILE_PREFIX)) {
         return book;
     }
@@ -120,18 +120,51 @@ async function fetchBook(projectRootPath: string, book: string, global: boolean)
 
     const packageName = book.startsWith(Transpiler.URL_NPM_PREFIX) ? book.slice(Transpiler.URL_NPM_PREFIX.length) : book;
 
-    const npmArgs = global
-        ? [
-              'install',
-              '--global',
-              packageName,
-          ]
-        : [
-              'install',
-              packageName,
-          ];
+    if (local) {
+        // Install into an isolated npm prefix (hintbooks/) instead of the project root, so npm
+        // never reads the host project's package.json. This keeps `hint add --local` working in
+        // yarn/pnpm workspaces (whose `workspace:*` deps npm cannot parse) without requiring their
+        // package manager — npm always ships with Node.
+        const storePath = await ensureNpmStore(projectRootPath);
 
-    await run('npm', npmArgs, projectRootPath);
+        await run(
+            'npm',
+            [
+                'install',
+                packageName,
+                '--prefix',
+                storePath,
+                '--no-audit',
+                '--no-fund',
+            ],
+            projectRootPath,
+        );
+    } else {
+        await run(
+            'npm',
+            [
+                'install',
+                '--global',
+                packageName,
+            ],
+            projectRootPath,
+        );
+    }
 
     return `${Transpiler.URL_NPM_PREFIX}${packageName}`;
+}
+
+async function ensureNpmStore(projectRootPath: string): Promise<string> {
+    const storePath = Path.join(projectRootPath, HINTBOOKS_FOLDER);
+    const manifestPath = Path.join(storePath, 'package.json');
+
+    await FsPromises.mkdir(storePath, { recursive: true });
+
+    if (!(await Transpiler.isPathExists(manifestPath))) {
+        // A private manifest makes npm treat this folder as its own project root, so it does not
+        // walk up into the host workspace when resolving where to install.
+        await FsPromises.writeFile(manifestPath, `${JSON.stringify({ name: 'hint-hintbooks', private: true }, null, 4)}\n`, 'utf8');
+    }
+
+    return storePath;
 }

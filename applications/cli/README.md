@@ -64,12 +64,13 @@ hint instruct | claude -p
 
 ### `hint add <books...>` — install hintbooks
 
-Fetches hintbooks, validates them (a `hintbook.json` must be present), and registers them in `hint.yml`. Run `hint instruct | claude -p` afterwards to refresh the agent files:
+Fetches hintbooks, validates them (a `hintbook.json` must be present), and registers them in `hint.yml`. npm packages install globally by default; pass `--local` to install into a project-local `hintbooks/` store instead (works inside yarn/pnpm workspaces). Run `hint instruct | claude -p` afterwards to refresh the agent files:
 
 ```bash
-hint add @openhint/hintbook-software-engineer         # npm package (-g/--global for global install)
-hint add https://github.com/acme/hintbooks-platform   # git repo → cloned into hintbooks/
-hint add file://hintbooks/team-conventions            # local folder
+hint add @openhint/hintbook-software-engineer           # npm package, installed globally
+hint add --local @openhint/hintbook-software-engineer   # npm package, into project-local hintbooks/
+hint add https://github.com/acme/hintbooks-platform     # git repo → cloned into hintbooks/
+hint add file://hintbooks/team-conventions              # local folder
 ```
 
 ## Project configuration
