@@ -3,6 +3,8 @@ import * as Path from 'node:path';
 
 import * as YAML from 'yaml';
 
+import { readFile, writeFile } from './helper.js';
+
 export const CONFIG_INSTRUCTION = `## HINT
 
 This project uses HINT specifications (\`.hint\` files) as the authoritative implementation contracts. The \`hint\` CLI compiles them into an AI-ready prompt.
@@ -84,13 +86,13 @@ export async function loadConfig(projectRootPath: string): Promise<ConfigData | 
     }
 
     try {
-        const content = await FsPromises.readFile(configPath, 'utf8');
-        return YAML.parse(content) as ConfigData;
-    } catch (err: unknown) {
-        if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        const content = await readFile(configPath);
+        if (content === null) {
             return null;
         }
 
+        return YAML.parse(content) as ConfigData;
+    } catch (err: unknown) {
         throw new Error(`Failed to read '${configPath}': ${(err as any).message}`);
     }
 }
@@ -104,7 +106,7 @@ export async function saveConfig(projectRootPath: string, config: ConfigData): P
     const content = YAML.stringify(config, { lineWidth: 0 });
 
     try {
-        await FsPromises.writeFile(configPath, content, 'utf8');
+        await writeFile(configPath, content);
     } catch (err: unknown) {
         const e = err as NodeJS.ErrnoException;
         throw new Error(`Failed to write '${configPath}': ${e.message}`);

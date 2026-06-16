@@ -21,8 +21,8 @@ hint config
 # 2. Install a keyword vocabulary (registered in hint.yml automatically)
 hint add @openhint/hintbook-software-engineer
 
-# 3. Wire up AGENTS.md / CLAUDE.md from hint.yml
-hint instruct | claude -p
+# 3. Wire up AGENTS.md / CLAUDE.md from hint.yml (or: hint instruct | claude -p)
+hint apply
 
 # 4. Write specs — a root _.hint and companion <file>.hint files — then compile
 hint src/billing/invoice.ts | claude -p
@@ -48,23 +48,31 @@ hint 'src/**/*.hint'              # globs
 
 ### `hint config` — initialize the project
 
-Creates `hint.yml` in the project root (interactively, if missing). Prints a status line and points you to `hint instruct` — it does not emit the agent prompt itself:
+Creates `hint.yml` in the project root (interactively, if missing). Prints a status line and points you to `hint apply` / `hint instruct` — it does not touch the agent files itself:
 
 ```bash
 hint config
 ```
 
-### `hint instruct` — set up the agent context files
+### `hint apply` — write the agent files directly
 
-Prints an AI agent prompt that sets up `AGENTS.md` and `CLAUDE.md` with the HINT workflow keywords and each hintbook's system glossary, built from the current `hint.yml`. The files are never modified directly — pipe the output to your agent. Re-run it whenever `hint.yml` changes (after `hint add`/`hint remove`):
+Writes the `<hint>` block from `hint.yml` straight into `AGENTS.md` and `CLAUDE.md` as a deterministic find-and-replace on the `<hint>` tags — no agent, no piping, no permission prompt. Creates the files if missing, replaces an existing `<hint>` block in place (idempotent), and strips a duplicate block from `CLAUDE.md` when it only `@AGENTS.md`-includes the instructions. Re-run after `hint add`/`hint remove`:
 
 ```bash
-hint instruct | claude -p
+hint apply
+```
+
+### `hint instruct` — set up the agent context files via an agent
+
+Prints the same content as an AI agent prompt instead of writing the files. Pipe it to your agent to apply; the files are never modified by the CLI in this mode. `--permission-mode acceptEdits` lets a headless Claude write the files without stopping for approval:
+
+```bash
+hint instruct | claude -p --permission-mode acceptEdits
 ```
 
 ### `hint add <books...>` — install hintbooks
 
-Fetches hintbooks, validates them (a `hintbook.json` must be present), and registers them in `hint.yml`. npm packages install globally by default; pass `--local` to install into a project-local `hintbooks/` store instead (works inside yarn/pnpm workspaces). Run `hint instruct | claude -p` afterwards to refresh the agent files:
+Fetches hintbooks, validates them (a `hintbook.json` must be present), and registers them in `hint.yml`. npm packages install globally by default; pass `--local` to install into a project-local `hintbooks/` store instead (works inside yarn/pnpm workspaces). Run `hint instruct | claude -p --permission-mode acceptEdits` afterwards to refresh the agent files:
 
 ```bash
 hint add @openhint/hintbook-software-engineer           # npm package, installed globally
