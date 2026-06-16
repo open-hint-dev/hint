@@ -6,7 +6,7 @@
 
 ## Cause
 
-When no `hint.yml` exists and stdin is a terminal, `hint config` asks for the project name and description interactively (on stderr; stdout still carries only the agent prompt). In non-interactive environments (CI, piped stdin) it creates a default `hint.yml` without asking.
+When no `hint.yml` exists and stdin is a terminal, `hint config` asks for the project name and description interactively. The prompts are written to the controlling terminal (`/dev/tty`, falling back to stderr) so they never enter a pipe. In non-interactive environments (CI, piped stdin via `< /dev/null`) it creates a default `hint.yml` without asking.
 
 ## Fix
 

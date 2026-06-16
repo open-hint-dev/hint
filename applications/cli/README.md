@@ -15,13 +15,16 @@ Or ad hoc: `npx @openhint/cli <paths...>`.
 ## Quick start
 
 ```bash
-# 1. Initialize: creates hint.yml, prints the agent-context setup prompt
-hint config | claude -p
+# 1. Initialize: creates hint.yml in the project root
+hint config
 
 # 2. Install a keyword vocabulary (registered in hint.yml automatically)
-hint add @openhint/hintbook-software-engineer | claude -p
+hint add @openhint/hintbook-software-engineer
 
-# 3. Write specs — a root _.hint and companion <file>.hint files — then compile
+# 3. Wire up AGENTS.md / CLAUDE.md from hint.yml
+hint instruct | claude -p
+
+# 4. Write specs — a root _.hint and companion <file>.hint files — then compile
 hint src/billing/invoice.ts | claude -p
 ```
 
@@ -45,20 +48,28 @@ hint 'src/**/*.hint'              # globs
 
 ### `hint config` — initialize the project
 
-Creates `hint.yml` (interactively, if missing) and prints an AI agent prompt that sets up `AGENTS.md` and `CLAUDE.md` with the HINT workflow keywords and each hintbook's system glossary. The files are never modified directly — pipe the output to your agent:
+Creates `hint.yml` in the project root (interactively, if missing). Prints a status line and points you to `hint instruct` — it does not emit the agent prompt itself:
 
 ```bash
-hint config | claude -p
+hint config
+```
+
+### `hint instruct` — set up the agent context files
+
+Prints an AI agent prompt that sets up `AGENTS.md` and `CLAUDE.md` with the HINT workflow keywords and each hintbook's system glossary, built from the current `hint.yml`. The files are never modified directly — pipe the output to your agent. Re-run it whenever `hint.yml` changes (after `hint add`/`hint remove`):
+
+```bash
+hint instruct | claude -p
 ```
 
 ### `hint add <books...>` — install hintbooks
 
-Fetches hintbooks, validates them (a `hintbook.json` must be present), and registers them in `hint.yml`:
+Fetches hintbooks, validates them (a `hintbook.json` must be present), and registers them in `hint.yml`. Run `hint instruct | claude -p` afterwards to refresh the agent files:
 
 ```bash
-hint add @openhint/hintbook-software-engineer | claude -p         # npm package (-g/--global for global install)
-hint add https://github.com/acme/hintbooks-platform | claude -p   # git repo → cloned into hintbooks/
-hint add file://hintbooks/team-conventions | claude -p            # local folder
+hint add @openhint/hintbook-software-engineer         # npm package (-g/--global for global install)
+hint add https://github.com/acme/hintbooks-platform   # git repo → cloned into hintbooks/
+hint add file://hintbooks/team-conventions            # local folder
 ```
 
 ## Project configuration

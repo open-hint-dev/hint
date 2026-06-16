@@ -158,7 +158,14 @@ async function findHintbookFolders(baseFolderPath: string): Promise<string[]> {
 let npmGlobalRootPromise: Promise<string | null> | undefined;
 
 function findNpmGlobalRoot(): Promise<string | null> {
-    npmGlobalRootPromise ??= promisify(execFile)('npm', ['root', '--global'], { shell: process.platform === 'win32' })
+    npmGlobalRootPromise ??= promisify(execFile)(
+        'npm',
+        [
+            'root',
+            '--global',
+        ],
+        { shell: process.platform === 'win32' },
+    )
         .then(({ stdout }) => stdout.trim() || null)
         .catch(() => null);
 
@@ -209,10 +216,7 @@ export async function resolveHintbookVersion(projectRootPath: string, book: stri
             continue;
         }
 
-        return (
-            (await readVersion(Path.join(baseFolderPath, 'package.json'))) ??
-            (await readVersion(Path.join(baseFolderPath, HINTBOOK_FILE_NAME)))
-        );
+        return (await readVersion(Path.join(baseFolderPath, 'package.json'))) ?? (await readVersion(Path.join(baseFolderPath, HINTBOOK_FILE_NAME)));
     }
 
     return null;

@@ -8,7 +8,7 @@ Fatal, from `hint <paths...>`:
 Hintbook not found: <book>
 ```
 
-Warning, from `hint config` (the command continues, but the generated agent prompt is missing that hintbook's system instructions — do not apply it to `AGENTS.md`/`CLAUDE.md` until resolved):
+Warning, from `hint instruct` (the command continues, but the generated agent prompt is missing that hintbook's system instructions — do not apply it to `AGENTS.md`/`CLAUDE.md` until resolved):
 
 ```
 Skipping hintbook '<book>': not found
@@ -28,4 +28,4 @@ Skipping hintbook '<book>': not found
 
 - `file://` book: check that the path (relative to the project root) exists and contains a `hintbook.json`. If the folder moved, update the entry in `hint.yml` or remove it with `hint remove <book>`.
 
-If the warning came from `hint config`, re-run `hint config` after fixing.
+If the warning came from `hint instruct`, re-run `hint instruct` after fixing.

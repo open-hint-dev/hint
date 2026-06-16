@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import { AddCommand } from './commands/add.js';
 import { CompileCommand } from './commands/compile.js';
 import { ConfigCommand } from './commands/config.js';
+import { InstructCommand } from './commands/instruct.js';
 import { RemoveCommand } from './commands/remove.js';
 import { VersionCommand } from './commands/version.js';
 
@@ -32,18 +33,28 @@ export async function main(): Promise<void> {
     program
         .command('config')
         .description(
-            `Initialize ${Transpiler.CONFIG_FILE_YML} and print an AI agent prompt that sets up AGENTS.md and CLAUDE.md. ` +
-                `The files are not modified directly — pipe the output to your agent to apply it, e.g. 'hint config | claude -p'.`,
+            `Initialize ${Transpiler.CONFIG_FILE_YML} in the project root. ` +
+                `Run 'hint instruct | claude -p' afterwards to set up AGENTS.md and CLAUDE.md.`,
         )
         .action(async () => {
             await ConfigCommand.new().execute();
         });
 
     program
+        .command('instruct')
+        .description(
+            `Print an AI agent prompt that sets up AGENTS.md and CLAUDE.md from ${Transpiler.CONFIG_FILE_YML}. ` +
+                `The files are not modified directly — pipe the output to your agent to apply it, e.g. 'hint instruct | claude -p'.`,
+        )
+        .action(async () => {
+            await InstructCommand.new().execute();
+        });
+
+    program
         .command('add')
         .description(
-            `Install hintbooks, register them in ${Transpiler.CONFIG_FILE_YML} and print the updated AI agent prompt, ` +
-                `e.g. 'hint add @openhint/hintbook-lawyer | claude -p'.`,
+            `Install hintbooks and register them in ${Transpiler.CONFIG_FILE_YML}. ` +
+                `Run 'hint instruct | claude -p' afterwards to refresh AGENTS.md and CLAUDE.md.`,
         )
         .argument('<books...>', 'hintbooks to add: a file:// path, a git repository URL, or an npm package name')
         .option('-g, --global', 'install npm hintbooks globally', false)
@@ -54,8 +65,8 @@ export async function main(): Promise<void> {
     program
         .command('remove')
         .description(
-            `Remove hintbooks from ${Transpiler.CONFIG_FILE_YML} without uninstalling them and print the updated AI agent prompt, ` +
-                `e.g. 'hint remove @openhint/hintbook-lawyer | claude -p'.`,
+            `Remove hintbooks from ${Transpiler.CONFIG_FILE_YML} without uninstalling them. ` +
+                `Run 'hint instruct | claude -p' afterwards to refresh AGENTS.md and CLAUDE.md.`,
         )
         .argument('<books...>', 'hintbooks to remove, as listed in the books array (the npm:// or file:// prefix may be omitted)')
         .action(async (books: string[]) => {
@@ -80,12 +91,13 @@ export async function main(): Promise<void> {
         'after',
         `
 Examples:
-  hint config | claude -p                            initialize the project and set up AGENTS.md / CLAUDE.md
-  hint add @openhint/hintbook-lawyer | claude -p     install a hintbook and refresh the agent files
-  hint remove @openhint/hintbook-lawyer | claude -p  unregister a hintbook and refresh the agent files
-  hint src/billing/invoice.ts | claude -p            compile the spec for a file and pipe it to an agent
-  hint --mode review src/billing | claude -p         audit existing code against the spec
-  hint version                                       show CLI and hintbook versions`,
+  hint config                                  initialize hint.yml in the project root
+  hint instruct | claude -p                    set up AGENTS.md / CLAUDE.md from hint.yml
+  hint add @openhint/hintbook-lawyer           install and register a hintbook
+  hint remove @openhint/hintbook-lawyer        unregister a hintbook
+  hint src/billing/invoice.ts | claude -p      compile the spec for a file and pipe it to an agent
+  hint --mode review src/billing | claude -p   audit existing code against the spec
+  hint version                                 show CLI and hintbook versions`,
     );
 
     try {

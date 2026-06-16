@@ -1,7 +1,6 @@
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
-import { printAgentPrompt } from './config.js';
 
 export class RemoveCommand implements ICommand {
     private books: string[] = [];
@@ -34,20 +33,16 @@ export class RemoveCommand implements ICommand {
             }
 
             books.splice(books.indexOf(entry), 1);
-            process.stderr.write(`Removed ${entry}\n`);
+            process.stdout.write(`Removed ${entry}\n`);
         }
 
         config.books = books;
         await Transpiler.saveConfig(projectRootPath, config);
 
-        await printAgentPrompt(projectRootPath, config);
+        process.stdout.write(`Run 'hint instruct | claude -p' to refresh AGENTS.md and CLAUDE.md.\n`);
     }
 }
 
 function matchesBook(entry: string, book: string): boolean {
-    return (
-        entry === book ||
-        entry === `${Transpiler.URL_NPM_PREFIX}${book}` ||
-        entry === `${Transpiler.URL_FILE_PREFIX}${book}`
-    );
+    return entry === book || entry === `${Transpiler.URL_NPM_PREFIX}${book}` || entry === `${Transpiler.URL_FILE_PREFIX}${book}`;
 }

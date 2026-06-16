@@ -448,14 +448,14 @@ trade under the governing law.</span></div>
     </div>
     <div class="grid-2 reveal" style="margin-bottom:24px;">
       <div class="code-wrap">
-        <button class="code__copy" data-copy data-copy-text="npm install -g @openhint/cli&#10;hint config | claude -p&#10;hint add @openhint/hintbook-lawyer | claude -p">Copy</button>
+        <button class="code__copy" data-copy data-copy-text="npm install -g @openhint/cli&#10;hint config&#10;hint add @openhint/hintbook-lawyer&#10;hint instruct | claude -p">Copy</button>
         <div class="code">
           <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">1 · install &amp; register</span></div>
 <div class="code__body"><span class="t-mut"># in the matter folder</span>
 <span class="t-bd">npm install -g @openhint/cli</span>
-<span class="t-bd">hint config | claude -p</span>
-<span class="t-bd">hint add @openhint/hintbook-lawyer \
-  | claude -p</span></div>
+<span class="t-bd">hint config</span>
+<span class="t-bd">hint add @openhint/hintbook-lawyer</span>
+<span class="t-bd">hint instruct | claude -p</span></div>
         </div>
       </div>
       <div class="code-wrap">
@@ -475,7 +475,7 @@ trade under the governing law.</span></div>
     </div>
     <div class="reveal" style="margin:0 0 16px; display:flex; gap:14px; align-items:flex-start; padding:20px 24px; border:1px solid var(--accent-line); background:var(--accent-soft); border-radius:12px;">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="color:var(--accent); flex:none; margin-top:2px;"><path d="M4 4h16v12H8.5L4 19.5V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-      <p style="font-size:0.96rem; color:var(--ink-2); margin:0;"><strong>Then just keep talking to your assistant.</strong> <code class="inl">hint config</code> writes the HINT workflow into your <code class="inl">AGENTS.md</code> and <code class="inl">CLAUDE.md</code> — so Claude Code, Codex, and Cursor call <code class="inl">hint</code> on their own whenever a matter’s <code class="inl">.hint</code> spec is relevant. No need to run it by hand.</p>
+      <p style="font-size:0.96rem; color:var(--ink-2); margin:0;"><strong>Then just keep talking to your assistant.</strong> <code class="inl">hint instruct</code> writes the HINT workflow into your <code class="inl">AGENTS.md</code> and <code class="inl">CLAUDE.md</code> — so Claude Code, Codex, and Cursor call <code class="inl">hint</code> on their own whenever a matter’s <code class="inl">.hint</code> spec is relevant. No need to run it by hand.</p>
     </div>
     <div class="disclaimer reveal">
       <svg viewBox="0 0 20 20" fill="none"><path d="M10 7v4m0 3h.01M10 2l8 14H2L10 2z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
