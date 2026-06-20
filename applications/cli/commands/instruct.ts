@@ -67,7 +67,10 @@ export function buildHintBlock(sections: HintbookSection[]): string {
 }
 
 function buildConfigPrompt(sections: HintbookSection[]): string {
-    return [CONFIG_PROMPT_HEADER, buildHintBlock(sections)].join('\n\n');
+    return [
+        CONFIG_PROMPT_HEADER,
+        buildHintBlock(sections),
+    ].join('\n\n');
 }
 
 function hintbookSectionId(hintbook: Transpiler.HintbookData, hintbookPath: string): string {
