@@ -32,7 +32,11 @@ async function runCli(args: string[], cwd = projectRootPath): Promise<CliResult>
     });
 
     process.chdir(cwd);
-    process.argv = ['node', 'hint', ...args];
+    process.argv = [
+        'node',
+        'hint',
+        ...args,
+    ];
     process.exitCode = undefined;
 
     try {
@@ -112,7 +116,7 @@ describe('cli', () => {
 
             expect(result.exitCode).toBeUndefined();
             expect(result.stdout).toContain('hint.yml already exists');
-            expect(result.stdout).toContain("hint apply");
+            expect(result.stdout).toContain('hint apply');
             expect(result.stdout).not.toContain('<hint>');
         });
 
@@ -124,7 +128,7 @@ describe('cli', () => {
 
                 expect(result.exitCode).toBeUndefined();
                 expect(result.stdout).toContain('Created hint.yml');
-                expect(result.stdout).toContain("hint apply");
+                expect(result.stdout).toContain('hint apply');
                 expect(result.stdout).not.toContain('<hint>');
 
                 const configContent = await FsPromises.readFile(Path.join(temporaryPath, 'hint.yml'), 'utf8');
@@ -183,7 +187,10 @@ describe('cli', () => {
                 expect(first.stdout).toContain('Created AGENTS.md');
                 expect(first.stdout).toContain('Created CLAUDE.md');
 
-                for (const fileName of ['AGENTS.md', 'CLAUDE.md']) {
+                for (const fileName of [
+                    'AGENTS.md',
+                    'CLAUDE.md',
+                ]) {
                     const content = await FsPromises.readFile(Path.join(temporaryPath, fileName), 'utf8');
                     expect(content.match(/<hint>/g)).toHaveLength(1);
                     expect(content).toContain('<system_instructions_from_demo>');
@@ -251,25 +258,31 @@ describe('cli', () => {
             const temporaryPath = await makeProject();
 
             try {
-                const addResult = await runCli([
-                    'add',
-                    'file://book',
-                ], temporaryPath);
+                const addResult = await runCli(
+                    [
+                        'add',
+                        'file://book',
+                    ],
+                    temporaryPath,
+                );
 
                 expect(addResult.exitCode).toBeUndefined();
                 expect(addResult.stdout).toContain('Installed file://book');
-                expect(addResult.stdout).toContain("hint apply");
+                expect(addResult.stdout).toContain('hint apply');
                 expect(addResult.stdout).not.toContain('<hint>');
                 expect(await FsPromises.readFile(Path.join(temporaryPath, 'hint.yml'), 'utf8')).toContain('file://book');
 
-                const removeResult = await runCli([
-                    'remove',
-                    'book',
-                ], temporaryPath);
+                const removeResult = await runCli(
+                    [
+                        'remove',
+                        'book',
+                    ],
+                    temporaryPath,
+                );
 
                 expect(removeResult.exitCode).toBeUndefined();
                 expect(removeResult.stdout).toContain('Removed file://book');
-                expect(removeResult.stdout).toContain("hint apply");
+                expect(removeResult.stdout).toContain('hint apply');
                 expect(removeResult.stdout).not.toContain('<hint>');
                 expect(await FsPromises.readFile(Path.join(temporaryPath, 'hint.yml'), 'utf8')).not.toContain('file://book');
             } finally {
@@ -281,13 +294,101 @@ describe('cli', () => {
             const temporaryPath = await makeProject();
 
             try {
-                const result = await runCli([
-                    'remove',
-                    'no-such-book',
-                ], temporaryPath);
+                const result = await runCli(
+                    [
+                        'remove',
+                        'no-such-book',
+                    ],
+                    temporaryPath,
+                );
 
                 expect(result.exitCode).toBe(1);
                 expect(result.stderr).toContain('Hintbook not registered');
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
+    });
+
+    describe('list', () => {
+        it('lists registered hintbooks with their status', async () => {
+            const result = await runCli(['list']);
+
+            expect(result.exitCode).toBeUndefined();
+            expect(result.stdout).toContain('file://../hintbook');
+            expect(result.stdout).toContain('installed');
+        });
+
+        it('shows version unknown for hintbooks without package.json', async () => {
+            const result = await runCli(['list']);
+
+            expect(result.exitCode).toBeUndefined();
+            expect(result.stdout).toContain('(version unknown)');
+        });
+
+        it('shows detailed path information with --verbose', async () => {
+            const result = await runCli([
+                'list',
+                '--verbose',
+            ]);
+
+            expect(result.exitCode).toBeUndefined();
+            expect(result.stdout).toContain('file://../hintbook');
+            expect(result.stdout).toContain('installed');
+            expect(result.stdout).toContain('hintbook');
+        });
+
+        it('shows help text for list command', async () => {
+            const result = await runCli([
+                'list',
+                '--help',
+            ]);
+
+            expect(result.stdout + result.stderr).toContain('Usage: hint list');
+            expect(result.stdout + result.stderr).toContain('--verbose');
+            expect(result.stdout + result.stderr).toContain('List hintbooks');
+        });
+
+        it('shows message when no hintbooks are registered', async () => {
+            const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-cli-test-'));
+
+            try {
+                await FsPromises.writeFile(Path.join(temporaryPath, 'hint.yml'), 'name: empty-project\nbooks: []\n', 'utf8');
+
+                const result = await runCli(['list'], temporaryPath);
+
+                expect(result.exitCode).toBeUndefined();
+                expect(result.stdout).toContain('No hintbooks registered');
+                expect(result.stdout).toContain('hint add');
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
+
+        it('reports not found status for missing hintbooks', async () => {
+            const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-cli-test-'));
+
+            try {
+                await FsPromises.writeFile(Path.join(temporaryPath, 'hint.yml'), 'name: temp\nbooks:\n  - file://nonexistent-book\n', 'utf8');
+
+                const result = await runCli(['list'], temporaryPath);
+
+                expect(result.exitCode).toBeUndefined();
+                expect(result.stdout).toContain('nonexistent-book');
+                expect(result.stdout).toContain('not found');
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
+
+        it('fails outside an initialized project', async () => {
+            const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-cli-test-'));
+
+            try {
+                const result = await runCli(['list'], temporaryPath);
+
+                expect(result.exitCode).toBe(1);
+                expect(result.stderr).toContain('No hint.yml found');
             } finally {
                 await FsPromises.rm(temporaryPath, { recursive: true, force: true });
             }
@@ -330,6 +431,7 @@ describe('cli', () => {
                 'apply',
                 'add',
                 'remove',
+                'list',
                 'version',
                 'help',
             ]) {

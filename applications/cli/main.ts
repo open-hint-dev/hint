@@ -6,6 +6,7 @@ import { ApplyCommand } from './commands/apply.js';
 import { CompileCommand } from './commands/compile.js';
 import { ConfigCommand } from './commands/config.js';
 import { InstructCommand } from './commands/instruct.js';
+import { ListCommand } from './commands/list.js';
 import { RemoveCommand } from './commands/remove.js';
 import { VersionCommand } from './commands/version.js';
 
@@ -34,8 +35,7 @@ export async function main(): Promise<void> {
     program
         .command('config')
         .description(
-            `Initialize ${Transpiler.CONFIG_FILE_YML} in the project root. ` +
-                `Run 'hint apply' afterwards to set up AGENTS.md and CLAUDE.md.`,
+            `Initialize ${Transpiler.CONFIG_FILE_YML} in the project root. ` + `Run 'hint apply' afterwards to set up AGENTS.md and CLAUDE.md.`,
         )
         .action(async () => {
             await ConfigCommand.new().execute();
@@ -85,6 +85,14 @@ export async function main(): Promise<void> {
         });
 
     program
+        .command('list')
+        .description(`List hintbooks registered in ${Transpiler.CONFIG_FILE_YML}. `)
+        .option('--verbose', 'show detailed path information for each hintbook', false)
+        .action(async (options: { verbose: boolean }) => {
+            await ListCommand.new(options.verbose).execute();
+        });
+
+    program
         .command('version')
         .description(`Print the CLI version and the versions of the hintbooks registered in ${Transpiler.CONFIG_FILE_YML}.`)
         .action(async () => {
@@ -107,6 +115,7 @@ Examples:
   hint instruct | claude -p --permission-mode acceptEdits   ...or have your agent do it
   hint add @openhint/hintbook-lawyer            install and register a hintbook
   hint remove @openhint/hintbook-lawyer         unregister a hintbook
+  hint list                                     list installed hintbooks
   hint src/billing/invoice.ts | claude -p       compile the spec for a file and pipe it to an agent
   hint --mode review src/billing | claude -p    audit existing code against the spec
   hint version                                  show CLI and hintbook versions

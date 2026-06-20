@@ -4,5 +4,6 @@ export * from './command.js';
 export * from './compile.js';
 export * from './config.js';
 export * from './instruct.js';
+export * from './list.js';
 export * from './remove.js';
 export * from './version.js';
