@@ -70,6 +70,14 @@ Prints the same content as an AI agent prompt instead of writing the files. Pipe
 hint instruct | claude -p --permission-mode acceptEdits
 ```
 
+### `hint modes` — list available modes
+
+Lists `__mode__.<mode>.md` files from registered hintbooks, including their frontmatter `name` and `description` when present:
+
+```bash
+hint modes
+```
+
 ### `hint add <books...>` — install hintbooks
 
 Fetches hintbooks, validates them (a `hintbook.json` must be present), and registers them in `hint.yml`. npm packages install globally by default; pass `--local` to install into a project-local `hintbooks/` store instead (works inside yarn/pnpm workspaces). Run `hint instruct | claude -p --permission-mode acceptEdits` afterwards to refresh the agent files:

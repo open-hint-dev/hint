@@ -36,6 +36,7 @@ my-hintbook/
 ├── __footer__.md          ← closing checklist that ends every compiled prompt
 ├── __header__.fix.md      ← header for `--mode fix`
 ├── __footer__.fix.md
+├── __mode__.fix.md        ← when and how agents should use `--mode fix`
 ├── __file__.md            ← wrapper for companion hint files
 ├── __folder__.md          ← wrapper for folder hints (_.hint)
 ├── entity.md              ← keyword instruction
@@ -110,6 +111,19 @@ A `.{mode}.md` suffix in the file name assigns an instruction to a mode: `__head
 
 At compile time, lookup tries the requested mode first and falls back to the default — so a mode only needs to override what actually differs (typically the header and footer; keyword templates are usually shared).
 
+Declare agent-facing mode guidance with `__mode__.<mode>.md`:
+
+```markdown
+---
+name: Review
+description: Audit an implementation against its HINT specification.
+---
+
+Use `hint --mode review <paths...>` when the user asks for a code review or conformance audit.
+```
+
+`hint modes` lists these files. If front matter includes `name` and `description`, the command shows them; otherwise the name falls back to the mode extracted from the file name. `hint apply` and `hint instruct` also copy the stripped mode guidance into `AGENTS.md` / `CLAUDE.md` so agents know when to choose each mode.
+
 ### Running instructions
 
 Names of the form `__name__` are **running instructions** — structural slots the compiler and tooling fill, resolved through the same lookup as keywords:
@@ -121,6 +135,7 @@ Names of the form `__name__` are **running instructions** — structural slots t
 | `__file__`   | Template wrapping each companion hint file; `{name}` is the target path, `{body}` the file preamble, `{children}` the rendered blocks.                 |
 | `__folder__` | Same for folder hints; `{name}` is the folder path (`.` for the project root).                                                                         |
 | `__system__` | Not used during compilation — `hint instruct` emits it for the agent context files (AGENTS.md / CLAUDE.md). Put the tag glossary and reading rules here. |
+| `__mode__`   | Not used during compilation — `__mode__.<mode>.md` describes when and how agents should compile with that mode.                                       |
 
 ## Authoring guidelines
 

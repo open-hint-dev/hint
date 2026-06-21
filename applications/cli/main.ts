@@ -7,6 +7,7 @@ import { CompileCommand } from './commands/compile.js';
 import { ConfigCommand } from './commands/config.js';
 import { InstructCommand } from './commands/instruct.js';
 import { ListCommand } from './commands/list.js';
+import { ModesCommand } from './commands/modes.js';
 import { RemoveCommand } from './commands/remove.js';
 import { VersionCommand } from './commands/version.js';
 
@@ -93,6 +94,13 @@ export async function main(): Promise<void> {
         });
 
     program
+        .command('modes')
+        .description(`List modes provided by the hintbooks registered in ${Transpiler.CONFIG_FILE_YML}.`)
+        .action(async () => {
+            await ModesCommand.new().execute();
+        });
+
+    program
         .command('version')
         .description(`Print the CLI version and the versions of the hintbooks registered in ${Transpiler.CONFIG_FILE_YML}.`)
         .action(async () => {
@@ -116,6 +124,7 @@ Examples:
   hint add @openhint/hintbook-lawyer            install and register a hintbook
   hint remove @openhint/hintbook-lawyer         unregister a hintbook
   hint list                                     list installed hintbooks
+  hint modes                                    list available hintbook modes
   hint src/billing/invoice.ts | claude -p       compile the spec for a file and pipe it to an agent
   hint --mode review src/billing | claude -p    audit existing code against the spec
   hint version                                  show CLI and hintbook versions

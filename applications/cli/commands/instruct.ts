@@ -98,16 +98,55 @@ export async function collectHintbookSections(projectRootPath: string, config: T
             const system = hintbook.modes[Transpiler.INSTRUCTION_MODE_DEFAULT]?.instructions.find(
                 (instruction) => instruction.name === Transpiler.RUNNING_SYSTEM,
             );
-            const content = system?.content.trim();
+            const parts = [
+                system?.content.trim(),
+                formatRunningModes(hintbook.runningModes),
+            ].filter((part) => part);
 
-            if (content) {
+            if (parts.length > 0) {
                 sections.push({
                     id: hintbookSectionId(hintbook, hintbookPath),
-                    content,
+                    content: parts.join('\n\n'),
                 });
             }
         }
     }
 
     return sections;
+}
+
+function formatRunningModes(modes: Transpiler.RunningModeData[]): string {
+    const modeBlocks = modes.map(formatRunningMode).filter((mode) => mode);
+
+    if (modeBlocks.length === 0) {
+        return '';
+    }
+
+    return `<available_hint_modes>\n\nThese are the HINT modes available in this project. Read them before running HINT and choose the mode whose guidance matches the user's request. Run a mode with \`hint --mode <mode> <path...>\`.\n\n${modeBlocks.join('\n\n')}\n\n</available_hint_modes>`;
+}
+
+function formatRunningMode(mode: Transpiler.RunningModeData): string {
+    const parts = [
+        `Mode: ${mode.mode}`,
+    ];
+
+    if (mode.name !== mode.mode) {
+        parts.push(`Name: ${mode.name}`);
+    }
+
+    if (mode.description) {
+        parts.push(`Description: ${mode.description}`);
+    }
+
+    const content = mode.content.trim();
+
+    if (content) {
+        parts.push(content);
+    }
+
+    return `<hint_mode mode="${escapeAttribute(mode.mode)}">\n\n${parts.join('\n\n')}\n\n</hint_mode>`;
+}
+
+function escapeAttribute(value: string): string {
+    return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

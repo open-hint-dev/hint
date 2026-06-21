@@ -76,7 +76,7 @@ hint apply    # then write the agent files
 
 ## `hint instruct` — set up the agent context files
 
-Prints an **AI agent prompt** to stdout that instructs an agent to maintain a single `<hint>...</hint>` block in `AGENTS.md` and `CLAUDE.md`, built from the current `hint.yml`. The block wraps the base HINT workflow instructions plus each registered hintbook's `__system__` glossary in `<system_instructions_from_<hintbook-id>>` tags. The agent creates the files if needed, appends the block if missing, and otherwise replaces the existing `<hint>` block wholesale — so updated, added, or removed hintbooks propagate on every run. The prompt states explicitly that these are the only HINT instructions allowed in the files; anything HINT-related outside the block is removed.
+Prints an **AI agent prompt** to stdout that instructs an agent to maintain a single `<hint>...</hint>` block in `AGENTS.md` and `CLAUDE.md`, built from the current `hint.yml`. The block wraps the base HINT workflow instructions plus each registered hintbook's `__system__` glossary and `__mode__.<mode>.md` usage guidance in `<system_instructions_from_<hintbook-id>>` tags. The agent creates the files if needed, appends the block if missing, and otherwise replaces the existing `<hint>` block wholesale — so updated, added, or removed hintbooks propagate on every run. The prompt states explicitly that these are the only HINT instructions allowed in the files; anything HINT-related outside the block is removed.
 
 The command never edits `AGENTS.md` / `CLAUDE.md` itself. Apply the printed prompt with your agent, and re-run it whenever `hint.yml` changes:
 
@@ -104,6 +104,18 @@ Does what `hint instruct` asks an agent to do, but as a deterministic find-and-r
 - If `CLAUDE.md` only `@AGENTS.md`-includes it, the block is written to `AGENTS.md` and any copy in `CLAUDE.md` is stripped to avoid duplication.
 
 It prints one short status line per file (`Created…`, `Updated the HINT block in…`, `…already up to date`). Use `hint instruct | claude -p` instead when you would rather an agent apply the changes. Fails with `No hint.yml found` outside an initialized project.
+
+---
+
+## `hint modes` — list available modes
+
+```bash
+hint modes
+```
+
+Lists modes declared by registered hintbooks through `__mode__.<mode>.md` files. The `mode` column is the value to pass to `hint --mode <mode>`. If a mode file starts with YAML front matter containing `name` and `description`, those are shown; otherwise the name falls back to the mode extracted from the file name.
+
+Warnings for unresolved hintbooks go to stderr. Fails with `No hint.yml found` outside an initialized project.
 
 ---
 
@@ -174,6 +186,6 @@ Prints the command overview with usage examples. The same text is available via 
 
 ## Exit codes and streams
 
-- **stdout** carries the command's primary output: the compiled prompt (`hint`), the agent prompt to pipe to your agent (`hint instruct`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), or the version report (`hint version`). Only `hint` and `hint instruct` are meant to be piped into an agent.
+- **stdout** carries the command's primary output: the compiled prompt (`hint`), the agent prompt to pipe to your agent (`hint instruct`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), listings (`hint list`, `hint modes`), or the version report (`hint version`). Only `hint` and `hint instruct` are meant to be piped into an agent.
 - **stderr** carries interactive prompts, subprocess (git/npm) output, warnings, and errors.
 - Exit code `0` on success, `1` on any failure (unresolvable specs under `--dry-run`, missing project, failed installs, invalid hintbooks).

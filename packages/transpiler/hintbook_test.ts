@@ -3,7 +3,7 @@ import * as Os from 'node:os';
 import * as Path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { INSTRUCTION_MODE_DEFAULT, loadHintbook, loadHintbooks, resolveHintbookPaths, RUNNING_SYSTEM } from './hintbook.js';
+import { INSTRUCTION_MODE_DEFAULT, loadHintbook, loadHintbooks, resolveHintbookPaths, RUNNING_MODE, RUNNING_SYSTEM } from './hintbook.js';
 
 const here = Path.dirname(fileURLToPath(import.meta.url));
 const repoRootPath = Path.resolve(here, '../..');
@@ -40,6 +40,28 @@ describe('hintbook', () => {
             const notes = hintbook.modes[INSTRUCTION_MODE_DEFAULT]!.instructions.find((instruction) => instruction.name === 'notes');
 
             expect(notes?.metadata?.exclude).toBe(true);
+        });
+
+        it('loads running mode descriptions from reserved mode files', async () => {
+            const hintbook = await loadHintbook(instructionsPath);
+
+            const review = hintbook.runningModes.find((mode) => mode.mode === 'review');
+            const fix = hintbook.runningModes.find((mode) => mode.mode === 'fix');
+
+            expect(review).toMatchObject({
+                mode: 'review',
+                name: 'Review',
+                description: 'Audit an implementation against its HINT specification.',
+            });
+            expect(review?.content).toContain('Use `hint --mode review');
+            expect(review?.content).not.toContain('---');
+
+            expect(fix).toMatchObject({
+                mode: 'fix',
+                name: 'fix',
+                description: '',
+            });
+            expect(hintbook.modes.review?.instructions.map((instruction) => instruction.name)).not.toContain(RUNNING_MODE);
         });
     });
 

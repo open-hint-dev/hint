@@ -18,6 +18,7 @@ export const RUNNING_FILE = '__file__';
 export const RUNNING_FOLDER = '__folder__';
 export const RUNNING_FOOTER = '__footer__';
 export const RUNNING_HEADER = '__header__';
+export const RUNNING_MODE = '__mode__';
 export const RUNNING_SYSTEM = '__system__';
 
 export const PLACEHOLDER_ID = 'id';
@@ -26,7 +27,9 @@ export const PLACEHOLDER_BODY = 'body';
 export const PLACEHOLDER_CHILDREN = 'children';
 
 export type MetaData = {
+    description?: string;
     exclude?: boolean;
+    name?: string;
     synonyms?: string[];
 };
 
@@ -45,10 +48,18 @@ export type ModeData = {
     instructions: InstructionData[];
 };
 
+export type RunningModeData = {
+    mode: string;
+    name: string;
+    description: string;
+    content: string;
+};
+
 export type HintbookData = {
     id?: string;
     name?: string;
     description?: string;
+    runningModes: RunningModeData[];
     modes: Record<string, ModeData>;
 };
 
@@ -68,8 +79,15 @@ async function resolveInstructionMode(file: string): Promise<InstructionFileData
     };
 }
 
+function metadataString(metadata: MetaData, key: 'description' | 'name'): string {
+    const value = metadata[key];
+
+    return typeof value === 'string' ? value.trim() : '';
+}
+
 export async function loadHintbook(hintbookPath: string): Promise<HintbookData> {
     const data: HintbookData = {
+        runningModes: [],
         modes: {
             [INSTRUCTION_MODE_DEFAULT]: {
                 instructions: [],
@@ -108,6 +126,17 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
         const parsed = new VFile(content);
         matter(parsed, { strip: true });
         const metadata = (parsed.data.matter ?? {}) as MetaData;
+
+        if (instructionFileData.name === RUNNING_MODE) {
+            data.runningModes.push({
+                mode: instructionFileData.mode,
+                name: metadataString(metadata, 'name') || instructionFileData.mode,
+                description: metadataString(metadata, 'description'),
+                content: String(parsed),
+            });
+
+            continue;
+        }
 
         mode.instructions.push({
             name: instructionFileData.name,

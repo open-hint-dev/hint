@@ -149,6 +149,10 @@ describe('cli', () => {
             expect(result.stdout).toContain('</hint>');
             expect(result.stdout).toContain('<system_instructions_from_hintbook-testdata>');
             expect(result.stdout).toContain('</system_instructions_from_hintbook-testdata>');
+            expect(result.stdout).toContain('<available_hint_modes>');
+            expect(result.stdout).toContain('read it before running HINT');
+            expect(result.stdout).toContain('hint --mode <mode> <path...>');
+            expect(result.stdout).toContain('Mode: review');
         });
 
         it('fails outside an initialized project', async () => {
@@ -173,6 +177,11 @@ describe('cli', () => {
             await FsPromises.mkdir(Path.join(temporaryPath, 'book'));
             await FsPromises.writeFile(Path.join(temporaryPath, 'book', 'hintbook.json'), '{ "id": "demo" }\n', 'utf8');
             await FsPromises.writeFile(Path.join(temporaryPath, 'book', '__system__.md'), '# system\nDemo glossary.\n', 'utf8');
+            await FsPromises.writeFile(
+                Path.join(temporaryPath, 'book', '__mode__.review.md'),
+                '---\nname: Review\n---\nUse review mode for implementation audits.\n',
+                'utf8',
+            );
 
             return temporaryPath;
         }
@@ -194,6 +203,9 @@ describe('cli', () => {
                     const content = await FsPromises.readFile(Path.join(temporaryPath, fileName), 'utf8');
                     expect(content.match(/<hint>/g)).toHaveLength(1);
                     expect(content).toContain('<system_instructions_from_demo>');
+                    expect(content).toContain('<available_hint_modes>');
+                    expect(content).toContain('hint --mode <mode> <path...>');
+                    expect(content).toContain('Use review mode for implementation audits.');
                 }
 
                 const second = await runCli(['apply'], temporaryPath);
@@ -395,6 +407,42 @@ describe('cli', () => {
         });
     });
 
+    describe('modes', () => {
+        it('lists modes from registered hintbooks', async () => {
+            const result = await runCli(['modes']);
+
+            expect(result.exitCode).toBeUndefined();
+            expect(result.stdout).toContain('mode');
+            expect(result.stdout).toContain('review');
+            expect(result.stdout).toContain('Review');
+            expect(result.stdout).toContain('Audit an implementation against its HINT specification.');
+            expect(result.stdout).toContain('fix');
+        });
+
+        it('shows help text for modes command', async () => {
+            const result = await runCli([
+                'modes',
+                '--help',
+            ]);
+
+            expect(result.stdout + result.stderr).toContain('Usage: hint modes');
+            expect(result.stdout + result.stderr).toContain('List modes');
+        });
+
+        it('fails outside an initialized project', async () => {
+            const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-cli-test-'));
+
+            try {
+                const result = await runCli(['modes'], temporaryPath);
+
+                expect(result.exitCode).toBe(1);
+                expect(result.stderr).toContain('No hint.yml found');
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
+    });
+
     describe('version', () => {
         it('prints the cli version and the registered hintbook versions', async () => {
             const result = await runCli(['version']);
@@ -432,6 +480,7 @@ describe('cli', () => {
                 'add',
                 'remove',
                 'list',
+                'modes',
                 'version',
                 'help',
             ]) {
