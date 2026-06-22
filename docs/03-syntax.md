@@ -84,15 +84,17 @@ There is no fixed meaning to any level — `##` under an `entity` is whatever yo
 
 ## Includes
 
-A paragraph consisting of a single `@include` directive inlines another file at compile time:
+A line consisting of a single `@include` directive inlines another file at compile time:
 
 ```markdown
+@include ../shared/error-policy.md
 @include "../shared/error-policy.md"
 ```
 
-- The path resolves relative to the folder of the hint file being compiled.
-- `.md` / `.mdx` files are parsed and merged as markdown — their content becomes part of the surrounding body. Includes may nest.
-- Any other file type is embedded as a fenced code block tagged with its extension — useful for inlining real schemas or configs.
+- Quotes around the path are optional — both forms above are equivalent.
+- The referenced file is inlined **as-is**: its raw text replaces the directive line before anything is parsed, so the file behaves exactly as if its content had been written in place. A `.hint` (or `.md`) file's headings therefore become real hints, and any `{#id}` they declare is honored. Includes may nest.
+- Path resolution: a leading `/` resolves from the project root. Otherwise the path resolves relative to the folder of the including file, falling back to the project root when that does not exist.
+- A missing target, or a file that includes itself in a cycle, is a hard error.
 
 Use includes for shared fragments that multiple specs must state identically.
 

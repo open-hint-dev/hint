@@ -9,7 +9,7 @@ import { InstructCommand } from './commands/instruct.js';
 import { ListCommand } from './commands/list.js';
 import { ModesCommand } from './commands/modes.js';
 import { RemoveCommand } from './commands/remove.js';
-import { VersionCommand } from './commands/version.js';
+import { findCliVersion, VersionCommand } from './commands/version.js';
 
 type CompileOptions = {
     mode?: string;
@@ -26,6 +26,7 @@ export async function main(): Promise<void> {
     program
         .name('hint')
         .description('Compile HINT specification files into AI-ready implementation prompts.')
+        .version(`@openhint/cli ${await findCliVersion()}`, '-v, --version', 'print the CLI version (use the "version" command to also list hintbook versions)')
         .argument('<paths...>', 'paths to .hint files, their target files, or folders (globs supported)')
         .option('--mode <mode>', 'compile keywords for the given hintbook mode (e.g. fix, review)')
         .option('--dry-run', 'fail on hint files that cannot be resolved instead of skipping them', false)

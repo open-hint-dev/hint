@@ -1,0 +1,9 @@
+File with reusable includes.
+
+@include ../shared/snippet.md
+
+# entity Widget {#widget}
+
+a widget
+
+@include ../shared/partial.hint

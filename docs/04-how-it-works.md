@@ -24,7 +24,7 @@ paths ──► find ──► HintFileData tree ──► parse ──► HintD
 
 **Reading.** Existing files are read; a missing `_.hint` counts as empty (the folder still wraps its children); a missing companion hint is skipped silently, or throws if `dryRun` is set.
 
-**Markdown processing.** Each file's content runs through a remark pipeline: parse → extract `{#id}` heading ids → expand `@include` directives (resolved relative to the hint file's folder).
+**Markdown processing.** `@include` directives are expanded first — each referenced file's raw text is inlined in place (quotes optional; leading `/` resolves from the project root, otherwise relative to the including file with a project-root fallback). The combined text then runs through a remark pipeline: parse → extract `{#id}` heading ids.
 
 **Block extraction.** Top-level nodes are walked once with a heading stack:
 

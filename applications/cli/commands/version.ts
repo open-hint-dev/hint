@@ -36,7 +36,7 @@ export class VersionCommand implements ICommand {
     }
 }
 
-async function findCliVersion(): Promise<string> {
+export async function findCliVersion(): Promise<string> {
     let folderPath = Path.dirname(fileURLToPath(import.meta.url));
 
     while (true) {
