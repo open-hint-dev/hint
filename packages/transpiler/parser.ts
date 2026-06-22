@@ -2,8 +2,6 @@ import * as FsPromises from 'node:fs/promises';
 import Path from 'node:path';
 
 import type { Heading, Root, RootContent } from 'mdast';
-// @ts-expect-error - no types available
-import { includeMarkdown } from '@hashicorp/platform-remark-plugins';
 import { toString as mdastToString } from 'mdast-util-to-string';
 import remarkCustomHeaderId from 'remark-custom-header-id';
 import remarkParse from 'remark-parse';
@@ -15,6 +13,7 @@ import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 
 const HINT_EXT = '.hint';
 const FOLDER_HINT = `_${HINT_EXT}`;
+const INCLUDE_DIRECTIVE = '@include';
 
 export type HintFileData = {
     path: string;
@@ -162,13 +161,109 @@ async function readHintContent(path: string, dryRun: boolean): Promise<string | 
     return null;
 }
 
-async function parseHintContent(path: string, content: string): Promise<Root> {
-    const processor = Unified.unified()
-        .use(remarkParse)
-        .use(remarkCustomHeaderId)
-        .use(includeMarkdown, { resolveFrom: Path.dirname(path) });
+async function parseHintContent(path: string, content: string, projectRootPath: string): Promise<Root> {
+    const expanded = await expandIncludes(path, content, projectRootPath, new Set([path]));
 
-    return (await processor.run(processor.parse(content))) as Root;
+    const processor = Unified.unified().use(remarkParse).use(remarkCustomHeaderId);
+
+    return (await processor.run(processor.parse(expanded))) as Root;
+}
+
+// A line is an `@include` directive when, ignoring surrounding whitespace, it is exactly
+// `@include <path>`. The path may be wrapped in matching single or double quotes, or left bare.
+function parseIncludeDirective(line: string): string | null {
+    const trimmed = line.trim();
+
+    if (!trimmed.startsWith(INCLUDE_DIRECTIVE)) {
+        return null;
+    }
+
+    const rest = trimmed.slice(INCLUDE_DIRECTIVE.length);
+
+    if (rest.length === 0 || !/^\s/.test(rest)) {
+        return null;
+    }
+
+    let target = rest.trim();
+
+    if (target.length === 0) {
+        return null;
+    }
+
+    const quote = target[0];
+
+    if ((quote === '"' || quote === "'") && target.length >= 2 && target.endsWith(quote)) {
+        target = target.slice(1, -1);
+    }
+
+    return target.length > 0 ? target : null;
+}
+
+// A leading slash resolves the include from the project root. Otherwise it resolves relative to
+// the including file's folder, falling back to the project root when that does not exist.
+async function resolveIncludePath(target: string, fromFilePath: string, projectRootPath: string): Promise<string | null> {
+    if (target.startsWith('/')) {
+        const rooted = Path.join(projectRootPath, target.replace(/^\/+/, ''));
+
+        return (await isPathExists(rooted)) ? rooted : null;
+    }
+
+    const relative = Path.resolve(Path.dirname(fromFilePath), target);
+
+    if (await isPathExists(relative)) {
+        return relative;
+    }
+
+    const rooted = Path.join(projectRootPath, target);
+
+    return (await isPathExists(rooted)) ? rooted : null;
+}
+
+// Inlines `@include` targets as-is: the referenced file's raw content replaces the directive line
+// before any markdown parsing, so an included file behaves exactly as if its text were written in
+// place. Includes nest, and a file may not include itself transitively (cycle).
+async function expandIncludes(filePath: string, content: string, projectRootPath: string, seen: Set<string>): Promise<string> {
+    const lines = content.split('\n');
+    const out: string[] = [];
+
+    for (const line of lines) {
+        const target = parseIncludeDirective(line);
+
+        if (target === null) {
+            out.push(line);
+            continue;
+        }
+
+        const resolved = await resolveIncludePath(target, filePath, projectRootPath);
+
+        if (resolved === null) {
+            throw new Error(`@include target not found: '${target}' (referenced in ${filePath})`);
+        }
+
+        if (seen.has(resolved)) {
+            throw new Error(`@include cycle detected: '${resolved}' (referenced in ${filePath})`);
+        }
+
+        const includedContent = await readFile(resolved);
+
+        if (includedContent === null) {
+            throw new Error(`@include target not found: '${target}' (referenced in ${filePath})`);
+        }
+
+        const expanded = await expandIncludes(
+            resolved,
+            includedContent,
+            projectRootPath,
+            new Set([
+                ...seen,
+                resolved,
+            ]),
+        );
+
+        out.push(expanded.trim());
+    }
+
+    return out.join('\n');
 }
 
 function stringifyHintBody(nodes: RootContent[]): string {
@@ -248,7 +343,7 @@ async function parseHint(projectRootPath: string, hintFile: HintFileData, dryRun
         children: [],
     };
 
-    parseHeadings(await parseHintContent(hintFile.path, content), hint);
+    parseHeadings(await parseHintContent(hintFile.path, content, projectRootPath), hint);
 
     for (const childFile of hintFile.children) {
         const childHint = await parseHint(projectRootPath, childFile, dryRun);

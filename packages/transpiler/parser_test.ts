@@ -187,6 +187,71 @@ describe('parser', () => {
             expect(action.body).toBe('validate the payment fields before persisting\n\nshared **markdown** context');
         });
 
+        describe('@include', () => {
+            async function fileHint(hintPath: string): Promise<HintData> {
+                const hints = await parseHints(projectRootPath, [hintPath], false);
+
+                return hints[0]!.children.find((hint) => hint.keyword === RUNNING_FOLDER)!.children[0]!;
+            }
+
+            it('inlines the included file content as-is at the directive position', async () => {
+                const file = await fileHint('includes/feature.ts.hint');
+
+                // The unquoted @include in the file body is replaced inline with the snippet content,
+                // preserving the surrounding text exactly.
+                expect(file.body).toBe('File with reusable includes.\n\nreusable snippet text');
+            });
+
+            it('accepts the directive with or without surrounding quotes', async () => {
+                // The payment hint uses a quoted include; the feature hint uses unquoted includes.
+                // Both resolve and inline their targets.
+                const quoted = await fileHint('src/payment.ts.hint');
+                const unquoted = await fileHint('includes/feature.ts.hint');
+
+                expect(quoted.children.at(-1)!.body).toContain('shared **markdown** context');
+                expect(unquoted.body).toContain('reusable snippet text');
+            });
+
+            it('preserves markdown markup from the included file verbatim', async () => {
+                const widget = (await fileHint('includes/feature.ts.hint')).children[0]!;
+
+                // The included markdown keeps its emphasis markers — it is inlined, not escaped or rendered.
+                expect(widget.body).toBe('a widget\n\nincluded **bold** body');
+            });
+
+            it('inlines an included .hint file as parsed hints, including its heading ids', async () => {
+                const widget = (await fileHint('includes/feature.ts.hint')).children[0]!;
+
+                // Because the include is expanded before parsing, a heading (with its {#id}) living in the
+                // included .hint file becomes a real hint in the tree — proving the include is truly inlined.
+                expect(widget).toMatchObject({ keyword: 'entity', name: 'Widget', id: 'widget' });
+                expect(widget.children).toHaveLength(1);
+                expect(widget.children[0]!).toMatchObject({
+                    level: 2,
+                    keyword: 'field',
+                    name: 'color',
+                    id: 'widget_color',
+                    body: 'the widget color',
+                });
+            });
+
+            it('resolves a leading-slash path from the project root and falls back to the root for bare paths', async () => {
+                // rooted.ts.hint lives in includes/ but pulls shared/rooted.md two ways:
+                // '/shared/rooted.md' (explicit root) and 'shared/rooted.md' (relative miss -> root fallback).
+                const file = await fileHint('includes/rooted.ts.hint');
+
+                expect(file.body).toBe('Root resolution check.\n\nrooted content\n\nrooted content');
+            });
+
+            it('throws on a missing include target', async () => {
+                await expect(parseHints(projectRootPath, ['includes/missing.ts.hint'], false)).rejects.toThrow(/@include target not found/);
+            });
+
+            it('throws on a circular include', async () => {
+                await expect(parseHints(projectRootPath, ['includes/cyclic.ts.hint'], false)).rejects.toThrow(/@include cycle detected/);
+            });
+        });
+
         it('parses synthesized folder hints with empty bodies', async () => {
             const hints = await parseHints(projectRootPath, ['deep/nested/feature.ts.hint'], false);
 

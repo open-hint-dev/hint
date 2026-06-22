@@ -464,6 +464,18 @@ describe('cli', () => {
                 await FsPromises.rm(temporaryPath, { recursive: true, force: true });
             }
         });
+
+        it('prints the cli version with the --version flag', async () => {
+            const result = await runCli(['--version']);
+
+            expect(result.stdout + result.stderr).toMatch(/@openhint\/cli \d+\.\d+\.\d+/);
+        });
+
+        it('prints the cli version with the -v flag', async () => {
+            const result = await runCli(['-v']);
+
+            expect(result.stdout + result.stderr).toMatch(/@openhint\/cli \d+\.\d+\.\d+/);
+        });
     });
 
     describe('help', () => {
