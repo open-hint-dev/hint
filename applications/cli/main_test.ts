@@ -443,6 +443,58 @@ describe('cli', () => {
         });
     });
 
+    describe('author', () => {
+        it('prints the authoring prompt with the keyword vocabulary', async () => {
+            const result = await runCli([
+                'author',
+                'src/payment.ts',
+            ]);
+
+            expect(result.exitCode).toBeUndefined();
+            expect(result.stdout).toContain('Authoring HINT specification files');
+            expect(result.stdout).toContain('src/payment.ts');
+            expect(result.stdout).toContain('Keyword vocabulary');
+            // Keyword rows, including the synonym from rule.md and the description from entity.md.
+            expect(result.stdout).toContain('| entity |');
+            expect(result.stdout).toContain('A data structure or model with a fixed schema.');
+            expect(result.stdout).toContain('| rule |');
+            expect(result.stdout).toContain('rules');
+            // Running instructions must never be advertised as keywords.
+            expect(result.stdout).not.toContain('__file__');
+            expect(result.stdout).not.toContain('__system__');
+        });
+
+        it('works with no target paths', async () => {
+            const result = await runCli(['author']);
+
+            expect(result.exitCode).toBeUndefined();
+            expect(result.stdout).toContain('Authoring HINT specification files');
+            expect(result.stdout).toContain('| entity |');
+        });
+
+        it('shows help text for author command', async () => {
+            const result = await runCli([
+                'author',
+                '--help',
+            ]);
+
+            expect(result.stdout + result.stderr).toContain('Usage: hint author');
+        });
+
+        it('fails outside an initialized project', async () => {
+            const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-cli-test-'));
+
+            try {
+                const result = await runCli(['author'], temporaryPath);
+
+                expect(result.exitCode).toBe(1);
+                expect(result.stderr).toContain('No hint.yml found');
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
+    });
+
     describe('version', () => {
         it('prints the cli version and the registered hintbook versions', async () => {
             const result = await runCli(['version']);
@@ -493,6 +545,7 @@ describe('cli', () => {
                 'remove',
                 'list',
                 'modes',
+                'author',
                 'version',
                 'help',
             ]) {

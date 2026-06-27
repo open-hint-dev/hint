@@ -268,6 +268,23 @@ describe('parser', () => {
             });
         });
 
+        it('strips the .hint tail from detached hint folders when deriving target paths', async () => {
+            const hints = await parseHints(projectRootPath, ['packages.hint/db/schema.ts.hint'], false);
+
+            // The folder hint `packages.hint/_.hint` describes the real `packages` folder, and the
+            // file hint `packages.hint/db/schema.ts.hint` describes `packages/db/schema.ts` — the
+            // `.hint` tail is dropped from every folder segment, but the file name is kept.
+            const packages = hints[0]!.children.find((hint) => hint.keyword === RUNNING_FOLDER)!;
+            expect(packages.name).toBe('packages');
+
+            const db = packages.children.find((hint) => hint.keyword === RUNNING_FOLDER)!;
+            expect(db.name).toBe('packages/db');
+
+            const schema = db.children.find((hint) => hint.keyword === RUNNING_FILE)!;
+            expect(schema.name).toBe('packages/db/schema.ts');
+            expect(schema.children[0]!).toMatchObject({ keyword: 'entity', name: 'Schema', id: 'db_schema' });
+        });
+
         it('silently skips missing hint files', async () => {
             const hints = await parseHints(projectRootPath, ['missing.ts'], false);
 

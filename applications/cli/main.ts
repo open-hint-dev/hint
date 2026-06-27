@@ -3,6 +3,7 @@ import { Command } from 'commander';
 
 import { AddCommand } from './commands/add.js';
 import { ApplyCommand } from './commands/apply.js';
+import { AuthorCommand } from './commands/author.js';
 import { CompileCommand } from './commands/compile.js';
 import { ConfigCommand } from './commands/config.js';
 import { InstructCommand } from './commands/instruct.js';
@@ -26,7 +27,11 @@ export async function main(): Promise<void> {
     program
         .name('hint')
         .description('Compile HINT specification files into AI-ready implementation prompts.')
-        .version(`@openhint/cli ${await findCliVersion()}`, '-v, --version', 'print the CLI version (use the "version" command to also list hintbook versions)')
+        .version(
+            `@openhint/cli ${await findCliVersion()}`,
+            '-v, --version',
+            'print the CLI version (use the "version" command to also list hintbook versions)',
+        )
         .argument('<paths...>', 'paths to .hint files, their target files, or folders (globs supported)')
         .option('--mode <mode>', 'compile keywords for the given hintbook mode (e.g. fix, review)')
         .option('--dry-run', 'fail on hint files that cannot be resolved instead of skipping them', false)
@@ -95,6 +100,17 @@ export async function main(): Promise<void> {
         });
 
     program
+        .command('author')
+        .description(
+            `Print an AI agent prompt for writing ${Transpiler.CONFIG_FILE_YML} hint files, listing the keyword vocabulary ` +
+                `and descriptions of the registered hintbooks. Pipe it to your agent, e.g. 'hint author src/billing/invoice.ts | claude -p'.`,
+        )
+        .argument('[paths...]', 'target files or folders the agent should write .hint specs for')
+        .action(async (paths: string[]) => {
+            await AuthorCommand.new(paths).execute();
+        });
+
+    program
         .command('modes')
         .description(`List modes provided by the hintbooks registered in ${Transpiler.CONFIG_FILE_YML}.`)
         .action(async () => {
@@ -126,6 +142,7 @@ Examples:
   hint remove @openhint/hintbook-lawyer         unregister a hintbook
   hint list                                     list installed hintbooks
   hint modes                                    list available hintbook modes
+  hint author src/billing/invoice.ts | claude -p   prompt an agent to write the .hint spec for a file
   hint src/billing/invoice.ts | claude -p       compile the spec for a file and pipe it to an agent
   hint --mode review src/billing | claude -p    audit existing code against the spec
   hint version                                  show CLI and hintbook versions

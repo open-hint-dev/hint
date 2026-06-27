@@ -142,7 +142,9 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
             name: instructionFileData.name,
             content: String(parsed),
             metadata: {
+                description: metadataString(metadata, 'description') || undefined,
                 exclude: metadata.exclude,
+                name: metadataString(metadata, 'name') || undefined,
                 synonyms: metadata.synonyms,
             },
         });

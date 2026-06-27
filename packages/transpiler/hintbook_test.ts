@@ -42,6 +42,19 @@ describe('hintbook', () => {
             expect(notes?.metadata?.exclude).toBe(true);
         });
 
+        it('reads description and synonyms from instruction front matter', async () => {
+            const hintbook = await loadHintbook(instructionsPath);
+            const instructions = hintbook.modes[INSTRUCTION_MODE_DEFAULT]!.instructions;
+
+            const entity = instructions.find((instruction) => instruction.name === 'entity');
+            expect(entity?.metadata?.description).toBe('A data structure or model with a fixed schema.');
+
+            const rule = instructions.find((instruction) => instruction.name === 'rule');
+            expect(rule?.metadata?.synonyms).toEqual(['rules']);
+            // Keywords without a description front matter key leave it undefined.
+            expect(rule?.metadata?.description).toBeUndefined();
+        });
+
         it('loads running mode descriptions from reserved mode files', async () => {
             const hintbook = await loadHintbook(instructionsPath);
 
