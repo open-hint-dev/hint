@@ -119,6 +119,21 @@ Warnings for unresolved hintbooks go to stderr. Fails with `No hint.yml found` o
 
 ---
 
+## `hint author [paths...]` — prompt an agent to write hints
+
+Prints an **AI agent prompt** to stdout that teaches an agent to author `.hint` specifications: the file kinds and naming rules, the heading/body/nesting syntax, and — built from the registered hintbooks — the full **keyword vocabulary** with each keyword's synonyms and `description`. Pipe it to your agent, which then writes the `.hint` files:
+
+```bash
+hint author src/billing/invoice.ts | claude -p --permission-mode acceptEdits
+hint author                                          # vocabulary only, no specific target
+```
+
+Pass one or more target paths to scope the prompt to writing those specs; omit them for the vocabulary and rules alone. The descriptions come from each keyword instruction's `description` front matter, so a well-documented hintbook produces a richer prompt. The command never writes files itself — the agent does.
+
+This is the authoring counterpart to the default compile command: `hint author` helps create a spec, `hint <path...>` compiles an existing one. Warnings for unresolved hintbooks go to stderr. Fails with `No hint.yml found` outside an initialized project, or when no hintbooks are registered.
+
+---
+
 ## `hint add <books...>` — install hintbooks
 
 Fetches each book, validates that it actually contains a hintbook (a `hintbook.json` must be discoverable), and registers it in the `books` array of `hint.yml`. Run `hint apply` afterwards to refresh `AGENTS.md` / `CLAUDE.md`:
@@ -186,6 +201,6 @@ Prints the command overview with usage examples. The same text is available via 
 
 ## Exit codes and streams
 
-- **stdout** carries the command's primary output: the compiled prompt (`hint`), the agent prompt to pipe to your agent (`hint instruct`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), listings (`hint list`, `hint modes`), or the version report (`hint version`). Only `hint` and `hint instruct` are meant to be piped into an agent.
+- **stdout** carries the command's primary output: the compiled prompt (`hint`), the agent prompt to pipe to your agent (`hint instruct`, `hint author`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), listings (`hint list`, `hint modes`), or the version report (`hint version`). Only `hint`, `hint instruct`, and `hint author` are meant to be piped into an agent.
 - **stderr** carries interactive prompts, subprocess (git/npm) output, warnings, and errors.
 - Exit code `0` on success, `1` on any failure (unresolvable specs under `--dry-run`, missing project, failed installs, invalid hintbooks).

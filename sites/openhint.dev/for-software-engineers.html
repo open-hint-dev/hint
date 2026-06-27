@@ -13,7 +13,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>HINT for Software Engineers — Specs that compile to prompts</title>
-<meta name="description" content="The software-engineer hintbook gives HINT a ~30-keyword vocabulary for architecture, data models, behavior, and constraints — compiled into binding prompts for implement, fix, and review." />
+<meta name="description" content="The software-engineer hintbook gives HINT a thirty-plus-keyword vocabulary for intent, architecture, data models, behavior, UI, and constraints — compiled into binding prompts for implement, fix, and review." />
+<link rel="canonical" href="https://openhint.dev/for-software-engineers.html" />
 <link rel="icon" type="image/png" href="favicon.png" />
 <link rel="apple-touch-icon" href="favicon.png" />
 <link rel="stylesheet" href="styles.css" />
@@ -221,32 +222,44 @@
   <div class="wrap">
     <div class="reveal" style="max-width:60ch; margin-bottom:44px;">
       <div class="eyebrow" style="margin-bottom:22px;">The vocabulary</div>
-      <h2 class="h2">~30 keywords across data, behavior, UI &amp; constraints.</h2>
+      <h2 class="h2">Thirty-plus keywords across intent, data, behavior, UI &amp; constraints.</h2>
       <p class="lede" style="margin-top:16px;">Every keyword is a markdown heading that compiles into an explicit, named tag the agent is trained to obey. Reach for the most specific one — a <code class="inl">field</code> inside an <code class="inl">entity</code> beats a bullet list in prose.</p>
     </div>
 
     <div class="reveal">
+      <div class="kwgroup">
+        <div class="kwgroup__h">Intent &amp; scope</div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">goal</span><small>why · intent</small></div><div class="kwrow__d">Why the work exists and the outcome it must produce — <b>the tie-breaker for everything the spec leaves unstated</b>.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">scope</span><small>nongoal · outofscope</small></div><div class="kwrow__d">What is in scope and explicitly out — the agent builds everything in, nothing out, and reports rather than expanding.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">done</span><small>acceptance · criteria</small></div><div class="kwrow__d">Observable conditions for "done" — proven with a test, a command, or an observation, never merely asserted.</div></div>
+      </div>
+
       <div class="kwgroup">
         <div class="kwgroup__h">Project context</div>
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">app</span><small>application</small></div><div class="kwrow__d">The domain, purpose, and overall structure — <b>informs naming and architecture everywhere</b>.</div></div>
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">lang</span><small>language</small></div><div class="kwrow__d">Language and runtime target. Only its syntax, APIs, and idioms are allowed.</div></div>
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">dep</span><small>deps · dependency</small></div><div class="kwrow__d">The approved dependency whitelist. Nothing outside it gets installed or imported without asking.</div></div>
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">build</span></div><div class="kwrow__d">Build and test commands. Generated code must never break these pipelines.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">module</span> <span class="kw kw--lg">lib</span><small>library</small></div><div class="kwrow__d">Existing modules and libraries to reuse — <b>never reimplement what they already provide</b>.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">namespace</span></div><div class="kwrow__d">The package / module path all code in this scope is emitted under.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">res</span><small>resource</small> <span class="kw kw--lg">read</span></div><div class="kwrow__d">Assets to honor and files to read first — match their conventions instead of guessing.</div></div>
       </div>
 
       <div class="kwgroup">
         <div class="kwgroup__h">Data</div>
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">entity</span></div><div class="kwrow__d">A data model with an exact schema — <b>no renamed fields, changed types, extra or missing fields</b>.</div></div>
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">field</span></div><div class="kwrow__d">One named property: type, optionality, validation. Implemented exactly as declared.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">table</span> <span class="kw kw--lg">column</span></div><div class="kwrow__d">Tabular structures and their columns: names, types, labels, constraints.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">table</span> <span class="kw kw--lg">column</span> <span class="kw kw--lg">row</span></div><div class="kwrow__d">Tabular structures, their columns, and exact rows: names, types, labels, constraints.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">data</span><small>const · value</small></div><div class="kwrow__d">A named constant or magic value — used exactly as given, referenced rather than duplicated.</div></div>
       </div>
 
       <div class="kwgroup">
         <div class="kwgroup__h">Behavior</div>
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">func</span><small>function</small></div><div class="kwrow__d">A binding function contract — <b>arguments, return, errors, and logic flow are all mandatory</b>.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">arg</span> <span class="kw kw--lg">result</span></div><div class="kwrow__d">Inputs and output: declared types and shapes, honored on every code path.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">arg</span> <span class="kw kw--lg">result</span><small>return</small></div><div class="kwrow__d">Inputs and output: declared types and shapes, honored on every code path.</div></div>
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">flow</span></div><div class="kwrow__d">A step-by-step sequence the implementation must follow without skipping validations.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">error</span></div><div class="kwrow__d">Exact error types under exact conditions — never substituted, wrapped, or renamed.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">action</span></div><div class="kwrow__d">A macro behavior invoked by name — its steps executed exactly whenever triggered.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">error</span></div><div class="kwrow__d">Exact error types under exact conditions — never substituted, wrapped, or renamed; each backed by a regression test.</div></div>
       </div>
 
       <div class="kwgroup">
@@ -255,7 +268,16 @@
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">bad</span></div><div class="kwrow__d"><b>Unconditional prohibitions</b> — real past failures, never reintroduced even if examples suggest them.</div></div>
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">good</span> <span class="kw kw--lg">example</span></div><div class="kwrow__d">Required patterns and few-shot demonstrations to replicate exactly.</div></div>
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">test</span></div><div class="kwrow__d">Scenarios that must all appear in the test output: edge cases, mock shapes, assertions.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">ui</span> <span class="kw kw--lg">form</span> <span class="kw kw--lg">block</span></div><div class="kwrow__d">UI surfaces, forms, and reusable components — only the declared elements, all of them.</div></div>
+      </div>
+
+      <div class="kwgroup">
+        <div class="kwgroup__h">User interface</div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">ui</span> <span class="kw kw--lg">form</span> <span class="kw kw--lg">block</span> <span class="kw kw--lg">image</span></div><div class="kwrow__d">UI surfaces, forms, reusable components, and images — only the declared elements, all of them.</div></div>
+      </div>
+
+      <div class="kwgroup">
+        <div class="kwgroup__h">Spec-internal</div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">notes</span><small>note</small></div><div class="kwrow__d">Author-facing notes dropped from the compiled prompt — reminders and TODOs the agent never sees.</div></div>
       </div>
     </div>
   </div>

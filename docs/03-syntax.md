@@ -31,6 +31,8 @@ Two kinds of specification files live in the tree:
 
 When compiling, every requested hint is wrapped in its full folder chain down from the project root, so folder context visibly encloses file context in the output. Folders without an `_.hint` still appear in the chain — with empty context.
 
+**Detached hint stores.** A folder whose name ends in `.hint` is a parallel hint tree: the target path each hint describes is derived by stripping the `.hint` tail from that folder. `packages.hint/db/schema.ts.hint` specifies `packages/db/schema.ts`, and `os.hint/_.hint` specifies the `os` folder. This lets you keep hints in a separate tree — gitignored, or simply out of the folder they document — without mixing `.hint` files into the real source. The stripping applies to every folder segment that carries the tail; the companion file's own name is left untouched.
+
 ## Path resolution
 
 Arguments passed to `hint` are resolved against the project root:

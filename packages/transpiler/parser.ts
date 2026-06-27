@@ -319,10 +319,28 @@ function parseHeadings(root: Root, parent: HintData): void {
     flushBody();
 }
 
+// A directory whose name ends in `.hint` (e.g. `packages.hint/`) is a detached hint store: its hints
+// describe the matching real path with the `.hint` tail removed. This lets hints live in a separate
+// tree — kept out of, or gitignored from, the folder they document. Strip the suffix from every
+// directory segment of the derived target path so `packages.hint/db/schema.ts.hint` describes
+// `packages/db/schema.ts`, and the folder hint `os.hint/_.hint` describes `os`.
+function stripHintFolderTails(relativeTargetPath: string, isFolderHint: boolean): string {
+    const segments = relativeTargetPath.split(Path.sep);
+
+    // For a file hint the last segment is the target file itself, which keeps any `.hint` in its name;
+    // every other segment is a folder. For a folder hint every segment, the last included, is a folder.
+    const lastFolderIndex = isFolderHint ? segments.length - 1 : segments.length - 2;
+
+    return segments
+        .map((segment, index) => (index <= lastFolderIndex && segment.endsWith(HINT_EXT) ? segment.slice(0, -HINT_EXT.length) : segment))
+        .join(Path.sep);
+}
+
 function hintName(projectRootPath: string, hintPath: string, isFolderHint: boolean): string {
     const targetPath = isFolderHint ? Path.dirname(hintPath) : hintPath.slice(0, -HINT_EXT.length);
+    const relativeTargetPath = Path.relative(projectRootPath, targetPath);
 
-    return Path.relative(projectRootPath, targetPath) || '.';
+    return stripHintFolderTails(relativeTargetPath, isFolderHint) || '.';
 }
 
 async function parseHint(projectRootPath: string, hintFile: HintFileData, dryRun: boolean): Promise<HintData | null> {
