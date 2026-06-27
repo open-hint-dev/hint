@@ -100,10 +100,11 @@ exclude: false
 ...
 ```
 
-| Key        | Effect                                                                                                                          |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `synonyms` | Additional keywords that resolve to this instruction (`# application` → `app.md`).                                              |
-| `exclude`  | When `true`, blocks with this keyword are dropped from the output entirely — children included. Useful for spec-internal notes. |
+| Key           | Effect                                                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `synonyms`    | Additional keywords that resolve to this instruction (`# application` → `app.md`).                                              |
+| `exclude`     | When `true`, blocks with this keyword are dropped from the output entirely — children included. Useful for spec-internal notes. |
+| `description` | A one-line summary of what the keyword declares. `hint author` lists it next to the keyword so an agent picks the right one when writing specs. Has no effect on compiled output. |
 
 ### Modes
 
@@ -160,5 +161,5 @@ For npm distribution, publish the package with `hintbook.json` and the keyword f
 
 ## Reference implementations
 
-- [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) is the official general-purpose vocabulary and the best example to copy from: ~30 keywords across data, behavior, UI, and constraint declarations, three modes, and a complete system glossary.
+- [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) is the official general-purpose vocabulary and the best example to copy from: thirty-plus keywords across intent, data, behavior, UI, and constraint declarations, three modes, and a complete system glossary.
 - [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) shows the same machinery applied outside software entirely — legal document drafting with `party`, `clause`, `obligation`, and red-line vocabulary. Use it as the template when your domain is not code.

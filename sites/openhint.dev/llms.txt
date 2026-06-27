@@ -16,8 +16,8 @@ Key facts an LLM should know about HINT:
 ## Pages
 
 - [Home](https://openhint.dev/): What HINT is, how it compiles, the professions it serves, principles, and quick start.
-- [For Software Engineers](https://openhint.dev/for-software-engineers): The software-engineer hintbook — ~30 keywords across project context, data, behavior, UI, and constraints; implement / fix / review modes; a compile-and-review walkthrough.
-- [For Lawyers](https://openhint.dev/for-lawyers): The lawyer hintbook — legal drafting vocabulary (party, clause, obligation, redline, never, exception, remedy, authority); draft / revise / audit modes; the same engineering rigor applied to documents.
+- [For Software Engineers](https://openhint.dev/for-software-engineers): The software-engineer hintbook — thirty-plus keywords across intent & scope, project context, data, behavior, UI, and constraints; implement / fix / review modes; a compile-and-review walkthrough.
+- [For Lawyers](https://openhint.dev/for-lawyers): The lawyer hintbook — forty-plus keywords of legal drafting vocabulary (party, clause, obligation, right, exception, breach, liability, redline, never, authority); draft / revise / audit modes; the same engineering rigor applied to documents.
 
 ## Hintbooks
 

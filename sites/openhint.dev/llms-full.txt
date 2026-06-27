@@ -585,7 +585,7 @@ For npm distribution, publish the package with `hintbook.json` and the keyword f
 
 ## Reference implementations
 
-- [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) is the official general-purpose vocabulary and the best example to copy from: ~30 keywords across data, behavior, UI, and constraint declarations, three modes, and a complete system glossary.
+- [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) is the official general-purpose vocabulary and the best example to copy from: thirty-plus keywords across intent, data, behavior, UI, and constraint declarations, three modes, and a complete system glossary.
 - [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) shows the same machinery applied outside software entirely — legal document drafting with `party`, `clause`, `obligation`, and red-line vocabulary. Use it as the template when your domain is not code.
 
 
