@@ -7,6 +7,7 @@ import {
     PLACEHOLDER_CHILDREN,
     PLACEHOLDER_ID,
     PLACEHOLDER_NAME,
+    RUNNING_CHANGES,
     RUNNING_FOOTER,
     RUNNING_HEADER,
 } from './hintbook.js';
@@ -59,7 +60,7 @@ function compileHint(hint: HintData, hintbooks: HintbookData[], mode: string): s
     }).trim();
 }
 
-export async function compileHints(hints: HintData[], hintbooks: HintbookData[], mode: string): Promise<string> {
+export async function compileHints(hints: HintData[], hintbooks: HintbookData[], mode: string, changes: string = ''): Promise<string> {
     const resolvedMode = mode || INSTRUCTION_MODE_DEFAULT;
 
     const content = hints
@@ -70,8 +71,14 @@ export async function compileHints(hints: HintData[], hintbooks: HintbookData[],
     const header = findInstruction(hintbooks, resolvedMode, RUNNING_HEADER)?.content.trim();
     const footer = findInstruction(hintbooks, resolvedMode, RUNNING_FOOTER)?.content.trim();
 
+    // Drift guidance renders only when the mode defines a `__changes__` instruction (e.g. fix mode) and the
+    // caller supplied a summary — so it stays a hintbook-controlled section, dormant everywhere else.
+    const changesInstruction = changes ? findInstruction(hintbooks, resolvedMode, RUNNING_CHANGES) : null;
+    const changesSection = changesInstruction ? interpolate(changesInstruction.content, { [PLACEHOLDER_BODY]: changes }).trim() : '';
+
     return [
         header,
+        changesSection,
         content,
         footer,
     ]
