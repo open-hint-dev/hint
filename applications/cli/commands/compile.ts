@@ -7,18 +7,18 @@ export class CompileCommand implements ICommand {
     private mode: string = '';
     private dryRun: boolean = false;
     private force: boolean = false;
-    private withRefs: boolean = false;
+    private refs: boolean = true;
 
     constructor() {}
 
-    static new(paths: string[], mode: string, dryRun: boolean, force: boolean, withRefs: boolean): CompileCommand {
+    static new(paths: string[], mode: string, dryRun: boolean, force: boolean, refs: boolean): CompileCommand {
         const command = new CompileCommand();
 
         command.paths = paths;
         command.mode = mode;
         command.dryRun = dryRun;
         command.force = force;
-        command.withRefs = withRefs;
+        command.refs = refs;
 
         return command;
     }
@@ -33,9 +33,9 @@ export class CompileCommand implements ICommand {
         const config = await Transpiler.loadConfig(projectRootPath);
         const hintbooks = await Transpiler.loadHintbooks(projectRootPath, config?.books ?? []);
 
-        // Reference closure: pull the specs of referenced files into this one compilation so shared
-        // ancestors are emitted once, instead of the agent re-invoking `hint` per referenced file.
-        const paths = this.withRefs ? await Transpiler.resolveClosurePaths(projectRootPath, this.paths) : this.paths;
+        // Reference closure (on by default): pull the specs of referenced files into this one compilation so
+        // shared ancestors are emitted once, instead of the agent re-invoking `hint` per referenced file.
+        const paths = this.refs ? await Transpiler.resolveClosurePaths(projectRootPath, this.paths) : this.paths;
 
         let hints = await Transpiler.parseHints(projectRootPath, paths, this.dryRun);
 

@@ -41,7 +41,9 @@ hint 'src/**/*.hint' > prompt.md
 | `src`               | the folder's `src/_.hint`                                                     |
 | `'src/**/*.hint'`   | every glob match (quote globs to keep your shell out of it)                   |
 
-Every compiled file is wrapped in its folder-hint chain down from the project root, so inherited context is part of the output.
+Every compiled file is wrapped in its folder-hint chain down from the project root, so inherited context is part of the output. By default the closure of files it references (its `# read` targets) is compiled in the same pass, with shared folder/root context deduplicated — so an agent gets everything in one prompt instead of re-invoking `hint` per referenced file.
+
+When a [`hint.lock`](#hint-lock-paths--record-generated-work) is present, compiling **skips** any file whose spec (with its inherited context) is unchanged and whose target still exists on disk. An unchanged run therefore produces no output and costs no tokens; a note on stderr reports what was skipped.
 
 ### Options
 
@@ -49,11 +51,42 @@ Every compiled file is wrapped in its folder-hint chain down from the project ro
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `--mode <mode>` | Compile with the given hintbook mode (e.g. `fix`, `review`). Defaults to the implementation mode, `compile`. Instructions missing from the mode fall back to the default mode. |
 | `--dry-run`     | Fail with a non-zero exit on hint files that cannot be resolved, instead of skipping them silently. Use it to validate specs in CI.                                            |
+| `--force`       | Recompile every named file even if a `hint.lock` marks it unchanged.                                                                                                          |
+| `--no-refs`     | Compile only the named specs; do not pull in the specs they reference. References are included by default.                                                                    |
 
 ```bash
 hint --mode review src/billing | claude -p     # audit code against the spec
 hint --dry-run 'src/**/*.hint'                 # validate that every spec resolves
+hint --force src/billing/invoice.ts            # ignore the lock and recompile
 ```
+
+When the mode defines a drift instruction (the software-engineer book's `fix` mode does) and a `hint.lock` exists, the compiled prompt carries a block-level drift report — see [`hint diff`](#hint-diff-paths--show-what-drifted).
+
+---
+
+## `hint lock <paths...>` — record generated work
+
+Fingerprints the given specs and writes them to `hint.lock` in the project root, marking those targets as generated. Run it after an agent implements or drafts what a spec defines:
+
+```bash
+hint lock src/billing/invoice.ts
+```
+
+Afterwards, a plain `hint` run skips each recorded target while its spec — including inherited folder/root context — stays unchanged, keeping repeated runs cheap and their output stable. The lock is deterministic and diff-friendly (sorted keys, no timestamps), so it reviews cleanly in version control. Each entry records a hash of the target's blocks plus its inherited context; a change to the registered hintbooks invalidates every entry, since the vocabulary defines what each keyword means.
+
+Locking is scoped to the paths you pass and merges into any existing `hint.lock`, so you can lock files as you finish them. Fails with `No hint.yml found` outside an initialized project.
+
+---
+
+## `hint diff <paths...>` — show what drifted
+
+Compares the given specs against `hint.lock` and reports, per file, exactly which blocks changed since they were generated — a token-free way to scope a fix before running `hint --mode fix`:
+
+```bash
+hint diff src/billing/invoice.ts
+```
+
+Each file is reported as up to date, **new** (never locked), **inherited** (only its ancestor `_.hint` context changed), or with the precise list of **changed / added / removed** blocks. Output goes to stdout; with no `hint.lock` it reports on stderr that nothing is being tracked yet. Fails with `No hint.yml found` outside an initialized project.
 
 ---
 
@@ -201,6 +234,6 @@ Prints the command overview with usage examples. The same text is available via 
 
 ## Exit codes and streams
 
-- **stdout** carries the command's primary output: the compiled prompt (`hint`), the agent prompt to pipe to your agent (`hint instruct`, `hint author`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), listings (`hint list`, `hint modes`), or the version report (`hint version`). Only `hint`, `hint instruct`, and `hint author` are meant to be piped into an agent.
+- **stdout** carries the command's primary output: the compiled prompt (`hint`), the drift report (`hint diff`), the agent prompt to pipe to your agent (`hint instruct`, `hint author`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), listings (`hint list`, `hint modes`), or the version report (`hint version`). Only `hint`, `hint instruct`, and `hint author` are meant to be piped into an agent. `hint lock` writes only `hint.lock` and reports how many files it recorded on stderr.
 - **stderr** carries interactive prompts, subprocess (git/npm) output, warnings, and errors.
 - Exit code `0` on success, `1` on any failure (unresolvable specs under `--dry-run`, missing project, failed installs, invalid hintbooks).

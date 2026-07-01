@@ -124,4 +124,40 @@ describe('closure', () => {
             },
         );
     });
+
+    it('resolves a reference relative to the referencing file when not found at the root', async () => {
+        await withProject(
+            {
+                'src/a.ts.hint': '# read b.ts',
+                'src/b.ts.hint': 'sibling of a',
+            },
+            async (dir) => {
+                const paths = await resolveClosurePaths(dir, [
+                    'src/a.ts.hint',
+                ]);
+
+                expect(hintPaths(dir, paths)).toEqual([
+                    'src/a.ts.hint',
+                    'src/b.ts.hint',
+                ]);
+            },
+        );
+    });
+
+    it('ignores a reference that escapes the project root', async () => {
+        await withProject(
+            {
+                'a.ts.hint': '# read ../outside.ts',
+            },
+            async (dir) => {
+                const paths = await resolveClosurePaths(dir, [
+                    'a.ts.hint',
+                ]);
+
+                expect(hintPaths(dir, paths)).toEqual([
+                    'a.ts.hint',
+                ]);
+            },
+        );
+    });
 });
