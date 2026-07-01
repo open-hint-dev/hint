@@ -5,6 +5,11 @@ import * as Path from 'node:path';
 import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 import {
     booksMatch,
+    collectFileNodes,
+    computeDrift,
+    diffFileBlocks,
+    formatDrift,
+    hashFileBlocks,
     hashFileHints,
     hashHint,
     loadLock,
@@ -119,6 +124,117 @@ describe('lock', () => {
 
         it('drops the whole tree when nothing is stale', () => {
             expect(pruneFreshHints(sampleTree(), new Set())).toEqual([]);
+        });
+    });
+
+    describe('hashFileBlocks', () => {
+        it('keys blocks by their keyword/name path and localizes changes', () => {
+            const node = file('src/a.ts', '', [
+                block('func', 'login', 'body', [block('flow', '', 'steps', [], 2)]),
+            ]);
+
+            const before = hashFileBlocks(node);
+
+            expect(Object.keys(before).sort()).toEqual([
+                'func login',
+                'func login > flow',
+            ]);
+
+            // change only the nested flow block; the parent func block hash must stay put
+            const changed = file('src/a.ts', '', [
+                block('func', 'login', 'body', [block('flow', '', 'different steps', [], 2)]),
+            ]);
+            const after = hashFileBlocks(changed);
+
+            expect(after['func login']).toBe(before['func login']);
+            expect(after['func login > flow']).not.toBe(before['func login > flow']);
+        });
+    });
+
+    describe('diffFileBlocks', () => {
+        it('reports changed, added, and removed blocks', () => {
+            const diff = diffFileBlocks(
+                { keep: 'h', drift: 'h1', gone: 'h' },
+                { keep: 'h', drift: 'h2', fresh: 'h' },
+            );
+
+            expect(diff).toEqual({ changed: ['drift'], added: ['fresh'], removed: ['gone'] });
+        });
+    });
+
+    describe('collectFileNodes', () => {
+        it('finds every file target with its node', () => {
+            expect(collectFileNodes(sampleTree()).map((f) => f.name)).toEqual([
+                'src/a.ts',
+                'src/b.ts',
+            ]);
+        });
+    });
+
+    describe('computeDrift', () => {
+        function lockFor(tree: HintData[]): LockData {
+            const effective = new Map(hashFileHints(tree).map((f) => [f.name, f.hash]));
+            const files: LockData['files'] = {};
+
+            for (const { name, node } of collectFileNodes(tree)) {
+                files[name] = { hash: effective.get(name)!, blocks: hashFileBlocks(node) };
+            }
+
+            return { version: 1, books: {}, files };
+        }
+
+        it('marks unchanged files fresh', () => {
+            const tree = sampleTree();
+
+            expect(computeDrift(tree, lockFor(tree), false).every((d) => d.status === 'fresh')).toBe(true);
+        });
+
+        it('localizes a file change to a block and leaves siblings fresh', () => {
+            const tree = sampleTree();
+            const lock = lockFor(tree);
+
+            ((tree[0]!.children[1] as HintData).children[0] as HintData).body = 'Implements A differently.';
+            const drift = computeDrift(tree, lock, false);
+
+            const a = drift.find((d) => d.name === 'src/a.ts')!;
+            expect(a.status).toBe('blocks');
+            expect(a.diff!.changed).toEqual([
+                '(preamble)',
+            ]);
+            expect(drift.find((d) => d.name === 'src/b.ts')!.status).toBe('fresh');
+        });
+
+        it('flags an ancestor-only change as inherited', () => {
+            const tree = sampleTree();
+            const lock = lockFor(tree);
+
+            (tree[0]!.children[0] as HintData).body = 'Changed baseline rule.';
+            const drift = computeDrift(tree, lock, false);
+
+            expect(drift.every((d) => d.status === 'inherited')).toBe(true);
+        });
+
+        it('marks unlocked files new', () => {
+            const drift = computeDrift(sampleTree(), { version: 1, books: {}, files: {} }, false);
+
+            expect(drift.every((d) => d.status === 'new')).toBe(true);
+        });
+    });
+
+    describe('formatDrift', () => {
+        it('renders per-file guidance and omits fresh files', () => {
+            const text = formatDrift([
+                { name: 'a.ts', status: 'fresh' },
+                { name: 'b.ts', status: 'new' },
+                { name: 'c.ts', status: 'inherited' },
+                { name: 'd.ts', status: 'blocks', diff: { changed: ['func x'], added: [], removed: [] } },
+            ]);
+
+            expect(text).not.toContain('a.ts');
+            expect(text).toContain('b.ts: new target');
+            expect(text).toContain('c.ts: inherited context changed');
+            expect(text).toContain('d.ts: reconcile these blocks');
+            expect(text).toContain('changed: func x');
         });
     });
 

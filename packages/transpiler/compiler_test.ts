@@ -83,6 +83,27 @@ describe('compiler', () => {
             expect(output).not.toContain('<data_structure');
         });
 
+        it('renders the changes section only when the mode defines a __changes__ instruction', async () => {
+            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
+            const drift = '- src/payment.ts: reconcile these blocks';
+
+            // fix mode ships __changes__.fix.md in the fixture hintbook; default mode does not
+            const fix = await compileHints(hints, [hintbook], 'fix', drift);
+            const plain = await compileHints(hints, [hintbook], '', drift);
+
+            expect(fix).toContain('<specification_changes>');
+            expect(fix).toContain(drift);
+            expect(plain).not.toContain('<specification_changes>');
+            expect(plain).not.toContain(drift);
+        });
+
+        it('omits the changes section when no drift text is supplied', async () => {
+            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
+            const fix = await compileHints(hints, [hintbook], 'fix');
+
+            expect(fix).not.toContain('<specification_changes>');
+        });
+
         it('compiles empty hints to header and footer only', async () => {
             const output = await compileHints([] as HintData[], [hintbook], '');
 

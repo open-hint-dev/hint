@@ -14,6 +14,7 @@ export const INSTRUCTION_MODE_DEFAULT = 'compile';
 
 export const HINTBOOK_FILE_NAME = 'hintbook.json';
 
+export const RUNNING_CHANGES = '__changes__';
 export const RUNNING_FILE = '__file__';
 export const RUNNING_FOLDER = '__folder__';
 export const RUNNING_FOOTER = '__footer__';
