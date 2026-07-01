@@ -6,6 +6,7 @@ import { ApplyCommand } from './commands/apply.js';
 import { AuthorCommand } from './commands/author.js';
 import { CompileCommand } from './commands/compile.js';
 import { ConfigCommand } from './commands/config.js';
+import { DiffCommand } from './commands/diff.js';
 import { InstructCommand } from './commands/instruct.js';
 import { ListCommand } from './commands/list.js';
 import { LockCommand } from './commands/lock.js';
@@ -127,6 +128,17 @@ export async function main(): Promise<void> {
         });
 
     program
+        .command('diff')
+        .description(
+            'Show which specs have drifted from hint.lock since they were generated — per file, the exact ' +
+                'blocks that changed. A token-free way to scope a fix before running `hint --mode fix`.',
+        )
+        .argument('<paths...>', 'paths to .hint files, their target files, or folders (globs supported)')
+        .action(async (paths: string[]) => {
+            await DiffCommand.new(paths).execute();
+        });
+
+    program
         .command('modes')
         .description(`List modes provided by the hintbooks registered in ${Transpiler.CONFIG_FILE_YML}.`)
         .action(async () => {
@@ -161,6 +173,7 @@ Examples:
   hint author src/billing/invoice.ts | claude -p   prompt an agent to write the .hint spec for a file
   hint src/billing/invoice.ts | claude -p       compile the spec for a file and pipe it to an agent
   hint lock src/billing/invoice.ts              mark a spec as generated so later runs skip it if unchanged
+  hint diff src/billing/invoice.ts              show which blocks drifted from hint.lock since generation
   hint --with-refs src/billing/invoice.ts       compile a spec together with the specs it references
   hint --mode review src/billing | claude -p    audit existing code against the spec
   hint version                                  show CLI and hintbook versions

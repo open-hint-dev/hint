@@ -26,7 +26,13 @@ export class LockCommand implements ICommand {
         const books = await Transpiler.booksFingerprint(projectRootPath, config?.books ?? []);
 
         const hints = await Transpiler.parseHints(projectRootPath, this.paths, false);
-        const fileHashes = Transpiler.hashFileHints(hints);
+        const effective = new Map(
+            Transpiler.hashFileHints(hints).map((file) => [
+                file.name,
+                file.hash,
+            ]),
+        );
+        const fileNodes = Transpiler.collectFileNodes(hints);
 
         const existing = await Transpiler.loadLock(projectRootPath);
 
@@ -34,8 +40,8 @@ export class LockCommand implements ICommand {
         // keyword semantics, so entries recorded under the old books can no longer be trusted as fresh.
         const files = existing && Transpiler.booksMatch(existing.books, books) ? { ...existing.files } : {};
 
-        for (const { name, hash } of fileHashes) {
-            files[name] = { hash };
+        for (const { name, node } of fileNodes) {
+            files[name] = { hash: effective.get(name)!, blocks: Transpiler.hashFileBlocks(node) };
         }
 
         await Transpiler.saveLock(projectRootPath, {
@@ -44,6 +50,6 @@ export class LockCommand implements ICommand {
             files,
         });
 
-        process.stderr.write(`hint: locked ${fileHashes.length} file(s).\n`);
+        process.stderr.write(`hint: locked ${fileNodes.length} file(s).\n`);
     }
 }

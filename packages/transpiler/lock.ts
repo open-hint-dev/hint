@@ -10,10 +10,16 @@ import { resolveHintbookVersion, RUNNING_FILE, RUNNING_FOLDER } from './hintbook
 export const LOCK_FILE = 'hint.lock';
 export const LOCK_VERSION = 1;
 
-// One generated target: the hash captures its spec plus the inherited folder/root context,
-// so editing an ancestor `_.hint` marks the file stale even when its own companion is untouched.
+// Block path (the `keyword name` chain from the file root) -> the block's own-content hash. Lets a
+// stale file be diffed block by block, so a fix can target exactly what drifted instead of the whole file.
+export type BlockHashes = Record<string, string>;
+
+// One generated target: `hash` captures its spec plus the inherited folder/root context (so editing an
+// ancestor `_.hint` marks the file stale even when its own companion is untouched), while `blocks` records
+// each declared block so drift can be localized.
 export type LockEntry = {
     hash: string;
+    blocks?: BlockHashes;
 };
 
 export type LockData = {
@@ -99,6 +105,174 @@ export function hashFileHints(hints: HintData[]): FileHash[] {
     walk(hints, '');
 
     return fileHashes;
+}
+
+// Own-content hash of a single block, excluding its children — so a change localizes to exactly the
+// block whose keyword, name, or body changed rather than rippling up through its ancestors.
+function blockContentHash(hint: HintData): string {
+    return Crypto.createHash('sha256').update(`${hint.level}\0${hint.keyword}\0${hint.id}\0${hint.name}\0${hint.body}`).digest('hex');
+}
+
+function blockKeySegment(hint: HintData): string {
+    return hint.name ? `${hint.keyword} ${hint.name}` : hint.keyword;
+}
+
+// Flat map of block-path -> own-content hash for a file node's declared blocks (its heading children,
+// excluding nested file/folder wrappers). Keys are the `keyword name` chain from the file root, e.g.
+// `func executeLogin > flow`; colliding keys get a numeric suffix so every block stays addressable.
+export function hashFileBlocks(fileNode: HintData): BlockHashes {
+    const blocks: BlockHashes = {};
+
+    // The file's preamble (content before its first heading) lives in the file node's own body, so it is
+    // tracked as a block in its own right — a preamble edit is a real spec change, not inherited drift.
+    if (fileNode.body) {
+        blocks['(preamble)'] = blockContentHash({ ...fileNode, children: [] });
+    }
+
+    const walk = (nodes: HintData[], prefix: string): void => {
+        for (const node of nodes) {
+            if (isSubHint(node)) {
+                continue;
+            }
+
+            const base = prefix ? `${prefix} > ${blockKeySegment(node)}` : blockKeySegment(node);
+
+            let key = base;
+            let suffix = 2;
+
+            while (key in blocks) {
+                key = `${base} #${suffix++}`;
+            }
+
+            blocks[key] = blockContentHash(node);
+            walk(node.children, key);
+        }
+    };
+
+    walk(fileNode.children, '');
+
+    return blocks;
+}
+
+// Every file target in the tree paired with its parsed node, so callers can hash or diff a file's blocks.
+export function collectFileNodes(hints: HintData[]): { name: string; node: HintData }[] {
+    const files: { name: string; node: HintData }[] = [];
+
+    const walk = (nodes: HintData[]): void => {
+        for (const node of nodes) {
+            if (node.keyword === RUNNING_FILE) {
+                files.push({ name: node.name, node });
+            } else if (node.keyword === RUNNING_FOLDER) {
+                walk(node.children.filter(isSubHint));
+            }
+        }
+    };
+
+    walk(hints);
+
+    return files;
+}
+
+export type BlockDiff = {
+    changed: string[];
+    added: string[];
+    removed: string[];
+};
+
+export function diffFileBlocks(previous: BlockHashes, current: BlockHashes): BlockDiff {
+    const changed: string[] = [];
+    const added: string[] = [];
+
+    for (const key of Object.keys(current)) {
+        if (!(key in previous)) {
+            added.push(key);
+        } else if (previous[key] !== current[key]) {
+            changed.push(key);
+        }
+    }
+
+    const removed = Object.keys(previous).filter((key) => !(key in current));
+
+    return {
+        changed: changed.sort(),
+        added: added.sort(),
+        removed: removed.sort(),
+    };
+}
+
+export type FileDriftStatus = 'fresh' | 'new' | 'inherited' | 'blocks';
+
+export type FileDrift = {
+    name: string;
+    status: FileDriftStatus;
+    diff?: BlockDiff;
+};
+
+// Classifies every file target against the lock: `fresh` (unchanged), `new` (never locked), `blocks`
+// (its own declared blocks drifted — carries the diff), or `inherited` (stale only because ancestor
+// context changed). A books-fingerprint mismatch forces every locked file off `fresh`.
+export function computeDrift(hints: HintData[], lock: LockData, booksChanged: boolean): FileDrift[] {
+    const effective = new Map(
+        hashFileHints(hints).map((file) => [
+            file.name,
+            file.hash,
+        ]),
+    );
+
+    return collectFileNodes(hints).map(({ name, node }): FileDrift => {
+        const entry = lock.files[name];
+
+        if (!entry) {
+            return { name, status: 'new' };
+        }
+
+        if (!booksChanged && entry.hash === effective.get(name)) {
+            return { name, status: 'fresh' };
+        }
+
+        const diff = diffFileBlocks(entry.blocks ?? {}, hashFileBlocks(node));
+        const hasBlockChanges = diff.changed.length > 0 || diff.added.length > 0 || diff.removed.length > 0;
+
+        return hasBlockChanges ? { name, status: 'blocks', diff } : { name, status: 'inherited' };
+    });
+}
+
+// Renders drift as agent-facing guidance: which files are new, which changed only through inherited
+// context, and — for the rest — exactly which blocks to reconcile. Fresh files are omitted.
+export function formatDrift(drift: FileDrift[]): string {
+    const lines: string[] = [];
+
+    for (const file of drift) {
+        if (file.status === 'fresh') {
+            continue;
+        }
+
+        if (file.status === 'new') {
+            lines.push(`- ${file.name}: new target — implement it in full.`);
+            continue;
+        }
+
+        if (file.status === 'inherited') {
+            lines.push(`- ${file.name}: inherited context changed — re-verify the whole file against the spec.`);
+            continue;
+        }
+
+        lines.push(`- ${file.name}: reconcile these blocks, leave the rest untouched:`);
+
+        for (const key of file.diff!.changed) {
+            lines.push(`    - changed: ${key}`);
+        }
+
+        for (const key of file.diff!.added) {
+            lines.push(`    - added: ${key}`);
+        }
+
+        for (const key of file.diff!.removed) {
+            lines.push(`    - removed: ${key}`);
+        }
+    }
+
+    return lines.join('\n');
 }
 
 // Drops file nodes whose target is not in `stale`, then drops any folder branch left with no stale file
