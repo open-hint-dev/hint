@@ -8,6 +8,7 @@ import { CompileCommand } from './commands/compile.js';
 import { ConfigCommand } from './commands/config.js';
 import { InstructCommand } from './commands/instruct.js';
 import { ListCommand } from './commands/list.js';
+import { LockCommand } from './commands/lock.js';
 import { ModesCommand } from './commands/modes.js';
 import { RemoveCommand } from './commands/remove.js';
 import { findCliVersion, VersionCommand } from './commands/version.js';
@@ -15,6 +16,8 @@ import { findCliVersion, VersionCommand } from './commands/version.js';
 type CompileOptions = {
     mode?: string;
     dryRun: boolean;
+    force: boolean;
+    withRefs: boolean;
 };
 
 type AddOptions = {
@@ -35,8 +38,10 @@ export async function main(): Promise<void> {
         .argument('<paths...>', 'paths to .hint files, their target files, or folders (globs supported)')
         .option('--mode <mode>', 'compile keywords for the given hintbook mode (e.g. fix, review)')
         .option('--dry-run', 'fail on hint files that cannot be resolved instead of skipping them', false)
+        .option('--force', 'ignore hint.lock and recompile every file, even unchanged ones', false)
+        .option('--with-refs', 'also compile the specs of referenced files, deduping shared context into one prompt', false)
         .action(async (paths: string[], options: CompileOptions) => {
-            await CompileCommand.new(paths, options.mode ?? '', options.dryRun).execute();
+            await CompileCommand.new(paths, options.mode ?? '', options.dryRun, options.force, options.withRefs).execute();
         });
 
     program
@@ -111,6 +116,17 @@ export async function main(): Promise<void> {
         });
 
     program
+        .command('lock')
+        .description(
+            'Record the current spec hashes into hint.lock, marking the given files as generated. ' +
+                'Run after an agent implements a spec; later plain `hint` runs then skip files whose specs are unchanged.',
+        )
+        .argument('<paths...>', 'paths to .hint files, their target files, or folders (globs supported)')
+        .action(async (paths: string[]) => {
+            await LockCommand.new(paths).execute();
+        });
+
+    program
         .command('modes')
         .description(`List modes provided by the hintbooks registered in ${Transpiler.CONFIG_FILE_YML}.`)
         .action(async () => {
@@ -144,6 +160,8 @@ Examples:
   hint modes                                    list available hintbook modes
   hint author src/billing/invoice.ts | claude -p   prompt an agent to write the .hint spec for a file
   hint src/billing/invoice.ts | claude -p       compile the spec for a file and pipe it to an agent
+  hint lock src/billing/invoice.ts              mark a spec as generated so later runs skip it if unchanged
+  hint --with-refs src/billing/invoice.ts       compile a spec together with the specs it references
   hint --mode review src/billing | claude -p    audit existing code against the spec
   hint version                                  show CLI and hintbook versions
 
