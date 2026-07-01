@@ -10,7 +10,9 @@ Key facts an LLM should know about HINT:
 - Companion files sit next to their targets: `src/auth/login.ts.hint` defines `src/auth/login.ts`; `contracts/nda.md.hint` defines `contracts/nda.md`. A folder's `_.hint` defines inherited context for everything beneath it.
 - Every Markdown heading is a typed block: `# keyword Name {#optional_id}`, with a body and children nested by heading depth.
 - Compilation is deterministic: the same specs + the same hintbook + the same mode always produce a byte-identical prompt — a reviewable, diffable artifact.
-- Modes select a role wrapper around the compiled spec. The software-engineer book ships `compile` (implement) / `fix` / `review`; the lawyer book ships draft / revise / audit.
+- A `hint.lock` extends that determinism to the whole workflow. `hint lock` records what was generated; afterwards a plain `hint` run skips any spec whose content (and inherited folder/root context) is unchanged, so repeated runs cost no tokens. `hint diff` reports exactly which blocks drifted since the lock, and `hint --mode fix` reconciles only those blocks — leaving conforming code untouched — so the loop converges instead of rewriting from scratch.
+- `hint <path>` automatically pulls in the specs of files a companion references (its `# read` targets), with shared folder/root context emitted once — so an agent gets everything in one call instead of re-invoking `hint` per referenced file (`--no-refs` opts out).
+- Modes select a role wrapper around the compiled spec. The software-engineer book ships `compile` (implement) / `fix` / `review`; the lawyer book ships draft / revise / audit. In `fix`/revise, when a `hint.lock` is present the compiled prompt carries a block-level drift report and instructs the agent to change nothing if the work already conforms — an idempotent no-op.
 - After running `hint config`, the HINT workflow and each hintbook's glossary are written into `AGENTS.md` / `CLAUDE.md`, so agents (Claude Code, Codex, Cursor) invoke `hint` automatically during normal dialogue — the user does not have to run it by hand.
 
 ## Pages

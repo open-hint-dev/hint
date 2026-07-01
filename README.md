@@ -164,7 +164,9 @@ Node.js v22+, ESM only.
 
 **3. Companion files** — drop a `*.hint` next to any file you want built. Context lives where your code lives.
 
-**4. Compile & run** — `hint 'src/**/*.hint' | claude -p`. Use `--mode fix` to repair code against the spec, `--mode review` to audit it.
+**4. Compile & run** — `hint 'src/**/*.hint' | claude -p`. A spec is compiled together with any files it references (its `# read` targets), shared context included once. Use `--mode fix` to repair code against the spec, `--mode review` to audit it.
+
+**5. Keep it in sync** — after the work is generated, `hint lock <path>` records it; later `hint` runs then skip specs that haven't changed, so repeated runs cost no tokens. When a spec drifts, `hint diff <path>` lists exactly which blocks changed and `hint --mode fix <path>` reconciles only those — the loop converges instead of rewriting from scratch.
 
 Full walkthrough → [`docs/02-quick-start.md`](docs/02-quick-start.md).
 
@@ -179,6 +181,7 @@ No new syntax — the compiler wraps your spec in a border contract that makes t
 - **Skip stubs** — every path built; scratch thoughts go in `# notes` (stripped at compile).
 - **Surface conflicts and gaps** — contradictions between blocks are reported, not silently resolved; unspecified decisions are listed back to you.
 - **Cover errors** — every `error` block gets a fail-then-pass regression test.
+- **Reconcile, don't rewrite** — in `fix` mode against a `hint.lock`, only the blocks that drifted are touched; conforming work is left as-is, so re-running on an unchanged spec is a no-op.
 - **Honor per-file control** — a companion beside each file; root → folder → file context nests visibly in the output.
 - **Verify before finishing** — the footer walks the agent block by block: implemented, prohibited patterns absent, names and types exact, build and tests passing.
 

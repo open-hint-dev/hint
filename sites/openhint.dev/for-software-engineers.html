@@ -390,7 +390,7 @@
         <div class="mode__k">--mode fix</div>
         <h3>Repair</h3>
         <p class="mode__role">Where the code and the spec disagree, the code is wrong.</p>
-        <p>Diagnose the root cause, make the smallest conforming change, and ship a regression test that fails without the fix.</p>
+        <p>Diagnose the root cause, make the smallest conforming change, and ship a regression test. With a <code class="inl">hint.lock</code> it reconciles only the blocks that drifted — and changes nothing when the code already conforms.</p>
         <code class="inl mode__cmd">hint --mode fix</code>
       </div>
       <div class="mode">
@@ -418,6 +418,7 @@
         <div class="scstep"><span class="scstep__n">02</span><div><h4>Specify the module</h4><p>Companion hints define the <code class="inl">CompressionResult</code> entity, the <code class="inl">compress</code> contract, its <code class="inl">flow</code>, and the <code class="inl">LossyFallback</code> prohibition.</p></div></div>
         <div class="scstep"><span class="scstep__n">03</span><div><h4>Compile &amp; implement</h4><p><code class="inl">hint src/compression | claude -p</code> emits the implementation prompt; the agent writes code in dependency order with the Weissman score exact.</p></div></div>
         <div class="scstep"><span class="scstep__n">04</span><div><h4>Review every PR</h4><p><code class="inl">--mode review</code> in CI audits each change against the same spec — the lossy fallback never lands without a flagged violation.</p></div></div>
+        <div class="scstep"><span class="scstep__n">05</span><div><h4>Lock &amp; reconcile</h4><p><code class="inl">hint lock</code> records what shipped; later <code class="inl">hint diff</code> shows which blocks a spec edit touched, and <code class="inl">--mode fix</code> corrects just those — the rest stays byte-for-byte.</p></div></div>
       </div>
       <div class="code-wrap">
         <div class="code">
