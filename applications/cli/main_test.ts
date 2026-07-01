@@ -556,3 +556,226 @@ describe('cli', () => {
         });
     });
 });
+
+describe('cli lock / gate / diff / closure', () => {
+    // A minimal project: hint.yml, a book whose only instruction renders the fix-mode drift section,
+    // plus whatever .hint/target files a test needs. Keyword blocks pass through as their body.
+    async function withProject(files: Record<string, string>, run: (dir: string) => Promise<void>): Promise<void> {
+        const dir = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-track-'));
+
+        try {
+            await FsPromises.writeFile(Path.join(dir, 'hint.yml'), 'name: temp\nbooks:\n  - file://book\n', 'utf8');
+            await FsPromises.mkdir(Path.join(dir, 'book'));
+            await FsPromises.writeFile(Path.join(dir, 'book', 'hintbook.json'), '{ "id": "demo" }\n', 'utf8');
+            await FsPromises.writeFile(Path.join(dir, 'book', '__changes__.fix.md'), '<drift>\n\n{body}\n\n</drift>\n', 'utf8');
+
+            for (const [
+                relativePath,
+                content,
+            ] of Object.entries(files)) {
+                const target = Path.join(dir, relativePath);
+                await FsPromises.mkdir(Path.dirname(target), { recursive: true });
+                await FsPromises.writeFile(target, content, 'utf8');
+            }
+
+            await run(dir);
+        } finally {
+            await FsPromises.rm(dir, { recursive: true, force: true });
+        }
+    }
+
+    describe('lock', () => {
+        it('writes hint.lock with a hash and per-block hashes for the target', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# entity Foo\n\nfoo body\n',
+                    'src/a.ts': 'export const a = 1;\n',
+                },
+                async (dir) => {
+                    const result = await runCli(['lock', 'src/a.ts'], dir);
+
+                    expect(result.stderr).toContain('locked 1 file(s)');
+
+                    const lock = await FsPromises.readFile(Path.join(dir, 'hint.lock'), 'utf8');
+                    expect(lock).toContain('src/a.ts:');
+                    expect(lock).toContain('hash:');
+                    expect(lock).toContain('entity Foo');
+                },
+            );
+        });
+    });
+
+    describe('gate', () => {
+        it('skips a locked file whose spec is unchanged and its target exists', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# entity Foo\n\nfoo body\n',
+                    'src/a.ts': 'export const a = 1;\n',
+                },
+                async (dir) => {
+                    await runCli(['lock', 'src/a.ts'], dir);
+                    const result = await runCli(['src/a.ts'], dir);
+
+                    expect(result.stdout).toBe('');
+                    expect(result.stderr).toContain('up to date');
+                },
+            );
+        });
+
+        it('recompiles after the spec changes', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# entity Foo\n\nfoo body\n',
+                    'src/a.ts': 'export const a = 1;\n',
+                },
+                async (dir) => {
+                    await runCli(['lock', 'src/a.ts'], dir);
+                    await FsPromises.writeFile(Path.join(dir, 'src/a.ts.hint'), '# entity Foo\n\nfoo body changed\n', 'utf8');
+
+                    const result = await runCli(['src/a.ts'], dir);
+                    expect(result.stdout).toContain('foo body changed');
+                },
+            );
+        });
+
+        it('--force recompiles even when the file is fresh', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# entity Foo\n\nfoo body\n',
+                    'src/a.ts': 'export const a = 1;\n',
+                },
+                async (dir) => {
+                    await runCli(['lock', 'src/a.ts'], dir);
+
+                    const result = await runCli(['src/a.ts', '--force'], dir);
+                    expect(result.stdout).toContain('foo body');
+                },
+            );
+        });
+
+        it('does not skip when the target file is missing on disk', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# entity Foo\n\nfoo body\n',
+                    'src/a.ts': 'export const a = 1;\n',
+                },
+                async (dir) => {
+                    await runCli(['lock', 'src/a.ts'], dir);
+                    await FsPromises.rm(Path.join(dir, 'src/a.ts'));
+
+                    const result = await runCli(['src/a.ts'], dir);
+                    expect(result.stdout).toContain('foo body');
+                },
+            );
+        });
+    });
+
+    describe('diff', () => {
+        it('reports up to date right after locking', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# entity Foo\n\nfoo body\n',
+                    'src/a.ts': 'export const a = 1;\n',
+                },
+                async (dir) => {
+                    await runCli(['lock', 'src/a.ts'], dir);
+                    const result = await runCli(['diff', 'src/a.ts'], dir);
+
+                    expect(result.stdout).toBe('');
+                    expect(result.stderr).toContain('up to date');
+                },
+            );
+        });
+
+        it('pinpoints the block that changed', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# entity Foo\n\nfoo body\n\n# rule Bar\n\nbar body\n',
+                    'src/a.ts': 'export const a = 1;\n',
+                },
+                async (dir) => {
+                    await runCli(['lock', 'src/a.ts'], dir);
+                    await FsPromises.writeFile(
+                        Path.join(dir, 'src/a.ts.hint'),
+                        '# entity Foo\n\nfoo body\n\n# rule Bar\n\nbar body harder\n',
+                        'utf8',
+                    );
+
+                    const result = await runCli(['diff', 'src/a.ts'], dir);
+                    expect(result.stdout).toContain('changed: rule Bar');
+                    expect(result.stdout).not.toContain('entity Foo');
+                },
+            );
+        });
+
+        it('reports the absence of a lock', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# entity Foo\n\nfoo body\n',
+                    'src/a.ts': 'export const a = 1;\n',
+                },
+                async (dir) => {
+                    const result = await runCli(['diff', 'src/a.ts'], dir);
+                    expect(result.stderr).toContain('no hint.lock');
+                },
+            );
+        });
+    });
+
+    describe('closure', () => {
+        it('includes referenced specs by default and excludes them with --no-refs', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# read src/b.ts\n\nreuse b\n',
+                    'src/b.ts.hint': 'bee spec marker\n',
+                    'src/b.ts': 'export const b = 1;\n',
+                },
+                async (dir) => {
+                    const withRefs = await runCli(['src/a.ts'], dir);
+                    expect(withRefs.stdout).toContain('bee spec marker');
+
+                    const withoutRefs = await runCli(['src/a.ts', '--no-refs'], dir);
+                    expect(withoutRefs.stdout).not.toContain('bee spec marker');
+                },
+            );
+        });
+
+        it('legacy --with-refs is accepted and still includes references', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# read src/b.ts\n\nreuse b\n',
+                    'src/b.ts.hint': 'bee spec marker\n',
+                    'src/b.ts': 'export const b = 1;\n',
+                },
+                async (dir) => {
+                    const result = await runCli(['src/a.ts', '--with-refs'], dir);
+                    expect(result.exitCode).toBeUndefined();
+                    expect(result.stdout).toContain('bee spec marker');
+                },
+            );
+        });
+    });
+
+    describe('fix-mode drift injection', () => {
+        it('renders the drift section in fix mode after a block changes', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# entity Foo\n\nfoo body\n\n# rule Bar\n\nbar body\n',
+                    'src/a.ts': 'export const a = 1;\n',
+                },
+                async (dir) => {
+                    await runCli(['lock', 'src/a.ts'], dir);
+                    await FsPromises.writeFile(
+                        Path.join(dir, 'src/a.ts.hint'),
+                        '# entity Foo\n\nfoo body\n\n# rule Bar\n\nbar body harder\n',
+                        'utf8',
+                    );
+
+                    const result = await runCli(['src/a.ts', '--mode', 'fix'], dir);
+                    expect(result.stdout).toContain('<drift>');
+                    expect(result.stdout).toContain('changed: rule Bar');
+                },
+            );
+        });
+    });
+});

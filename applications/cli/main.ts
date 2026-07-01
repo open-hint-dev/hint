@@ -1,5 +1,5 @@
 import * as Transpiler from '@openhint/transpiler';
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 
 import { AddCommand } from './commands/add.js';
 import { ApplyCommand } from './commands/apply.js';
@@ -18,7 +18,7 @@ type CompileOptions = {
     mode?: string;
     dryRun: boolean;
     force: boolean;
-    withRefs: boolean;
+    refs: boolean;
 };
 
 type AddOptions = {
@@ -40,9 +40,11 @@ export async function main(): Promise<void> {
         .option('--mode <mode>', 'compile keywords for the given hintbook mode (e.g. fix, review)')
         .option('--dry-run', 'fail on hint files that cannot be resolved instead of skipping them', false)
         .option('--force', 'ignore hint.lock and recompile every file, even unchanged ones', false)
-        .option('--with-refs', 'also compile the specs of referenced files, deduping shared context into one prompt', false)
+        .option('--no-refs', 'compile only the named specs, not the specs they reference (references are included by default)')
+        // Legacy: references are now on by default, so --with-refs is accepted but does nothing.
+        .addOption(new Option('--with-refs').hideHelp())
         .action(async (paths: string[], options: CompileOptions) => {
-            await CompileCommand.new(paths, options.mode ?? '', options.dryRun, options.force, options.withRefs).execute();
+            await CompileCommand.new(paths, options.mode ?? '', options.dryRun, options.force, options.refs).execute();
         });
 
     program
@@ -174,7 +176,7 @@ Examples:
   hint src/billing/invoice.ts | claude -p       compile the spec for a file and pipe it to an agent
   hint lock src/billing/invoice.ts              mark a spec as generated so later runs skip it if unchanged
   hint diff src/billing/invoice.ts              show which blocks drifted from hint.lock since generation
-  hint --with-refs src/billing/invoice.ts       compile a spec together with the specs it references
+  hint --no-refs src/billing/invoice.ts         compile a spec alone; referenced specs are included by default
   hint --mode review src/billing | claude -p    audit existing code against the spec
   hint version                                  show CLI and hintbook versions
 

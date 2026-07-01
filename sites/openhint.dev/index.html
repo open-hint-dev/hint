@@ -457,9 +457,9 @@
         <p>Publish your own hintbook as an npm package, a git repo, or a plain folder. Authoring one needs no code — if you can write Markdown, you can build it.</p>
       </div>
       <div class="principle">
-        <div class="principle__k">Deterministic</div>
+        <div class="principle__k">Deterministic &amp; convergent</div>
         <h3>Same input, same output</h3>
-        <p>Sorted traversal, stable trees, pure template interpolation. Compiled prompts are reviewable, diffable artifacts you can trust in CI.</p>
+        <p>Sorted traversal, stable trees, pure interpolation — byte-identical prompts you can diff in CI. A <code class="inl">hint.lock</code> carries that determinism into the loop: unchanged specs are skipped, and <code class="inl">fix</code> reconciles only the blocks that drifted.</p>
       </div>
     </div>
   </div>
@@ -594,19 +594,20 @@
         </div>
       </div>
       <div class="qsstep reveal" data-d="1">
-        <div class="qsstep__h"><span class="qsstep__n">02</span><h3 style="color:var(--on-surface)">Write a spec &amp; compile</h3></div>
-        <p style="color:var(--on-surface-mut)">Drop a <code class="inl">.hint</code> companion next to any file, then compile and pipe straight to your agent. Swap the hintbook and the same flow drafts contracts instead of code.</p>
+        <div class="qsstep__h"><span class="qsstep__n">02</span><h3 style="color:var(--on-surface)">Compile, then keep it in sync</h3></div>
+        <p style="color:var(--on-surface-mut)">Drop a <code class="inl">.hint</code> companion next to any file and compile — referenced specs are pulled into the same prompt automatically. Record what you built with <code class="inl">hint lock</code>; from then on, unchanged specs are skipped and <code class="inl">fix</code> reconciles only the blocks that drifted.</p>
         <div class="code-wrap on-dark">
-          <button class="code__copy" data-copy data-copy-text="hint src/billing/invoice.ts | claude -p&#10;hint --mode review src/billing | claude -p&#10;hint --dry-run 'src/**/*.hint'">Copy</button>
+          <button class="code__copy" data-copy data-copy-text="hint src/billing/invoice.ts | claude -p&#10;hint lock src/billing/invoice.ts&#10;hint diff src/billing/invoice.ts&#10;hint --mode fix src/billing/invoice.ts | claude -p">Copy</button>
           <div class="code">
-<div class="code__body"><span class="t-mut"># compile one file (companion auto-resolved)</span>
+<div class="code__body"><span class="t-mut"># compile — referenced specs pulled in automatically</span>
 <span class="t-bd">hint src/billing/invoice.ts | claude -p</span>
 
-<span class="t-mut"># audit existing code against the spec</span>
-<span class="t-bd">hint --mode review src/billing | claude -p</span>
+<span class="t-mut"># record what you generated so unchanged specs are skipped</span>
+<span class="t-bd">hint lock src/billing/invoice.ts</span>
 
-<span class="t-mut"># validate every spec in CI</span>
-<span class="t-bd">hint --dry-run 'src/**/*.hint'</span></div>
+<span class="t-mut"># when a spec drifts: see what changed, fix only that</span>
+<span class="t-bd">hint diff src/billing/invoice.ts</span>
+<span class="t-bd">hint --mode fix src/billing/invoice.ts | claude -p</span></div>
           </div>
         </div>
       </div>

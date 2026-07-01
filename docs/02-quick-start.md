@@ -122,7 +122,7 @@ hint src/billing                     # a folder
 hint 'src/**/*.hint'                 # globs
 ```
 
-The compiled prompt goes to stdout: a mode header (the agent's role), your specs rendered through the hintbook's templates — each file wrapped in its folder chain so context inheritance is explicit — and a closing checklist footer. Pipe it straight to an agent:
+The compiled prompt goes to stdout: a mode header (the agent's role), your specs rendered through the hintbook's templates — each file wrapped in its folder chain so context inheritance is explicit — and a closing checklist footer. By default the output also includes the specs of any files this one references (its `# read` targets), with shared context emitted once, so an agent has everything in a single prompt; pass `--no-refs` for just the named specs. Pipe it straight to an agent:
 
 ```bash
 hint src/billing/invoice.ts | claude -p
@@ -144,6 +144,19 @@ hint --mode review src/billing/invoice.ts   # audit code against the spec, repor
 ```bash
 hint --dry-run 'src/**/*.hint'
 ```
+
+## 7. Stay in sync
+
+Once you've generated the work a spec defines, record it with `hint lock`. From then on the loop is cheap and convergent — unchanged specs are skipped, and you fix only what drifted:
+
+```bash
+hint lock src/billing/invoice.ts            # mark the target as generated
+hint src/billing/invoice.ts                 # now a no-op while the spec is unchanged (skipped)
+hint diff src/billing/invoice.ts            # after an edit: lists exactly which blocks drifted
+hint --mode fix src/billing/invoice.ts      # the prompt scopes the fix to only those blocks
+```
+
+A locked spec recompiles the moment its content (or inherited folder/root context) or its target file changes; `--force` recompiles regardless. See the [CLI reference](06-cli.md#hint-lock-paths--record-generated-work) for `hint lock` and `hint diff`.
 
 ## Where to go next
 

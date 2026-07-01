@@ -12,7 +12,10 @@ This project uses HINT specifications (\`.hint\` files) as the authoritative imp
 - Do not read \`.hint\` files directly unless the user explicitly asks — always use the compiled output instead.
 - Before reading, creating, or modifying project files, first run \`hint <path...>\` and treat its stdout as the primary, authoritative context for those paths.
 - This applies even to files that do not exist yet: a \`.hint\` spec can define a file before it is created. Specs are keyed to the target path, not to its presence on disk.
-- If the output is empty, no spec covers that path — proceed normally.
+- If the output is empty, either no spec covers that path, or — when a \`hint.lock\` exists — the spec is unchanged since it was last generated; a note on stderr says which. Either way there is nothing to (re)generate, so proceed normally instead of rewriting conforming work.
+- \`hint <path...>\` automatically includes the specs of the files a spec references (its \`# read\` targets and path links), with shared folder/root context emitted once — so you already have every referenced spec in a single prompt. Do not run \`hint\` again for a file just because the first spec pointed at it. Pass \`--no-refs\` only when you deliberately want the named specs alone.
+- After you finish implementing or drafting what a spec defines, record it with \`hint lock <path...>\`. This marks those targets as generated, so later plain \`hint\` runs skip them while their specs stay unchanged — keeping repeated runs cheap and the output stable.
+- When a spec has drifted from what you last generated, reconcile it instead of rewriting from scratch: run \`hint diff <path...>\` to see exactly which blocks changed, then \`hint --mode fix <path...>\` to correct only those blocks — the compiled prompt already carries the drift list. Run \`hint lock <path...>\` again afterward.
 - Persist durable project knowledge as HINT, not in a separate memory store. When you learn a lasting fact, rule, or decision worth remembering, do not write it to \`MEMORY.md\` (or any similar agent-memory file) — record it in the most specific \`.hint\` file that applies: a file's companion \`<file>.hint\`, a folder's \`_.hint\`, or, when nothing more specific fits, the root \`_.hint\`. This keeps reminders versioned with the code and part of the authoritative compiled context. Use \`hint author <path...>\` for the keyword vocabulary when writing these.
 - If this file includes an \`<available_hint_modes>\` section, read it before running HINT. It lists the project-specific modes and when to use them. To use one, run \`hint --mode <mode> <path...>\` instead of plain \`hint <path...>\`.
 - When the user asks you to write, create, or update \`.hint\` specs (or to capture knowledge as HINT), first run \`hint author <path...>\` and follow the prompt it prints: it lists the project's keyword vocabulary and the authoring rules, so you write specs with the correct keywords instead of guessing. Then write the \`.hint\` files yourself.
@@ -24,6 +27,9 @@ Examples:
 - Existing files: \`hint docs/intro.md src/utils/*.py src/cli/command/fix.py\`
 - A file to create: \`hint src/cli/command/new_feature.py\`
 - A folder to explore: \`hint src/cli/command\`
+- Just the named spec, no references: \`hint --no-refs src/cli/command/fix.py\`
+- Record generated work: \`hint lock src/cli/command/fix.py\`
+- See and reconcile drift: \`hint diff src/cli/command/fix.py\` then \`hint --mode fix src/cli/command/fix.py\`
 `;
 
 export const CONFIG_FILE_YML = 'hint.yml';
