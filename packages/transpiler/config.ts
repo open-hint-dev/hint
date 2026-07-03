@@ -12,6 +12,7 @@ This project uses HINT specifications (\`.hint\` files) as the authoritative imp
 - Do not read \`.hint\` files directly unless the user explicitly asks — always use the compiled output instead.
 - Before reading, creating, or modifying project files, first run \`hint <path...>\` and treat its stdout as the primary, authoritative context for those paths.
 - This applies even to files that do not exist yet: a \`.hint\` spec can define a file before it is created. Specs are keyed to the target path, not to its presence on disk.
+- Scope the paths to what the task touches — the specific files, plus \`--no-refs\` off so their references come along. A folder path (\`hint src/cli\`) compiles only that folder's own \`_.hint\`, not the specs beneath it; to pull in a whole subtree, use a glob (\`hint 'src/cli/**'\`). Compiling broadly (the repo root, top-level folders, or wide globs) dumps the entire project spec and wastes context — if a run reports a large target count or token estimate on stderr, you probably cast too wide a net.
 - If the output is empty, either no spec covers that path, or — when a \`hint.lock\` exists — the spec is unchanged since it was last generated; a note on stderr says which. Either way there is nothing to (re)generate, so proceed normally instead of rewriting conforming work.
 - \`hint <path...>\` automatically includes the specs of the files a spec references (its \`# read\` targets and path links), with shared folder/root context emitted once — so you already have every referenced spec in a single prompt. Do not run \`hint\` again for a file just because the first spec pointed at it. Pass \`--no-refs\` only when you deliberately want the named specs alone.
 - After you finish implementing or drafting what a spec defines, record it with \`hint lock <path...>\`. This marks those targets as generated, so later plain \`hint\` runs skip them while their specs stay unchanged — keeping repeated runs cheap and the output stable.
@@ -26,7 +27,8 @@ Examples:
 
 - Existing files: \`hint docs/intro.md src/utils/*.py src/cli/command/fix.py\`
 - A file to create: \`hint src/cli/command/new_feature.py\`
-- A folder to explore: \`hint src/cli/command\`
+- A folder's own spec (not its contents): \`hint src/cli/command\`
+- A whole subtree, every spec beneath a folder: \`hint 'src/cli/command/**'\`
 - Just the named spec, no references: \`hint --no-refs src/cli/command/fix.py\`
 - Record generated work: \`hint lock src/cli/command/fix.py\`
 - See and reconcile drift: \`hint diff src/cli/command/fix.py\` then \`hint --mode fix src/cli/command/fix.py\`

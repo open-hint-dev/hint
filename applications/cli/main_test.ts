@@ -86,6 +86,23 @@ describe('cli', () => {
             expect(result.stdout).not.toContain('<file_context');
         });
 
+        it('prepends the tag glossary with --standalone', async () => {
+            const plain = await runCli(['src/payment.ts.hint']);
+            const standalone = await runCli([
+                '--standalone',
+                'src/payment.ts.hint',
+            ]);
+
+            expect(plain.stdout).not.toContain('The tag glossary below defines');
+            expect(standalone.stdout).toContain('The tag glossary below defines');
+        });
+
+        it('does not warn about breadth on a small, focused compile', async () => {
+            const result = await runCli(['src/payment.ts.hint']);
+
+            expect(result.stderr).not.toContain('If this is broader than the task needs');
+        });
+
         it('fails outside an initialized project', async () => {
             const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-cli-test-'));
 

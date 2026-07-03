@@ -8,9 +8,28 @@ import {
     PLACEHOLDER_ID,
     PLACEHOLDER_NAME,
     RUNNING_CHANGES,
+    RUNNING_FILE,
+    RUNNING_FOLDER,
     RUNNING_FOOTER,
     RUNNING_HEADER,
+    RUNNING_SYSTEM,
 } from './hintbook.js';
+
+// A file/folder wrapper is pure structural nesting when it declares no directives of its own: its
+// own hint body is empty and none of its children are content blocks (every child is itself a
+// file/folder wrapper). Such a wrapper carries no constraints — its `path` only groups descendants
+// that already hold their own absolute paths — so emitting it adds tokens and visual noise.
+function isEmptyStructuralWrapper(hint: HintData): boolean {
+    if (hint.keyword !== RUNNING_FOLDER && hint.keyword !== RUNNING_FILE) {
+        return false;
+    }
+
+    if (hint.body.trim() !== '') {
+        return false;
+    }
+
+    return hint.children.every((child) => child.keyword === RUNNING_FOLDER || child.keyword === RUNNING_FILE);
+}
 
 function findInstruction(hintbooks: HintbookData[], mode: string, keyword: string): InstructionData | null {
     for (const modeName of new Set([
@@ -43,6 +62,13 @@ function compileHint(hint: HintData, hintbooks: HintbookData[], mode: string): s
         .filter(Boolean)
         .join('\n\n');
 
+    // Drop empty structural wrappers, promoting whatever their (already path-scoped) children compiled
+    // to. A folder that only nests other wrappers collapses to those wrappers; an empty file wrapper
+    // collapses to '' and is filtered out by its parent.
+    if (isEmptyStructuralWrapper(hint)) {
+        return children;
+    }
+
     if (!instruction) {
         return [
             hint.body,
@@ -60,7 +86,13 @@ function compileHint(hint: HintData, hintbooks: HintbookData[], mode: string): s
     }).trim();
 }
 
-export async function compileHints(hints: HintData[], hintbooks: HintbookData[], mode: string, changes: string = ''): Promise<string> {
+export async function compileHints(
+    hints: HintData[],
+    hintbooks: HintbookData[],
+    mode: string,
+    changes: string = '',
+    standalone: boolean = false,
+): Promise<string> {
     const resolvedMode = mode || INSTRUCTION_MODE_DEFAULT;
 
     const content = hints
@@ -68,6 +100,9 @@ export async function compileHints(hints: HintData[], hintbooks: HintbookData[],
         .filter(Boolean)
         .join('\n\n');
 
+    // The tag glossary normally lives once in AGENTS.md, not in every compile. `--standalone` prepends
+    // it so the output explains its own tags for an agent that never loaded AGENTS.md (e.g. a subagent).
+    const system = standalone ? findInstruction(hintbooks, resolvedMode, RUNNING_SYSTEM)?.content.trim() : '';
     const header = findInstruction(hintbooks, resolvedMode, RUNNING_HEADER)?.content.trim();
     const footer = findInstruction(hintbooks, resolvedMode, RUNNING_FOOTER)?.content.trim();
 
@@ -76,13 +111,19 @@ export async function compileHints(hints: HintData[], hintbooks: HintbookData[],
     const changesInstruction = changes ? findInstruction(hintbooks, resolvedMode, RUNNING_CHANGES) : null;
     const changesSection = changesInstruction ? interpolate(changesInstruction.content, { [PLACEHOLDER_BODY]: changes }).trim() : '';
 
-    return [
-        header,
-        changesSection,
-        content,
-        footer,
-    ]
-        .filter(Boolean)
-        .join('\n\n')
-        .trim();
+    return (
+        [
+            system,
+            header,
+            changesSection,
+            content,
+            footer,
+        ]
+            .filter(Boolean)
+            .join('\n\n')
+            // Interpolated wrappers pad `{body}`/`{children}` with blank lines; when a slot is empty this
+            // leaves runs of 3+ newlines. Collapse every run to a single blank line so nesting stays legible.
+            .replace(/\n{3,}/g, '\n\n')
+            .trim()
+    );
 }

@@ -8,10 +8,11 @@ export class CompileCommand implements ICommand {
     private dryRun: boolean = false;
     private force: boolean = false;
     private refs: boolean = true;
+    private standalone: boolean = false;
 
     constructor() {}
 
-    static new(paths: string[], mode: string, dryRun: boolean, force: boolean, refs: boolean): CompileCommand {
+    static new(paths: string[], mode: string, dryRun: boolean, force: boolean, refs: boolean, standalone: boolean = false): CompileCommand {
         const command = new CompileCommand();
 
         command.paths = paths;
@@ -19,6 +20,7 @@ export class CompileCommand implements ICommand {
         command.dryRun = dryRun;
         command.force = force;
         command.refs = refs;
+        command.standalone = standalone;
 
         return command;
     }
@@ -65,10 +67,33 @@ export class CompileCommand implements ICommand {
         // active mode defines a `__changes__` instruction (fix mode), so plain compiles are unaffected.
         const changes = lock ? Transpiler.formatDrift(Transpiler.computeDrift(hints, lock, !Transpiler.booksMatch(lock.books, books))) : '';
 
-        const output = await Transpiler.compileHints(hints, hintbooks, this.mode, changes);
+        const output = await Transpiler.compileHints(hints, hintbooks, this.mode, changes, this.standalone);
 
         if (output) {
+            warnIfBroad(hints, output);
+
             process.stdout.write(`${output}\n`);
         }
     }
+}
+
+// A run that pulls in a large slice of the tree is usually an accidental whole-repo compile (a broad
+// glob, or a folder walked with references) rather than a focused task. Warn on stderr — never on
+// stdout, which the agent consumes as the spec — so the breadth is visible and can be narrowed.
+const BROAD_TARGET_COUNT = 25;
+const BROAD_TOKEN_ESTIMATE = 20_000;
+
+function warnIfBroad(hints: Transpiler.HintData[], output: string): void {
+    const targetCount = Transpiler.collectFileNodes(hints).length;
+    // Rough heuristic: ~4 characters per token. Precise enough to flag an order-of-magnitude overshoot.
+    const tokenEstimate = Math.round(output.length / 4);
+
+    if (targetCount < BROAD_TARGET_COUNT && tokenEstimate < BROAD_TOKEN_ESTIMATE) {
+        return;
+    }
+
+    process.stderr.write(
+        `hint: compiled ${targetCount} file target(s), ~${tokenEstimate.toLocaleString('en-US')} tokens. ` +
+            `If this is broader than the task needs, pass fewer paths or add --no-refs.\n`,
+    );
 }
