@@ -22,7 +22,7 @@ paths ──► find ──► HintFileData tree ──► parse ──► HintD
 
 `parseHints(projectRootPath, paths, dryRun)` reads each node of the tree and produces `HintData` — the typed block tree.
 
-**Reading.** Existing files are read; a missing `_.hint` counts as empty (the folder still wraps its children); a missing companion hint is skipped silently, or throws if `dryRun` is set.
+**Reading.** Existing files are read; a missing `_.hint` counts as empty (the folder node still holds its children here — an empty wrapper that only nests others is elided later, at compile); a missing companion hint is skipped silently, or throws if `dryRun` is set.
 
 **Markdown processing.** `@include` directives are expanded first — each referenced file's raw text is inlined in place (quotes optional; leading `/` resolves from the project root, otherwise relative to the including file with a project-root fallback). The combined text then runs through a remark pipeline: parse → extract `{#id}` heading ids.
 
@@ -53,8 +53,9 @@ Special cases:
 
 - An instruction with `exclude: true` front matter drops the block — and everything beneath it — from the output.
 - A keyword with no instruction passes through: body and compiled children, no wrapper.
+- A `__file__` / `__folder__` wrapper with no directives of its own — an empty body whose only children are themselves wrappers — is elided and its children promoted, so a folder that merely nests others (each already carrying its full path) adds no tag. An empty file wrapper collapses to nothing.
 
-**Wrapping.** The compiled roots are joined and framed by the mode's `__header__` and `__footer__` instructions — the role definition and closing checklist that turn rendered specs into an actionable prompt.
+**Wrapping.** The compiled roots are joined and framed by the mode's `__header__` and `__footer__` instructions — the role definition and closing checklist that turn rendered specs into an actionable prompt. Runs of blank lines left where an empty template slot met its wrapper are collapsed to a single blank line. With `--standalone`, the hintbook's `__system__` tag glossary is prepended ahead of the header.
 
 ## Hintbook resolution
 

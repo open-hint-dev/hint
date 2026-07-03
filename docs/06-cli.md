@@ -53,12 +53,16 @@ When a [`hint.lock`](#hint-lock-paths--record-generated-work) is present, compil
 | `--dry-run`     | Fail with a non-zero exit on hint files that cannot be resolved, instead of skipping them silently. Use it to validate specs in CI.                                            |
 | `--force`       | Recompile every named file even if a `hint.lock` marks it unchanged.                                                                                                          |
 | `--no-refs`     | Compile only the named specs; do not pull in the specs they reference. References are included by default.                                                                    |
+| `--standalone`  | Prepend the hintbook's tag glossary (`__system__`) to the output, so the prompt explains its own tags for an agent that never loaded `AGENTS.md` (e.g. a subagent).            |
 
 ```bash
 hint --mode review src/billing | claude -p     # audit code against the spec
 hint --dry-run 'src/**/*.hint'                 # validate that every spec resolves
 hint --force src/billing/invoice.ts            # ignore the lock and recompile
+hint --standalone src/billing/invoice.ts       # include the tag glossary in the prompt
 ```
+
+Compiling broadly — the repo root, a top-level folder, or a wide glob — pulls the whole project spec into one prompt and usually means the paths were cast wider than the task needs. When a run crosses roughly 25 file targets or ~20k estimated tokens, `hint` prints a one-line notice on **stderr** (never stdout, which the agent consumes as the spec) reporting the target count and token estimate; narrow the paths or add `--no-refs`. Scope compiles to the specific files a task touches — a folder path compiles only that folder's own `_.hint`, so use a glob (`hint 'src/billing/**'`) when you deliberately want a whole subtree.
 
 When the mode defines a drift instruction (the software-engineer book's `fix` mode does) and a `hint.lock` exists, the compiled prompt carries a block-level drift report — see [`hint diff`](#hint-diff-paths--show-what-drifted).
 
