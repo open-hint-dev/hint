@@ -19,6 +19,7 @@ type CompileOptions = {
     dryRun: boolean;
     force: boolean;
     refs: boolean;
+    standalone: boolean;
 };
 
 type AddOptions = {
@@ -41,10 +42,11 @@ export async function main(): Promise<void> {
         .option('--dry-run', 'fail on hint files that cannot be resolved instead of skipping them', false)
         .option('--force', 'ignore hint.lock and recompile every file, even unchanged ones', false)
         .option('--no-refs', 'compile only the named specs, not the specs they reference (references are included by default)')
+        .option('--standalone', 'prepend the hintbook tag glossary so the output explains its own tags without AGENTS.md', false)
         // Legacy: references are now on by default, so --with-refs is accepted but does nothing.
         .addOption(new Option('--with-refs').hideHelp())
         .action(async (paths: string[], options: CompileOptions) => {
-            await CompileCommand.new(paths, options.mode ?? '', options.dryRun, options.force, options.refs).execute();
+            await CompileCommand.new(paths, options.mode ?? '', options.dryRun, options.force, options.refs, options.standalone).execute();
         });
 
     program

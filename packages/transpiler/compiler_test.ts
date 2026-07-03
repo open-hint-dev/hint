@@ -35,6 +35,29 @@ describe('compiler', () => {
             expect(output).toContain('<file_context path="src/payment.ts">');
         });
 
+        it('elides empty folder wrappers, promoting their nested targets', async () => {
+            const output = await compileProject(['deep/nested/feature.ts.hint']);
+
+            // deep/ and deep/nested/ have no _.hint of their own — pure nesting, so no wrapper is emitted
+            expect(output).not.toContain('<folder_context path="deep">');
+            expect(output).not.toContain('<folder_context path="deep/nested">');
+            // the file target itself, which carries its full path, is still emitted
+            expect(output).toContain('<file_context path="deep/nested/feature.ts">');
+        });
+
+        it('keeps folder wrappers that declare their own context', async () => {
+            const output = await compileProject(['src/payment.ts.hint']);
+
+            // src/_.hint has body content, so its wrapper carries a directive and must survive
+            expect(output).toContain('<folder_context path="src">');
+        });
+
+        it('collapses runs of blank lines left by empty wrapper slots', async () => {
+            const output = await compileProject(['deep/nested/feature.ts.hint']);
+
+            expect(output).not.toMatch(/\n{3,}/);
+        });
+
         it('expands includes into the compiled output', async () => {
             const output = await compileProject(['src/payment.ts.hint']);
 
@@ -52,6 +75,22 @@ describe('compiler', () => {
 
             expect(output).toContain('custom keyword body passes through unchanged');
             expect(output).not.toContain('customkeyword');
+        });
+
+        it('omits the tag glossary by default', async () => {
+            const output = await compileProject(['src/payment.ts.hint']);
+
+            expect(output).not.toContain('The tag glossary below defines');
+        });
+
+        it('prepends the tag glossary in standalone mode', async () => {
+            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
+            const output = await compileHints(hints, [hintbook], '', '', true);
+
+            expect(output.startsWith('The following prompt uses a structured')).toBe(true);
+            expect(output).toContain('The tag glossary below defines');
+            // header still follows the glossary
+            expect(output).toContain('You are a senior software engineer implementing a project');
         });
 
         it('wraps the output with the default mode header and footer', async () => {
