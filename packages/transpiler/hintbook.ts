@@ -31,6 +31,7 @@ export type MetaData = {
     description?: string;
     exclude?: boolean;
     name?: string;
+    surface?: boolean;
     synonyms?: string[];
 };
 
@@ -146,6 +147,7 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
                 description: metadataString(metadata, 'description') || undefined,
                 exclude: metadata.exclude,
                 name: metadataString(metadata, 'name') || undefined,
+                surface: metadata.surface,
                 synonyms: metadata.synonyms,
             },
         });

@@ -31,10 +31,16 @@ export class DiffCommand implements ICommand {
         }
 
         const config = await Transpiler.loadConfig(projectRootPath);
-        const books = await Transpiler.booksFingerprint(projectRootPath, config?.books ?? []);
+        const hintbooks = await Transpiler.loadHintbooks(projectRootPath, config?.books ?? []);
 
         const hints = await Transpiler.parseHints(projectRootPath, this.paths, false);
-        const drift = Transpiler.computeDrift(hints, lock, !Transpiler.booksMatch(lock.books, books));
+
+        // Read each target's output so drift is reported bidirectionally: a spec whose code was edited
+        // since it was locked shows up as `drifted-output`, not silently as fresh.
+        const targetNames = Transpiler.collectFileNodes(hints).map((file) => file.name);
+        const targetHashes = await Transpiler.hashTargetFiles(projectRootPath, targetNames);
+
+        const drift = Transpiler.computeDrift(hints, lock, hintbooks, targetHashes);
 
         const summary = Transpiler.formatDrift(drift);
 
