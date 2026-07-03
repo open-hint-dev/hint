@@ -44,7 +44,6 @@ As a professional, you already know exactly what needs to be produced — the en
 - **Zero syntax friction**: a `.hint` file is pure markdown. There is no new syntax to learn, and files are instantly readable by humans and AI alike.
 - **Specs live with the work**: companion files sit next to their targets and travel through the same reviews, branches, and history.
 - **Deterministic compilation**: the same specs and the same hintbook always produce the same prompt. No hidden prompt engineering.
-- **Cheap, convergent iteration**: a `hint.lock` records what was generated, so unchanged specs are skipped on later runs, `hint diff` shows exactly which blocks drifted, and `fix` reconciles only those — repeated runs are a no-op instead of a costly rewrite.
 - **Borders, not vibes**: the compiled prompt tells the AI exactly what exists, what it must contain, what it must do, and what it must never do.
 - **Gaps come back, not guesses**: missing decisions are reported to you instead of being filled with something plausible.
 
@@ -194,7 +193,7 @@ hint src/billing                     # a folder
 hint 'src/**/*.hint'                 # globs
 ```
 
-The compiled prompt goes to stdout: a mode header (the agent's role), your specs rendered through the hintbook's templates — each file wrapped in its folder chain so context inheritance is explicit — and a closing checklist footer. By default the output also includes the specs of any files this one references (its `# read` targets), with shared folder/root context emitted once, so an agent has everything in a single prompt; pass `--no-refs` for just the named specs. Pipe it straight to an agent:
+The compiled prompt goes to stdout: a mode header (the agent's role), your specs rendered through the hintbook's templates — each file wrapped in its folder chain so context inheritance is explicit — and a closing checklist footer. By default the output also includes the specs of any files this one references (its `# read` targets), with shared context emitted once, so an agent has everything in a single prompt; pass `--no-refs` for just the named specs. Pipe it straight to an agent:
 
 ```bash
 hint src/billing/invoice.ts | claude -p
@@ -217,18 +216,18 @@ hint --mode review src/billing/invoice.ts   # audit code against the spec, repor
 hint --dry-run 'src/**/*.hint'
 ```
 
-### Staying in sync
+## 7. Stay in sync
 
-Once you've generated the work a spec defines, record it with `hint lock`. From then on the loop is cheap and convergent:
+Once you've generated the work a spec defines, record it with `hint lock`. From then on the loop is cheap and convergent — unchanged specs are skipped, and you fix only what drifted:
 
 ```bash
 hint lock src/billing/invoice.ts            # mark the target as generated
-hint src/billing/invoice.ts                 # now a no-op while the spec is unchanged (skipped, zero tokens)
+hint src/billing/invoice.ts                 # now a no-op while the spec is unchanged (skipped)
 hint diff src/billing/invoice.ts            # after an edit: lists exactly which blocks drifted
 hint --mode fix src/billing/invoice.ts      # the prompt scopes the fix to only those blocks
 ```
 
-A locked spec is skipped only while both its content (including inherited folder/root context) and the target file are unchanged; edit either and it recompiles. `--force` recompiles regardless.
+A locked spec recompiles the moment its content (or inherited folder/root context) or its target file changes; `--force` recompiles regardless. See the [CLI reference](06-cli.md#hint-lock-paths--record-generated-work) for `hint lock` and `hint diff`.
 
 ## Where to go next
 
@@ -272,6 +271,8 @@ Two kinds of specification files live in the tree:
 - **Companion hints** — `<path>.hint` declares the file at `<path>`: `src/auth/login.ts.hint` defines `src/auth/login.ts`, `contracts/nda.md.hint` defines `contracts/nda.md`. The target file does not need to exist yet; the spec is keyed to the path, not to its presence on disk.
 
 When compiling, every requested hint is wrapped in its full folder chain down from the project root, so folder context visibly encloses file context in the output. Folders without an `_.hint` still appear in the chain — with empty context.
+
+**Detached hint stores.** A folder whose name ends in `.hint` is a parallel hint tree: the target path each hint describes is derived by stripping the `.hint` tail from that folder. `packages.hint/db/schema.ts.hint` specifies `packages/db/schema.ts`, and `os.hint/_.hint` specifies the `os` folder. This lets you keep hints in a separate tree — gitignored, or simply out of the folder they document — without mixing `.hint` files into the real source. The stripping applies to every folder segment that carries the tail; the companion file's own name is left untouched.
 
 ## Path resolution
 
@@ -326,15 +327,17 @@ There is no fixed meaning to any level — `##` under an `entity` is whatever yo
 
 ## Includes
 
-A paragraph consisting of a single `@include` directive inlines another file at compile time:
+A line consisting of a single `@include` directive inlines another file at compile time:
 
 ```markdown
+@include ../shared/error-policy.md
 @include "../shared/error-policy.md"
 ```
 
-- The path resolves relative to the folder of the hint file being compiled.
-- `.md` / `.mdx` files are parsed and merged as markdown — their content becomes part of the surrounding body. Includes may nest.
-- Any other file type is embedded as a fenced code block tagged with its extension — useful for inlining real schemas or configs.
+- Quotes around the path are optional — both forms above are equivalent.
+- The referenced file is inlined **as-is**: its raw text replaces the directive line before anything is parsed, so the file behaves exactly as if its content had been written in place. A `.hint` (or `.md`) file's headings therefore become real hints, and any `{#id}` they declare is honored. Includes may nest.
+- Path resolution: a leading `/` resolves from the project root. Otherwise the path resolves relative to the folder of the including file, falling back to the project root when that does not exist.
+- A missing target, or a file that includes itself in a cycle, is a hard error.
 
 Use includes for shared fragments that multiple specs must state identically.
 
@@ -401,7 +404,7 @@ paths ──► find ──► HintFileData tree ──► parse ──► HintD
 
 **Reading.** Existing files are read; a missing `_.hint` counts as empty (the folder node still holds its children here — an empty wrapper that only nests others is elided later, at compile); a missing companion hint is skipped silently, or throws if `dryRun` is set.
 
-**Markdown processing.** Each file's content runs through a remark pipeline: parse → extract `{#id}` heading ids → expand `@include` directives (resolved relative to the hint file's folder).
+**Markdown processing.** `@include` directives are expanded first — each referenced file's raw text is inlined in place (quotes optional; leading `/` resolves from the project root, otherwise relative to the including file with a project-root fallback). The combined text then runs through a remark pipeline: parse → extract `{#id}` heading ids.
 
 **Block extraction.** Top-level nodes are walked once with a heading stack:
 
@@ -448,7 +451,7 @@ See [Hintbooks](05-hintbooks.md) for the authoring guide.
 
 Every stage is deterministic: sorted traversal, stable tree synthesis, ordered hintbook lookup, and pure template interpolation. The same specs, hintbooks, and mode always produce byte-identical output — which makes compiled prompts reviewable and diffable artifacts.
 
-That determinism is what the `hint.lock` builds on. Each generated target is fingerprinted by a hash over its blocks and inherited context; `hint lock` records those fingerprints, later runs compare against them to skip unchanged specs, and `hint diff` reports the exact blocks that differ — turning "regenerate everything" into "reconcile only what moved."
+That determinism is what the `hint.lock` builds on. Each generated target is fingerprinted by a hash over its blocks and its inherited context; [`hint lock`](06-cli.md#hint-lock-paths--record-generated-work) records those fingerprints, later runs compare against them to skip unchanged specs, and [`hint diff`](06-cli.md#hint-diff-paths--show-what-drifted) reports the exact blocks that differ — turning "regenerate everything" into "reconcile only what moved."
 
 
 <!-- ============================================================ -->
@@ -493,6 +496,7 @@ my-hintbook/
 ├── __footer__.md          ← closing checklist that ends every compiled prompt
 ├── __header__.fix.md      ← header for `--mode fix`
 ├── __footer__.fix.md
+├── __mode__.fix.md        ← when and how agents should use `--mode fix`
 ├── __file__.md            ← wrapper for companion hint files
 ├── __folder__.md          ← wrapper for folder hints (_.hint)
 ├── entity.md              ← keyword instruction
@@ -556,16 +560,30 @@ exclude: false
 ...
 ```
 
-| Key        | Effect                                                                                                                          |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `synonyms` | Additional keywords that resolve to this instruction (`# application` → `app.md`).                                              |
-| `exclude`  | When `true`, blocks with this keyword are dropped from the output entirely — children included. Useful for spec-internal notes. |
+| Key           | Effect                                                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `synonyms`    | Additional keywords that resolve to this instruction (`# application` → `app.md`).                                              |
+| `exclude`     | When `true`, blocks with this keyword are dropped from the output entirely — children included. Useful for spec-internal notes. |
+| `description` | A one-line summary of what the keyword declares. `hint author` lists it next to the keyword so an agent picks the right one when writing specs. Has no effect on compiled output. |
 
 ### Modes
 
 A `.{mode}.md` suffix in the file name assigns an instruction to a mode: `__header__.fix.md` is the `__header__` instruction of the `fix` mode. No suffix means the default mode, `compile`.
 
 At compile time, lookup tries the requested mode first and falls back to the default — so a mode only needs to override what actually differs (typically the header and footer; keyword templates are usually shared).
+
+Declare agent-facing mode guidance with `__mode__.<mode>.md`:
+
+```markdown
+---
+name: Review
+description: Audit an implementation against its HINT specification.
+---
+
+Use `hint --mode review <paths...>` when the user asks for a code review or conformance audit.
+```
+
+`hint modes` lists these files. If front matter includes `name` and `description`, the command shows them; otherwise the name falls back to the mode extracted from the file name. `hint apply` and `hint instruct` also copy the stripped mode guidance into `AGENTS.md` / `CLAUDE.md` so agents know when to choose each mode.
 
 ### Running instructions
 
@@ -578,6 +596,7 @@ Names of the form `__name__` are **running instructions** — structural slots t
 | `__file__`   | Template wrapping each companion hint file; `{name}` is the target path, `{body}` the file preamble, `{children}` the rendered blocks.                 |
 | `__folder__` | Same for folder hints; `{name}` is the folder path (`.` for the project root).                                                                         |
 | `__system__` | `hint instruct` emits it for the agent context files (AGENTS.md / CLAUDE.md), and `hint --standalone` prepends it to the compiled prompt. Put the tag glossary and reading rules here. |
+| `__mode__`   | Not used during compilation — `__mode__.<mode>.md` describes when and how agents should compile with that mode.                                       |
 
 ## Authoring guidelines
 
@@ -653,9 +672,9 @@ hint 'src/**/*.hint' > prompt.md
 | `src`               | the folder's `src/_.hint`                                                     |
 | `'src/**/*.hint'`   | every glob match (quote globs to keep your shell out of it)                   |
 
-Every compiled file is wrapped in its folder-hint chain down from the project root, so inherited context is part of the output. By default the closure of files it references (`# read` targets) is compiled in the same pass, with shared context deduplicated.
+Every compiled file is wrapped in its folder-hint chain down from the project root, so inherited context is part of the output. By default the closure of files it references (its `# read` targets) is compiled in the same pass, with shared folder/root context deduplicated — so an agent gets everything in one prompt instead of re-invoking `hint` per referenced file.
 
-When a `hint.lock` is present, compiling **skips** any file whose spec (and inherited context) is unchanged and whose target still exists — so an unchanged run produces no output and costs no tokens. A note on stderr says what was skipped.
+When a [`hint.lock`](#hint-lock-paths--record-generated-work) is present, compiling **skips** any file whose spec (with its inherited context) is unchanged and whose target still exists on disk. An unchanged run therefore produces no output and costs no tokens; a note on stderr reports what was skipped.
 
 ### Options
 
@@ -676,29 +695,33 @@ hint --standalone src/billing/invoice.ts       # include the tag glossary in the
 
 Compiling broadly — the repo root, a top-level folder, or a wide glob — pulls the whole project spec into one prompt and usually means the paths were cast wider than the task needs. When a run crosses roughly 25 file targets or ~20k estimated tokens, `hint` prints a one-line notice on **stderr** (never stdout, which the agent consumes as the spec) reporting the target count and token estimate; narrow the paths or add `--no-refs`. Scope compiles to the specific files a task touches — a folder path compiles only that folder's own `_.hint`, so use a glob (`hint 'src/billing/**'`) when you deliberately want a whole subtree.
 
+When the mode defines a drift instruction (the software-engineer book's `fix` mode does) and a `hint.lock` exists, the compiled prompt carries a block-level drift report — see [`hint diff`](#hint-diff-paths--show-what-drifted).
+
 ---
 
 ## `hint lock <paths...>` — record generated work
 
-Fingerprints the given specs and writes them to `hint.lock` in the project root, marking those targets as generated. Run it after an agent implements or drafts what a spec defines. Afterwards, a plain `hint` run skips each recorded target while its spec (and inherited folder/root context) stays unchanged, keeping repeated runs cheap and their output stable.
+Fingerprints the given specs and writes them to `hint.lock` in the project root, marking those targets as generated. Run it after an agent implements or drafts what a spec defines:
 
 ```bash
 hint lock src/billing/invoice.ts
 ```
 
-The lock is deterministic and diff-friendly (sorted keys, no timestamps), so it reviews cleanly in version control. A change to the registered hintbooks invalidates every entry, since the vocabulary defines what each keyword means.
+Afterwards, a plain `hint` run skips each recorded target while its spec — including inherited folder/root context — stays unchanged, keeping repeated runs cheap and their output stable. The lock is deterministic and diff-friendly (sorted keys, no timestamps), so it reviews cleanly in version control. Each entry records a hash of the target's blocks plus its inherited context; a change to the registered hintbooks invalidates every entry, since the vocabulary defines what each keyword means.
+
+Locking is scoped to the paths you pass and merges into any existing `hint.lock`, so you can lock files as you finish them. Fails with `No hint.yml found` outside an initialized project.
 
 ---
 
 ## `hint diff <paths...>` — show what drifted
 
-Compares the given specs against `hint.lock` and reports, per file, exactly which blocks changed since they were generated — a token-free way to scope a fix before running `hint --mode fix`. Each file is reported as up to date, `new` (never locked), `inherited` (only its ancestor context changed), or with the precise list of changed/added/removed blocks.
+Compares the given specs against `hint.lock` and reports, per file, exactly which blocks changed since they were generated — a token-free way to scope a fix before running `hint --mode fix`:
 
 ```bash
 hint diff src/billing/invoice.ts
 ```
 
-With no `hint.lock`, it reports that nothing is being tracked yet.
+Each file is reported as up to date, **new** (never locked), **inherited** (only its ancestor `_.hint` context changed), or with the precise list of **changed / added / removed** blocks. Output goes to stdout; with no `hint.lock` it reports on stderr that nothing is being tracked yet. Fails with `No hint.yml found` outside an initialized project.
 
 ---
 
@@ -721,7 +744,7 @@ hint apply    # then write the agent files
 
 ## `hint instruct` — set up the agent context files
 
-Prints an **AI agent prompt** to stdout that instructs an agent to maintain a single `<hint>...</hint>` block in `AGENTS.md` and `CLAUDE.md`, built from the current `hint.yml`. The block wraps the base HINT workflow instructions plus each registered hintbook's `__system__` glossary in `<system_instructions_from_<hintbook-id>>` tags. The agent creates the files if needed, appends the block if missing, and otherwise replaces the existing `<hint>` block wholesale — so updated, added, or removed hintbooks propagate on every run. The prompt states explicitly that these are the only HINT instructions allowed in the files; anything HINT-related outside the block is removed.
+Prints an **AI agent prompt** to stdout that instructs an agent to maintain a single `<hint>...</hint>` block in `AGENTS.md` and `CLAUDE.md`, built from the current `hint.yml`. The block wraps the base HINT workflow instructions plus each registered hintbook's `__system__` glossary and `__mode__.<mode>.md` usage guidance in `<system_instructions_from_<hintbook-id>>` tags. The agent creates the files if needed, appends the block if missing, and otherwise replaces the existing `<hint>` block wholesale — so updated, added, or removed hintbooks propagate on every run. The prompt states explicitly that these are the only HINT instructions allowed in the files; anything HINT-related outside the block is removed.
 
 The command never edits `AGENTS.md` / `CLAUDE.md` itself. Apply the printed prompt with your agent, and re-run it whenever `hint.yml` changes:
 
@@ -749,6 +772,33 @@ Does what `hint instruct` asks an agent to do, but as a deterministic find-and-r
 - If `CLAUDE.md` only `@AGENTS.md`-includes it, the block is written to `AGENTS.md` and any copy in `CLAUDE.md` is stripped to avoid duplication.
 
 It prints one short status line per file (`Created…`, `Updated the HINT block in…`, `…already up to date`). Use `hint instruct | claude -p` instead when you would rather an agent apply the changes. Fails with `No hint.yml found` outside an initialized project.
+
+---
+
+## `hint modes` — list available modes
+
+```bash
+hint modes
+```
+
+Lists modes declared by registered hintbooks through `__mode__.<mode>.md` files. The `mode` column is the value to pass to `hint --mode <mode>`. If a mode file starts with YAML front matter containing `name` and `description`, those are shown; otherwise the name falls back to the mode extracted from the file name.
+
+Warnings for unresolved hintbooks go to stderr. Fails with `No hint.yml found` outside an initialized project.
+
+---
+
+## `hint author [paths...]` — prompt an agent to write hints
+
+Prints an **AI agent prompt** to stdout that teaches an agent to author `.hint` specifications: the file kinds and naming rules, the heading/body/nesting syntax, and — built from the registered hintbooks — the full **keyword vocabulary** with each keyword's synonyms and `description`. Pipe it to your agent, which then writes the `.hint` files:
+
+```bash
+hint author src/billing/invoice.ts | claude -p --permission-mode acceptEdits
+hint author                                          # vocabulary only, no specific target
+```
+
+Pass one or more target paths to scope the prompt to writing those specs; omit them for the vocabulary and rules alone. The descriptions come from each keyword instruction's `description` front matter, so a well-documented hintbook produces a richer prompt. The command never writes files itself — the agent does.
+
+This is the authoring counterpart to the default compile command: `hint author` helps create a spec, `hint <path...>` compiles an existing one. Warnings for unresolved hintbooks go to stderr. Fails with `No hint.yml found` outside an initialized project, or when no hintbooks are registered.
 
 ---
 
@@ -819,7 +869,7 @@ Prints the command overview with usage examples. The same text is available via 
 
 ## Exit codes and streams
 
-- **stdout** carries the command's primary output: the compiled prompt (`hint`), the agent prompt to pipe to your agent (`hint instruct`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), or the version report (`hint version`). Only `hint` and `hint instruct` are meant to be piped into an agent.
+- **stdout** carries the command's primary output: the compiled prompt (`hint`), the drift report (`hint diff`), the agent prompt to pipe to your agent (`hint instruct`, `hint author`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), listings (`hint list`, `hint modes`), or the version report (`hint version`). Only `hint`, `hint instruct`, and `hint author` are meant to be piped into an agent. `hint lock` writes only `hint.lock` and reports how many files it recorded on stderr.
 - **stderr** carries interactive prompts, subprocess (git/npm) output, warnings, and errors.
 - Exit code `0` on success, `1` on any failure (unresolvable specs under `--dry-run`, missing project, failed installs, invalid hintbooks).
 
