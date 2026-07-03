@@ -31,7 +31,7 @@ When several hintbooks define the same keyword, the first one in `books` order w
 ```
 my-hintbook/
 ├── hintbook.json          ← identity: marks this folder as a hintbook
-├── __system__.md          ← tag glossary, injected into AGENTS.md / CLAUDE.md by `hint instruct`
+├── __system__.md          ← tag glossary, injected into AGENTS.md / CLAUDE.md by `hint instruct` (or prepended by `hint --standalone`)
 ├── __header__.md          ← role definition that opens every compiled prompt
 ├── __footer__.md          ← closing checklist that ends every compiled prompt
 ├── __header__.fix.md      ← header for `--mode fix`
@@ -135,7 +135,7 @@ Names of the form `__name__` are **running instructions** — structural slots t
 | `__footer__` | Closes the prompt: verification checklist and report format.                                                                                           |
 | `__file__`   | Template wrapping each companion hint file; `{name}` is the target path, `{body}` the file preamble, `{children}` the rendered blocks.                 |
 | `__folder__` | Same for folder hints; `{name}` is the folder path (`.` for the project root).                                                                         |
-| `__system__` | Not used during compilation — `hint instruct` emits it for the agent context files (AGENTS.md / CLAUDE.md). Put the tag glossary and reading rules here. |
+| `__system__` | `hint instruct` emits it for the agent context files (AGENTS.md / CLAUDE.md), and `hint --standalone` prepends it to the compiled prompt. Put the tag glossary and reading rules here. |
 | `__mode__`   | Not used during compilation — `__mode__.<mode>.md` describes when and how agents should compile with that mode.                                       |
 
 ## Authoring guidelines
