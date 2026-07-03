@@ -42,13 +42,13 @@ export class CompileCommand implements ICommand {
         let hints = await Transpiler.parseHints(projectRootPath, paths, this.dryRun);
 
         const lock = await Transpiler.loadLock(projectRootPath);
-        const books = lock ? await Transpiler.booksFingerprint(projectRootPath, config?.books ?? []) : {};
 
-        // Hash-gate: when a lock exists (opt-in via `hint lock`), skip files whose spec and inherited
-        // context are unchanged and whose output still exists — so unchanged runs cost no tokens.
+        // Hash-gate: when a lock exists (opt-in via `hint lock`), skip files whose spec, inherited context,
+        // and the vocabulary they use are all unchanged and whose output still exists — so unchanged runs
+        // cost no tokens. The effective hash folds in the hintbooks, so no separate book fingerprint is needed.
         if (lock && !this.force) {
-            const fileHashes = Transpiler.hashFileHints(hints);
-            const fresh = await Transpiler.selectFreshTargets(projectRootPath, fileHashes, lock, books);
+            const fileHashes = Transpiler.effectiveFileHashes(hints, hintbooks);
+            const fresh = await Transpiler.selectFreshTargets(projectRootPath, fileHashes, lock);
 
             if (fresh.size > 0) {
                 const stale = new Set(fileHashes.filter((file) => !fresh.has(file.name)).map((file) => file.name));
@@ -63,9 +63,16 @@ export class CompileCommand implements ICommand {
             }
         }
 
-        // Drift guidance: when a lock exists, tell the agent which blocks changed. It renders only if the
-        // active mode defines a `__changes__` instruction (fix mode), so plain compiles are unaffected.
-        const changes = lock ? Transpiler.formatDrift(Transpiler.computeDrift(hints, lock, !Transpiler.booksMatch(lock.books, books))) : '';
+        // Drift guidance: when a lock exists, tell the agent which blocks changed — including any output
+        // edited underneath an unchanged spec. It renders only if the active mode defines a `__changes__`
+        // instruction (fix mode), so plain compiles are unaffected.
+        const targetHashes = lock
+            ? await Transpiler.hashTargetFiles(
+                  projectRootPath,
+                  Transpiler.collectFileNodes(hints).map((file) => file.name),
+              )
+            : undefined;
+        const changes = lock ? Transpiler.formatDrift(Transpiler.computeDrift(hints, lock, hintbooks, targetHashes)) : '';
 
         const output = await Transpiler.compileHints(hints, hintbooks, this.mode, changes, this.standalone);
 

@@ -2,16 +2,19 @@ import * as FsPromises from 'node:fs/promises';
 import * as Os from 'node:os';
 import * as Path from 'node:path';
 
-import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
+import { type HintbookData, INSTRUCTION_MODE_DEFAULT, RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 import {
-    booksMatch,
     collectFileNodes,
     computeDrift,
     diffFileBlocks,
+    effectiveFileHashes,
     formatDrift,
     hashFileBlocks,
     hashFileHints,
+    hashFileVocab,
     hashHint,
+    hashTargetFile,
+    hashTargetFiles,
     loadLock,
     type LockData,
     pruneFreshHints,
@@ -19,6 +22,22 @@ import {
     selectFreshTargets,
 } from './lock.js';
 import type { HintData } from './parser.js';
+
+// A hintbook where `func` renders a fixed template and `entity` another — used to prove a keyword's
+// instruction content (not its version) drives lock invalidation.
+function bookWith(funcContent: string, entityContent = '<entity>{name}</entity>'): HintbookData {
+    return {
+        runningModes: [],
+        modes: {
+            [INSTRUCTION_MODE_DEFAULT]: {
+                instructions: [
+                    { name: 'func', content: funcContent },
+                    { name: 'entity', content: entityContent },
+                ],
+            },
+        },
+    };
+}
 
 function block(keyword: string, name = '', body = '', children: HintData[] = [], level = 1): HintData {
     return { level, keyword, id: '', name, body, children };
@@ -172,21 +191,22 @@ describe('lock', () => {
     });
 
     describe('computeDrift', () => {
+        // Locks against empty hintbooks, so effective hashes reduce to spec + a stable (empty-vocab) component.
         function lockFor(tree: HintData[]): LockData {
-            const effective = new Map(hashFileHints(tree).map((f) => [f.name, f.hash]));
+            const effective = new Map(effectiveFileHashes(tree, []).map((f) => [f.name, f.hash]));
             const files: LockData['files'] = {};
 
             for (const { name, node } of collectFileNodes(tree)) {
                 files[name] = { hash: effective.get(name)!, blocks: hashFileBlocks(node) };
             }
 
-            return { version: 1, books: {}, files };
+            return { version: 2, files };
         }
 
         it('marks unchanged files fresh', () => {
             const tree = sampleTree();
 
-            expect(computeDrift(tree, lockFor(tree), false).every((d) => d.status === 'fresh')).toBe(true);
+            expect(computeDrift(tree, lockFor(tree), []).every((d) => d.status === 'fresh')).toBe(true);
         });
 
         it('localizes a file change to a block and leaves siblings fresh', () => {
@@ -194,7 +214,7 @@ describe('lock', () => {
             const lock = lockFor(tree);
 
             ((tree[0]!.children[1] as HintData).children[0] as HintData).body = 'Implements A differently.';
-            const drift = computeDrift(tree, lock, false);
+            const drift = computeDrift(tree, lock, []);
 
             const a = drift.find((d) => d.name === 'src/a.ts')!;
             expect(a.status).toBe('blocks');
@@ -209,15 +229,76 @@ describe('lock', () => {
             const lock = lockFor(tree);
 
             (tree[0]!.children[0] as HintData).body = 'Changed baseline rule.';
-            const drift = computeDrift(tree, lock, false);
+            const drift = computeDrift(tree, lock, []);
 
             expect(drift.every((d) => d.status === 'inherited')).toBe(true);
         });
 
         it('marks unlocked files new', () => {
-            const drift = computeDrift(sampleTree(), { version: 1, books: {}, files: {} }, false);
+            const drift = computeDrift(sampleTree(), { version: 2, files: {} }, []);
 
             expect(drift.every((d) => d.status === 'new')).toBe(true);
+        });
+
+        it('flags a file whose used keyword changed meaning as inherited (vocabulary drift)', () => {
+            // Root declares `lang`; give the books a `lang` instruction, lock, then change that instruction.
+            const langBook = (content: string): HintbookData => ({
+                runningModes: [],
+                modes: { [INSTRUCTION_MODE_DEFAULT]: { instructions: [{ name: 'lang', content }] } },
+            });
+            const tree = sampleTree();
+            const effective = new Map(effectiveFileHashes(tree, [langBook('v1')]).map((f) => [f.name, f.hash]));
+            const lock: LockData = { version: 2, files: {} };
+            for (const { name, node } of collectFileNodes(tree)) {
+                lock.files[name] = { hash: effective.get(name)!, blocks: hashFileBlocks(node) };
+            }
+
+            // Same spec, changed keyword meaning -> every file using `lang` drifts, none stays fresh.
+            const drift = computeDrift(tree, lock, [langBook('v2')]);
+            expect(drift.every((d) => d.status === 'inherited')).toBe(true);
+        });
+
+        it('flags output edited underneath an unchanged spec as drifted-output', () => {
+            const tree = sampleTree();
+            const lock = lockFor(tree);
+            lock.files['src/a.ts']!.target = 'locked-output-hash';
+            lock.files['src/b.ts']!.target = 'locked-output-hash-b';
+
+            const targetHashes = new Map<string, string | null>([
+                ['src/a.ts', 'edited-output-hash'], // differs from lock -> drifted
+                ['src/b.ts', 'locked-output-hash-b'], // matches lock -> fresh
+            ]);
+            const drift = computeDrift(tree, lock, [], targetHashes);
+
+            expect(drift.find((d) => d.name === 'src/a.ts')!.status).toBe('drifted-output');
+            expect(drift.find((d) => d.name === 'src/b.ts')!.status).toBe('fresh');
+        });
+
+        it('reports fresh when no target hashes are supplied, even if a target was recorded', () => {
+            const tree = sampleTree();
+            const lock = lockFor(tree);
+            lock.files['src/a.ts']!.target = 'locked-output-hash';
+
+            expect(computeDrift(tree, lock, []).every((d) => d.status === 'fresh')).toBe(true);
+        });
+
+        it('reports fresh for an entry with no recorded target (older lock)', () => {
+            const tree = sampleTree();
+            const lock = lockFor(tree); // lockFor records no target
+
+            const targetHashes = new Map<string, string | null>([['src/a.ts', 'any-hash']]);
+
+            expect(computeDrift(tree, lock, [], targetHashes).find((d) => d.name === 'src/a.ts')!.status).toBe('fresh');
+        });
+
+        it('does not report drift when the output is missing (null hash)', () => {
+            const tree = sampleTree();
+            const lock = lockFor(tree);
+            lock.files['src/a.ts']!.target = 'locked-output-hash';
+
+            const targetHashes = new Map<string, string | null>([['src/a.ts', null]]);
+
+            expect(computeDrift(tree, lock, [], targetHashes).find((d) => d.name === 'src/a.ts')!.status).toBe('fresh');
         });
     });
 
@@ -228,21 +309,63 @@ describe('lock', () => {
                 { name: 'b.ts', status: 'new' },
                 { name: 'c.ts', status: 'inherited' },
                 { name: 'd.ts', status: 'blocks', diff: { changed: ['func x'], added: [], removed: [] } },
+                { name: 'e.ts', status: 'drifted-output' },
             ]);
 
             expect(text).not.toContain('a.ts');
             expect(text).toContain('b.ts: new target');
-            expect(text).toContain('c.ts: inherited context changed');
+            expect(text).toContain('c.ts: inherited context or vocabulary changed');
             expect(text).toContain('d.ts: reconcile these blocks');
             expect(text).toContain('changed: func x');
+            expect(text).toContain('e.ts: output changed since it was generated');
         });
     });
 
-    describe('booksMatch', () => {
-        it('matches identical fingerprints and rejects differing ones', () => {
-            expect(booksMatch({ a: '1' }, { a: '1' })).toBe(true);
-            expect(booksMatch({ a: '1' }, { a: '2' })).toBe(false);
-            expect(booksMatch({ a: '1' }, { a: '1', b: '1' })).toBe(false);
+    describe('hashFileVocab / effectiveFileHashes', () => {
+        // Root `_.hint` with a `func` block, then a file that also declares a `func` plus an `entity`.
+        const tree = (): HintData[] => [
+            folder('.', [
+                block('func', 'shared', 'x'),
+                folder('src', [
+                    file('src/a.ts', '', [block('func', 'doThing', 'body')]),
+                    file('src/b.ts', '', [block('entity', 'Thing', 'body')]),
+                ]),
+            ]),
+        ];
+
+        it('changes a file hash when a keyword it uses changes meaning, and leaves others alone', () => {
+            const before = new Map(effectiveFileHashes(tree(), [bookWith('<func>v1</func>')]).map((f) => [f.name, f.hash]));
+            const after = new Map(effectiveFileHashes(tree(), [bookWith('<func>v2</func>')]).map((f) => [f.name, f.hash]));
+
+            // a.ts uses `func` (own) — and both files inherit the root `func` — so both shift.
+            expect(after.get('src/a.ts')).not.toBe(before.get('src/a.ts'));
+            expect(after.get('src/b.ts')).not.toBe(before.get('src/b.ts'));
+        });
+
+        it('does not change a file hash when an unrelated keyword changes', () => {
+            const before = new Map(effectiveFileHashes(tree(), [bookWith('<func>v1</func>', '<entity>v1</entity>')]).map((f) => [f.name, f.hash]));
+            const after = new Map(effectiveFileHashes(tree(), [bookWith('<func>v1</func>', '<entity>v2</entity>')]).map((f) => [f.name, f.hash]));
+
+            // b.ts uses `entity` -> shifts; a.ts never uses `entity` -> unchanged.
+            expect(after.get('src/b.ts')).not.toBe(before.get('src/b.ts'));
+            expect(after.get('src/a.ts')).toBe(before.get('src/a.ts'));
+        });
+
+        it('is unaffected by non-rendering metadata (surface/description/synonyms)', () => {
+            const plain = bookWith('<func>v1</func>');
+            const withMeta: HintbookData = {
+                runningModes: [],
+                modes: {
+                    [INSTRUCTION_MODE_DEFAULT]: {
+                        instructions: [
+                            { name: 'func', content: '<func>v1</func>', metadata: { surface: true, description: 'x', synonyms: ['fn'] } },
+                            { name: 'entity', content: '<entity>{name}</entity>' },
+                        ],
+                    },
+                },
+            };
+
+            expect(hashFileVocab(tree(), [withMeta])).toEqual(hashFileVocab(tree(), [plain]));
         });
     });
 
@@ -250,8 +373,7 @@ describe('lock', () => {
         it('round-trips a lock file', async () => {
             await withTempDir(async (dir) => {
                 const lock: LockData = {
-                    version: 1,
-                    books: { 'npm://book': '1.0.0' },
+                    version: 2,
                     files: { 'src/b.ts': { hash: 'h2' }, 'src/a.ts': { hash: 'h1' } },
                 };
 
@@ -269,6 +391,33 @@ describe('lock', () => {
         });
     });
 
+    describe('hashTargetFile / hashTargetFiles', () => {
+        it('hashes a file deterministically and returns null when it is missing', async () => {
+            await withTempDir(async (dir) => {
+                await FsPromises.writeFile(Path.join(dir, 'a.ts'), 'code', 'utf8');
+
+                const hashA = await hashTargetFile(dir, 'a.ts');
+
+                expect(hashA).toBe(await hashTargetFile(dir, 'a.ts'));
+                expect(await hashTargetFile(dir, 'missing.ts')).toBeNull();
+
+                const map = await hashTargetFiles(dir, ['a.ts', 'missing.ts']);
+                expect(map.get('a.ts')).toBe(hashA);
+                expect(map.get('missing.ts')).toBeNull();
+            });
+        });
+
+        it('changes when the file content changes', async () => {
+            await withTempDir(async (dir) => {
+                await FsPromises.writeFile(Path.join(dir, 'a.ts'), 'code', 'utf8');
+                const before = await hashTargetFile(dir, 'a.ts');
+
+                await FsPromises.writeFile(Path.join(dir, 'a.ts'), 'edited', 'utf8');
+                expect(await hashTargetFile(dir, 'a.ts')).not.toBe(before);
+            });
+        });
+    });
+
     describe('selectFreshTargets', () => {
         it('marks a target fresh only when the hash matches and the file exists', async () => {
             await withTempDir(async (dir) => {
@@ -281,12 +430,11 @@ describe('lock', () => {
                 ];
 
                 const lock: LockData = {
-                    version: 1,
-                    books: {},
+                    version: 2,
                     files: { 'a.ts': { hash: 'h1' }, 'b.ts': { hash: 'h2' }, 'c.ts': { hash: 'h3' } },
                 };
 
-                const fresh = await selectFreshTargets(dir, fileHashes, lock, {});
+                const fresh = await selectFreshTargets(dir, fileHashes, lock);
 
                 expect([...fresh]).toEqual([
                     'a.ts',
@@ -294,18 +442,30 @@ describe('lock', () => {
             });
         });
 
-        it('marks everything stale when the books fingerprint differs', async () => {
+        it('marks a target stale when its recorded output hash no longer matches disk', async () => {
             await withTempDir(async (dir) => {
                 await FsPromises.writeFile(Path.join(dir, 'a.ts'), 'code', 'utf8');
+                const target = (await hashTargetFile(dir, 'a.ts'))!;
 
-                const fresh = await selectFreshTargets(
-                    dir,
-                    [{ name: 'a.ts', hash: 'h1' }],
-                    { version: 1, books: { book: '1.0.0' }, files: { 'a.ts': { hash: 'h1' } } },
-                    { book: '2.0.0' },
-                );
+                const fileHashes = [{ name: 'a.ts', hash: 'h1' }];
+                const lock: LockData = { version: 2, files: { 'a.ts': { hash: 'h1', target } } };
 
-                expect(fresh.size).toBe(0);
+                // Unchanged output -> fresh.
+                expect([...(await selectFreshTargets(dir, fileHashes, lock))]).toEqual(['a.ts']);
+
+                // Output edited underneath the unchanged spec -> stale.
+                await FsPromises.writeFile(Path.join(dir, 'a.ts'), 'edited', 'utf8');
+                expect((await selectFreshTargets(dir, fileHashes, lock)).size).toBe(0);
+            });
+        });
+
+        it('falls back to existence only for an entry with no recorded output hash', async () => {
+            await withTempDir(async (dir) => {
+                await FsPromises.writeFile(Path.join(dir, 'a.ts'), 'anything', 'utf8');
+
+                const fresh = await selectFreshTargets(dir, [{ name: 'a.ts', hash: 'h1' }], { version: 2, files: { 'a.ts': { hash: 'h1' } } });
+
+                expect([...fresh]).toEqual(['a.ts']);
             });
         });
     });

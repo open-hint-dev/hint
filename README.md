@@ -166,7 +166,7 @@ Node.js v22+, ESM only.
 
 **4. Compile & run** — `hint 'src/**/*.hint' | claude -p`. A spec is compiled together with any files it references (its `# read` targets), shared context included once. Use `--mode fix` to repair code against the spec, `--mode review` to audit it.
 
-**5. Keep it in sync** — after the work is generated, `hint lock <path>` records it; later `hint` runs then skip specs that haven't changed, so repeated runs cost no tokens. When a spec drifts, `hint diff <path>` lists exactly which blocks changed and `hint --mode fix <path>` reconciles only those — the loop converges instead of rewriting from scratch.
+**5. Verify & keep it in sync** — after the work is generated, `hint verify <path>` checks — deterministically, no tokens — that every declared surface (each `func`, `entity`, `error`…) actually appears in the output, so a stubbed or forgotten declaration is caught before you trust it. Then `hint lock <path>` records the work; later `hint` runs skip specs that haven't changed, so repeated runs cost no tokens. Drift is bidirectional: editing the spec *or* editing the generated code marks the file stale. When a spec drifts, `hint diff <path>` lists exactly which blocks changed and `hint --mode fix <path>` reconciles only those — the loop converges instead of rewriting from scratch. Use `hint lock --strict` to refuse recording anything that does not verify.
 
 Full walkthrough → [`docs/02-quick-start.md`](docs/02-quick-start.md).
 

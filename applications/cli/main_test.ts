@@ -637,7 +637,83 @@ describe('cli lock / gate / diff / closure', () => {
                     const lock = await FsPromises.readFile(Path.join(dir, 'hint.lock'), 'utf8');
                     expect(lock).toContain('src/a.ts:');
                     expect(lock).toContain('hash:');
+                    expect(lock).toContain('target:');
                     expect(lock).toContain('entity Foo');
+                    // No version fingerprint — invalidation is driven by the per-file vocab hash instead.
+                    expect(lock).not.toContain('books:');
+                },
+            );
+        });
+
+        it('--strict records passing targets and refuses ones missing a declared surface', async () => {
+            await withProject(
+                {
+                    'book/func.md': '---\nsurface: true\n---\n<func>{name}</func>\n',
+                    'src/a.ts.hint': '# func doLogin\n\nbody\n',
+                    'src/a.ts': 'export function doLogin() {}\n', // surface present
+                    'src/b.ts.hint': '# func doLogout\n\nbody\n',
+                    'src/b.ts': 'export const nope = 1;\n', // surface absent
+                },
+                async (dir) => {
+                    const result = await runCli(['lock', '--strict', 'src/a.ts', 'src/b.ts'], dir);
+
+                    expect(result.exitCode).toBe(1);
+                    expect(result.stderr).toContain('verification failed');
+                    expect(result.stderr).toContain('src/b.ts');
+
+                    const lock = await FsPromises.readFile(Path.join(dir, 'hint.lock'), 'utf8');
+                    expect(lock).toContain('src/a.ts:');
+                    expect(lock).not.toContain('src/b.ts:');
+                },
+            );
+        });
+    });
+
+    describe('verify', () => {
+        it('reports success when every declared surface is present', async () => {
+            await withProject(
+                {
+                    'book/func.md': '---\nsurface: true\n---\n<func>{name}</func>\n',
+                    'src/a.ts.hint': '# func doLogin\n\nbody\n',
+                    'src/a.ts': 'export function doLogin() {}\n',
+                },
+                async (dir) => {
+                    const result = await runCli(['verify', 'src/a.ts'], dir);
+
+                    expect(result.exitCode).toBeUndefined();
+                    expect(result.stderr).toContain('verified 1 file(s)');
+                },
+            );
+        });
+
+        it('fails with a non-zero exit and lists the missing surface', async () => {
+            await withProject(
+                {
+                    'book/func.md': '---\nsurface: true\n---\n<func>{name}</func>\n',
+                    'src/a.ts.hint': '# func doLogin\n\nbody\n',
+                    'src/a.ts': 'export const x = 1;\n',
+                },
+                async (dir) => {
+                    const result = await runCli(['verify', 'src/a.ts'], dir);
+
+                    expect(result.exitCode).toBe(1);
+                    expect(result.stdout).toContain('src/a.ts: 1 declared surface(s) missing');
+                    expect(result.stdout).toContain('func doLogin');
+                },
+            );
+        });
+
+        it('is a no-op with a note when the books declare no surface keywords', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# func doLogin\n\nbody\n',
+                    'src/a.ts': 'export const x = 1;\n',
+                },
+                async (dir) => {
+                    const result = await runCli(['verify', 'src/a.ts'], dir);
+
+                    expect(result.exitCode).toBeUndefined();
+                    expect(result.stderr).toContain('no surface keywords');
                 },
             );
         });
@@ -706,6 +782,45 @@ describe('cli lock / gate / diff / closure', () => {
                 },
             );
         });
+
+        it('recompiles after a keyword instruction changes in place, with no version bump', async () => {
+            await withProject(
+                {
+                    'book/entity.md': '<data_structure>{name}: {body}</data_structure>\n',
+                    'src/a.ts.hint': '# entity Foo\n\nfoo body\n',
+                    'src/a.ts': 'export const a = 1;\n',
+                },
+                async (dir) => {
+                    await runCli(['lock', 'src/a.ts'], dir);
+
+                    // Sanity: unchanged -> skipped.
+                    expect((await runCli(['src/a.ts'], dir)).stdout).toBe('');
+
+                    // Change what `entity` compiles to — the spec, the output, and any version are all untouched.
+                    await FsPromises.writeFile(Path.join(dir, 'book/entity.md'), '<data_structure>{name}: {body} — now audited</data_structure>\n', 'utf8');
+
+                    const result = await runCli(['src/a.ts'], dir);
+                    expect(result.stdout).toContain('now audited'); // recompiled under the new vocabulary
+                },
+            );
+        });
+
+        it('does not skip when the output was edited underneath an unchanged spec', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# entity Foo\n\nfoo body\n',
+                    'src/a.ts': 'export const a = 1;\n',
+                },
+                async (dir) => {
+                    await runCli(['lock', 'src/a.ts'], dir);
+                    // Edit the generated output only; the spec is untouched.
+                    await FsPromises.writeFile(Path.join(dir, 'src/a.ts'), 'export const a = 999;\n', 'utf8');
+
+                    const result = await runCli(['src/a.ts'], dir);
+                    expect(result.stdout).toContain('foo body');
+                },
+            );
+        });
     });
 
     describe('diff', () => {
@@ -742,6 +857,22 @@ describe('cli lock / gate / diff / closure', () => {
                     const result = await runCli(['diff', 'src/a.ts'], dir);
                     expect(result.stdout).toContain('changed: rule Bar');
                     expect(result.stdout).not.toContain('entity Foo');
+                },
+            );
+        });
+
+        it('reports output edited underneath an unchanged spec as drifted', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# entity Foo\n\nfoo body\n',
+                    'src/a.ts': 'export const a = 1;\n',
+                },
+                async (dir) => {
+                    await runCli(['lock', 'src/a.ts'], dir);
+                    await FsPromises.writeFile(Path.join(dir, 'src/a.ts'), 'export const a = 999;\n', 'utf8');
+
+                    const result = await runCli(['diff', 'src/a.ts'], dir);
+                    expect(result.stdout).toContain('src/a.ts: output changed since it was generated');
                 },
             );
         });

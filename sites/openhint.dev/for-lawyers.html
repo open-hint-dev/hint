@@ -431,6 +431,7 @@ notice to the Disclosing Party.</span>
         <div class="scstep"><span class="scstep__n">02</span><div><h4>Declare the positions</h4><p>The non-compete spec nests a <code class="inl">prohibition</code>, its <code class="inl">condition</code> and <code class="inl">exception</code>, a <code class="inl">breach → remedy</code> chain, and the <code class="inl">source</code> on restraint-of-trade limits.</p></div></div>
         <div class="scstep"><span class="scstep__n">03</span><div><h4>Compile &amp; draft</h4><p><code class="inl">hint contracts/employment.md | claude -p</code> produces a complete first draft with defined terms consistent and no invented figures.</p></div></div>
         <div class="scstep"><span class="scstep__n">04</span><div><h4>Audit the counterparty's redline</h4><p><code class="inl">--mode review</code> checks their markup against your red lines — the perpetual-survival edit comes back as a flagged violation, not a missed one.</p></div></div>
+        <div class="scstep"><span class="scstep__n">05</span><div><h4>Verify &amp; lock</h4><p><code class="inl">hint verify</code> confirms every declared <code class="inl">party</code>, <code class="inl">definition</code>, and <code class="inl">exhibit</code> is actually used in the draft — deterministic, no tokens — then <code class="inl">hint lock</code> records it, so unchanged specs are skipped and edits reconcile only what drifted.</p></div></div>
       </div>
       <div class="code-wrap">
         <div class="code">

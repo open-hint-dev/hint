@@ -147,16 +147,19 @@ hint --dry-run 'src/**/*.hint'
 
 ## 7. Stay in sync
 
-Once you've generated the work a spec defines, record it with `hint lock`. From then on the loop is cheap and convergent — unchanged specs are skipped, and you fix only what drifted:
+Once you've generated the work a spec defines, verify it and record it. From then on the loop is cheap and convergent — unchanged specs are skipped, and you fix only what drifted:
 
 ```bash
+hint verify src/billing/invoice.ts          # deterministic, token-free: every declared surface present?
 hint lock src/billing/invoice.ts            # mark the target as generated
 hint src/billing/invoice.ts                 # now a no-op while the spec is unchanged (skipped)
 hint diff src/billing/invoice.ts            # after an edit: lists exactly which blocks drifted
 hint --mode fix src/billing/invoice.ts      # the prompt scopes the fix to only those blocks
 ```
 
-A locked spec recompiles the moment its content (or inherited folder/root context) or its target file changes; `--force` recompiles regardless. See the [CLI reference](06-cli.md#hint-lock-paths--record-generated-work) for `hint lock` and `hint diff`.
+`hint verify` reads the generated file and checks that every declared surface (each `func`, `entity`, `error`…) appears in it — catching a stubbed or forgotten declaration for zero tokens, before you lock. `hint lock --strict` combines the two: it refuses to record any target that does not verify.
+
+A locked spec recompiles the moment its content (or inherited folder/root context) or its target file changes — editing the generated code underneath an unchanged spec counts as drift too; `--force` recompiles regardless. See the [CLI reference](06-cli.md#hint-verify-paths--structurally-check-generated-output) for `hint verify`, `hint lock`, and `hint diff`.
 
 ## Where to go next
 

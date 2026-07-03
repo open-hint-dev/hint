@@ -94,6 +94,7 @@ Instructions accept YAML front matter:
 synonyms:
     - application
 exclude: false
+surface: false
 ---
 
 <application_context name="{name}" id="{id}">
@@ -104,6 +105,7 @@ exclude: false
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `synonyms`    | Additional keywords that resolve to this instruction (`# application` → `app.md`).                                              |
 | `exclude`     | When `true`, blocks with this keyword are dropped from the output entirely — children included. Useful for spec-internal notes. |
+| `surface`     | When `true`, this keyword is a **verifiable surface**: `hint verify` requires each block's declared name to appear verbatim in the generated output, and `hint lock --strict` refuses to record a target until it does. Mark only keywords whose name is a code identifier or defined term that must appear unchanged (e.g. `func`, `entity`, `field`) — not ones whose name is a descriptive phrase. Has no effect on compiled output. |
 | `description` | A one-line summary of what the keyword declares. `hint author` lists it next to the keyword so an agent picks the right one when writing specs. Has no effect on compiled output. |
 
 ### Modes
