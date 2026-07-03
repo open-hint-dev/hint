@@ -3,6 +3,7 @@ import * as Os from 'node:os';
 import * as Path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { BROAD_TARGET_COUNT, estimateTokens, isBroadCompile } from './commands/compile.js';
 import { main } from './main.js';
 
 const here = Path.dirname(fileURLToPath(import.meta.url));
@@ -101,6 +102,26 @@ describe('cli', () => {
             const result = await runCli(['src/payment.ts.hint']);
 
             expect(result.stderr).not.toContain('If this is broader than the task needs');
+        });
+
+        it('warns on stderr, never stdout, when a compile is broad', async () => {
+            const tempRoot = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-broad-'));
+
+            try {
+                const hintbookPath = Path.resolve(here, '../../testdata/hintbook');
+                await FsPromises.writeFile(Path.join(tempRoot, 'hint.yml'), `name: broad\nbooks:\n    - file://${hintbookPath}\n`);
+                // A single spec whose body alone clears the token estimate, so the run reads as broad.
+                await FsPromises.writeFile(Path.join(tempRoot, 'big.ts.hint'), `# entity Big {#big}\n\n${'lorem ipsum '.repeat(8000)}\n`);
+
+                const result = await runCli(['big.ts.hint'], tempRoot);
+
+                expect(result.stderr).toContain('If this is broader than the task needs');
+                // The warning must not leak into stdout, which the agent consumes as the spec.
+                expect(result.stdout).not.toContain('If this is broader than the task needs');
+                expect(result.stdout).toContain('<data_structure name="Big"');
+            } finally {
+                await FsPromises.rm(tempRoot, { recursive: true, force: true });
+            }
         });
 
         it('fails outside an initialized project', async () => {
@@ -794,5 +815,27 @@ describe('cli lock / gate / diff / closure', () => {
                 },
             );
         });
+    });
+});
+
+describe('isBroadCompile', () => {
+    it('estimates tokens at roughly four characters each', () => {
+        expect(estimateTokens(0)).toBe(0);
+        expect(estimateTokens(4000)).toBe(1000);
+    });
+
+    it('flags a run at or above the target-count threshold', () => {
+        expect(isBroadCompile(BROAD_TARGET_COUNT - 1, 0)).toBe(false);
+        expect(isBroadCompile(BROAD_TARGET_COUNT, 0)).toBe(true);
+    });
+
+    it('flags a run at or above the token estimate even with few targets', () => {
+        // token estimate = length / 4; the threshold is 20,000 tokens, i.e. 80,000 characters
+        expect(isBroadCompile(1, 79_000)).toBe(false);
+        expect(isBroadCompile(1, 80_000)).toBe(true);
+    });
+
+    it('stays quiet for a small, short compile', () => {
+        expect(isBroadCompile(3, 5_000)).toBe(false);
     });
 });

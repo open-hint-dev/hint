@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { HintData } from './parser.js';
 import { compileHints } from './compiler.js';
-import { loadHintbook } from './hintbook.js';
+import { loadHintbook, RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 import { parseHints } from './parser.js';
 
 const here = Path.dirname(fileURLToPath(import.meta.url));
@@ -15,6 +15,12 @@ const hintbook = await loadHintbook(instructionsPath);
 async function compileProject(paths: string[], mode = ''): Promise<string> {
     return compileHints(await parseHints(projectRootPath, paths, false), [hintbook], mode);
 }
+
+// Synthetic hint nodes, so the elision branches can be exercised precisely without carrying a fixture
+// for every shape. `keyword: 'data'` maps to the fixture's data_structure template.
+const folder = (name: string, children: HintData[], body = ''): HintData => ({ level: 0, keyword: RUNNING_FOLDER, id: '', name, body, children });
+const file = (name: string, children: HintData[] = [], body = ''): HintData => ({ level: 0, keyword: RUNNING_FILE, id: '', name, body, children });
+const block = (keyword: string, name: string, body: string): HintData => ({ level: 1, keyword, id: '', name, body, children: [] });
 
 describe('compiler', () => {
     describe('compileHints', () => {
@@ -58,6 +64,43 @@ describe('compiler', () => {
             expect(output).not.toMatch(/\n{3,}/);
         });
 
+        it('drops a file wrapper that has no directives of its own', async () => {
+            const output = await compileHints([file('src/empty.ts')], [hintbook], '');
+
+            expect(output).not.toContain('<file_context path="src/empty.ts">');
+        });
+
+        it('keeps a folder whose only directive is a heading block, not preamble body', async () => {
+            const tree = folder('pkg', [block('entity', 'Thing', 'the thing contract')]);
+            const output = await compileHints([tree], [hintbook], '');
+
+            expect(output).toContain('<folder_context path="pkg">');
+            expect(output).toContain('<data_structure name="Thing"');
+        });
+
+        it('elides an empty folder and promotes all of its nested targets', async () => {
+            const tree = folder('pkg', [
+                file('pkg/a.ts', [block('entity', 'A', 'a contract')]),
+                file('pkg/b.ts', [block('entity', 'B', 'b contract')]),
+            ]);
+            const output = await compileHints([tree], [hintbook], '');
+
+            expect(output).not.toContain('<folder_context path="pkg">');
+            expect(output).toContain('<file_context path="pkg/a.ts">');
+            expect(output).toContain('<file_context path="pkg/b.ts">');
+        });
+
+        it('collapses a chain of empty folders down to the deepest real target', async () => {
+            const tree = folder('a', [folder('a/b', [folder('a/b/c', [file('a/b/c/leaf.ts', [block('entity', 'Leaf', 'leaf contract')])])])]);
+            const output = await compileHints([tree], [hintbook], '');
+
+            expect(output).not.toContain('<folder_context path="a">');
+            expect(output).not.toContain('<folder_context path="a/b">');
+            expect(output).not.toContain('<folder_context path="a/b/c">');
+            expect(output).toContain('<file_context path="a/b/c/leaf.ts">');
+            expect(output).toContain('<data_structure name="Leaf"');
+        });
+
         it('expands includes into the compiled output', async () => {
             const output = await compileProject(['src/payment.ts.hint']);
 
@@ -91,6 +134,15 @@ describe('compiler', () => {
             expect(output).toContain('The tag glossary below defines');
             // header still follows the glossary
             expect(output).toContain('You are a senior software engineer implementing a project');
+        });
+
+        it('resolves the standalone glossary from the default mode under another mode', async () => {
+            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
+            // the fixture defines __system__ only in the default mode; fix mode must fall back to it
+            const output = await compileHints(hints, [hintbook], 'fix', '', true);
+
+            expect(output).toContain('The tag glossary below defines');
+            expect(output).toContain('You are a senior software engineer fixing defects');
         });
 
         it('wraps the output with the default mode header and footer', async () => {

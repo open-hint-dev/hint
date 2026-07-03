@@ -80,20 +80,27 @@ export class CompileCommand implements ICommand {
 // A run that pulls in a large slice of the tree is usually an accidental whole-repo compile (a broad
 // glob, or a folder walked with references) rather than a focused task. Warn on stderr — never on
 // stdout, which the agent consumes as the spec — so the breadth is visible and can be narrowed.
-const BROAD_TARGET_COUNT = 25;
-const BROAD_TOKEN_ESTIMATE = 20_000;
+export const BROAD_TARGET_COUNT = 25;
+export const BROAD_TOKEN_ESTIMATE = 20_000;
+
+// Rough heuristic: ~4 characters per token. Precise enough to flag an order-of-magnitude overshoot.
+export function estimateTokens(outputLength: number): number {
+    return Math.round(outputLength / 4);
+}
+
+export function isBroadCompile(targetCount: number, outputLength: number): boolean {
+    return targetCount >= BROAD_TARGET_COUNT || estimateTokens(outputLength) >= BROAD_TOKEN_ESTIMATE;
+}
 
 function warnIfBroad(hints: Transpiler.HintData[], output: string): void {
     const targetCount = Transpiler.collectFileNodes(hints).length;
-    // Rough heuristic: ~4 characters per token. Precise enough to flag an order-of-magnitude overshoot.
-    const tokenEstimate = Math.round(output.length / 4);
 
-    if (targetCount < BROAD_TARGET_COUNT && tokenEstimate < BROAD_TOKEN_ESTIMATE) {
+    if (!isBroadCompile(targetCount, output.length)) {
         return;
     }
 
     process.stderr.write(
-        `hint: compiled ${targetCount} file target(s), ~${tokenEstimate.toLocaleString('en-US')} tokens. ` +
+        `hint: compiled ${targetCount} file target(s), ~${estimateTokens(output.length).toLocaleString('en-US')} tokens. ` +
             `If this is broader than the task needs, pass fewer paths or add --no-refs.\n`,
     );
 }
