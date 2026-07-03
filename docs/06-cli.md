@@ -43,7 +43,7 @@ hint 'src/**/*.hint' > prompt.md
 
 Every compiled file is wrapped in its folder-hint chain down from the project root, so inherited context is part of the output. By default the closure of files it references (its `# read` targets) is compiled in the same pass, with shared folder/root context deduplicated — so an agent gets everything in one prompt instead of re-invoking `hint` per referenced file.
 
-When a [`hint.lock`](#hint-lock-paths--record-generated-work) is present, compiling **skips** any file whose spec (with its inherited context) is unchanged and whose target still exists on disk. An unchanged run therefore produces no output and costs no tokens; a note on stderr reports what was skipped.
+When a [`hint.lock`](#hint-lock-paths--record-generated-work) is present, compiling **skips** any file whose spec (with its inherited context) is unchanged **and** whose generated output still matches what was recorded at lock time. An unchanged run therefore produces no output and costs no tokens; a note on stderr reports what was skipped. Drift is bidirectional: editing the spec *or* editing the generated code underneath an unchanged spec both mark the file stale, so hand-edited output is recompiled rather than silently skipped. (Entries recorded before an output existed fall back to checking existence only.)
 
 ### Options
 
@@ -76,9 +76,29 @@ Fingerprints the given specs and writes them to `hint.lock` in the project root,
 hint lock src/billing/invoice.ts
 ```
 
-Afterwards, a plain `hint` run skips each recorded target while its spec — including inherited folder/root context — stays unchanged, keeping repeated runs cheap and their output stable. The lock is deterministic and diff-friendly (sorted keys, no timestamps), so it reviews cleanly in version control. Each entry records a hash of the target's blocks plus its inherited context; a change to the registered hintbooks invalidates every entry, since the vocabulary defines what each keyword means.
+Afterwards, a plain `hint` run skips each recorded target while its spec — including inherited folder/root context — stays unchanged **and** its generated output is untouched, keeping repeated runs cheap and their output stable. The lock is deterministic and diff-friendly (sorted keys, no timestamps), so it reviews cleanly in version control. Each entry's hash folds in three things: the target's spec blocks, its inherited context, and the **vocabulary it uses** — the resolved instruction content of every keyword in its chain, plus the mode wrappers. So changing what a keyword *compiles to* invalidates exactly the files that use that keyword, and nothing else. This replaces the older hintbook-version fingerprint, which was both too broad (any book release invalidated every file) and too narrow (an in-place edit to a `file://` book with no version bump invalidated nothing). A separate `target` field records a content hash of the generated output, so a file edited underneath an unchanged spec is detected as drifted rather than skipped. Changes to a keyword's `description`, `synonyms`, or `surface` flag do **not** invalidate anything — they never affect compiled output.
 
 Locking is scoped to the paths you pass and merges into any existing `hint.lock`, so you can lock files as you finish them. Fails with `No hint.yml found` outside an initialized project.
+
+Pass `--strict` to gate recording on structural verification: each target is checked with the same rules as [`hint verify`](#hint-verify-paths--structurally-check-generated-output), and any file that fails (its output is missing, or a declared surface is absent from the code) is **not** recorded and is reported on stderr, with the command exiting non-zero. Passing files are still locked. Plain `hint lock` records unconditionally — verification is opt-in, so an unverified target never silently becomes "generated".
+
+```bash
+hint lock --strict src/billing/invoice.ts   # only record it if it structurally matches its spec
+```
+
+---
+
+## `hint verify <paths...>` — structurally check generated output
+
+Deterministically checks each generated target against its spec, with **no** LLM call and no language-specific parsing: every **surface** a spec declares must appear by name in the output. It is the token-free, deterministic counterpart to the semantic `hint --mode review` audit — a presence lint that catches a whole surface omitted (a stubbed or forgotten function, an unhandled error type, an unused defined term), not a subtly wrong implementation.
+
+```bash
+hint verify src/billing/invoice.ts
+```
+
+A **surface** is any keyword a hintbook marks with `surface: true` in its instruction front matter — the declarations whose name must manifest in the output (e.g. `func`, `entity`, `error`, `party`, `clause`). Constraint, scratch, and input keywords (`bad`, `rule`, `notes`, `read`) are never surfaces, so their names are not expected in the code. If the active hintbooks declare no surface keywords, verification is a no-op and the command says so on stderr rather than reporting a hollow pass.
+
+Each file is reported as verified, **missing-output** (the target does not exist on disk), or **missing-surfaces** (the output exists but named declarations are absent — each one is listed). Failing files print to stdout and the command **exits non-zero**, so an agent loop or CI step can gate on structural conformance. `--mode <mode>` resolves keywords for a specific hintbook mode. Fails with `No hint.yml found` outside an initialized project.
 
 ---
 
@@ -90,7 +110,7 @@ Compares the given specs against `hint.lock` and reports, per file, exactly whic
 hint diff src/billing/invoice.ts
 ```
 
-Each file is reported as up to date, **new** (never locked), **inherited** (only its ancestor `_.hint` context changed), or with the precise list of **changed / added / removed** blocks. Output goes to stdout; with no `hint.lock` it reports on stderr that nothing is being tracked yet. Fails with `No hint.yml found` outside an initialized project.
+Each file is reported as up to date, **new** (never locked), **inherited** (only its ancestor `_.hint` context changed), **output changed** (the spec is unchanged but the generated code was edited since it was locked — re-verify against the spec, then re-lock), or with the precise list of **changed / added / removed** blocks. Output goes to stdout; with no `hint.lock` it reports on stderr that nothing is being tracked yet. Fails with `No hint.yml found` outside an initialized project.
 
 ---
 
@@ -238,6 +258,6 @@ Prints the command overview with usage examples. The same text is available via 
 
 ## Exit codes and streams
 
-- **stdout** carries the command's primary output: the compiled prompt (`hint`), the drift report (`hint diff`), the agent prompt to pipe to your agent (`hint instruct`, `hint author`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), listings (`hint list`, `hint modes`), or the version report (`hint version`). Only `hint`, `hint instruct`, and `hint author` are meant to be piped into an agent. `hint lock` writes only `hint.lock` and reports how many files it recorded on stderr.
+- **stdout** carries the command's primary output: the compiled prompt (`hint`), the drift report (`hint diff`), the verification report (`hint verify`), the agent prompt to pipe to your agent (`hint instruct`, `hint author`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), listings (`hint list`, `hint modes`), or the version report (`hint version`). Only `hint`, `hint instruct`, and `hint author` are meant to be piped into an agent. `hint lock` writes only `hint.lock` and reports how many files it recorded on stderr.
 - **stderr** carries interactive prompts, subprocess (git/npm) output, warnings, and errors.
-- Exit code `0` on success, `1` on any failure (unresolvable specs under `--dry-run`, missing project, failed installs, invalid hintbooks).
+- Exit code `0` on success, `1` on any failure (unresolvable specs under `--dry-run`, missing project, failed installs, invalid hintbooks) — and, additionally, when `hint verify` finds a target that fails structural verification or `hint lock --strict` refuses one.

@@ -12,6 +12,7 @@ import { ListCommand } from './commands/list.js';
 import { LockCommand } from './commands/lock.js';
 import { ModesCommand } from './commands/modes.js';
 import { RemoveCommand } from './commands/remove.js';
+import { VerifyCommand } from './commands/verify.js';
 import { findCliVersion, VersionCommand } from './commands/version.js';
 
 type CompileOptions = {
@@ -127,8 +128,21 @@ export async function main(): Promise<void> {
                 'Run after an agent implements a spec; later plain `hint` runs then skip files whose specs are unchanged.',
         )
         .argument('<paths...>', 'paths to .hint files, their target files, or folders (globs supported)')
-        .action(async (paths: string[]) => {
-            await LockCommand.new(paths).execute();
+        .option('--strict', 'structurally verify each target first and refuse to record files that fail (see `hint verify`)', false)
+        .action(async (paths: string[], options: { strict: boolean }) => {
+            await LockCommand.new(paths, options.strict).execute();
+        });
+
+    program
+        .command('verify')
+        .description(
+            'Structurally verify generated targets against their specs — deterministic and token-free: every ' +
+                'declared surface must appear in the output. Exits non-zero on failure, so agents and CI can gate on it.',
+        )
+        .argument('<paths...>', 'paths to .hint files, their target files, or folders (globs supported)')
+        .option('--mode <mode>', 'resolve keywords for the given hintbook mode (defaults to the implementation mode)')
+        .action(async (paths: string[], options: { mode?: string }) => {
+            await VerifyCommand.new(paths, options.mode ?? '').execute();
         });
 
     program
@@ -177,6 +191,7 @@ Examples:
   hint author src/billing/invoice.ts | claude -p   prompt an agent to write the .hint spec for a file
   hint src/billing/invoice.ts | claude -p       compile the spec for a file and pipe it to an agent
   hint lock src/billing/invoice.ts              mark a spec as generated so later runs skip it if unchanged
+  hint verify src/billing/invoice.ts            check the generated code contains every declared surface
   hint diff src/billing/invoice.ts              show which blocks drifted from hint.lock since generation
   hint --no-refs src/billing/invoice.ts         compile a spec alone; referenced specs are included by default
   hint --mode review src/billing | claude -p    audit existing code against the spec

@@ -31,7 +31,10 @@ function isEmptyStructuralWrapper(hint: HintData): boolean {
     return hint.children.every((child) => child.keyword === RUNNING_FOLDER || child.keyword === RUNNING_FILE);
 }
 
-function findInstruction(hintbooks: HintbookData[], mode: string, keyword: string): InstructionData | null {
+// Resolves the keyword's instruction the same way compilation does: the active mode first, then the
+// default mode, matching an instruction by its name or one of its declared synonyms. Exported so drift
+// and verification resolve keywords by exactly the rules the compiler uses.
+export function findInstruction(hintbooks: HintbookData[], mode: string, keyword: string): InstructionData | null {
     for (const modeName of new Set([
         mode,
         INSTRUCTION_MODE_DEFAULT,
