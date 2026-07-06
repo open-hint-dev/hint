@@ -1,0 +1,505 @@
+import Path from 'node:path';
+
+import type { HintData } from './parser.js';
+import { listHintFiles, parseHintFile } from './parser.js';
+
+// A ranked hit: the hint file whose spec is closest to the query, and how close.
+export type SearchResult = {
+    hint: string; // hint file path, relative to the project root (e.g. `src/rpc/server.ts.hint`)
+    score: number; // BM25F relevance score; higher is closer. Only positive scores are returned.
+};
+
+export type SearchOptions = {
+    limit?: number;
+};
+
+// Zones a hint document is split into. The same term is worth more in a target path or a declared
+// name than deep in prose, so each zone carries a boost when scoring (BM25F field weights).
+type Zone = 'path' | 'name' | 'body';
+
+const ZONE_WEIGHT: Record<Zone, number> = { path: 5, name: 3, body: 1 };
+const ZONES: Zone[] = [
+    'path',
+    'name',
+    'body',
+];
+
+// BM25 tuning. k1 controls term-frequency saturation; b controls length normalization.
+const BM25_K1 = 1.2;
+const BM25_B = 0.75;
+
+// Fuzzy fallback only kicks in for query terms that match nothing exactly, and only for terms long
+// enough that an edit-distance-1 neighbour is unlikely to be coincidental. Matches score at a discount.
+const FUZZY_MIN_LENGTH = 4;
+const FUZZY_WEIGHT = 0.5;
+
+const STOPWORDS = new Set([
+    'a',
+    'an',
+    'and',
+    'are',
+    'as',
+    'at',
+    'be',
+    'but',
+    'by',
+    'for',
+    'from',
+    'has',
+    'in',
+    'into',
+    'is',
+    'it',
+    'its',
+    'of',
+    'on',
+    'or',
+    'the',
+    'their',
+    'this',
+    'to',
+    'was',
+    'were',
+    'will',
+    'with',
+]);
+
+// Symmetric synonym/acronym groups. Every token is expanded to the union of the groups it belongs
+// to, so a query for `grpc server` reaches a hint that only ever says `rpc service`. Kept small and
+// software-flavoured on purpose — it is meant to bridge the common gaps, not to be a thesaurus.
+const SYNONYM_GROUPS: string[][] = [
+    [
+        'grpc',
+        'rpc',
+        'protobuf',
+        'proto',
+    ],
+    [
+        'auth',
+        'authentication',
+        'authn',
+        'login',
+        'signin',
+        'signup',
+    ],
+    [
+        'authz',
+        'authorization',
+        'permission',
+        'permissions',
+        'rbac',
+        'acl',
+    ],
+    [
+        'db',
+        'database',
+        'sql',
+        'postgres',
+        'postgresql',
+        'mysql',
+        'sqlite',
+    ],
+    [
+        'server',
+        'service',
+        'backend',
+        'daemon',
+    ],
+    [
+        'client',
+        'frontend',
+        'ui',
+        'browser',
+    ],
+    [
+        'api',
+        'rest',
+        'http',
+        'endpoint',
+        'route',
+        'handler',
+    ],
+    [
+        'ws',
+        'websocket',
+        'socket',
+        'streaming',
+        'stream',
+    ],
+    [
+        'queue',
+        'mq',
+        'kafka',
+        'rabbitmq',
+        'pubsub',
+        'messaging',
+        'broker',
+    ],
+    [
+        'cache',
+        'caching',
+        'redis',
+        'memcached',
+    ],
+    [
+        'k8s',
+        'kubernetes',
+        'container',
+        'docker',
+    ],
+    [
+        'config',
+        'configuration',
+        'settings',
+        'options',
+    ],
+    [
+        'env',
+        'environment',
+    ],
+    [
+        'repo',
+        'repository',
+        'store',
+        'storage',
+        'persistence',
+        'dao',
+    ],
+    [
+        'fn',
+        'func',
+        'function',
+        'method',
+    ],
+    [
+        'err',
+        'error',
+        'exception',
+        'fault',
+        'failure',
+    ],
+    [
+        'test',
+        'spec',
+        'testing',
+        'fixture',
+    ],
+    [
+        'crypto',
+        'encryption',
+        'encrypt',
+        'cipher',
+    ],
+    [
+        'jwt',
+        'token',
+        'bearer',
+        'session',
+    ],
+    [
+        'payment',
+        'billing',
+        'invoice',
+        'charge',
+        'checkout',
+    ],
+    [
+        'user',
+        'account',
+        'profile',
+        'identity',
+    ],
+    [
+        'log',
+        'logging',
+        'logger',
+        'telemetry',
+        'tracing',
+        'metrics',
+        'observability',
+    ],
+];
+
+const SYNONYMS: Map<string, string[]> = buildSynonymIndex();
+
+function buildSynonymIndex(): Map<string, string[]> {
+    const index = new Map<string, Set<string>>();
+
+    for (const group of SYNONYM_GROUPS) {
+        for (const term of group) {
+            const bucket = index.get(term) ?? new Set<string>();
+
+            for (const other of group) {
+                bucket.add(other);
+            }
+
+            index.set(term, bucket);
+        }
+    }
+
+    return new Map(
+        [...index].map(
+            ([
+                term,
+                bucket,
+            ]) => [
+                term,
+                [...bucket],
+            ],
+        ),
+    );
+}
+
+// Splits raw text into base tokens: lowercased, broken on non-alphanumerics and on the boundaries
+// inside identifiers (`grpcServer`, `grpc_server`, `grpc-server`, `rpc/server` all yield grpc, server).
+// Digits are kept attached to letters so `k8s` and `oauth2` survive. Stopwords are dropped.
+function baseTokens(text: string): string[] {
+    if (!text) {
+        return [];
+    }
+
+    const withBoundaries = text.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
+
+    const raw = withBoundaries.toLowerCase().split(/[^a-z0-9]+/);
+
+    return raw.filter((token) => token.length > 1 && !STOPWORDS.has(token));
+}
+
+// Tokenizes and expands each token through the synonym index. Used for the document side only — the
+// query stays on its base tokens, and since synonym groups are symmetric, an expanded document is
+// guaranteed to contain the query's own term whenever they share a group.
+function expandedTokens(text: string): string[] {
+    const tokens: string[] = [];
+
+    for (const token of baseTokens(text)) {
+        tokens.push(token);
+
+        const synonyms = SYNONYMS.get(token);
+
+        if (synonyms) {
+            for (const synonym of synonyms) {
+                if (synonym !== token) {
+                    tokens.push(synonym);
+                }
+            }
+        }
+    }
+
+    return tokens;
+}
+
+// A hint file reduced to what scoring needs: per-zone token bags and their lengths.
+type Document = {
+    hint: string;
+    zones: Record<Zone, string[]>;
+    length: Record<Zone, number>;
+};
+
+function flattenDeclarations(hint: HintData): { names: string; bodies: string } {
+    const names: string[] = [];
+    const bodies: string[] = [];
+
+    const walk = (node: HintData): void => {
+        for (const child of node.children) {
+            names.push(child.keyword, child.name);
+            bodies.push(child.body);
+
+            walk(child);
+        }
+    };
+
+    walk(hint);
+
+    return { names: names.join(' '), bodies: bodies.join(' ') };
+}
+
+function buildDocument(hintPath: string, hint: HintData): Document {
+    const { names, bodies } = flattenDeclarations(hint);
+
+    // `hint.name` is the path the spec describes — the strongest signal — so it anchors the path zone.
+    const zones: Record<Zone, string[]> = {
+        path: expandedTokens(hint.name),
+        name: expandedTokens(names),
+        body: expandedTokens(`${hint.name} ${hint.body} ${bodies}`),
+    };
+
+    return {
+        hint: hintPath,
+        zones,
+        length: { path: zones.path.length, name: zones.name.length, body: zones.body.length },
+    };
+}
+
+function countTerm(tokens: string[], term: string): number {
+    let count = 0;
+
+    for (const token of tokens) {
+        if (token === term) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+// Bounded edit distance: returns a value > 1 as soon as it is certain the true distance exceeds 1,
+// which is all the fuzzy fallback needs.
+function withinOneEdit(a: string, b: string): boolean {
+    if (a === b) {
+        return true;
+    }
+
+    const lengthDelta = Math.abs(a.length - b.length);
+
+    if (lengthDelta > 1) {
+        return false;
+    }
+
+    let i = 0;
+    let j = 0;
+    let edits = 0;
+
+    while (i < a.length && j < b.length) {
+        if (a[i] === b[j]) {
+            i++;
+            j++;
+            continue;
+        }
+
+        if (++edits > 1) {
+            return false;
+        }
+
+        if (a.length > b.length) {
+            i++;
+        } else if (a.length < b.length) {
+            j++;
+        } else {
+            i++;
+            j++;
+        }
+    }
+
+    return edits + (a.length - i) + (b.length - j) <= 1;
+}
+
+export async function searchHints(projectRootPath: string, query: string, options: SearchOptions = {}): Promise<SearchResult[]> {
+    const queryTerms = [...new Set(baseTokens(query))];
+
+    if (queryTerms.length === 0) {
+        return [];
+    }
+
+    const hintPaths = await listHintFiles(projectRootPath);
+    const documents: Document[] = [];
+
+    for (const hintPath of hintPaths) {
+        // A single malformed spec (bad include, cycle) must not sink the whole search — it is simply
+        // left out of the index. Compile/verify remain the place where such errors are surfaced.
+        try {
+            const hint = await parseHintFile(projectRootPath, Path.resolve(projectRootPath, hintPath), false);
+
+            if (hint) {
+                documents.push(buildDocument(hintPath, hint));
+            }
+        } catch {
+            continue;
+        }
+    }
+
+    if (documents.length === 0) {
+        return [];
+    }
+
+    // Corpus statistics: document frequency per term and average length per zone, for idf and BM25F.
+    const documentFrequency = new Map<string, number>();
+    const vocabulary = new Set<string>();
+    const totalLength: Record<Zone, number> = { path: 0, name: 0, body: 0 };
+
+    for (const document of documents) {
+        const seen = new Set<string>();
+
+        for (const zone of ZONES) {
+            totalLength[zone] += document.length[zone];
+
+            for (const token of document.zones[zone]) {
+                vocabulary.add(token);
+
+                if (!seen.has(token)) {
+                    seen.add(token);
+                    documentFrequency.set(token, (documentFrequency.get(token) ?? 0) + 1);
+                }
+            }
+        }
+    }
+
+    const averageLength: Record<Zone, number> = {
+        path: totalLength.path / documents.length || 1,
+        name: totalLength.name / documents.length || 1,
+        body: totalLength.body / documents.length || 1,
+    };
+
+    // Resolve each query term to the term actually present in the corpus, applying the fuzzy fallback
+    // for terms that match nothing exactly. Each resolved term carries a weight (1, or discounted).
+    const resolvedTerms: { term: string; weight: number }[] = [];
+
+    for (const queryTerm of queryTerms) {
+        if (documentFrequency.has(queryTerm)) {
+            resolvedTerms.push({ term: queryTerm, weight: 1 });
+            continue;
+        }
+
+        if (queryTerm.length >= FUZZY_MIN_LENGTH) {
+            const neighbour = [...vocabulary].find((candidate) => candidate.length >= FUZZY_MIN_LENGTH && withinOneEdit(queryTerm, candidate));
+
+            if (neighbour) {
+                resolvedTerms.push({ term: neighbour, weight: FUZZY_WEIGHT });
+            }
+        }
+    }
+
+    if (resolvedTerms.length === 0) {
+        return [];
+    }
+
+    const N = documents.length;
+    const results: SearchResult[] = [];
+
+    for (const document of documents) {
+        let score = 0;
+
+        for (const { term, weight } of resolvedTerms) {
+            let boostedTf = 0;
+
+            for (const zone of ZONES) {
+                const tf = countTerm(document.zones[zone], term);
+
+                if (tf === 0) {
+                    continue;
+                }
+
+                const normalization = 1 - BM25_B + BM25_B * (document.length[zone] / averageLength[zone]);
+                boostedTf += (ZONE_WEIGHT[zone] * tf) / normalization;
+            }
+
+            if (boostedTf === 0) {
+                continue;
+            }
+
+            const df = documentFrequency.get(term) ?? 0;
+            const idf = Math.log(1 + (N - df + 0.5) / (df + 0.5));
+
+            score += weight * idf * (boostedTf / (BM25_K1 + boostedTf));
+        }
+
+        if (score > 0) {
+            results.push({ hint: document.hint, score: Math.round(score * 1000) / 1000 });
+        }
+    }
+
+    results.sort((a, b) => b.score - a.score || a.hint.localeCompare(b.hint));
+
+    const limit = options.limit ?? 20;
+
+    return limit >= 0 ? results.slice(0, limit) : results;
+}

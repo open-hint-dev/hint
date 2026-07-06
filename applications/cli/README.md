@@ -46,6 +46,15 @@ hint 'src/**/*.hint'              # globs
 | `--mode <mode>` | Compile for a hintbook mode, e.g. `--mode fix` (repair against spec) or `--mode review` (audit against spec). Default is the implementation mode. |
 | `--dry-run`     | Fail on unresolvable hint files instead of skipping them — use in CI to validate specs.                                                           |
 
+### `hint search <query...>` — find the specs closest to an intent
+
+Ranks every `.hint` in the project against a free-text query and prints the closest matches as JSON — each result a hint file path and a relevance score — so an agent can discover the relevant specs before it knows their paths, then compile them. Deterministic and fully offline (no model, service, or network):
+
+```bash
+hint search grpc server           # → {"query":..., "results":[{"hint":"...","score":...}]}
+hint search payment --limit 5     # cap the number of results (default 20)
+```
+
 ### `hint config` — initialize the project
 
 Creates `hint.yml` in the project root (interactively, if missing). Prints a status line and points you to `hint apply` / `hint instruct` — it does not touch the agent files itself:
