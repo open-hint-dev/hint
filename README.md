@@ -164,7 +164,7 @@ Node.js v22+, ESM only.
 
 **3. Companion files** — drop a `*.hint` next to any file you want built. Context lives where your code lives.
 
-**4. Compile & run** — `hint 'src/**/*.hint' | claude -p`. A spec is compiled together with any files it references (its `# read` targets), shared context included once. Use `--mode fix` to repair code against the spec, `--mode review` to audit it.
+**4. Compile & run** — `hint 'src/**/*.hint' | claude -p`. A spec is compiled together with any files it references (its `# read` targets), shared context included once. Use `--mode fix` to repair code against the spec, `--mode review` to audit it. When an agent knows the intent but not the path, `hint search grpc server` ranks every spec in the project by relevance (offline, no model) and returns the closest hint files to compile.
 
 **5. Verify & keep it in sync** — after the work is generated, `hint verify <path>` checks — deterministically, no tokens — that every declared surface (each `func`, `entity`, `error`…) actually appears in the output, so a stubbed or forgotten declaration is caught before you trust it. Then `hint lock <path>` records the work; later `hint` runs skip specs that haven't changed, so repeated runs cost no tokens. Drift is bidirectional: editing the spec *or* editing the generated code marks the file stale. When a spec drifts, `hint diff <path>` lists exactly which blocks changed and `hint --mode fix <path>` reconciles only those — the loop converges instead of rewriting from scratch. Use `hint lock --strict` to refuse recording anything that does not verify.
 

@@ -8,7 +8,7 @@ import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
 import * as Unified from 'unified';
 
-import { isGlobPattern, isPathExists, isPathFolder, readFile } from './helper.js';
+import { HINTBOOKS_FOLDER, isGlobPattern, isPathExists, isPathFolder, readFile } from './helper.js';
 import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 
 const HINT_EXT = '.hint';
@@ -372,6 +372,37 @@ async function parseHint(projectRootPath: string, hintFile: HintFileData, dryRun
     }
 
     return hint;
+}
+
+// Parses a single hint file in isolation — no folder closure, no referenced child files pulled in.
+// Unlike `parseHints`, which builds the nested compile closure, this returns exactly one document
+// for the given file, which is what a per-file index (search, listings) needs. `hintPath` must be
+// absolute. Returns null when the file does not exist (unless `dryRun`).
+export async function parseHintFile(projectRootPath: string, hintPath: string, dryRun: boolean = false): Promise<HintData | null> {
+    return parseHint(projectRootPath, { path: hintPath, children: [] }, dryRun);
+}
+
+// Enumerates every `.hint` file in the project, skipping dependency and hintbook stores. Paths are
+// returned relative to `projectRootPath`.
+export async function listHintFiles(projectRootPath: string): Promise<string[]> {
+    const ignored = [
+        'node_modules',
+        '.git',
+        HINTBOOKS_FOLDER,
+    ];
+    const results: string[] = [];
+
+    for await (const match of FsPromises.glob(`**/*${HINT_EXT}`, { cwd: projectRootPath })) {
+        const segments = match.split(Path.sep);
+
+        if (segments.some((segment) => ignored.includes(segment))) {
+            continue;
+        }
+
+        results.push(match);
+    }
+
+    return results.sort();
 }
 
 export async function parseHints(projectRootPath: string, paths: string[], dryRun: boolean): Promise<HintData[]> {
