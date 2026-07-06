@@ -704,6 +704,33 @@ When the mode defines a drift instruction (the software-engineer book's `fix` mo
 
 ---
 
+## `hint search <query...>` — find the specs closest to an intent
+
+Ranks every `.hint` file in the project against a free-text query and prints the closest matches as JSON — a fast, offline way for an agent to discover which specs are relevant to a task before it knows their paths, then compile them:
+
+```bash
+hint search grpc server
+```
+
+```json
+{
+  "query": "grpc server",
+  "count": 2,
+  "results": [
+    { "hint": "src/rpc/server.ts.hint", "score": 7.104 },
+    { "hint": "src/rpc/client.ts.hint", "score": 2.318 }
+  ]
+}
+```
+
+Each result is a **hint file path** (relative to the project root, ready to pass to `hint <path>`) and a relevance **score**; results are ordered closest-first and only positive scores are returned. The typical flow is `hint search <intent>` to locate the specs, then `hint <path...>` to compile the top hits.
+
+Matching is deterministic and needs no model, service, or network — it scans the parsed specs directly and ranks them with BM25F over weighted zones (a spec's target path and declared names count for more than its prose). It splits identifiers so `grpcServer` / `grpc_server` / `rpc/server` all match `grpc`, `server`; bridges a small set of software synonyms and acronyms so `database` reaches a spec that only says `db`; and falls back to fuzzy matching for typos. Malformed specs (a broken `@include`, a cycle) are skipped rather than failing the search.
+
+`--limit <n>` caps the number of results (default `20`; a negative value returns all). An empty query, or one no spec matches, yields an empty `results` array. Fails with `No hint.yml found` outside an initialized project.
+
+---
+
 ## `hint lock <paths...>` — record generated work
 
 Fingerprints the given specs and writes them to `hint.lock` in the project root, marking those targets as generated. Run it after an agent implements or drafts what a spec defines:
@@ -890,7 +917,7 @@ Prints the command overview with usage examples. The same text is available via 
 
 ## Exit codes and streams
 
-- **stdout** carries the command's primary output: the compiled prompt (`hint`), the drift report (`hint diff`), the agent prompt to pipe to your agent (`hint instruct`, `hint author`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), listings (`hint list`, `hint modes`), or the version report (`hint version`). Only `hint`, `hint instruct`, and `hint author` are meant to be piped into an agent. `hint lock` writes only `hint.lock` and reports how many files it recorded on stderr.
+- **stdout** carries the command's primary output: the compiled prompt (`hint`), the drift report (`hint diff`), the search results (`hint search`, as JSON), the agent prompt to pipe to your agent (`hint instruct`, `hint author`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), listings (`hint list`, `hint modes`), or the version report (`hint version`). Only `hint`, `hint instruct`, and `hint author` are meant to be piped into an agent. `hint lock` writes only `hint.lock` and reports how many files it recorded on stderr.
 - **stderr** carries interactive prompts, subprocess (git/npm) output, warnings, and errors.
 - Exit code `0` on success, `1` on any failure (unresolvable specs under `--dry-run`, missing project, failed installs, invalid hintbooks).
 

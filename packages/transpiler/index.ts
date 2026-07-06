@@ -5,4 +5,5 @@ export * from './helper.js';
 export * from './hintbook.js';
 export * from './lock.js';
 export * from './parser.js';
+export * from './search.js';
 export * from './verify.js';

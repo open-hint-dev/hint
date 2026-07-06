@@ -12,6 +12,7 @@ import { ListCommand } from './commands/list.js';
 import { LockCommand } from './commands/lock.js';
 import { ModesCommand } from './commands/modes.js';
 import { RemoveCommand } from './commands/remove.js';
+import { SearchCommand } from './commands/search.js';
 import { VerifyCommand } from './commands/verify.js';
 import { findCliVersion, VersionCommand } from './commands/version.js';
 
@@ -157,6 +158,19 @@ export async function main(): Promise<void> {
         });
 
     program
+        .command('search')
+        .description(
+            'Find the hint files whose specs are closest to a search query — a fast, offline, dependency-free ' +
+                'relevance search over every .hint in the project, so an agent can discover the specs relevant to a ' +
+                'task before compiling them. Prints JSON: each result is the hint file path and a relevance score.',
+        )
+        .argument('<query...>', 'search terms, e.g. grpc server')
+        .option('--limit <n>', 'maximum number of results (use a negative value for no limit)', '20')
+        .action(async (query: string[], options: { limit: string }) => {
+            await SearchCommand.new(query.join(' '), Number.parseInt(options.limit, 10)).execute();
+        });
+
+    program
         .command('modes')
         .description(`List modes provided by the hintbooks registered in ${Transpiler.CONFIG_FILE_YML}.`)
         .action(async () => {
@@ -184,6 +198,7 @@ Examples:
   hint config                                   initialize hint.yml in the project root
   hint apply                                    write AGENTS.md / CLAUDE.md directly from hint.yml
   hint instruct | claude -p --permission-mode acceptEdits   ...or have your agent do it
+  hint search grpc server                       find hint files whose specs are closest to a query (JSON)
   hint add @openhint/hintbook-lawyer            install and register a hintbook
   hint remove @openhint/hintbook-lawyer         unregister a hintbook
   hint list                                     list installed hintbooks
