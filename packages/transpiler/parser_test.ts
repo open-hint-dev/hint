@@ -113,7 +113,7 @@ describe('parser', () => {
 
     describe('parseHints', () => {
         it('wraps files and folders into running hints', async () => {
-            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
+            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint']);
 
             const root = hints[0]!;
             expect(root.keyword).toBe(RUNNING_FOLDER);
@@ -130,7 +130,7 @@ describe('parser', () => {
         });
 
         it('parses headings into nested hints with keyword, name, and id', async () => {
-            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
+            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint']);
 
             const file = hints[0]!.children.find((hint) => hint.keyword === RUNNING_FOLDER)!.children[0]!;
             const [
@@ -179,7 +179,7 @@ describe('parser', () => {
         });
 
         it('expands include directives into the body', async () => {
-            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
+            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint']);
 
             const file = hints[0]!.children.find((hint) => hint.keyword === RUNNING_FOLDER)!.children[0]!;
             const action = file.children.at(-1)!;
@@ -189,7 +189,7 @@ describe('parser', () => {
 
         describe('@include', () => {
             async function fileHint(hintPath: string): Promise<HintData> {
-                const hints = await parseHints(projectRootPath, [hintPath], false);
+                const hints = await parseHints(projectRootPath, [hintPath]);
 
                 return hints[0]!.children.find((hint) => hint.keyword === RUNNING_FOLDER)!.children[0]!;
             }
@@ -244,16 +244,16 @@ describe('parser', () => {
             });
 
             it('throws on a missing include target', async () => {
-                await expect(parseHints(projectRootPath, ['includes/missing.ts.hint'], false)).rejects.toThrow(/@include target not found/);
+                await expect(parseHints(projectRootPath, ['includes/missing.ts.hint'])).rejects.toThrow(/@include target not found/);
             });
 
             it('throws on a circular include', async () => {
-                await expect(parseHints(projectRootPath, ['includes/cyclic.ts.hint'], false)).rejects.toThrow(/@include cycle detected/);
+                await expect(parseHints(projectRootPath, ['includes/cyclic.ts.hint'])).rejects.toThrow(/@include cycle detected/);
             });
         });
 
         it('parses synthesized folder hints with empty bodies', async () => {
-            const hints = await parseHints(projectRootPath, ['deep/nested/feature.ts.hint'], false);
+            const hints = await parseHints(projectRootPath, ['deep/nested/feature.ts.hint']);
 
             const deep = hints[0]!.children.find((hint) => hint.keyword === RUNNING_FOLDER)!;
             expect(deep.name).toBe('deep');
@@ -269,7 +269,7 @@ describe('parser', () => {
         });
 
         it('strips the .hint tail from detached hint folders when deriving target paths', async () => {
-            const hints = await parseHints(projectRootPath, ['packages.hint/db/schema.ts.hint'], false);
+            const hints = await parseHints(projectRootPath, ['packages.hint/db/schema.ts.hint']);
 
             // The folder hint `packages.hint/_.hint` describes the real `packages` folder, and the
             // file hint `packages.hint/db/schema.ts.hint` describes `packages/db/schema.ts` — the
@@ -285,16 +285,15 @@ describe('parser', () => {
             expect(schema.children[0]!).toMatchObject({ keyword: 'entity', name: 'Schema', id: 'db_schema' });
         });
 
-        it('silently skips missing hint files', async () => {
-            const hints = await parseHints(projectRootPath, ['missing.ts'], false);
+        // The parser has no opinion about intent: a hint file that is not on disk contributes nothing,
+        // and only the inherited context survives. Whether the caller *asked* for something that does
+        // not exist is decided and reported in `resolve.ts` — see resolve_test.
+        it('skips missing hint files, keeping the inherited context', async () => {
+            const hints = await parseHints(projectRootPath, ['missing.ts']);
 
             const root = hints[0]!;
             expect(root.keyword).toBe(RUNNING_FOLDER);
             expect(root.children.some((hint) => hint.keyword === RUNNING_FILE)).toBe(false);
-        });
-
-        it('throws on missing hint files in dry run', async () => {
-            await expect(parseHints(projectRootPath, ['missing.ts'], true)).rejects.toThrow(`Hint file not found: ${inProject('missing.ts.hint')}`);
         });
     });
 });

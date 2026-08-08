@@ -12,8 +12,8 @@
 </script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HINT for Lawyers — Specifications that draft, revise &amp; audit documents</title>
-<meta name="description" content="The lawyer hintbook gives HINT a drafting vocabulary — party, clause, obligation, redline — compiled into binding prompts for a senior attorney to draft, revise, and audit documents." />
+<title>HINT for Lawyers — the knowledge that governs this matter</title>
+<meta name="description" content="The lawyer hintbook gives HINT a drafting vocabulary — party, clause, obligation, redline — scoped per client and per matter, so an AI assistant gets the positions and policies that govern a document and never another client's." />
 <link rel="canonical" href="https://openhint.dev/for-lawyers.html" />
 <link rel="icon" type="image/png" href="favicon.png" />
 <link rel="apple-touch-icon" href="favicon.png" />
@@ -232,7 +232,7 @@ notice to the Disclosing Party.</span>
         <ul style="list-style:none; display:flex; flex-direction:column; gap:15px; margin:0; padding:0;">
           <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--accent);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><code class="inl">.hint</code> specs that bind the draft</li>
           <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--accent);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Specs versioned in your matter, beside the document</li>
-          <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--accent);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><code class="inl">--mode review</code> audits the document against the spec</li>
+          <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--accent);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><code class="inl">hint verify</code> checks every defined term and exhibit actually appears</li>
           <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--accent);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Deterministic compiles — byte-identical drafts</li>
           <li style="display:flex; gap:12px; align-items:flex-start; color:var(--ink); font-size:0.96rem;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex:none; margin-top:3px; color:var(--accent);"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Red lines the draft can never cross</li>
         </ul>
@@ -301,7 +301,7 @@ notice to the Disclosing Party.</span>
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">example</span><small>sample</small></div><div class="kwrow__d">A worked example — form to match, not substance to copy.</div></div>
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">action</span><small>procedure</small></div><div class="kwrow__d">A repeatable procedure run exactly in order when invoked — conflict checks, defined-term sweeps, filings.</div></div>
         <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">res</span><small>resource</small></div><div class="kwrow__d">Material used verbatim — letterhead, riders, fixed boilerplate; never retyped or paraphrased.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">notes</span></div><div class="kwrow__d">Author-facing notes dropped from the compiled prompt — open questions the assistant never sees.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">notes</span></div><div class="kwrow__d">Author-facing notes dropped from the output — open questions the assistant never sees.</div></div>
       </div>
     </div>
   </div>
@@ -313,13 +313,13 @@ notice to the Disclosing Party.</span>
     <div class="reveal" style="max-width:60ch; margin-bottom:36px;">
       <div class="eyebrow" style="margin-bottom:22px;">See it compile</div>
       <h2 class="h2">One spec. A binding brief. A severity-ranked audit.</h2>
-      <p class="lede" style="margin-top:16px;">The confidentiality clause becomes a draft prompt for a senior-attorney persona — then, under <code class="inl">--mode review</code>, a findings report that quotes the document's exact language against each block.</p>
+      <p class="lede" style="margin-top:16px;">One <code class="inl">.hint</code> file, three uses. It is the knowledge that governs the document, the drafting brief when you add <code class="inl">--prompt</code>, and the standard an audit quotes the document's exact language against.</p>
     </div>
 
     <div class="reveal" data-tabs>
       <div class="tabs">
         <button data-tab="src" class="is-active">.hint source</button>
-        <button data-tab="out">compiled brief</button>
+        <button data-tab="out">what governs it</button>
         <button data-tab="rep">audit report</button>
       </div>
 
@@ -365,7 +365,7 @@ notice to the Disclosing Party.</span>
       </div>
 
       <div data-panel="rep" class="reveal">
-        <p style="color:var(--on-surface-mut); font-family:var(--font-mono); font-size:0.82rem; margin-bottom:16px;">$ hint --mode review contracts/nda.md | claude -p</p>
+        <p style="color:var(--on-surface-mut); font-family:var(--font-mono); font-size:0.82rem; margin-bottom:16px;">$ hint verify contracts/nda.md&nbsp;&nbsp;<span style="opacity:.6">→ exit 1</span><br />$ hint --prompt contracts/nda.md | claude -p "Audit against the specification. Findings only."</p>
         <div class="finding">
           <div class="finding__h"><span class="sev sev--v">violation</span><span class="finding__loc">§ 4.2 → redline Survival</span></div>
           <p><b>Quoted: "…shall survive in perpetuity."</b> Directly violates the <code class="inl">Survival</code> red line (5 years, never perpetual). Correcting language: "…shall survive for five (5) years following disclosure."</p>
@@ -388,30 +388,30 @@ notice to the Disclosing Party.</span>
 <section class="section divider" id="modes">
   <div class="wrap">
     <div class="reveal" style="margin-bottom:42px;">
-      <div class="eyebrow" style="margin-bottom:22px;">Three modes</div>
-      <h2 class="h2">Same spec. A senior attorney for each task.</h2>
+      <div class="eyebrow" style="margin-bottom:22px;">Two costs, three uses</div>
+      <h2 class="h2">Same knowledge. A different job each time.</h2>
     </div>
     <div class="grid-3 reveal">
       <div class="mode">
-        <div class="mode__k">compile · default</div>
-        <h3>Draft</h3>
-        <p class="mode__role">A senior attorney drafting from a binding specification.</p>
-        <p>Read parties, defined terms, governing law, and red lines first; draft complete documents — no bracketed stubs unless declared.</p>
+        <div class="mode__k">default</div>
+        <h3>Load what governs it</h3>
+        <p class="mode__role">The positions, policies, and red lines that apply to this document.</p>
+        <p>The client's folder plus the firm's policies, inherited down — and never another client's. No persona, no checklist, so it costs what it carries.</p>
         <code class="inl mode__cmd">hint contracts/...</code>
       </div>
       <div class="mode">
-        <div class="mode__k">--mode fix</div>
-        <h3>Revise</h3>
-        <p class="mode__role">Where the document and the spec disagree, the document is wrong.</p>
-        <p>Smallest conforming revision; structure, numbering, defined terms, and style preserved; each change reported with its rationale. With a <code class="inl">hint.lock</code> it revises only the blocks that drifted — and returns the document unchanged when it already conforms.</p>
-        <code class="inl mode__cmd">hint --mode fix</code>
+        <div class="mode__k">--prompt</div>
+        <h3>Draft or revise</h3>
+        <p class="mode__role">The same knowledge, framed for an assistant starting cold.</p>
+        <p>Adds the senior-attorney role and the verification-and-report close: defined-term discipline, no invented facts or citations, gaps reported not filled. When a <code class="inl">hint.lock</code> exists and blocks have drifted, the drift list comes along — so the revision is scoped to what changed.</p>
+        <code class="inl mode__cmd">hint --prompt contracts/...</code>
       </div>
       <div class="mode">
-        <div class="mode__k">--mode review</div>
-        <h3>Audit</h3>
-        <p class="mode__role">Findings, never redlines.</p>
-        <p>Walk the spec block by block, quote the document's exact language, hunt prohibited content and red-line breaches, rank by severity.</p>
-        <code class="inl mode__cmd">hint --mode review</code>
+        <div class="mode__k">verify</div>
+        <h3>Check it mechanically</h3>
+        <p class="mode__role">Deterministic, token-free, exits non-zero.</p>
+        <p>Every <code class="inl">party</code>, <code class="inl">definition</code>, <code class="inl">clause</code>, and <code class="inl">exhibit</code> the spec declares must appear by name. A defined term never used or an exhibit never referenced is caught for free — before anyone reads a word.</p>
+        <code class="inl mode__cmd">hint verify contracts/...</code>
       </div>
     </div>
   </div>
@@ -430,7 +430,7 @@ notice to the Disclosing Party.</span>
         <div class="scstep"><span class="scstep__n">01</span><div><h4>Set the matter baseline</h4><p>A folder <code class="inl">_.hint</code> declares the <code class="inl">jurisdiction</code>, the <code class="inl">party</code> names, and the firm's drafting <code class="inl">style</code> — inherited by every document.</p></div></div>
         <div class="scstep"><span class="scstep__n">02</span><div><h4>Declare the positions</h4><p>The non-compete spec nests a <code class="inl">prohibition</code>, its <code class="inl">condition</code> and <code class="inl">exception</code>, a <code class="inl">breach → remedy</code> chain, and the <code class="inl">source</code> on restraint-of-trade limits.</p></div></div>
         <div class="scstep"><span class="scstep__n">03</span><div><h4>Compile &amp; draft</h4><p><code class="inl">hint contracts/employment.md | claude -p</code> produces a complete first draft with defined terms consistent and no invented figures.</p></div></div>
-        <div class="scstep"><span class="scstep__n">04</span><div><h4>Audit the counterparty's redline</h4><p><code class="inl">--mode review</code> checks their markup against your red lines — the perpetual-survival edit comes back as a flagged violation, not a missed one.</p></div></div>
+        <div class="scstep"><span class="scstep__n">04</span><div><h4>Audit the counterparty's redline</h4><p><code class="inl">hint verify</code> catches a deleted defined term for free; handing an assistant <code class="inl">--prompt</code> output catches the perpetual-survival edit — a flagged violation, not a missed one.</p></div></div>
         <div class="scstep"><span class="scstep__n">05</span><div><h4>Verify &amp; lock</h4><p><code class="inl">hint verify</code> confirms every declared <code class="inl">party</code>, <code class="inl">definition</code>, and <code class="inl">exhibit</code> is actually used in the draft — deterministic, no tokens — then <code class="inl">hint lock</code> records it, so unchanged specs are skipped and edits reconcile only what drifted.</p></div></div>
       </div>
       <div class="code-wrap">
@@ -482,17 +482,17 @@ trade under the governing law.</span></div>
         </div>
       </div>
       <div class="code-wrap">
-        <button class="code__copy" data-copy data-copy-text="hint contracts/nda.md | claude -p&#10;hint --mode fix contracts/nda.md | claude -p&#10;hint --mode review contracts/nda.md | claude -p">Copy</button>
+        <button class="code__copy" data-copy data-copy-text="hint contracts/nda.md&#10;hint --prompt contracts/nda.md | claude -p&#10;hint verify contracts/nda.md">Copy</button>
         <div class="code">
-          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">2 · draft, revise, audit</span></div>
-<div class="code__body"><span class="t-mut"># draft from the spec</span>
-<span class="t-bd">hint contracts/nda.md | claude -p</span>
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">2 · query, draft, check</span></div>
+<div class="code__body"><span class="t-mut"># what governs this document?</span>
+<span class="t-bd">hint contracts/nda.md</span>
 
-<span class="t-mut"># revise an existing document</span>
-<span class="t-bd">hint --mode fix contracts/nda.md | claude -p</span>
+<span class="t-mut"># hand it to an assistant to draft or revise</span>
+<span class="t-bd">hint --prompt contracts/nda.md | claude -p</span>
 
-<span class="t-mut"># audit against the spec</span>
-<span class="t-bd">hint --mode review contracts/nda.md | claude -p</span></div>
+<span class="t-mut"># check every declared term landed — no model, no tokens</span>
+<span class="t-bd">hint verify contracts/nda.md</span></div>
         </div>
       </div>
     </div>
@@ -527,14 +527,14 @@ trade under the governing law.</span></div>
         <div class="logo footer__logo">
           <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
         </div>
-        <p>Human Intent Native Transpiler. A Markdown-native specification language for professionals who work with AI and want predictable results.</p>
+        <p>A context compiler for AI assistants. Matter knowledge in Markdown, scoped per client and per document, inherited from the firm's policies down.</p>
       </div>
       <div class="footer__col">
         <h5>Product</h5>
         <ul>
           <li><a href="index.html#how">How it works</a></li>
           <li><a href="#vocabulary">Vocabulary</a></li>
-          <li><a href="#modes">Modes</a></li>
+          <li><a href="#modes">Output</a></li>
         </ul>
       </div>
       <div class="footer__col">
@@ -556,7 +556,7 @@ trade under the governing law.</span></div>
     </div>
     <div class="footer__bottom">
       <span>© 2026 openhint.dev · MIT licensed</span>
-      <span>Borders, not vibes.</span>
+      <span>Tell your assistant what matters here.</span>
     </div>
   </div>
 </footer>

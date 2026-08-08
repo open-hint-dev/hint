@@ -1,18 +1,24 @@
-# How HINT Works: The Compilation Pipeline
+# How HINT Works: The Pipeline
 
-This document describes the internal mechanics of the HINT engine — how files are found, parsed, and compiled into the final prompt. The pipeline lives in [`@openhint/transpiler`](../packages/transpiler/README.md) and runs in three stages:
+This document describes the internal mechanics of the HINT engine — how a path becomes the scoped knowledge that applies to it. The pipeline lives in [`@openhint/transpiler`](../packages/transpiler/README.md) and runs in three stages, with prompt framing as an optional fourth:
 
 ```
-paths ──► find ──► HintFileData tree ──► parse ──► HintData tree ──► compile ──► prompt
-                                                            ▲
-                                              hintbooks ────┘
+paths ──► resolve ──► HintFileData tree ──► parse ──► HintData tree ──► render ──► scoped knowledge
+                                                              ▲                          │
+                                                hintbooks ────┘                          └─► renderPrompt (optional)
 ```
+
+Each stage has one job. Resolution decides *what was asked for and whether it exists*; parsing decides *what it says*; rendering decides *how it reads*. Contract checking (`verify` / `lock` / `diff`) consumes the parsed `HintData` tree rather than defining it, and prompt framing wraps the rendered string — so neither one constrains the representation.
 
 ---
 
-## Stage 1 — Find
+## Stage 1 — Resolve
 
-`findHints(projectRootPath, paths)` turns the requested paths into a tree of hint files.
+`resolveRequests(projectRootPath, paths)` turns the requested paths into hint file paths **and a verdict per request**, then `findHintFiles` builds the tree.
+
+The verdict is the part that matters to a caller: `spec` (the path declares knowledge of its own), `inherited` (the path exists but only inherits from its ancestors), or `missing` (the path names nothing in this repository). Commands report it and set their exit code from it, which is why "I matched nothing you asked for" can no longer be mistaken for success.
+
+`findHints(projectRootPath, paths)` combines both for callers that only need the tree.
 
 1. **Normalization.** Each argument is resolved against the project root (arguments escaping the root are dropped). Globs are expanded. A folder becomes its `_.hint`; a source file becomes its `<file>.hint` companion; a path that does not exist is still kept — specs can define files before they are created.
 2. **Sorting.** Paths are ordered folder-first, parents before children, `_.hint` before its siblings — so the tree builds deterministically regardless of argument order. Duplicates are removed.
@@ -20,9 +26,9 @@ paths ──► find ──► HintFileData tree ──► parse ──► HintD
 
 ## Stage 2 — Parse
 
-`parseHints(projectRootPath, paths, dryRun)` reads each node of the tree and produces `HintData` — the typed block tree.
+`parseHintFiles(projectRootPath, hintPaths)` reads each node of the tree and produces `HintData` — the typed block tree.
 
-**Reading.** Existing files are read; a missing `_.hint` counts as empty (the folder node still holds its children here — an empty wrapper that only nests others is elided later, at compile); a missing companion hint is skipped silently, or throws if `dryRun` is set.
+**Reading.** Existing files are read; a missing `_.hint` counts as empty (the folder node still holds its children here — an empty wrapper that only nests others is elided later, at compile); a missing companion hint contributes nothing (the caller learns about it from `resolveRequests`, which reports whether the path was `spec`, `inherited`, or `missing`).
 
 **Markdown processing.** `@include` directives are expanded first — each referenced file's raw text is inlined in place (quotes optional; leading `/` resolves from the project root, otherwise relative to the including file with a project-root fallback). The combined text then runs through a remark pipeline: parse → extract `{#id}` heading ids.
 
@@ -34,11 +40,11 @@ paths ──► find ──► HintFileData tree ──► parse ──► HintD
 
 **Wrapping.** Each file becomes a `HintData` with a *running keyword*: `__file__` for companion hints, `__folder__` for `_.hint` — with `name` set to the target path relative to the project root (the `.hint` extension stripped; the folder path for folder hints; `.` for the root). Parsed headings come first in `children`, followed by recursively parsed child files.
 
-## Stage 3 — Compile
+## Stage 3 — Render
 
-`compileHints(hints, hintbooks, mode)` renders the block tree to the final prompt string.
+`renderContext(hints, hintbooks)` renders the block tree to the scoped knowledge string. `renderPrompt(context, hintbooks, options)` optionally wraps that in `__header__` / `__footer__` framing — the framing is a wrapper, not part of the compiled form.
 
-**Instruction lookup.** For every block, the compiler searches the requested mode's instructions across all hintbooks in order, falling back to the default mode (`compile`). An instruction matches by `name` or by one of its `synonyms`. Running keywords (`__file__`, `__folder__`, `__header__`, `__footer__`) resolve through exactly the same lookup — they are ordinary instructions.
+**Instruction lookup.** For every block, the renderer searches the instructions of each hintbook in order; the first match wins. An instruction matches by `name` or by one of its `synonyms`. Running keywords (`__file__`, `__folder__`, `__header__`, `__footer__`) resolve through exactly the same lookup — they are ordinary instructions.
 
 **Rendering.** Children are compiled first and joined with blank lines. Then the block's instruction template is interpolated:
 
@@ -69,6 +75,6 @@ See [Hintbooks](05-hintbooks.md) for the authoring guide.
 
 ## Determinism
 
-Every stage is deterministic: sorted traversal, stable tree synthesis, ordered hintbook lookup, and pure template interpolation. The same specs, hintbooks, and mode always produce byte-identical output — which makes compiled prompts reviewable and diffable artifacts.
+Every stage is deterministic: sorted traversal, stable tree synthesis, ordered hintbook lookup, and pure template interpolation. The same knowledge and hintbooks always produce byte-identical output — which makes it a reviewable, diffable artifact.
 
 That determinism is what the `hint.lock` builds on. Each generated target is fingerprinted by a hash over its blocks and its inherited context; [`hint lock`](06-cli.md#hint-lock-paths--record-generated-work) records those fingerprints, later runs compare against them to skip unchanged specs, and [`hint diff`](06-cli.md#hint-diff-paths--show-what-drifted) reports the exact blocks that differ — turning "regenerate everything" into "reconcile only what moved."

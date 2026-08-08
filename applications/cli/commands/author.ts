@@ -65,22 +65,20 @@ export class AuthorCommand implements ICommand {
                 const hintbook = await Transpiler.loadHintbook(hintbookPath);
                 const source = hintbook.id || hintbook.name || Path.basename(hintbookPath);
 
-                for (const mode of Object.values(hintbook.modes)) {
-                    for (const instruction of mode.instructions) {
-                        // First hintbook to define a keyword wins, mirroring compile-time lookup order.
-                        if (RUNNING_INSTRUCTION.test(instruction.name) || seen.has(instruction.name)) {
-                            continue;
-                        }
-
-                        seen.add(instruction.name);
-
-                        keywords.push({
-                            keyword: instruction.name,
-                            synonyms: instruction.metadata?.synonyms ?? [],
-                            description: instruction.metadata?.description ?? '',
-                            hintbook: source,
-                        });
+                for (const instruction of hintbook.instructions) {
+                    // First hintbook to define a keyword wins, mirroring render-time lookup order.
+                    if (RUNNING_INSTRUCTION.test(instruction.name) || seen.has(instruction.name)) {
+                        continue;
                     }
+
+                    seen.add(instruction.name);
+
+                    keywords.push({
+                        keyword: instruction.name,
+                        synonyms: instruction.metadata?.synonyms ?? [],
+                        description: instruction.metadata?.description ?? '',
+                        hintbook: source,
+                    });
                 }
             }
         }
@@ -89,31 +87,36 @@ export class AuthorCommand implements ICommand {
     }
 }
 
+// The vocabulary comes first and fits on a screen. Picking a legal keyword is the decision an author
+// has to make; the syntax rules matter less and can be read after. Anyone who truncates this output
+// still gets the part they came for.
 function buildAuthorPrompt(keywords: Keyword[], paths: string[]): string {
     const target =
         paths.length > 0
-            ? `Write or update the HINT specification (\`.hint\`) for each of these target paths: ${paths.join(', ')}.`
-            : 'Write or update the HINT specification (`.hint`) files the user asked for.';
+            ? `Write or update the HINT knowledge (\`.hint\`) for: ${paths.join(', ')}.`
+            : 'Write or update the HINT knowledge (`.hint`) the user asked for.';
 
     return [
-        '# Authoring HINT specification files',
-        `${target} A \`.hint\` file is the authoritative implementation contract for a target file or folder; the \`hint\` CLI compiles it into an AI-ready prompt. Capture intent, contracts, and constraints — not an implementation.`,
+        '# Authoring HINT knowledge',
+        `${target} A \`.hint\` file records what future work on that path must know — decisions, invariants, constraints, hazards, and contracts. It lives in the repository, is versioned with the code, and any coding agent can query it. Capture durable knowledge, not session state, and not an implementation.`,
+        '## Keyword vocabulary',
+        "The first word of every heading must be one of these keywords (or a synonym) registered by this project's hintbooks. A heading whose keyword is unknown is passed through as plain markdown and carries no binding meaning.",
+        formatKeywordIndex(keywords),
         '## File kinds and naming',
         FILE_KINDS,
         '## Syntax',
         SYNTAX,
-        '## Keyword vocabulary',
-        "Use only these keywords (or their synonyms) registered by this project's hintbooks. The first word of every heading must be one of them — a heading whose keyword is unknown is passed through as plain markdown and carries no binding meaning. Pick the keyword whose description matches what you are declaring.",
-        formatKeywordTable(keywords),
+        '## Keyword reference',
+        formatKeywordDetails(keywords),
         '## Output',
         OUTPUT_RULES,
     ].join('\n\n');
 }
 
 const FILE_KINDS = [
-    '- **Companion hint** — `<path>.hint` specifies the file at `<path>`: `src/auth/login.ts.hint` specifies `src/auth/login.ts`. The target file need not exist yet; the spec is keyed to the path.',
-    '- **Folder hint** — `_.hint` specifies its folder and everything beneath it. The root `_.hint` is the project-wide baseline. Put shared context here so companion hints stay focused.',
-    '- **Detached hint store** — a folder whose name ends in `.hint` (e.g. `packages.hint/`) holds hints for the matching real path with the `.hint` tail removed: `packages.hint/db/schema.ts.hint` specifies `packages/db/schema.ts`. Use it to keep hints out of, or gitignored from, the tree they document.',
+    '- **Folder knowledge** — `_.hint` applies to its folder and everything beneath it. The root `_.hint` is the project-wide baseline. This is the most common kind: a repository that only ever uses folder hints is a normal, fully supported setup.',
+    '- **Companion knowledge** — `<path>.hint` applies to the file at `<path>`: `src/auth/login.ts.hint` describes `src/auth/login.ts`. The target file need not exist yet; the knowledge is keyed to the path.',
+    '- **Detached store** — a folder whose name ends in `.hint` (e.g. `packages.hint/`) holds hints for the matching real path with the `.hint` tail removed: `packages.hint/db/schema.ts.hint` describes `packages/db/schema.ts`. Use it to keep hints out of, or gitignored from, the tree they document.',
 ].join('\n');
 
 const SYNTAX = [
@@ -123,7 +126,7 @@ const SYNTAX = [
     '',
     'the block body — plain markdown: paragraphs, lists, code fences, tables',
     '```',
-    '- **Keyword** — the first word of the heading; case-sensitive; must be a registered keyword (below).',
+    '- **Keyword** — the first word of the heading; case-sensitive; must be a registered keyword.',
     '- **Name** — everything after the keyword (may be empty). Templates usually render it as a `name="…"` attribute.',
     '- **Id** — an optional `{#stable_id}` suffix giving the block a stable handle that survives renames.',
     '- **Body** — everything between this heading and the next heading of any level.',
@@ -132,33 +135,61 @@ const SYNTAX = [
 ].join('\n');
 
 const OUTPUT_RULES = [
-    '- Write each `.hint` file to disk at its correct path (creating folders as needed), then tell the user which files you wrote.',
-    '- Keep it declarative and minimal: state what must be true, the data shapes, behaviors, and constraints — do not write the implementation.',
-    '- Reuse stable ids when revising an existing spec so references stay intact.',
-    '- After writing, you may run `hint <path...>` to compile a spec and read the result as the agent would.',
+    '- Read the `.hint` file first if it already exists, then write it to disk at its correct path (creating folders as needed), and tell the user which files you wrote.',
+    '- Record it at the most specific scope that applies: the file’s companion hint, else the folder’s `_.hint`, else the root `_.hint`. Knowledge in the wrong scope either misses the work it should govern or pollutes work it should not.',
+    '- Keep it declarative and minimal: state what must be true and why. Do not write the implementation.',
+    '- Reuse stable ids when revising so references stay intact.',
+    '- After writing, run `hint <path>` to see exactly what a coding agent will receive.',
 ].join('\n');
 
-function formatKeywordTable(keywords: Keyword[]): string {
+// One row per keyword, single-line cells. Descriptions in a hintbook are multi-line YAML block scalars
+// that often carry a fenced example; interpolating those into pipe-delimited cells produced rows that
+// terminated mid-cell and parsed as a table in no Markdown implementation. The first line is the
+// summary, and the full text moves to the reference section below.
+function formatKeywordIndex(keywords: Keyword[]): string {
     const rows = [
         [
             'keyword',
             'synonyms',
-            'description',
-            'hintbook',
+            'what it declares',
         ],
         [
             '-------',
             '--------',
-            '-----------',
-            '--------',
+            '-----------------',
         ],
         ...keywords.map((keyword) => [
             keyword.keyword,
             keyword.synonyms.join(', ') || '—',
-            keyword.description || '—',
-            keyword.hintbook,
+            summarize(keyword.description),
         ]),
     ];
 
     return rows.map((row) => `| ${row.join(' | ')} |`).join('\n');
+}
+
+// The first sentence or line of a description, collapsed to one line so it can never break a table row.
+function summarize(description: string): string {
+    const firstLine = description
+        .split('\n')
+        .map((line) => line.trim())
+        .find((line) => line.length > 0);
+
+    if (!firstLine) {
+        return '—';
+    }
+
+    const collapsed = firstLine.replace(/\|/g, '\\|');
+
+    return collapsed.length > 120 ? `${collapsed.slice(0, 117)}...` : collapsed;
+}
+
+// Full descriptions, examples included, as prose sections — the place multi-line content can live
+// without corrupting anything. Keywords with nothing but a summary are omitted rather than repeated.
+function formatKeywordDetails(keywords: Keyword[]): string {
+    const sections = keywords
+        .filter((keyword) => keyword.description.includes('\n'))
+        .map((keyword) => `### ${keyword.keyword}\n\n${keyword.description.trim()}`);
+
+    return sections.length > 0 ? sections.join('\n\n') : '_The registered hintbooks provide no extended keyword documentation._';
 }

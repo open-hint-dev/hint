@@ -8,9 +8,7 @@ import { matter } from 'vfile-matter';
 
 import { HINTBOOKS_FOLDER, isPathExists, isPathFolder, NODE_MODULES_FOLDER, readFile, URL_FILE_PREFIX, URL_NPM_PREFIX } from './helper.js';
 
-export const INSTRUCTION_EXTENSION = '.md';
-
-export const INSTRUCTION_MODE_DEFAULT = 'compile';
+const INSTRUCTION_EXTENSION = '.md';
 
 export const HINTBOOK_FILE_NAME = 'hintbook.json';
 
@@ -19,7 +17,6 @@ export const RUNNING_FILE = '__file__';
 export const RUNNING_FOLDER = '__folder__';
 export const RUNNING_FOOTER = '__footer__';
 export const RUNNING_HEADER = '__header__';
-export const RUNNING_MODE = '__mode__';
 export const RUNNING_SYSTEM = '__system__';
 
 export const PLACEHOLDER_ID = 'id';
@@ -35,50 +32,30 @@ export type MetaData = {
     synonyms?: string[];
 };
 
-export type InstructionFileData = {
-    name: string;
-    mode: string;
-};
-
 export type InstructionData = {
     name: string;
     content: string;
     metadata?: MetaData;
 };
 
-export type ModeData = {
-    instructions: InstructionData[];
-};
-
-export type RunningModeData = {
-    mode: string;
-    name: string;
-    description: string;
-    content: string;
-};
-
 export type HintbookData = {
     id?: string;
     name?: string;
     description?: string;
-    runningModes: RunningModeData[];
-    modes: Record<string, ModeData>;
+    instructions: InstructionData[];
 };
 
-async function resolveInstructionMode(file: string): Promise<InstructionFileData | null> {
-    const fileExt = Path.extname(file);
-    if (fileExt !== INSTRUCTION_EXTENSION) {
+// A hintbook is a flat folder of `<keyword>.md` instructions. Files carrying a second extension
+// (`__header__.fix.md`, `__mode__.review.md`) are variants from the removed mode system; they are
+// ignored so an older hintbook still loads its base vocabulary instead of failing or double-binding.
+function instructionName(file: string): string | null {
+    if (Path.extname(file) !== INSTRUCTION_EXTENSION) {
         return null;
     }
 
-    const fileName = Path.basename(file, fileExt);
-    const mode = Path.extname(fileName);
-    const name = Path.basename(fileName, mode);
+    const name = Path.basename(file, INSTRUCTION_EXTENSION);
 
-    return {
-        mode: mode.slice(1) || INSTRUCTION_MODE_DEFAULT,
-        name,
-    };
+    return Path.extname(name) === '' ? name : null;
 }
 
 function metadataString(metadata: MetaData, key: 'description' | 'name'): string {
@@ -88,14 +65,7 @@ function metadataString(metadata: MetaData, key: 'description' | 'name'): string
 }
 
 export async function loadHintbook(hintbookPath: string): Promise<HintbookData> {
-    const data: HintbookData = {
-        runningModes: [],
-        modes: {
-            [INSTRUCTION_MODE_DEFAULT]: {
-                instructions: [],
-            },
-        },
-    };
+    const data: HintbookData = { instructions: [] };
 
     const files = await FsPromises.readdir(hintbookPath);
 
@@ -110,17 +80,10 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
             continue;
         }
 
-        const instructionFileData = await resolveInstructionMode(file);
-        if (!instructionFileData) {
+        const name = instructionName(file);
+
+        if (!name) {
             continue;
-        }
-
-        const mode = data.modes[instructionFileData.mode] || {
-            instructions: [],
-        };
-
-        if (!data.modes[instructionFileData.mode]) {
-            data.modes[instructionFileData.mode] = mode;
         }
 
         const content = (await readFile(Path.join(hintbookPath, file))) ?? '';
@@ -129,19 +92,8 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
         matter(parsed, { strip: true });
         const metadata = (parsed.data.matter ?? {}) as MetaData;
 
-        if (instructionFileData.name === RUNNING_MODE) {
-            data.runningModes.push({
-                mode: instructionFileData.mode,
-                name: metadataString(metadata, 'name') || instructionFileData.mode,
-                description: metadataString(metadata, 'description'),
-                content: String(parsed),
-            });
-
-            continue;
-        }
-
-        mode.instructions.push({
-            name: instructionFileData.name,
+        data.instructions.push({
+            name,
             content: String(parsed),
             metadata: {
                 description: metadataString(metadata, 'description') || undefined,

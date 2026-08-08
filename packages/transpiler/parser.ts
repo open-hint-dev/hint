@@ -8,11 +8,10 @@ import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
 import * as Unified from 'unified';
 
-import { HINTBOOKS_FOLDER, isGlobPattern, isPathExists, isPathFolder, readFile } from './helper.js';
+import { HINTBOOKS_FOLDER, isPathExists, readFile } from './helper.js';
 import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
+import { FOLDER_HINT, HINT_EXT, hintTargetName, isFolderHintPath, normalizeHintPaths } from './resolve.js';
 
-const HINT_EXT = '.hint';
-const FOLDER_HINT = `_${HINT_EXT}`;
 const INCLUDE_DIRECTIVE = '@include';
 
 export type HintFileData = {
@@ -28,45 +27,6 @@ export type HintData = {
     body: string;
     children: HintData[];
 };
-
-async function normalizeHintPath(path: string): Promise<string | null> {
-    if ((await isPathExists(path)) && (await isPathFolder(path))) {
-        return Path.join(path, FOLDER_HINT);
-    }
-
-    if (Path.extname(path) === HINT_EXT) {
-        return path;
-    }
-
-    return normalizeHintPath(`${path}${HINT_EXT}`);
-}
-
-async function normalizeHintPaths(currentPath: string, paths: string[]): Promise<string[]> {
-    const normalizedPaths: string[] = [];
-
-    for (const path of paths) {
-        if (isGlobPattern(path)) {
-            const expandedPaths: string[] = [];
-
-            for await (const match of FsPromises.glob(path, { cwd: currentPath })) {
-                expandedPaths.push(match);
-            }
-
-            normalizedPaths.push(...(await normalizeHintPaths(currentPath, expandedPaths)));
-        } else {
-            const resolvedPath = Path.resolve(currentPath, path);
-            if (resolvedPath.startsWith(currentPath)) {
-                const normalizedPath = await normalizeHintPath(resolvedPath);
-
-                if (normalizedPath) {
-                    normalizedPaths.push(normalizedPath);
-                }
-            }
-        }
-    }
-
-    return normalizedPaths;
-}
 
 function sortHintPaths(normalizedHintPaths: string[]): string[] {
     return normalizedHintPaths.sort((a: string, b: string): number => {
@@ -126,8 +86,13 @@ function findHint(projectRootPath: string, folderPath: string, hints: HintFileDa
 }
 
 export async function findHints(projectRootPath: string, paths: string[]): Promise<HintFileData[]> {
-    const normalizedHintPaths = await normalizeHintPaths(projectRootPath, paths);
-    const sortedHintPaths = sortHintPaths([...new Set(normalizedHintPaths)]);
+    return findHintFiles(projectRootPath, await normalizeHintPaths(projectRootPath, paths));
+}
+
+// Builds the nesting tree from hint paths that are already normalized — the shape `resolveRequests`
+// hands back, so resolution happens once instead of again per command.
+export function findHintFiles(projectRootPath: string, hintPaths: string[]): HintFileData[] {
+    const sortedHintPaths = sortHintPaths([...new Set(hintPaths)]);
 
     const hints: HintFileData[] = [];
     const nodes = new Map<string, HintFileData>();
@@ -143,22 +108,18 @@ export async function findHints(projectRootPath: string, paths: string[]): Promi
     return hints;
 }
 
-async function readHintContent(path: string, dryRun: boolean): Promise<string | null> {
+// A hint file that is not on disk contributes nothing. A folder hint reads as empty instead of absent
+// so an intermediate folder without its own `_.hint` still nests its children. Whether a caller
+// *asked* for a spec that does not exist is decided in `resolve.ts`, not here — the parser has no
+// opinion about intent.
+async function readHintContent(path: string): Promise<string | null> {
     const content = await readFile(path);
 
     if (content !== null) {
         return content;
     }
 
-    if (Path.basename(path) === FOLDER_HINT) {
-        return '';
-    }
-
-    if (dryRun) {
-        throw new Error(`Hint file not found: ${path}`);
-    }
-
-    return null;
+    return isFolderHintPath(path) ? '' : null;
 }
 
 async function parseHintContent(path: string, content: string, projectRootPath: string): Promise<Root> {
@@ -319,44 +280,18 @@ function parseHeadings(root: Root, parent: HintData): void {
     flushBody();
 }
 
-// A directory whose name ends in `.hint` (e.g. `packages.hint/`) is a detached hint store: its hints
-// describe the matching real path with the `.hint` tail removed. This lets hints live in a separate
-// tree — kept out of, or gitignored from, the folder they document. Strip the suffix from every
-// directory segment of the derived target path so `packages.hint/db/schema.ts.hint` describes
-// `packages/db/schema.ts`, and the folder hint `os.hint/_.hint` describes `os`.
-function stripHintFolderTails(relativeTargetPath: string, isFolderHint: boolean): string {
-    const segments = relativeTargetPath.split(Path.sep);
-
-    // For a file hint the last segment is the target file itself, which keeps any `.hint` in its name;
-    // every other segment is a folder. For a folder hint every segment, the last included, is a folder.
-    const lastFolderIndex = isFolderHint ? segments.length - 1 : segments.length - 2;
-
-    return segments
-        .map((segment, index) => (index <= lastFolderIndex && segment.endsWith(HINT_EXT) ? segment.slice(0, -HINT_EXT.length) : segment))
-        .join(Path.sep);
-}
-
-function hintName(projectRootPath: string, hintPath: string, isFolderHint: boolean): string {
-    const targetPath = isFolderHint ? Path.dirname(hintPath) : hintPath.slice(0, -HINT_EXT.length);
-    const relativeTargetPath = Path.relative(projectRootPath, targetPath);
-
-    return stripHintFolderTails(relativeTargetPath, isFolderHint) || '.';
-}
-
-async function parseHint(projectRootPath: string, hintFile: HintFileData, dryRun: boolean): Promise<HintData | null> {
-    const content = await readHintContent(hintFile.path, dryRun);
+async function parseHint(projectRootPath: string, hintFile: HintFileData): Promise<HintData | null> {
+    const content = await readHintContent(hintFile.path);
 
     if (content === null) {
         return null;
     }
 
-    const isFolderHint = Path.basename(hintFile.path) === FOLDER_HINT;
-
     const hint: HintData = {
         level: 0,
-        keyword: isFolderHint ? RUNNING_FOLDER : RUNNING_FILE,
+        keyword: isFolderHintPath(hintFile.path) ? RUNNING_FOLDER : RUNNING_FILE,
         id: '',
-        name: hintName(projectRootPath, hintFile.path, isFolderHint),
+        name: hintTargetName(projectRootPath, hintFile.path),
         body: '',
         children: [],
     };
@@ -364,7 +299,7 @@ async function parseHint(projectRootPath: string, hintFile: HintFileData, dryRun
     parseHeadings(await parseHintContent(hintFile.path, content, projectRootPath), hint);
 
     for (const childFile of hintFile.children) {
-        const childHint = await parseHint(projectRootPath, childFile, dryRun);
+        const childHint = await parseHint(projectRootPath, childFile);
 
         if (childHint) {
             hint.children.push(childHint);
@@ -377,9 +312,9 @@ async function parseHint(projectRootPath: string, hintFile: HintFileData, dryRun
 // Parses a single hint file in isolation — no folder closure, no referenced child files pulled in.
 // Unlike `parseHints`, which builds the nested compile closure, this returns exactly one document
 // for the given file, which is what a per-file index (search, listings) needs. `hintPath` must be
-// absolute. Returns null when the file does not exist (unless `dryRun`).
-export async function parseHintFile(projectRootPath: string, hintPath: string, dryRun: boolean = false): Promise<HintData | null> {
-    return parseHint(projectRootPath, { path: hintPath, children: [] }, dryRun);
+// absolute. Returns null when the file does not exist.
+export async function parseHintFile(projectRootPath: string, hintPath: string): Promise<HintData | null> {
+    return parseHint(projectRootPath, { path: hintPath, children: [] });
 }
 
 // Enumerates every `.hint` file in the project, skipping dependency and hintbook stores. Paths are
@@ -405,13 +340,13 @@ export async function listHintFiles(projectRootPath: string): Promise<string[]> 
     return results.sort();
 }
 
-export async function parseHints(projectRootPath: string, paths: string[], dryRun: boolean): Promise<HintData[]> {
-    const hintFiles = await findHints(projectRootPath, paths);
-
+// Parses an already-resolved set of hint paths into the nested context tree. This is the form
+// commands use, so path resolution stays in `resolve.ts` and is reported on rather than repeated.
+export async function parseHintFiles(projectRootPath: string, hintPaths: string[]): Promise<HintData[]> {
     const hints: HintData[] = [];
 
-    for (const hintFile of hintFiles) {
-        const hint = await parseHint(projectRootPath, hintFile, dryRun);
+    for (const hintFile of findHintFiles(projectRootPath, hintPaths)) {
+        const hint = await parseHint(projectRootPath, hintFile);
 
         if (hint) {
             hints.push(hint);
@@ -419,4 +354,32 @@ export async function parseHints(projectRootPath: string, paths: string[], dryRu
     }
 
     return hints;
+}
+
+export async function parseHints(projectRootPath: string, paths: string[]): Promise<HintData[]> {
+    return parseHintFiles(projectRootPath, await normalizeHintPaths(projectRootPath, paths));
+}
+
+// How many scopes a parsed tree actually carries, split by kind. Folder scopes count: a repository
+// whose knowledge lives entirely in `_.hint` files has no file targets at all, and a breadth guard
+// that only counted files would never fire there.
+export function countScopes(hints: HintData[]): { files: number; folders: number } {
+    let files = 0;
+    let folders = 0;
+
+    const walk = (nodes: HintData[]): void => {
+        for (const node of nodes) {
+            if (node.keyword === RUNNING_FILE) {
+                files += 1;
+            } else if (node.keyword === RUNNING_FOLDER) {
+                folders += 1;
+            }
+
+            walk(node.children);
+        }
+    };
+
+    walk(hints);
+
+    return { files, folders };
 }

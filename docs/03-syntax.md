@@ -44,7 +44,7 @@ Arguments passed to `hint` are resolved against the project root:
 | `src` (a folder)    | `src/_.hint`                           |
 | `src/**/*.hint`     | every glob match                       |
 
-Paths outside the project root are ignored. Hints that do not exist are skipped silently — or fail the compilation when `--dry-run` is set.
+A path outside the project root, or one that names nothing in the repository, is reported on stderr and exits `2`; the inherited context is still returned. `--strict` additionally fails when a named path has no spec of its own.
 
 ## Heading blocks
 

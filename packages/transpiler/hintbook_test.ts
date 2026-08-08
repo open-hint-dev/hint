@@ -3,7 +3,7 @@ import * as Os from 'node:os';
 import * as Path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { INSTRUCTION_MODE_DEFAULT, loadHintbook, loadHintbooks, resolveHintbookPaths, RUNNING_MODE, RUNNING_SYSTEM } from './hintbook.js';
+import { loadHintbook, loadHintbooks, resolveHintbookPaths, RUNNING_SYSTEM } from './hintbook.js';
 
 const here = Path.dirname(fileURLToPath(import.meta.url));
 const repoRootPath = Path.resolve(here, '../..');
@@ -11,10 +11,10 @@ const instructionsPath = Path.join(repoRootPath, 'testdata/hintbook/keywords');
 
 describe('hintbook', () => {
     describe('loadHintbook', () => {
-        it('loads instructions into the default mode', async () => {
+        it('loads every instruction from the hintbook folder', async () => {
             const hintbook = await loadHintbook(instructionsPath);
 
-            const names = hintbook.modes[INSTRUCTION_MODE_DEFAULT]!.instructions.map((instruction) => instruction.name);
+            const names = hintbook.instructions.map((instruction) => instruction.name);
 
             expect(names).toContain('entity');
             expect(names).toContain('field');
@@ -23,28 +23,34 @@ describe('hintbook', () => {
             expect(names).toContain('__footer__');
         });
 
-        it('loads mode-specific instructions from the file name suffix', async () => {
-            const hintbook = await loadHintbook(instructionsPath);
+        it('ignores legacy mode-suffixed instruction files', async () => {
+            const hintbookPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-legacy-'));
 
-            for (const mode of ['fix', 'review']) {
-                const names = hintbook.modes[mode]!.instructions.map((instruction) => instruction.name);
+            await FsPromises.writeFile(Path.join(hintbookPath, 'hintbook.json'), '{"id":"legacy"}');
+            await FsPromises.writeFile(Path.join(hintbookPath, '__header__.md'), 'the header');
+            // Variants from the removed mode system must not shadow or duplicate the base instruction.
+            await FsPromises.writeFile(Path.join(hintbookPath, '__header__.fix.md'), 'the fix header');
+            await FsPromises.writeFile(Path.join(hintbookPath, '__mode__.review.md'), 'a review mode');
 
-                expect(names).toContain('__header__');
-                expect(names).toContain('__footer__');
-            }
+            const hintbook = await loadHintbook(hintbookPath);
+            const headers = hintbook.instructions.filter((instruction) => instruction.name === '__header__');
+
+            expect(headers).toHaveLength(1);
+            expect(headers[0]!.content).toBe('the header');
+            expect(hintbook.instructions.map((instruction) => instruction.name)).not.toContain('__mode__');
         });
 
         it('reads exclude metadata from instruction front matter', async () => {
             const hintbook = await loadHintbook(instructionsPath);
 
-            const notes = hintbook.modes[INSTRUCTION_MODE_DEFAULT]!.instructions.find((instruction) => instruction.name === 'notes');
+            const notes = hintbook.instructions.find((instruction) => instruction.name === 'notes');
 
             expect(notes?.metadata?.exclude).toBe(true);
         });
 
         it('reads description and synonyms from instruction front matter', async () => {
             const hintbook = await loadHintbook(instructionsPath);
-            const instructions = hintbook.modes[INSTRUCTION_MODE_DEFAULT]!.instructions;
+            const instructions = hintbook.instructions;
 
             const entity = instructions.find((instruction) => instruction.name === 'entity');
             expect(entity?.metadata?.description).toBe('A data structure or model with a fixed schema.');
@@ -53,28 +59,6 @@ describe('hintbook', () => {
             expect(rule?.metadata?.synonyms).toEqual(['rules']);
             // Keywords without a description front matter key leave it undefined.
             expect(rule?.metadata?.description).toBeUndefined();
-        });
-
-        it('loads running mode descriptions from reserved mode files', async () => {
-            const hintbook = await loadHintbook(instructionsPath);
-
-            const review = hintbook.runningModes.find((mode) => mode.mode === 'review');
-            const fix = hintbook.runningModes.find((mode) => mode.mode === 'fix');
-
-            expect(review).toMatchObject({
-                mode: 'review',
-                name: 'Review',
-                description: 'Audit an implementation against its HINT specification.',
-            });
-            expect(review?.content).toContain('Use `hint --mode review');
-            expect(review?.content).not.toContain('---');
-
-            expect(fix).toMatchObject({
-                mode: 'fix',
-                name: 'fix',
-                description: '',
-            });
-            expect(hintbook.modes.review?.instructions.map((instruction) => instruction.name)).not.toContain(RUNNING_MODE);
         });
     });
 
@@ -142,7 +126,7 @@ describe('hintbook', () => {
             const hintbooks = await loadHintbooks(repoRootPath, ['file://testdata/hintbook']);
 
             expect(hintbooks).toHaveLength(1);
-            expect(hintbooks[0]!.modes[INSTRUCTION_MODE_DEFAULT]!.instructions.length).toBeGreaterThan(0);
+            expect(hintbooks[0]!.instructions.length).toBeGreaterThan(0);
         });
 
         it('loads every hintbook discovered under one book entry', async () => {

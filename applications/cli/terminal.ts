@@ -1,6 +1,6 @@
+import type * as Stream from 'node:stream';
 import * as Fs from 'node:fs';
 import * as Readline from 'node:readline';
-import * as Stream from 'node:stream';
 import * as Tty from 'node:tty';
 
 export type Terminal = {

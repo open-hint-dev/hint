@@ -2,7 +2,7 @@ import * as FsPromises from 'node:fs/promises';
 import * as Os from 'node:os';
 import * as Path from 'node:path';
 
-import { type HintbookData, INSTRUCTION_MODE_DEFAULT, RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
+import { type HintbookData, RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 import type { HintData } from './parser.js';
 import { collectSurfaces, countSurfaceKeywords, formatVerification, mentionsSurface, verifyTargets } from './verify.js';
 
@@ -23,16 +23,11 @@ function surfaceBook(): HintbookData {
     const instruction = (name: string, surface: boolean) => ({ name, content: '', metadata: { surface } });
 
     return {
-        runningModes: [],
-        modes: {
-            [INSTRUCTION_MODE_DEFAULT]: {
-                instructions: [
-                    instruction('func', true),
-                    instruction('error', true),
-                    instruction('bad', false),
-                ],
-            },
-        },
+        instructions: [
+            instruction('func', true),
+            instruction('error', true),
+            instruction('bad', false),
+        ],
     };
 }
 
@@ -75,7 +70,7 @@ describe('verify', () => {
                 block('func', ''), // surface keyword but no name — unverifiable, skipped
             ]);
 
-            expect(collectSurfaces(node, [surfaceBook()], INSTRUCTION_MODE_DEFAULT)).toEqual([
+            expect(collectSurfaces(node, [surfaceBook()])).toEqual([
                 { keyword: 'func', name: 'executeLogin' },
                 { keyword: 'error', name: 'InvalidCredentials' },
             ]);
@@ -84,7 +79,7 @@ describe('verify', () => {
         it('descends into nested blocks', () => {
             const node = file('src/a.ts', [block('func', 'outer', [block('error', 'InnerError')])]);
 
-            expect(collectSurfaces(node, [surfaceBook()], INSTRUCTION_MODE_DEFAULT)).toEqual([
+            expect(collectSurfaces(node, [surfaceBook()])).toEqual([
                 { keyword: 'func', name: 'outer' },
                 { keyword: 'error', name: 'InnerError' },
             ]);
@@ -93,13 +88,13 @@ describe('verify', () => {
 
     describe('countSurfaceKeywords', () => {
         it('counts surface-flagged keywords across books', () => {
-            expect(countSurfaceKeywords([surfaceBook()], INSTRUCTION_MODE_DEFAULT)).toBe(2);
+            expect(countSurfaceKeywords([surfaceBook()])).toBe(2);
         });
 
         it('is zero when no keyword is flagged', () => {
-            const plain: HintbookData = { runningModes: [], modes: { [INSTRUCTION_MODE_DEFAULT]: { instructions: [{ name: 'func', content: '' }] } } };
+            const plain: HintbookData = { instructions: [{ name: 'func', content: '' }] };
 
-            expect(countSurfaceKeywords([plain], INSTRUCTION_MODE_DEFAULT)).toBe(0);
+            expect(countSurfaceKeywords([plain])).toBe(0);
         });
     });
 
@@ -111,7 +106,7 @@ describe('verify', () => {
                 await FsPromises.mkdir(Path.join(dir, 'src'));
                 await FsPromises.writeFile(Path.join(dir, 'src/a.ts'), 'function executeLogin() { throw new InvalidCredentials(); }', 'utf8');
 
-                const results = await verifyTargets(dir, hints(), [surfaceBook()], INSTRUCTION_MODE_DEFAULT);
+                const results = await verifyTargets(dir, hints(), [surfaceBook()]);
 
                 expect(results).toEqual([{ name: 'src/a.ts', status: 'ok', checked: 2, missing: [] }]);
             });
@@ -122,7 +117,7 @@ describe('verify', () => {
                 await FsPromises.mkdir(Path.join(dir, 'src'));
                 await FsPromises.writeFile(Path.join(dir, 'src/a.ts'), 'function executeLogin() {}', 'utf8');
 
-                const results = await verifyTargets(dir, hints(), [surfaceBook()], INSTRUCTION_MODE_DEFAULT);
+                const results = await verifyTargets(dir, hints(), [surfaceBook()]);
 
                 expect(results[0]!.status).toBe('missing-surfaces');
                 expect(results[0]!.missing).toEqual([{ keyword: 'error', name: 'InvalidCredentials' }]);
@@ -131,7 +126,7 @@ describe('verify', () => {
 
         it('reports missing-output when the target does not exist', async () => {
             await withTempDir(async (dir) => {
-                const results = await verifyTargets(dir, hints(), [surfaceBook()], INSTRUCTION_MODE_DEFAULT);
+                const results = await verifyTargets(dir, hints(), [surfaceBook()]);
 
                 expect(results[0]!.status).toBe('missing-output');
             });
@@ -142,7 +137,7 @@ describe('verify', () => {
                 await FsPromises.writeFile(Path.join(dir, 'a.ts'), 'anything', 'utf8');
                 const tree = [folder('.', [file('a.ts', [block('bad', 'Leak')])])];
 
-                const results = await verifyTargets(dir, tree, [surfaceBook()], INSTRUCTION_MODE_DEFAULT);
+                const results = await verifyTargets(dir, tree, [surfaceBook()]);
 
                 expect(results).toEqual([{ name: 'a.ts', status: 'ok', checked: 0, missing: [] }]);
             });

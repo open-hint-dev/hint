@@ -3,9 +3,8 @@ import * as Path from 'node:path';
 import type { HintData } from './parser.js';
 import { isPathExists } from './helper.js';
 import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
-import { parseHints } from './parser.js';
-
-const HINT_EXT = '.hint';
+import { parseHintFiles } from './parser.js';
+import { HINT_EXT } from './resolve.js';
 
 // Cheap guard before touching the filesystem: a real cross-file reference names a path, which contains
 // a separator or a dot (extension). Keyword names like `executeLogin` or `Credentials` never do, so they
@@ -86,14 +85,14 @@ async function collectReferenceTargets(projectRootPath: string, hints: HintData[
 // Expands the requested paths with the transitive closure of the files they reference, so a single
 // compilation carries every referenced spec with its shared ancestors emitted once — instead of the
 // agent re-invoking `hint` per file and re-paying for the same folder/root context each time.
-export async function resolveClosurePaths(projectRootPath: string, paths: string[]): Promise<string[]> {
-    const resultPaths = [...paths];
-    const seenHintPaths = new Set<string>();
+export async function resolveClosurePaths(projectRootPath: string, hintPaths: string[]): Promise<string[]> {
+    const resultPaths = [...hintPaths];
+    const seenHintPaths = new Set<string>(hintPaths);
 
-    let frontier = paths;
+    let frontier = hintPaths;
 
     while (frontier.length > 0) {
-        const hints = await parseHints(projectRootPath, frontier, false);
+        const hints = await parseHintFiles(projectRootPath, frontier);
         const targets = await collectReferenceTargets(projectRootPath, hints);
 
         const next: string[] = [];
