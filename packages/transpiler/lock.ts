@@ -7,7 +7,7 @@ import type { HintbookData } from './hintbook.js';
 import type { HintData } from './parser.js';
 import { findInstruction } from './compiler.js';
 import { readFile, writeFile } from './helper.js';
-import { INSTRUCTION_MODE_DEFAULT, RUNNING_FILE, RUNNING_FOLDER, RUNNING_FOOTER, RUNNING_HEADER } from './hintbook.js';
+import { RUNNING_FILE, RUNNING_FOLDER, RUNNING_FOOTER, RUNNING_HEADER } from './hintbook.js';
 
 export const LOCK_FILE = 'hint.lock';
 // Bumped to 2 when the file hash began folding in the vocabulary each file uses (see effectiveFileHashes),
@@ -131,7 +131,7 @@ function collectKeywords(nodes: HintData[], into: Set<string>): void {
 // so touching them must NOT invalidate a lock. An unknown keyword (no instruction) contributes a stable
 // empty marker; adding an instruction for it later changes the hash, since the output would then change.
 function keywordVocabPart(keyword: string, hintbooks: HintbookData[]): string {
-    const instruction = findInstruction(hintbooks, INSTRUCTION_MODE_DEFAULT, keyword);
+    const instruction = findInstruction(hintbooks, keyword);
 
     return `${keyword}\0${instruction?.content ?? ''}\0${instruction?.metadata?.exclude ? '1' : '0'}`;
 }
@@ -146,7 +146,7 @@ function wrapperVocabHash(hintbooks: HintbookData[]): string {
         RUNNING_FOOTER,
         RUNNING_FILE,
         RUNNING_FOLDER,
-    ].map((name) => findInstruction(hintbooks, INSTRUCTION_MODE_DEFAULT, name)?.content ?? '');
+    ].map((name) => findInstruction(hintbooks, name)?.content ?? '');
 
     return Crypto.createHash('sha256').update(parts.join('\0')).digest('hex');
 }

@@ -1,18 +1,17 @@
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
+import { EXIT_FAILED, EXIT_UNRESOLVED, reportResolution } from './report.js';
 
 export class VerifyCommand implements ICommand {
     private paths: string[] = [];
-    private mode: string = '';
 
     constructor() {}
 
-    static new(paths: string[], mode: string): VerifyCommand {
+    static new(paths: string[]): VerifyCommand {
         const command = new VerifyCommand();
 
         command.paths = paths;
-        command.mode = mode;
 
         return command;
     }
@@ -29,17 +28,31 @@ export class VerifyCommand implements ICommand {
 
         // No surface keyword in the active books means structural verification has nothing to check — say
         // so rather than reporting a hollow pass, and point at how to enable it.
-        if (Transpiler.countSurfaceKeywords(hintbooks, this.mode) === 0) {
+        if (Transpiler.countSurfaceKeywords(hintbooks) === 0) {
             process.stderr.write(
-                'hint: the active hintbooks declare no surface keywords, so structural verification is a no-op. ' +
+                'hint: the active hintbooks declare no surface keywords, so there is nothing to verify. ' +
                     'Mark the keywords whose declared name must appear in the output with `surface: true` to enable it.\n',
             );
+            process.exitCode = EXIT_UNRESOLVED;
 
             return;
         }
 
-        const hints = await Transpiler.parseHints(projectRootPath, this.paths, false);
-        const results = await Transpiler.verifyTargets(projectRootPath, hints, hintbooks, this.mode);
+        const resolution = await Transpiler.resolveRequests(projectRootPath, this.paths);
+
+        await reportResolution(projectRootPath, resolution);
+
+        const hints = await Transpiler.parseHintFiles(projectRootPath, resolution.hintPaths);
+        const results = await Transpiler.verifyTargets(projectRootPath, hints, hintbooks);
+
+        // Verification is a claim about a set of files. An empty set proves nothing, so it must not
+        // report that every declared surface is present.
+        if (results.length === 0) {
+            process.stderr.write(`hint: no file spec matched — nothing to verify. Only companion <file>.hint specs declare surfaces.\n`);
+            process.exitCode = EXIT_UNRESOLVED;
+
+            return;
+        }
 
         const summary = Transpiler.formatVerification(results);
 
@@ -51,6 +64,6 @@ export class VerifyCommand implements ICommand {
 
         // Non-zero exit so an agent loop or CI step can gate on structural conformance.
         process.stdout.write(`${summary}\n`);
-        process.exitCode = 1;
+        process.exitCode = EXIT_FAILED;
     }
 }

@@ -7,32 +7,25 @@ import { readFile, writeFile } from './helper.js';
 
 export const CONFIG_INSTRUCTION = `## HINT
 
-This project uses HINT specifications (\`.hint\` files) as the authoritative implementation contracts. The \`hint\` CLI compiles them into an AI-ready prompt.
+This repository records durable knowledge — decisions, invariants, constraints, hazards, conventions — in \`.hint\` files, versioned alongside the code. The \`hint\` CLI returns the subset that applies to a given path or intent. It tells you what matters here.
 
-- Do not read \`.hint\` files directly unless the user explicitly asks — always use the compiled output instead.
-- Before reading, creating, or modifying project files, first run \`hint <path...>\` and treat its stdout as the primary, authoritative context for those paths.
-- This applies even to files that do not exist yet: a \`.hint\` spec can define a file before it is created. Specs are keyed to the target path, not to its presence on disk.
-- When a task is described by intent rather than an explicit path — you do not yet know which spec covers it — run \`hint search <query...>\` first to find the closest specs (e.g. \`hint search grpc server\`). It ranks every \`.hint\` in the project by relevance and prints JSON, each result a hint file path and a score; it is fast, offline, and reads no files into context. Then compile the top matches with \`hint <path...>\` before starting, so you build on the specs that already exist instead of duplicating them. If it returns nothing, no spec covers that intent yet.
-- Scope the paths to what the task touches — the specific files, plus \`--no-refs\` off so their references come along. A folder path (\`hint src/cli\`) compiles only that folder's own \`_.hint\`, not the specs beneath it; to pull in a whole subtree, use a glob (\`hint 'src/cli/**'\`). Compiling broadly (the repo root, top-level folders, or wide globs) dumps the entire project spec and wastes context — if a run reports a large target count or token estimate on stderr, you probably cast too wide a net.
-- If the output is empty, either no spec covers that path, or — when a \`hint.lock\` exists — the spec is unchanged since it was last generated; a note on stderr says which. Either way there is nothing to (re)generate, so proceed normally instead of rewriting conforming work.
-- \`hint <path...>\` automatically includes the specs of the files a spec references (its \`# read\` targets and path links), with shared folder/root context emitted once — so you already have every referenced spec in a single prompt. Do not run \`hint\` again for a file just because the first spec pointed at it. Pass \`--no-refs\` only when you deliberately want the named specs alone.
-- After you finish implementing or drafting what a spec defines, record it with \`hint lock <path...>\`. This marks those targets as generated, so later plain \`hint\` runs skip them while their specs stay unchanged — keeping repeated runs cheap and the output stable.
-- When a spec has drifted from what you last generated, reconcile it instead of rewriting from scratch: run \`hint diff <path...>\` to see exactly which blocks changed, then \`hint --mode fix <path...>\` to correct only those blocks — the compiled prompt already carries the drift list. Run \`hint lock <path...>\` again afterward.
-- Persist durable project knowledge as HINT, not in a separate memory store. When you learn a lasting fact, rule, or decision worth remembering, do not write it to \`MEMORY.md\` (or any similar agent-memory file) — record it in the most specific \`.hint\` file that applies: a file's companion \`<file>.hint\`, a folder's \`_.hint\`, or, when nothing more specific fits, the root \`_.hint\`. This keeps reminders versioned with the code and part of the authoritative compiled context. Use \`hint author <path...>\` for the keyword vocabulary when writing these.
-- If this file includes an \`<available_hint_modes>\` section, read it before running HINT. It lists the project-specific modes and when to use them. To use one, run \`hint --mode <mode> <path...>\` instead of plain \`hint <path...>\`.
-- When the user asks you to write, create, or update \`.hint\` specs (or to capture knowledge as HINT), first run \`hint author <path...>\` and follow the prompt it prints: it lists the project's keyword vocabulary and the authoring rules, so you write specs with the correct keywords instead of guessing. Then write the \`.hint\` files yourself.
-- If \`hint\` is not installed globally, use \`npx @openhint/cli <path...>\` instead.
-- Run \`hint\` silently as part of your normal workflow — do not narrate routine successful runs. But if a \`hint\` command fails or behaves unexpectedly, do not just relay the raw error. First diagnose it: fetch the troubleshooting index at https://github.com/open-hint-dev/hint/blob/main/docs/troubleshooting/01-intro.md, match the symptom in its issue table, and follow the linked page for that issue. Apply the fix yourself when the page marks it as safe to autofix and retry once. Then report back to the user with the original error, your diagnosis, and the solution you applied or propose.
+**Before you modify code, get the knowledge that applies to it — unless you already have it in this session.**
 
-Examples:
+- Know the path: \`hint <path...>\` prints the knowledge for those paths on stdout. It costs about as much as there is to say; a path nothing applies to returns almost nothing.
+- Know only the intent: \`hint search "<what you are about to do>"\` ranks every \`.hint\` in the repository and prints JSON — \`hint\` (the file), \`target\` (the path it governs), \`score\`, and \`weak\`. It is fast, offline, and reads nothing into your context. Run it whenever you do not already know which knowledge covers the work. Then \`hint <target>\` on the results worth reading. If every result is \`weak\`, treat it as "nothing covers this yet".
+- Knowledge is inherited: a path picks up its own \`.hint\` plus every folder \`_.hint\` above it, up to the repository root. A path with no \`.hint\` of its own still inherits, and \`hint\` says so on stderr.
+- Scope the request to what you are touching. A folder path returns that folder's own knowledge, not the whole subtree — use a glob (\`hint 'src/api/**'\`) when you want everything beneath it.
+- Referenced specs come along automatically, with shared context emitted once, so you do not need a second call for a path the first one pointed at. \`--no-refs\` turns that off.
 
-- Existing files: \`hint docs/intro.md src/utils/*.py src/cli/command/fix.py\`
-- A file to create: \`hint src/cli/command/new_feature.py\`
-- A folder's own spec (not its contents): \`hint src/cli/command\`
-- A whole subtree, every spec beneath a folder: \`hint 'src/cli/command/**'\`
-- Just the named spec, no references: \`hint --no-refs src/cli/command/fix.py\`
-- Record generated work: \`hint lock src/cli/command/fix.py\`
-- See and reconcile drift: \`hint diff src/cli/command/fix.py\` then \`hint --mode fix src/cli/command/fix.py\`
+**Reading stderr and exit codes.** stdout is the knowledge; stderr is the verdict, and its first line is the one that matters. Exit \`0\` succeeded, \`1\` a check failed, \`2\` nothing you asked for matched — a typo, or a path this repository says nothing about. Empty stdout with exit 0 means there is genuinely nothing to say; proceed normally.
+
+**Authoring.** You may read \`.hint\` files directly whenever you are writing or editing them — that is the only way to edit them, and it is expected. Do not read them directly to *consume* knowledge; \`hint <path>\` gives you that in the form agents are meant to receive, with inheritance resolved. Run \`hint author <path...>\` first for the keyword vocabulary and syntax, then write the files yourself.
+
+**Recording what you learn.** When you discover something durable that future work on this repository should know — an architectural decision, a subsystem invariant, an operational hazard, a security constraint, an approach that does not work and why — record it in the most specific \`.hint\` that applies: the file's companion \`<file>.hint\`, else the folder's \`_.hint\`, else the root \`_.hint\`. Prefer this over a separate agent-memory file, so the knowledge is versioned with the code and available to every tool. Do not record session state, task progress, or anything that stops being true when the task ends.
+
+**Contracts (optional).** Only for specs that declare surfaces the code must contain. \`hint verify <path...>\` checks them deterministically and exits non-zero on failure. \`hint lock <path...>\` records a snapshot so later \`hint\` runs skip unchanged work; \`hint diff <path...>\` shows what drifted since. These operate on companion \`<file>.hint\` specs only — folder knowledge has no single generated file to check, and they will say so rather than report a hollow success. A repository that never uses them is a normal HINT repository.
+
+**Notes.** \`hint --prompt <path...>\` wraps the knowledge in a full implementation prompt, for piping to a fresh agent that has no other instructions; you do not need it mid-session. \`hint --help\` lists the complete CLI surface — consult it rather than assuming this block is exhaustive. If \`hint\` is not installed, use \`npx @openhint/cli\`. Run \`hint\` silently as part of your normal workflow; if it fails unexpectedly, diagnose against https://github.com/open-hint-dev/hint/blob/main/docs/troubleshooting/01-intro.md before relaying the error.
 `;
 
 export const CONFIG_FILE_YML = 'hint.yml';

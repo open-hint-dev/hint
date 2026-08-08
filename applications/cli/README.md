@@ -1,8 +1,8 @@
 # @openhint/cli
 
-The `hint` command — compile [HINT](https://github.com/open-hint-dev/hint#readme) specifications into AI-ready prompts.
+The `hint` command — a context compiler for coding agents. See [HINT](https://github.com/open-hint-dev/hint#readme).
 
-HINT is a markdown-native specification language for professionals who want structured, strict AI collaboration with predictable results. `.hint` files live next to the work they define (`src/auth/login.ts.hint` defines `src/auth/login.ts`; `contracts/nda.md.hint` defines `contracts/nda.md`), declare intent and constraints in plain markdown, and compile into deterministic prompts for AI agents. The keyword vocabulary is supplied by installable **hintbooks** — one per profession or team: [software engineering](https://www.npmjs.com/package/@openhint/hintbook-software-engineer), [legal drafting](https://github.com/open-hint-dev/hintbook-lawyer), or your own.
+Given a path or an intent, `hint` returns the repository knowledge that applies to it. Knowledge lives in markdown-native `.hint` files next to the code they describe, versioned in git, inherited from the project root down. It is agent-neutral: Claude Code, Codex, OpenCode, Cline, or anything else that can run a command consumes the same output. The keyword vocabulary comes from installable **hintbooks** — [software engineering](https://www.npmjs.com/package/@openhint/hintbook-software-engineer), [legal drafting](https://github.com/open-hint-dev/hintbook-lawyer), or your own.
 
 ## Installation
 
@@ -21,18 +21,18 @@ hint config
 # 2. Install a keyword vocabulary (registered in hint.yml automatically)
 hint add @openhint/hintbook-software-engineer
 
-# 3. Wire up AGENTS.md / CLAUDE.md from hint.yml (or: hint instruct | claude -p)
+# 3. Tell your agent how to query HINT (writes a short block into AGENTS.md / CLAUDE.md)
 hint apply
 
-# 4. Write specs — a root _.hint and companion <file>.hint files — then compile
-hint src/billing/invoice.ts | claude -p
+# 4. Record what the repo knows in _.hint files, then ask what applies
+hint src/billing/invoice.ts
 ```
 
 ## Commands
 
-### `hint <paths...>` — compile
+### `hint <paths...>` — what applies here
 
-Compiles specs to stdout, wrapped in their folder-context chain plus the active mode's role header and verification footer:
+Prints the knowledge that applies to the given paths, inherited from the project root down. Knowledge only — no persona, no workflow instructions, no reporting format — so the cost is proportional to how much applies:
 
 ```bash
 hint src/login.ts.hint            # a hint file
@@ -41,23 +41,28 @@ hint src                          # a folder's _.hint
 hint 'src/**/*.hint'              # globs
 ```
 
-| Option          | Effect                                                                                                                                            |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--mode <mode>` | Compile for a hintbook mode, e.g. `--mode fix` (repair against spec) or `--mode review` (audit against spec). Default is the implementation mode. |
-| `--dry-run`     | Fail on unresolvable hint files instead of skipping them — use in CI to validate specs.                                                           |
+| Option         | Effect                                                                                                            |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `--prompt`     | Wrap the knowledge in a standalone implementation prompt, for piping to a fresh agent.                            |
+| `--strict`     | Exit 2 when a named path has no spec of its own — use in CI to validate specs.                                    |
+| `--no-refs`    | Only the named specs, not the ones they reference.                                                                |
+| `--force`      | Ignore `hint.lock` and include unchanged files.                                                                   |
+| `--standalone` | Implies `--prompt`, and prepends the tag glossary.                                                                |
+
+Exit codes: `0` succeeded, `1` a check failed, `2` nothing you asked for matched.
 
 ### `hint search <query...>` — find the specs closest to an intent
 
-Ranks every `.hint` in the project against a free-text query and prints the closest matches as JSON — each result a hint file path and a relevance score — so an agent can discover the relevant specs before it knows their paths, then compile them. Deterministic and fully offline (no model, service, or network):
+Ranks every `.hint` in the project against a free-text query and prints JSON — each result the hint file, the `target` path it governs, a relevance score, and a `weak` flag for hits matching under half the query terms. Weak results are flagged, never hidden. Deterministic and fully offline (no model, service, or network):
 
 ```bash
-hint search grpc server           # → {"query":..., "results":[{"hint":"...","score":...}]}
+hint search grpc server           # → results: [{hint, target, score, weak}]
 hint search payment --limit 5     # cap the number of results (default 20)
 ```
 
 ### `hint config` — initialize the project
 
-Creates `hint.yml` in the project root (interactively, if missing). Prints a status line and points you to `hint apply` / `hint instruct` — it does not touch the agent files itself:
+Creates `hint.yml` in the project root (interactively, if missing). It does not touch the agent files — run `hint apply` next:
 
 ```bash
 hint config
@@ -71,25 +76,9 @@ Writes the `<hint>` block from `hint.yml` straight into `AGENTS.md` and `CLAUDE.
 hint apply
 ```
 
-### `hint instruct` — set up the agent context files via an agent
-
-Prints the same content as an AI agent prompt instead of writing the files. Pipe it to your agent to apply; the files are never modified by the CLI in this mode. `--permission-mode acceptEdits` lets a headless Claude write the files without stopping for approval:
-
-```bash
-hint instruct | claude -p --permission-mode acceptEdits
-```
-
-### `hint modes` — list available modes
-
-Lists `__mode__.<mode>.md` files from registered hintbooks, including their frontmatter `name` and `description` when present:
-
-```bash
-hint modes
-```
-
 ### `hint add <books...>` — install hintbooks
 
-Fetches hintbooks, validates them (a `hintbook.json` must be present), and registers them in `hint.yml`. npm packages install globally by default; pass `--local` to install into a project-local `hintbooks/` store instead (works inside yarn/pnpm workspaces). Run `hint instruct | claude -p --permission-mode acceptEdits` afterwards to refresh the agent files:
+Fetches hintbooks, validates them (a `hintbook.json` must be present), and registers them in `hint.yml`. npm packages install globally by default; pass `--local` to install into a project-local `hintbooks/` store instead (works inside yarn/pnpm workspaces). Run `hint apply` afterwards to refresh the agent files:
 
 ```bash
 hint add @openhint/hintbook-software-engineer           # npm package, installed globally
@@ -116,6 +105,7 @@ books:
 - [Quick Start](https://github.com/open-hint-dev/hint/blob/main/docs/02-quick-start.md)
 - [Syntax](https://github.com/open-hint-dev/hint/blob/main/docs/03-syntax.md)
 - [CLI Reference](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md)
+- [Migrating to 1.1](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md)
 
 ## License
 

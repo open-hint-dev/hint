@@ -3,7 +3,7 @@ import * as Path from 'node:path';
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
-import { AGENT_FILE_NAMES, buildHintBlock, collectHintbookSections, HINT_TAG } from './instruct.js';
+import { AGENT_FILE_NAMES, buildHintBlock, collectHintbookSections, HINT_TAG } from './bootstrap.js';
 
 const HINT_BLOCK_PATTERN = new RegExp(`<${HINT_TAG}>[\\s\\S]*?<\\/${HINT_TAG}>`);
 

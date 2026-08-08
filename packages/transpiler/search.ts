@@ -3,15 +3,25 @@ import Path from 'node:path';
 import type { HintData } from './parser.js';
 import { listHintFiles, parseHintFile } from './parser.js';
 
-// A ranked hit: the hint file whose spec is closest to the query, and how close.
+// A ranked hit: the knowledge closest to the query, what it governs, and how close.
 export type SearchResult = {
     hint: string; // hint file path, relative to the project root (e.g. `src/rpc/server.ts.hint`)
+    target: string; // the path this knowledge governs (`src/rpc/server.ts`, or a folder, or `.`)
     score: number; // BM25F relevance score; higher is closer. Only positive scores are returned.
+    weak: boolean; // matched under half the query's terms — probably not what you meant
 };
 
 export type SearchOptions = {
     limit?: number;
 };
+
+// Scores are corpus-relative, so a high one says nothing about whether a hit is on topic — the reason a
+// confident-looking top result can be pure noise. Term coverage is the honest signal: a document that
+// matched under half the query's terms is flagged. It is advisory only, and never filters a result out;
+// a false `weak` costs a glance, a hidden result costs the knowledge.
+function isWeakMatch(matchedTerms: number, totalTerms: number): boolean {
+    return matchedTerms * 2 < totalTerms;
+}
 
 // Zones a hint document is split into. The same term is worth more in a target path or a declared
 // name than deep in prose, so each zone carries a boost when scoring (BM25F field weights).
@@ -291,6 +301,7 @@ function expandedTokens(text: string): string[] {
 // A hint file reduced to what scoring needs: per-zone token bags and their lengths.
 type Document = {
     hint: string;
+    target: string;
     zones: Record<Zone, string[]>;
     length: Record<Zone, number>;
 };
@@ -325,6 +336,9 @@ function buildDocument(hintPath: string, hint: HintData): Document {
 
     return {
         hint: hintPath,
+        // `hint.name` is the repo-relative path this knowledge governs — the thing a caller passes to
+        // `hint <path>` next, so a hit is directly actionable without deriving it from the file name.
+        target: hint.name,
         zones,
         length: { path: zones.path.length, name: zones.name.length, body: zones.body.length },
     };
@@ -397,7 +411,7 @@ export async function searchHints(projectRootPath: string, query: string, option
         // A single malformed spec (bad include, cycle) must not sink the whole search — it is simply
         // left out of the index. Compile/verify remain the place where such errors are surfaced.
         try {
-            const hint = await parseHintFile(projectRootPath, Path.resolve(projectRootPath, hintPath), false);
+            const hint = await parseHintFile(projectRootPath, Path.resolve(projectRootPath, hintPath));
 
             if (hint) {
                 documents.push(buildDocument(hintPath, hint));
@@ -467,6 +481,7 @@ export async function searchHints(projectRootPath: string, query: string, option
 
     for (const document of documents) {
         let score = 0;
+        let matchedTerms = 0;
 
         for (const { term, weight } of resolvedTerms) {
             let boostedTf = 0;
@@ -486,6 +501,8 @@ export async function searchHints(projectRootPath: string, query: string, option
                 continue;
             }
 
+            matchedTerms += 1;
+
             const df = documentFrequency.get(term) ?? 0;
             const idf = Math.log(1 + (N - df + 0.5) / (df + 0.5));
 
@@ -493,7 +510,16 @@ export async function searchHints(projectRootPath: string, query: string, option
         }
 
         if (score > 0) {
-            results.push({ hint: document.hint, score: Math.round(score * 1000) / 1000 });
+            results.push({
+                hint: document.hint,
+                target: document.target,
+                score: Math.round(score * 1000) / 1000,
+                // Coverage is measured against every term the caller typed, not just the ones the corpus
+                // happens to contain. A query whose terms mostly match nothing here is the clearest
+                // evidence that this repository does not cover the intent — which is exactly the case a
+                // corpus-relative score cannot express.
+                weak: isWeakMatch(matchedTerms, queryTerms.length),
+            });
         }
     }
 

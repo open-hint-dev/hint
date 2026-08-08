@@ -2,7 +2,7 @@ import * as FsPromises from 'node:fs/promises';
 import * as Os from 'node:os';
 import * as Path from 'node:path';
 
-import { type HintbookData, INSTRUCTION_MODE_DEFAULT, RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
+import { type HintbookData, RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 import {
     collectFileNodes,
     computeDrift,
@@ -27,15 +27,10 @@ import type { HintData } from './parser.js';
 // instruction content (not its version) drives lock invalidation.
 function bookWith(funcContent: string, entityContent = '<entity>{name}</entity>'): HintbookData {
     return {
-        runningModes: [],
-        modes: {
-            [INSTRUCTION_MODE_DEFAULT]: {
-                instructions: [
-                    { name: 'func', content: funcContent },
-                    { name: 'entity', content: entityContent },
-                ],
-            },
-        },
+        instructions: [
+            { name: 'func', content: funcContent },
+            { name: 'entity', content: entityContent },
+        ],
     };
 }
 
@@ -242,10 +237,7 @@ describe('lock', () => {
 
         it('flags a file whose used keyword changed meaning as inherited (vocabulary drift)', () => {
             // Root declares `lang`; give the books a `lang` instruction, lock, then change that instruction.
-            const langBook = (content: string): HintbookData => ({
-                runningModes: [],
-                modes: { [INSTRUCTION_MODE_DEFAULT]: { instructions: [{ name: 'lang', content }] } },
-            });
+            const langBook = (content: string): HintbookData => ({ instructions: [{ name: 'lang', content }] });
             const tree = sampleTree();
             const effective = new Map(effectiveFileHashes(tree, [langBook('v1')]).map((f) => [f.name, f.hash]));
             const lock: LockData = { version: 2, files: {} };
@@ -354,15 +346,10 @@ describe('lock', () => {
         it('is unaffected by non-rendering metadata (surface/description/synonyms)', () => {
             const plain = bookWith('<func>v1</func>');
             const withMeta: HintbookData = {
-                runningModes: [],
-                modes: {
-                    [INSTRUCTION_MODE_DEFAULT]: {
-                        instructions: [
-                            { name: 'func', content: '<func>v1</func>', metadata: { surface: true, description: 'x', synonyms: ['fn'] } },
-                            { name: 'entity', content: '<entity>{name}</entity>' },
-                        ],
-                    },
-                },
+                instructions: [
+                    { name: 'func', content: '<func>v1</func>', metadata: { surface: true, description: 'x', synonyms: ['fn'] } },
+                    { name: 'entity', content: '<entity>{name}</entity>' },
+                ],
             };
 
             expect(hashFileVocab(tree(), [withMeta])).toEqual(hashFileVocab(tree(), [plain]));

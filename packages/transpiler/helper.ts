@@ -30,10 +30,6 @@ export function isGlobPattern(p: string): boolean {
     return /[*?{[]/.test(p);
 }
 
-export async function isPathFile(path: string): Promise<boolean> {
-    return (await FsPromises.stat(path)).isFile();
-}
-
 export async function isPathFolder(path: string): Promise<boolean> {
     return (await FsPromises.stat(path)).isDirectory();
 }

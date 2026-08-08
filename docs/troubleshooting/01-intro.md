@@ -2,7 +2,7 @@
 
 This is the entry point for diagnosing `hint` CLI failures. Every error the CLI can produce has its own page below, with the exact error text, the cause, and the fix.
 
-The CLI reports failures as a single message on **stderr** and a non-zero exit code; warnings also go to stderr but do not stop the command. **stdout** always carries only the command's payload (compiled prompt, agent prompt, or version report), so it stays safe to pipe.
+The CLI reports failures as a single message on **stderr**, first line first, with a non-zero exit code: `1` a check failed, `2` nothing you asked for could be resolved. Warnings also go to stderr but do not stop the command. **stdout** always carries only the answer (the scoped knowledge, a drift or verification report, JSON search results, or a status line), so it stays safe to pipe.
 
 ## How to use this guide (AI agents)
 
@@ -24,8 +24,7 @@ If no page matches, report the full error verbatim along with the command you ra
 | `Hintbook not found: <book>` / `Skipping hintbook '<book>': not found`  | [Hintbook not found](04-hintbook-not-found.md)                   |
 | `No hintbook found in '<book>'`                                         | [Package is not a hintbook](05-not-a-hintbook.md)                |
 | `'npm install <...>' failed` / `'git clone <...>' failed`               | [Hintbook installation failed](06-install-failed.md)             |
-| `Hint file not found: <path>`                                           | [Hint file not found with --dry-run](07-hint-file-not-found.md)  |
+| `<path> does not exist in this repository` (exit 2)                     | [Requested path matched nothing](07-hint-file-not-found.md)      |
 | `Failed to read / access / write '<path>'`                              | [hint.yml read/write errors](08-config-file-errors.md)           |
 | `hint <paths...>` prints nothing unexpectedly                           | [Empty compile output](09-empty-output.md)                       |
 | `hint config` asks questions in a script                                | [Interactive prompts when scripting](10-interactive-prompts.md)  |
-| `hint instruct \| claude -p` stalls asking to approve a write            | [Agent stalls on write approval](11-agent-write-approval.md)     |

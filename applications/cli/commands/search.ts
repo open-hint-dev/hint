@@ -26,6 +26,12 @@ export class SearchCommand implements ICommand {
 
         const results = await Transpiler.searchHints(projectRootPath, this.query, { limit: this.limit });
 
+        // A ranked list with nothing strong in it reads as confident even when it is noise, because
+        // scores are corpus-relative. Say so on stderr — the results still print, unfiltered.
+        if (results.length > 0 && results.every((result) => result.weak)) {
+            process.stderr.write(`hint: no strong match for '${this.query}' — every result matched under half the query terms.\n`);
+        }
+
         process.stdout.write(`${JSON.stringify({ query: this.query, count: results.length, results }, null, 2)}\n`);
     }
 }
