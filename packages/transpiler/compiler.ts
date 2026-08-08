@@ -2,7 +2,6 @@ import type { HintbookData, InstructionData } from './hintbook.js';
 import type { HintData } from './parser.js';
 import { interpolate } from './helper.js';
 import {
-    INSTRUCTION_MODE_DEFAULT,
     PLACEHOLDER_BODY,
     PLACEHOLDER_CHILDREN,
     PLACEHOLDER_ID,
@@ -14,6 +13,15 @@ import {
     RUNNING_HEADER,
     RUNNING_SYSTEM,
 } from './hintbook.js';
+
+export type PromptOptions = {
+    // Block-level drift, rendered through the hintbook's `__changes__` instruction. Supplied only when
+    // a lock exists and something actually drifted, so reconciliation framing appears exactly when it
+    // applies instead of being selected by hand.
+    changes?: string;
+    // Prepend the tag glossary, for an agent that never loaded the project's AGENTS.md.
+    standalone?: boolean;
+};
 
 // A file/folder wrapper is pure structural nesting when it declares no directives of its own: its
 // own hint body is empty and none of its children are content blocks (every child is itself a
@@ -31,41 +39,34 @@ function isEmptyStructuralWrapper(hint: HintData): boolean {
     return hint.children.every((child) => child.keyword === RUNNING_FOLDER || child.keyword === RUNNING_FILE);
 }
 
-// Resolves the keyword's instruction the same way compilation does: the active mode first, then the
-// default mode, matching an instruction by its name or one of its declared synonyms. Exported so drift
-// and verification resolve keywords by exactly the rules the compiler uses.
-export function findInstruction(hintbooks: HintbookData[], mode: string, keyword: string): InstructionData | null {
-    for (const modeName of new Set([
-        mode,
-        INSTRUCTION_MODE_DEFAULT,
-    ])) {
-        for (const hintbook of hintbooks) {
-            const instruction = hintbook.modes[modeName]?.instructions.find(
-                (candidate) => candidate.name === keyword || candidate.metadata?.synonyms?.includes(keyword),
-            );
+// Resolves a keyword to its instruction, matching by name or by one of its declared synonyms. The
+// first hintbook that defines the keyword wins. Exported so drift and verification resolve keywords
+// by exactly the rules the renderer uses.
+export function findInstruction(hintbooks: HintbookData[], keyword: string): InstructionData | null {
+    for (const hintbook of hintbooks) {
+        const instruction = hintbook.instructions.find((candidate) => candidate.name === keyword || candidate.metadata?.synonyms?.includes(keyword));
 
-            if (instruction) {
-                return instruction;
-            }
+        if (instruction) {
+            return instruction;
         }
     }
 
     return null;
 }
 
-function compileHint(hint: HintData, hintbooks: HintbookData[], mode: string): string {
-    const instruction = findInstruction(hintbooks, mode, hint.keyword);
+function renderHint(hint: HintData, hintbooks: HintbookData[]): string {
+    const instruction = findInstruction(hintbooks, hint.keyword);
 
     if (instruction?.metadata?.exclude) {
         return '';
     }
 
     const children = hint.children
-        .map((child) => compileHint(child, hintbooks, mode))
+        .map((child) => renderHint(child, hintbooks))
         .filter(Boolean)
         .join('\n\n');
 
-    // Drop empty structural wrappers, promoting whatever their (already path-scoped) children compiled
+    // Drop empty structural wrappers, promoting whatever their (already path-scoped) children rendered
     // to. A folder that only nests other wrappers collapses to those wrappers; an empty file wrapper
     // collapses to '' and is filtered out by its parent.
     if (isEmptyStructuralWrapper(hint)) {
@@ -89,44 +90,47 @@ function compileHint(hint: HintData, hintbooks: HintbookData[], mode: string): s
     }).trim();
 }
 
-export async function compileHints(
-    hints: HintData[],
-    hintbooks: HintbookData[],
-    mode: string,
-    changes: string = '',
-    standalone: boolean = false,
-): Promise<string> {
-    const resolvedMode = mode || INSTRUCTION_MODE_DEFAULT;
+// Interpolated wrappers pad `{body}`/`{children}` with blank lines; when a slot is empty this leaves
+// runs of 3+ newlines. Collapse every run to a single blank line so nesting stays legible.
+function tidy(text: string): string {
+    return text.replace(/\n{3,}/g, '\n\n').trim();
+}
 
-    const content = hints
-        .map((hint) => compileHint(hint, hintbooks, resolvedMode))
-        .filter(Boolean)
-        .join('\n\n');
+// The core artifact: the scoped repository knowledge that applies, and nothing else. No persona, no
+// workflow instructions, no reporting format — so the cost of asking HINT what applies to a path is
+// proportional to how much actually applies. `renderPrompt` wraps this when framing is wanted.
+export function renderContext(hints: HintData[], hintbooks: HintbookData[]): string {
+    return tidy(
+        hints
+            .map((hint) => renderHint(hint, hintbooks))
+            .filter(Boolean)
+            .join('\n\n'),
+    );
+}
 
-    // The tag glossary normally lives once in AGENTS.md, not in every compile. `--standalone` prepends
-    // it so the output explains its own tags for an agent that never loaded AGENTS.md (e.g. a subagent).
-    const system = standalone ? findInstruction(hintbooks, resolvedMode, RUNNING_SYSTEM)?.content.trim() : '';
-    const header = findInstruction(hintbooks, resolvedMode, RUNNING_HEADER)?.content.trim();
-    const footer = findInstruction(hintbooks, resolvedMode, RUNNING_FOOTER)?.content.trim();
+// The optional wrapper: the same context framed as a standalone implementation prompt, for piping to
+// a fresh agent that has no other instructions. Everything here is framing — losing it loses no
+// repository knowledge.
+export function renderPrompt(context: string, hintbooks: HintbookData[], options: PromptOptions = {}): string {
+    const system = options.standalone ? findInstruction(hintbooks, RUNNING_SYSTEM)?.content.trim() : '';
+    const header = findInstruction(hintbooks, RUNNING_HEADER)?.content.trim();
+    const footer = findInstruction(hintbooks, RUNNING_FOOTER)?.content.trim();
 
-    // Drift guidance renders only when the mode defines a `__changes__` instruction (e.g. fix mode) and the
-    // caller supplied a summary — so it stays a hintbook-controlled section, dormant everywhere else.
-    const changesInstruction = changes ? findInstruction(hintbooks, resolvedMode, RUNNING_CHANGES) : null;
-    const changesSection = changesInstruction ? interpolate(changesInstruction.content, { [PLACEHOLDER_BODY]: changes }).trim() : '';
+    // Reconciliation guidance renders only when the hintbook defines a `__changes__` instruction and the
+    // caller detected drift — so it appears exactly when code has drifted from its spec, with no mode to
+    // select by hand.
+    const changesInstruction = options.changes ? findInstruction(hintbooks, RUNNING_CHANGES) : null;
+    const changes = changesInstruction ? interpolate(changesInstruction.content, { [PLACEHOLDER_BODY]: options.changes! }).trim() : '';
 
-    return (
+    return tidy(
         [
             system,
             header,
-            changesSection,
-            content,
+            changes,
+            context,
             footer,
         ]
             .filter(Boolean)
-            .join('\n\n')
-            // Interpolated wrappers pad `{body}`/`{children}` with blank lines; when a slot is empty this
-            // leaves runs of 3+ newlines. Collapse every run to a single blank line so nesting stays legible.
-            .replace(/\n{3,}/g, '\n\n')
-            .trim()
+            .join('\n\n'),
     );
 }

@@ -2,7 +2,7 @@ import * as Path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { HintData } from './parser.js';
-import { compileHints } from './compiler.js';
+import { renderContext, renderPrompt } from './compiler.js';
 import { loadHintbook, RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 import { parseHints } from './parser.js';
 
@@ -12,8 +12,8 @@ const instructionsPath = Path.resolve(here, '../../testdata/hintbook/keywords');
 
 const hintbook = await loadHintbook(instructionsPath);
 
-async function compileProject(paths: string[], mode = ''): Promise<string> {
-    return compileHints(await parseHints(projectRootPath, paths, false), [hintbook], mode);
+async function contextFor(paths: string[]): Promise<string> {
+    return renderContext(await parseHints(projectRootPath, paths), [hintbook]);
 }
 
 // Synthetic hint nodes, so the elision branches can be exercised precisely without carrying a fixture
@@ -23,9 +23,9 @@ const file = (name: string, children: HintData[] = [], body = ''): HintData => (
 const block = (keyword: string, name: string, body: string): HintData => ({ level: 1, keyword, id: '', name, body, children: [] });
 
 describe('compiler', () => {
-    describe('compileHints', () => {
+    describe('renderContext', () => {
         it('renders hints through their keyword instructions', async () => {
-            const output = await compileProject(['src/payment.ts.hint']);
+            const output = await contextFor(['src/payment.ts.hint']);
 
             expect(output).toContain('<data_structure name="PaymentData" id="payment_data">');
             expect(output).toContain('this entity describes payment data contract');
@@ -34,7 +34,7 @@ describe('compiler', () => {
         });
 
         it('wraps files and folders into context tags with their paths', async () => {
-            const output = await compileProject(['src/payment.ts.hint']);
+            const output = await contextFor(['src/payment.ts.hint']);
 
             expect(output).toContain('<folder_context path=".">');
             expect(output).toContain('<folder_context path="src">');
@@ -42,7 +42,7 @@ describe('compiler', () => {
         });
 
         it('elides empty folder wrappers, promoting their nested targets', async () => {
-            const output = await compileProject(['deep/nested/feature.ts.hint']);
+            const output = await contextFor(['deep/nested/feature.ts.hint']);
 
             // deep/ and deep/nested/ have no _.hint of their own — pure nesting, so no wrapper is emitted
             expect(output).not.toContain('<folder_context path="deep">');
@@ -52,27 +52,27 @@ describe('compiler', () => {
         });
 
         it('keeps folder wrappers that declare their own context', async () => {
-            const output = await compileProject(['src/payment.ts.hint']);
+            const output = await contextFor(['src/payment.ts.hint']);
 
             // src/_.hint has body content, so its wrapper carries a directive and must survive
             expect(output).toContain('<folder_context path="src">');
         });
 
         it('collapses runs of blank lines left by empty wrapper slots', async () => {
-            const output = await compileProject(['deep/nested/feature.ts.hint']);
+            const output = await contextFor(['deep/nested/feature.ts.hint']);
 
             expect(output).not.toMatch(/\n{3,}/);
         });
 
         it('drops a file wrapper that has no directives of its own', async () => {
-            const output = await compileHints([file('src/empty.ts')], [hintbook], '');
+            const output = renderContext([file('src/empty.ts')], [hintbook]);
 
             expect(output).not.toContain('<file_context path="src/empty.ts">');
         });
 
         it('keeps a folder whose only directive is a heading block, not preamble body', async () => {
             const tree = folder('pkg', [block('entity', 'Thing', 'the thing contract')]);
-            const output = await compileHints([tree], [hintbook], '');
+            const output = renderContext([tree], [hintbook]);
 
             expect(output).toContain('<folder_context path="pkg">');
             expect(output).toContain('<data_structure name="Thing"');
@@ -83,7 +83,7 @@ describe('compiler', () => {
                 file('pkg/a.ts', [block('entity', 'A', 'a contract')]),
                 file('pkg/b.ts', [block('entity', 'B', 'b contract')]),
             ]);
-            const output = await compileHints([tree], [hintbook], '');
+            const output = renderContext([tree], [hintbook]);
 
             expect(output).not.toContain('<folder_context path="pkg">');
             expect(output).toContain('<file_context path="pkg/a.ts">');
@@ -92,7 +92,7 @@ describe('compiler', () => {
 
         it('collapses a chain of empty folders down to the deepest real target', async () => {
             const tree = folder('a', [folder('a/b', [folder('a/b/c', [file('a/b/c/leaf.ts', [block('entity', 'Leaf', 'leaf contract')])])])]);
-            const output = await compileHints([tree], [hintbook], '');
+            const output = renderContext([tree], [hintbook]);
 
             expect(output).not.toContain('<folder_context path="a">');
             expect(output).not.toContain('<folder_context path="a/b">');
@@ -102,101 +102,100 @@ describe('compiler', () => {
         });
 
         it('expands includes into the compiled output', async () => {
-            const output = await compileProject(['src/payment.ts.hint']);
+            const output = await contextFor(['src/payment.ts.hint']);
 
             expect(output).toContain('shared **markdown** context');
         });
 
         it('drops hints whose instruction is marked exclude', async () => {
-            const output = await compileProject(['src/notes.ts.hint']);
+            const output = await contextFor(['src/notes.ts.hint']);
 
             expect(output).not.toContain('internal notes that must never reach the compiled prompt');
         });
 
         it('passes unknown keywords through as plain body', async () => {
-            const output = await compileProject(['src/notes.ts.hint']);
+            const output = await contextFor(['src/notes.ts.hint']);
 
             expect(output).toContain('custom keyword body passes through unchanged');
             expect(output).not.toContain('customkeyword');
         });
 
-        it('omits the tag glossary by default', async () => {
-            const output = await compileProject(['src/payment.ts.hint']);
+        it('emits no persona, glossary, or reporting framing', async () => {
+            const output = await contextFor(['src/payment.ts.hint']);
 
+            // The whole point of the default artifact: knowledge only. Framing is `renderPrompt`'s job.
             expect(output).not.toContain('The tag glossary below defines');
+            expect(output).not.toContain('You are a senior software engineer');
+            expect(output).not.toContain('The specification ends here.');
+            expect(output.startsWith('<folder_context path=".">')).toBe(true);
         });
 
-        it('prepends the tag glossary in standalone mode', async () => {
-            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
-            const output = await compileHints(hints, [hintbook], '', '', true);
+        it('costs in proportion to the knowledge it carries', () => {
+            const nothing = renderContext([], [hintbook]);
+            const one = renderContext([file('a.ts', [block('entity', 'A', 'a')])], [hintbook]);
+            const three = renderContext(
+                [
+                    file('a.ts', [block('entity', 'A', 'a')]),
+                    file('b.ts', [block('entity', 'B', 'b')]),
+                    file('c.ts', [block('entity', 'C', 'c')]),
+                ],
+                [hintbook],
+            );
 
-            expect(output.startsWith('The following prompt uses a structured')).toBe(true);
-            expect(output).toContain('The tag glossary below defines');
-            // header still follows the glossary
-            expect(output).toContain('You are a senior software engineer implementing a project');
+            // No fixed floor: a path nothing applies to returns nothing at all, and output grows with the
+            // knowledge rather than around a constant scaffold.
+            expect(nothing).toBe('');
+            expect(one.length).toBeLessThan(200);
+            expect(three.length).toBeGreaterThan(one.length * 2.5);
         });
 
-        it('resolves the standalone glossary from the default mode under another mode', async () => {
-            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
-            // the fixture defines __system__ only in the default mode; fix mode must fall back to it
-            const output = await compileHints(hints, [hintbook], 'fix', '', true);
-
-            expect(output).toContain('The tag glossary below defines');
-            expect(output).toContain('You are a senior software engineer fixing defects');
-        });
-
-        it('wraps the output with the default mode header and footer', async () => {
-            const output = await compileProject(['src/payment.ts.hint']);
-
-            expect(output.startsWith('You are a senior software engineer implementing a project')).toBe(true);
-            expect(output).toContain('The specification ends here.');
-        });
-
-        it('wraps the output with mode-specific headers', async () => {
-            const fix = await compileProject(['src/payment.ts.hint'], 'fix');
-            const review = await compileProject(['src/payment.ts.hint'], 'review');
-
-            expect(fix.startsWith('You are a senior software engineer fixing defects')).toBe(true);
-            expect(review.startsWith('You are a senior software engineer reviewing an implementation')).toBe(true);
-        });
-
-        it('falls back to default mode instructions for keywords missing in the requested mode', async () => {
-            const output = await compileProject(['src/payment.ts.hint'], 'fix');
-
-            expect(output).toContain('<data_structure name="PaymentData" id="payment_data">');
-        });
-
-        it('compiles without hintbooks as plain passthrough', async () => {
-            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
-            const output = await compileHints(hints, [], '');
+        it('renders without hintbooks as plain passthrough', async () => {
+            const output = renderContext(await parseHints(projectRootPath, ['src/payment.ts.hint']), []);
 
             expect(output).toContain('this entity describes payment data contract');
             expect(output).not.toContain('<data_structure');
         });
 
-        it('renders the changes section only when the mode defines a __changes__ instruction', async () => {
-            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
-            const drift = '- src/payment.ts: reconcile these blocks';
+    });
 
-            // fix mode ships __changes__.fix.md in the fixture hintbook; default mode does not
-            const fix = await compileHints(hints, [hintbook], 'fix', drift);
-            const plain = await compileHints(hints, [hintbook], '', drift);
+    describe('renderPrompt', () => {
+        it('adds the persona header and the reporting footer around the context', async () => {
+            const context = await contextFor(['src/payment.ts.hint']);
+            const output = renderPrompt(context, [hintbook]);
 
-            expect(fix).toContain('<specification_changes>');
-            expect(fix).toContain(drift);
-            expect(plain).not.toContain('<specification_changes>');
-            expect(plain).not.toContain(drift);
+            expect(output.startsWith('You are a senior software engineer implementing a project')).toBe(true);
+            expect(output).toContain(context);
+            expect(output).toContain('The specification ends here.');
         });
 
-        it('omits the changes section when no drift text is supplied', async () => {
-            const hints = await parseHints(projectRootPath, ['src/payment.ts.hint'], false);
-            const fix = await compileHints(hints, [hintbook], 'fix');
+        it('prepends the tag glossary when standalone', async () => {
+            const output = renderPrompt(await contextFor(['src/payment.ts.hint']), [hintbook], { standalone: true });
 
-            expect(fix).not.toContain('<specification_changes>');
+            expect(output.startsWith('The following prompt uses a structured')).toBe(true);
+            expect(output).toContain('The tag glossary below defines');
+            expect(output).toContain('You are a senior software engineer implementing a project');
         });
 
-        it('compiles empty hints to header and footer only', async () => {
-            const output = await compileHints([] as HintData[], [hintbook], '');
+        it('omits the glossary unless standalone is asked for', async () => {
+            const output = renderPrompt(await contextFor(['src/payment.ts.hint']), [hintbook]);
+
+            expect(output).not.toContain('The tag glossary below defines');
+        });
+
+        it('renders reconciliation guidance only when drift is supplied', async () => {
+            const context = await contextFor(['src/payment.ts.hint']);
+            const changes = '- src/payment.ts: reconcile these blocks';
+
+            const drifted = renderPrompt(context, [hintbook], { changes });
+            const clean = renderPrompt(context, [hintbook]);
+
+            expect(drifted).toContain('<specification_changes>');
+            expect(drifted).toContain(changes);
+            expect(clean).not.toContain('<specification_changes>');
+        });
+
+        it('frames an empty context as header and footer only', () => {
+            const output = renderPrompt(renderContext([] as HintData[], [hintbook]), [hintbook]);
 
             expect(output.startsWith('You are a senior software engineer implementing a project')).toBe(true);
             expect(output).toContain('The specification ends here.');

@@ -7,20 +7,17 @@ import { AuthorCommand } from './commands/author.js';
 import { CompileCommand } from './commands/compile.js';
 import { ConfigCommand } from './commands/config.js';
 import { DiffCommand } from './commands/diff.js';
-import { InstructCommand } from './commands/instruct.js';
-import { ListCommand } from './commands/list.js';
 import { LockCommand } from './commands/lock.js';
-import { ModesCommand } from './commands/modes.js';
 import { RemoveCommand } from './commands/remove.js';
 import { SearchCommand } from './commands/search.js';
 import { VerifyCommand } from './commands/verify.js';
 import { findCliVersion, VersionCommand } from './commands/version.js';
 
-type CompileOptions = {
-    mode?: string;
-    dryRun: boolean;
+type ContextOptions = {
+    strict: boolean;
     force: boolean;
     refs: boolean;
+    prompt: boolean;
     standalone: boolean;
 };
 
@@ -28,53 +25,89 @@ type AddOptions = {
     local: boolean;
 };
 
+// Examples come before options and commands: agents routinely read only the head of a command's output,
+// so the most actionable lines have to be the first ones they see.
+const EXAMPLES = `Examples:
+  hint src/auth/token.ts               what HINT knowledge applies to this path
+  hint search "service account auth"   which knowledge covers this intent (JSON)
+  hint author src/auth/token.ts        how to write or update a .hint spec
+  hint apply                           install HINT instructions into AGENTS.md / CLAUDE.md
+  hint version                         CLI version and installed hintbooks
+
+Contracts (optional — only for specs that declare surfaces the code must contain):
+  hint verify src/auth/token.ts        check the code contains every declared surface
+  hint lock src/auth/token.ts          record a contract snapshot
+  hint diff src/auth/token.ts          show which blocks drifted since that snapshot
+
+Exit codes: 0 succeeded · 1 a check failed · 2 nothing matched the given paths.`;
+
 export async function main(): Promise<void> {
     const program = new Command();
 
     program
         .name('hint')
-        .description('Compile HINT specification files into AI-ready implementation prompts.')
-        .version(
-            `@openhint/cli ${await findCliVersion()}`,
-            '-v, --version',
-            'print the CLI version (use the "version" command to also list hintbook versions)',
+        .description('Return the repository knowledge that applies to a path, for any coding agent to consume.')
+        .version(`@openhint/cli ${await findCliVersion()}`, '-v, --version', 'print the CLI version')
+        .argument('[paths...]', 'paths to source files, folders, or .hint files (globs supported)')
+        .option('--prompt', 'wrap the knowledge in a standalone implementation prompt, for piping to a fresh agent', false)
+        .option('--strict', 'exit non-zero when a given path has no spec of its own, instead of returning inherited context', false)
+        .option('--force', 'ignore hint.lock and include every file, even unchanged ones', false)
+        .option('--no-refs', 'return only the named specs, not the specs they reference (references are included by default)')
+        .option('--standalone', 'implies --prompt, and prepends the tag glossary for an agent that never loaded AGENTS.md', false)
+        // Renamed to --strict, which says what it does. Accepted silently so existing scripts keep working.
+        .addOption(new Option('--dry-run').hideHelp())
+        .action(async (paths: string[], options: ContextOptions & { dryRun?: boolean }) => {
+            if (paths.length === 0) {
+                program.outputHelp();
+
+                return;
+            }
+
+            await CompileCommand.new(paths, {
+                strict: options.strict || Boolean(options.dryRun),
+                force: options.force,
+                refs: options.refs,
+                prompt: options.prompt || options.standalone,
+                standalone: options.standalone,
+            }).execute();
+        });
+
+    program
+        .command('search')
+        .description(
+            'Find the knowledge closest to a query — a fast, offline, dependency-free relevance search over ' +
+                'every .hint in the project. Prints JSON: the hint file, the path it governs, a score, and ' +
+                'whether the match is weak.',
         )
-        .argument('<paths...>', 'paths to .hint files, their target files, or folders (globs supported)')
-        .option('--mode <mode>', 'compile keywords for the given hintbook mode (e.g. fix, review)')
-        .option('--dry-run', 'fail on hint files that cannot be resolved instead of skipping them', false)
-        .option('--force', 'ignore hint.lock and recompile every file, even unchanged ones', false)
-        .option('--no-refs', 'compile only the named specs, not the specs they reference (references are included by default)')
-        .option('--standalone', 'prepend the hintbook tag glossary so the output explains its own tags without AGENTS.md', false)
-        // Legacy: references are now on by default, so --with-refs is accepted but does nothing.
-        .addOption(new Option('--with-refs').hideHelp())
-        .action(async (paths: string[], options: CompileOptions) => {
-            await CompileCommand.new(paths, options.mode ?? '', options.dryRun, options.force, options.refs, options.standalone).execute();
+        .argument('<query...>', 'search terms, e.g. service account authentication')
+        .option('--limit <n>', 'maximum number of results (use a negative value for no limit)', '20')
+        .action(async (query: string[], options: { limit: string }) => {
+            await SearchCommand.new(query.join(' '), Number.parseInt(options.limit, 10)).execute();
+        });
+
+    program
+        .command('author')
+        .description(
+            'Print the guidance for writing .hint knowledge: the keyword vocabulary of the registered ' +
+                'hintbooks, the file kinds, and the syntax. Read it before creating or editing a spec.',
+        )
+        .argument('[paths...]', 'target files or folders the .hint specs will describe')
+        .action(async (paths: string[]) => {
+            await AuthorCommand.new(paths).execute();
         });
 
     program
         .command('config')
-        .description(
-            `Initialize ${Transpiler.CONFIG_FILE_YML} in the project root. ` + `Run 'hint apply' afterwards to set up AGENTS.md and CLAUDE.md.`,
-        )
+        .description(`Initialize ${Transpiler.CONFIG_FILE_YML} in the project root. Run 'hint apply' afterwards.`)
         .action(async () => {
             await ConfigCommand.new().execute();
         });
 
     program
-        .command('instruct')
-        .description(
-            `Print an AI agent prompt that sets up AGENTS.md and CLAUDE.md from ${Transpiler.CONFIG_FILE_YML}. ` +
-                `The files are not modified directly — pipe the output to your agent to apply it, e.g. 'hint instruct | claude -p --permission-mode acceptEdits'.`,
-        )
-        .action(async () => {
-            await InstructCommand.new().execute();
-        });
-
-    program
         .command('apply')
         .description(
-            `Write the <hint> block from ${Transpiler.CONFIG_FILE_YML} directly into AGENTS.md and CLAUDE.md — ` +
-                `a deterministic find-and-replace on the <hint> tags, no agent needed. Use instead of 'hint instruct | claude -p'.`,
+            `Write the HINT instruction block from ${Transpiler.CONFIG_FILE_YML} into AGENTS.md and CLAUDE.md — ` +
+                'a deterministic find-and-replace on the <hint> tags. Run it after adding or removing a hintbook.',
         )
         .action(async () => {
             await ApplyCommand.new().execute();
@@ -82,10 +115,7 @@ export async function main(): Promise<void> {
 
     program
         .command('add')
-        .description(
-            `Install hintbooks and register them in ${Transpiler.CONFIG_FILE_YML}. ` +
-                `Run 'hint apply' afterwards to refresh AGENTS.md and CLAUDE.md.`,
-        )
+        .description(`Install hintbooks and register them in ${Transpiler.CONFIG_FILE_YML}. Run 'hint apply' afterwards.`)
         .argument('<books...>', 'hintbooks to add: a file:// path, a git repository URL, or an npm package name')
         .option('--local', 'install npm hintbooks into the project-local hintbooks/ store instead of globally', false)
         .action(async (books: string[], options: AddOptions) => {
@@ -94,126 +124,50 @@ export async function main(): Promise<void> {
 
     program
         .command('remove')
-        .description(
-            `Remove hintbooks from ${Transpiler.CONFIG_FILE_YML} without uninstalling them. ` +
-                `Run 'hint apply' afterwards to refresh AGENTS.md and CLAUDE.md.`,
-        )
-        .argument('<books...>', 'hintbooks to remove, as listed in the books array (the npm:// or file:// prefix may be omitted)')
+        .description(`Remove hintbooks from ${Transpiler.CONFIG_FILE_YML} without uninstalling them. Run 'hint apply' afterwards.`)
+        .argument('<books...>', 'hintbooks to remove (the npm:// or file:// prefix may be omitted)')
         .action(async (books: string[]) => {
             await RemoveCommand.new(books).execute();
         });
 
     program
-        .command('list')
-        .description(`List hintbooks registered in ${Transpiler.CONFIG_FILE_YML}. `)
-        .option('--verbose', 'show detailed path information for each hintbook', false)
-        .action(async (options: { verbose: boolean }) => {
-            await ListCommand.new(options.verbose).execute();
-        });
-
-    program
-        .command('author')
-        .description(
-            `Print an AI agent prompt for writing ${Transpiler.CONFIG_FILE_YML} hint files, listing the keyword vocabulary ` +
-                `and descriptions of the registered hintbooks. Pipe it to your agent, e.g. 'hint author src/billing/invoice.ts | claude -p'.`,
-        )
-        .argument('[paths...]', 'target files or folders the agent should write .hint specs for')
-        .action(async (paths: string[]) => {
-            await AuthorCommand.new(paths).execute();
-        });
-
-    program
-        .command('lock')
-        .description(
-            'Record the current spec hashes into hint.lock, marking the given files as generated. ' +
-                'Run after an agent implements a spec; later plain `hint` runs then skip files whose specs are unchanged.',
-        )
-        .argument('<paths...>', 'paths to .hint files, their target files, or folders (globs supported)')
-        .option('--strict', 'structurally verify each target first and refuse to record files that fail (see `hint verify`)', false)
-        .action(async (paths: string[], options: { strict: boolean }) => {
-            await LockCommand.new(paths, options.strict).execute();
-        });
-
-    program
-        .command('verify')
-        .description(
-            'Structurally verify generated targets against their specs — deterministic and token-free: every ' +
-                'declared surface must appear in the output. Exits non-zero on failure, so agents and CI can gate on it.',
-        )
-        .argument('<paths...>', 'paths to .hint files, their target files, or folders (globs supported)')
-        .option('--mode <mode>', 'resolve keywords for the given hintbook mode (defaults to the implementation mode)')
-        .action(async (paths: string[], options: { mode?: string }) => {
-            await VerifyCommand.new(paths, options.mode ?? '').execute();
-        });
-
-    program
-        .command('diff')
-        .description(
-            'Show which specs have drifted from hint.lock since they were generated — per file, the exact ' +
-                'blocks that changed. A token-free way to scope a fix before running `hint --mode fix`.',
-        )
-        .argument('<paths...>', 'paths to .hint files, their target files, or folders (globs supported)')
-        .action(async (paths: string[]) => {
-            await DiffCommand.new(paths).execute();
-        });
-
-    program
-        .command('search')
-        .description(
-            'Find the hint files whose specs are closest to a search query — a fast, offline, dependency-free ' +
-                'relevance search over every .hint in the project, so an agent can discover the specs relevant to a ' +
-                'task before compiling them. Prints JSON: each result is the hint file path and a relevance score.',
-        )
-        .argument('<query...>', 'search terms, e.g. grpc server')
-        .option('--limit <n>', 'maximum number of results (use a negative value for no limit)', '20')
-        .action(async (query: string[], options: { limit: string }) => {
-            await SearchCommand.new(query.join(' '), Number.parseInt(options.limit, 10)).execute();
-        });
-
-    program
-        .command('modes')
-        .description(`List modes provided by the hintbooks registered in ${Transpiler.CONFIG_FILE_YML}.`)
-        .action(async () => {
-            await ModesCommand.new().execute();
-        });
-
-    program
         .command('version')
-        .description(`Print the CLI version and the versions of the hintbooks registered in ${Transpiler.CONFIG_FILE_YML}.`)
+        .description(`Print the CLI version and the hintbooks registered in ${Transpiler.CONFIG_FILE_YML}, with their versions.`)
         .action(async () => {
             await VersionCommand.new().execute();
         });
 
     program
-        .command('help')
-        .description('Show usage for the hint CLI and its commands.')
-        .action(() => {
-            program.outputHelp();
+        .command('verify')
+        .description(
+            'Contracts: check that every surface a spec declares appears in the generated file. Deterministic ' +
+                'and token-free. Exits 1 on failure, 2 when no file spec matched — so agents and CI can gate on it.',
+        )
+        .argument('<paths...>', 'paths to companion specs or the files they describe (globs supported)')
+        .action(async (paths: string[]) => {
+            await VerifyCommand.new(paths).execute();
         });
 
-    program.addHelpText(
-        'after',
-        `
-Examples:
-  hint config                                   initialize hint.yml in the project root
-  hint apply                                    write AGENTS.md / CLAUDE.md directly from hint.yml
-  hint instruct | claude -p --permission-mode acceptEdits   ...or have your agent do it
-  hint search grpc server                       find hint files whose specs are closest to a query (JSON)
-  hint add @openhint/hintbook-lawyer            install and register a hintbook
-  hint remove @openhint/hintbook-lawyer         unregister a hintbook
-  hint list                                     list installed hintbooks
-  hint modes                                    list available hintbook modes
-  hint author src/billing/invoice.ts | claude -p   prompt an agent to write the .hint spec for a file
-  hint src/billing/invoice.ts | claude -p       compile the spec for a file and pipe it to an agent
-  hint lock src/billing/invoice.ts              mark a spec as generated so later runs skip it if unchanged
-  hint verify src/billing/invoice.ts            check the generated code contains every declared surface
-  hint diff src/billing/invoice.ts              show which blocks drifted from hint.lock since generation
-  hint --no-refs src/billing/invoice.ts         compile a spec alone; referenced specs are included by default
-  hint --mode review src/billing | claude -p    audit existing code against the spec
-  hint version                                  show CLI and hintbook versions
+    program
+        .command('lock')
+        .description(
+            'Contracts: record the current spec hashes into hint.lock, marking the given files as generated. ' +
+                'Later plain `hint` runs then skip files whose specs are unchanged. Only companion <file>.hint specs are lockable.',
+        )
+        .argument('<paths...>', 'paths to companion specs or the files they describe (globs supported)')
+        .action(async (paths: string[]) => {
+            await LockCommand.new(paths).execute();
+        });
 
-Piping into 'claude -p' that should write files needs '--permission-mode acceptEdits' (or '--dangerously-skip-permissions').`,
-    );
+    program
+        .command('diff')
+        .description('Contracts: show which spec blocks have drifted from hint.lock since the code was generated.')
+        .argument('<paths...>', 'paths to companion specs or the files they describe (globs supported)')
+        .action(async (paths: string[]) => {
+            await DiffCommand.new(paths).execute();
+        });
+
+    program.addHelpText('beforeAll', `${EXAMPLES}\n`);
 
     try {
         await program.parseAsync();

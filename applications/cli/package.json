@@ -2,7 +2,7 @@
     "name": "@openhint/cli",
     "version": "0.0.0",
     "private": true,
-    "description": "The hint command — compile markdown-native HINT specifications into deterministic, AI-ready prompts.",
+    "description": "The hint command — a context compiler for coding agents. Ask what your repository already knows about a path or an intent, and get back only the knowledge that applies.",
     "type": "module",
     "bin": {
         "hint": "./index.js"

@@ -12,8 +12,8 @@
 </script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HINT — Human Intent Native Transpiler</title>
-<meta name="description" content="HINT is a Markdown-native specification language that compiles human intent into deterministic, high-density prompts for AI agents." />
+<title>HINT — a context compiler for coding agents</title>
+<meta name="description" content="HINT tells your coding agent what matters here. Repository knowledge in Markdown-native .hint files, scoped by path, inherited from the root down — ask about a path or an intent and get back only what applies." />
 <link rel="canonical" href="https://openhint.dev" />
 <link rel="icon" type="image/png" href="favicon.png" />
 <link rel="apple-touch-icon" href="favicon.png" />
@@ -222,9 +222,9 @@
 <header class="hero">
   <div class="wrap hero__grid">
     <div class="hero__text">
-      <div class="eyebrow hero__kicker">Human · Intent · Native · Transpiler</div>
-      <h1 class="display">You hint at the result.<br />AI honors the <span class="em">borders</span>.</h1>
-      <p class="lede">HINT is a Markdown-native specification language. Declare what must be produced — in plain human intent, right next to the work — and HINT compiles it into a deterministic, high-density prompt your AI agent can't improvise around.</p>
+      <div class="eyebrow hero__kicker">Scoped · Inherited · Retrievable · Agent-neutral</div>
+      <h1 class="display">Tell your agent<br />what <span class="em">matters here</span>.</h1>
+      <p class="lede">Your coding agent starts every session knowing nothing about your repository. HINT keeps that knowledge in Markdown files next to the code, and returns only the part that applies to the path or task at hand.</p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="#quickstart">
           Quick start
@@ -236,7 +236,7 @@
         <span><span class="pr">$</span> npm install -g @openhint/cli</span>
         <button data-copy data-copy-text="npm install -g @openhint/cli">Copy</button>
       </div>
-      <p class="hero__note" style="margin-top:16px;">Compiles to prompts for Claude Code, Codex, Cursor &amp; friends.</p>
+      <p class="hero__note" style="margin-top:16px;">Agent-neutral — Claude Code, Codex, OpenCode, Cline, or your own.</p>
     </div>
 
     <!-- DEMO -->
@@ -253,7 +253,7 @@
           <div class="code demo__src">
             <div class="code__bar">
               <span class="code__dots"><i></i><i></i><i></i></span>
-              <span class="code__file"><b>src/api/invoice.ts.hint</b></span>
+              <span class="code__file"><b>src/api/_.hint</b></span>
               <span class="code__tag">Markdown</span>
             </div>
 <div class="code__body"><span class="t-h"># </span><span class="t-kw">entity</span> <span class="t-nm">Invoice</span> <span class="t-id">{#invoice}</span>
@@ -273,14 +273,14 @@
         </div>
         <div class="demo__connector">
           <span class="ln"></span>
-          <span class="chip"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>hint compile</span>
+          <span class="chip"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>hint src/api/invoice.ts</span>
           <span class="ln"></span>
         </div>
         <div class="code-wrap">
           <div class="code">
             <div class="code__bar">
               <span class="code__dots"><i></i><i></i><i></i></span>
-              <span class="code__file">compiled prompt → <b>agent</b></span>
+              <span class="code__file">what applies here → <b>agent</b></span>
               <span class="code__tag">deterministic</span>
             </div>
 <div class="code__body"><span class="t-mut">&lt;</span><span class="t-tag">file_context</span> <span class="t-at">path</span>=<span class="t-str">"src/api/invoice.ts"</span><span class="t-mut">&gt;</span>
@@ -326,14 +326,14 @@
         </div>
         <div class="demo__connector">
           <span class="ln"></span>
-          <span class="chip"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>hint compile</span>
+          <span class="chip"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>hint src/api/invoice.ts</span>
           <span class="ln"></span>
         </div>
         <div class="code-wrap">
           <div class="code">
             <div class="code__bar">
               <span class="code__dots"><i></i><i></i><i></i></span>
-              <span class="code__file">compiled prompt → <b>agent</b></span>
+              <span class="code__file">what applies here → <b>agent</b></span>
               <span class="code__tag">deterministic</span>
             </div>
 <div class="code__body"><span class="t-mut">&lt;</span><span class="t-tag">matter_context</span> <span class="t-at">path</span>=<span class="t-str">"contracts"</span><span class="t-mut">&gt;</span>
@@ -371,8 +371,8 @@
   <div class="wrap">
     <div class="reveal" style="max-width:64ch; margin-bottom:48px;">
       <div class="eyebrow" style="margin-bottom:22px;">What is HINT</div>
-      <h2 class="h2">AI gives you speed. Raw prompts quietly take away control.</h2>
-      <p class="lede" style="margin-top:18px;">You ask for one thing and get plausible improvisation around it. HINT keeps both — your declarations become binding borders, the AI produces the work inside them, and gaps come back to you as reports instead of silent decisions.</p>
+      <h2 class="h2">One instruction file for the whole repo is the wrong shape.</h2>
+      <p class="lede" style="margin-top:18px;">A <code class="inl">CLAUDE.md</code> grows without bound, applies everywhere at once, and gets loaded whole on every task — so most of what the agent reads is irrelevant, and the part that mattered was three hundred lines down. HINT scopes knowledge to the paths it governs and returns only what applies.</p>
     </div>
     <div class="grid-3">
       <div class="card feat reveal" data-d="1">
@@ -382,13 +382,13 @@
       </div>
       <div class="card feat reveal" data-d="2">
         <svg class="feat__ico" viewBox="0 0 32 32" fill="none"><path d="M10 4h8l6 6v18H8V4h2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M17 4v7h7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-        <h3 class="h3">Specs live with the work</h3>
-        <p>Companion files sit next to their targets — <code class="inl">login.ts.hint</code> beside <code class="inl">login.ts</code> — and travel through the same reviews, branches, and history.</p>
+        <h3 class="h3">Scoped and inherited</h3>
+        <p>A folder's <code class="inl">_.hint</code> governs everything beneath it; a path picks up its own knowledge plus every ancestor. A rule about billing governs billing — and nothing else.</p>
       </div>
       <div class="card feat reveal" data-d="3">
         <svg class="feat__ico" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="currentColor" stroke-width="2"/><path d="M11 16l3.5 3.5L21 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <h3 class="h3">Deterministic compilation</h3>
-        <p>The same specs and the same hintbook always produce the same prompt. No hidden prompt engineering — compiled prompts are reviewable, diffable artifacts.</p>
+        <h3 class="h3">Costs what it carries</h3>
+        <p>Output is proportional to how much applies — a path nothing governs returns nothing. Cheap enough to ask before every edit, which is the only way it gets used.</p>
       </div>
     </div>
   </div>
@@ -399,34 +399,34 @@
   <div class="wrap">
     <div class="reveal" style="margin-bottom:44px;">
       <div class="eyebrow" style="margin-bottom:22px;">How it works</div>
-      <h2 class="h2">Write intent. Compile borders. Ship the work.</h2>
+      <h2 class="h2">Record it once. Ask about a path. Get what applies.</h2>
     </div>
     <div class="steps reveal">
       <div class="step">
-        <div class="step__n">01 / WRITE</div>
-        <h3>Declare in Markdown</h3>
-        <p>Every heading is a typed block — <code class="inl">entity</code>, <code class="inl">clause</code>, <code class="inl">bad</code>. Keyword, name, body. Heading depth nests the structure into a tree.</p>
+        <div class="step__n">01 / RECORD</div>
+        <h3>Write it in Markdown</h3>
+        <p>Every heading is a typed block — <code class="inl">decision</code>, <code class="inl">invariant</code>, <code class="inl">bad</code>, <code class="inl">clause</code>. Keyword, name, body. Depth nests it into a tree.</p>
       </div>
       <div class="step">
-        <div class="step__n">02 / COMPILE</div>
+        <div class="step__n">02 / SCOPE</div>
         <h3>Run <code class="inl" style="font-size:0.92em">hint</code></h3>
-        <p>The transpiler walks <em>find → parse → compile</em>, renders each block through your hintbook's templates, and wraps it in a role header and verification footer.</p>
+        <p>It walks <em>resolve → parse → render</em>: the path's own knowledge plus every folder above it, rendered through your hintbook's templates. Nothing else.</p>
       </div>
       <div class="step">
-        <div class="step__n">03 / EXECUTE</div>
-        <h3>Pipe to your agent</h3>
-        <p>The high-density prompt tells the AI exactly what exists, what it must contain, what it must do, and what it must <em>never</em> do. Gaps come back, not guesses.</p>
+        <div class="step__n">03 / USE</div>
+        <h3>Any agent consumes it</h3>
+        <p>Knowledge only — no persona, no reporting format. Add <code class="inl">--prompt</code> when you are handing work to a fresh agent that has nothing else.</p>
       </div>
     </div>
     <div class="reveal" style="margin-top:18px; font-family:var(--font-mono); font-size:0.84rem; color:var(--ink-3); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <code class="inl">hint src/api/invoice.ts | claude -p</code>
-      <span>— one pipe, spec to working code.</span>
+      <code class="inl">hint src/api/invoice.ts</code>
+      <span>— or <code class="inl">hint search "how do we sign tokens"</code> when you know the task, not the path.</span>
     </div>
     <div class="callout reveal">
       <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v12H8.5L4 19.5V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
       <div>
         <h4>Or never run it by hand at all.</h4>
-        <p><code class="inl">hint apply</code> writes the HINT workflow into your <code class="inl">AGENTS.md</code> and <code class="inl">CLAUDE.md</code>. After that, just keep working in normal dialogue — Claude Code, Codex, and Cursor read those instructions and call <code class="inl">hint</code> themselves whenever a <code class="inl">.hint</code> spec is relevant. You stay in the conversation; the borders come along automatically.</p>
+        <p><code class="inl">hint apply</code> writes a short block into your <code class="inl">AGENTS.md</code> and <code class="inl">CLAUDE.md</code> teaching an agent how to query HINT — and how to record what it learns. After that, just keep working in normal dialogue; the agent calls <code class="inl">hint</code> itself. The block stays small: the knowledge stays in <code class="inl">.hint</code>, never duplicated into tool-specific files.</p>
       </div>
     </div>
   </div>
@@ -436,20 +436,20 @@
 <section class="section band">
   <div class="wrap">
     <div class="reveal" style="margin-bottom:42px; max-width:60ch;">
-      <div class="eyebrow" style="margin-bottom:22px;">The contract</div>
+      <div class="eyebrow" style="margin-bottom:22px;">The design</div>
       <h2 class="h2">A small, honest core. An open, extensible vocabulary.</h2>
-      <p class="lede" style="color:var(--on-surface-mut); margin-top:16px;">The transpiler understands only structure — files, headings, bodies. What each keyword <em>means</em> is supplied by <strong style="color:var(--on-surface)">hintbooks</strong>: installable packages of instruction templates. Swap the book, and the same files compile into a different profession's language.</p>
+      <p class="lede" style="color:var(--on-surface-mut); margin-top:16px;">The engine understands only structure — files, headings, bodies. What each keyword <em>means</em> is supplied by <strong style="color:var(--on-surface)">hintbooks</strong>: installable packages of instruction templates. Swap the book, and the same files render in a different profession's language.</p>
     </div>
     <div class="principles reveal">
       <div class="principle">
-        <div class="principle__k">Borders, not vibes</div>
-        <h3>The prompt states the rules</h3>
-        <p>Compiled output spells out exactly what exists, what it must contain, what it must do, and what it must never do — in explicit, binding tags.</p>
+        <div class="principle__k">Owned by the repo</div>
+        <h3>Not by one AI tool</h3>
+        <p><code class="inl">.hint</code> is the source of truth, versioned in git and reviewed in normal diffs. Every agent reads the same answer; nothing is duplicated into tool-specific files.</p>
       </div>
       <div class="principle">
-        <div class="principle__k">Gaps come back</div>
-        <h3>Missing decisions are reported</h3>
-        <p>A missing figure, party, or type is surfaced to you as a gap with its risk — never quietly filled with something plausible.</p>
+        <div class="principle__k">Never a hollow success</div>
+        <h3>It tells you when it matched nothing</h3>
+        <p>A mistyped path, a glob that hit nothing, a check with no target — each says so and exits non-zero. <code class="inl">0</code> succeeded, <code class="inl">1</code> a check failed, <code class="inl">2</code> nothing matched.</p>
       </div>
       <div class="principle">
         <div class="principle__k">No built-in keywords</div>
@@ -459,7 +459,7 @@
       <div class="principle">
         <div class="principle__k">Deterministic &amp; convergent</div>
         <h3>Same input, same output</h3>
-        <p>Sorted traversal, stable trees, pure interpolation — byte-identical prompts you can diff in CI. A <code class="inl">hint.lock</code> carries that determinism into the loop: unchanged specs are skipped, and <code class="inl">fix</code> reconciles only the blocks that drifted.</p>
+        <p>Sorted traversal, stable trees, pure interpolation — byte-identical output you can diff in CI. Retrieval is local BM25F: no model, no service, no network, nothing read into your context.</p>
       </div>
     </div>
   </div>
@@ -471,7 +471,7 @@
     <div class="reveal" style="margin-bottom:42px; max-width:62ch;">
       <div class="eyebrow" style="margin-bottom:22px;">Built for every profession</div>
       <h2 class="h2">Software is the first vocabulary — not the definition.</h2>
-      <p class="lede" style="margin-top:16px;">HINT isn't just a language for programmers — it's a professional <strong>intent layer over AI</strong>. It serves anyone whose work demands strict, structured thinking: the engineer knows the architecture, the lawyer knows the deal. HINT eliminates the mechanical production while keeping the decisions yours.</p>
+      <p class="lede" style="margin-top:16px;">HINT isn't only for programmers. Any repository of high-stakes work has knowledge worth scoping to the paths it governs: the engineer knows the architecture, the lawyer knows the deal, and neither wants to re-explain it to an AI every session.</p>
     </div>
 
     <div class="profgrid reveal" style="grid-template-columns:1fr 1fr; margin-bottom:14px;">
@@ -519,7 +519,7 @@
 
     <div class="intentlayer reveal">
       <div>
-        <h3>Not just for programmers — an intent layer over AI.</h3>
+        <h3>Not just for programmers — a context layer under AI.</h3>
         <p>HINT pays off most wherever a wrong answer is expensive: <b>analytics, compliance, finance, procurement, medicine, government, QA, documentation, and product</b>. Anywhere the job means repeatable, high-stakes artifacts.</p>
       </div>
       <div class="artifacts">
@@ -572,48 +572,45 @@
   <div class="wrap">
     <div class="reveal" style="margin-bottom:42px;">
       <div class="eyebrow" style="margin-bottom:22px;">Quick start</div>
-      <h2 class="h2">From zero to a compiled prompt in five minutes.</h2>
+      <h2 class="h2">From zero to scoped context in five minutes.</h2>
     </div>
     <div class="qs">
       <div class="qsstep reveal">
         <div class="qsstep__h"><span class="qsstep__n">01</span><h3 style="color:var(--on-surface)">Install &amp; initialize</h3></div>
-        <p style="color:var(--on-surface-mut)">Install the CLI, then mark the project root. <code class="inl">hint config</code> writes <code class="inl">hint.yml</code>; <code class="inl">hint apply</code> writes the HINT workflow into your <code class="inl">AGENTS.md</code> / <code class="inl">CLAUDE.md</code>.</p>
+        <p style="color:var(--on-surface-mut)">Install the CLI, then mark the project root. <code class="inl">hint config</code> writes <code class="inl">hint.yml</code>; <code class="inl">hint apply</code> teaches your agent how to query HINT.</p>
         <div class="code-wrap on-dark">
           <button class="code__copy" data-copy data-copy-text="npm install -g @openhint/cli&#10;hint config&#10;hint add @openhint/hintbook-software-engineer&#10;hint apply">Copy</button>
           <div class="code">
-<div class="code__body"><span class="t-mut"># install the transpiler</span>
+<div class="code__body"><span class="t-mut"># install the CLI</span>
 <span class="t-bd">npm install -g @openhint/cli</span>
 
 <span class="t-mut"># scaffold + register a hintbook</span>
 <span class="t-bd">hint config</span>
 <span class="t-bd">hint add @openhint/hintbook-software-engineer</span>
 
-<span class="t-mut"># wire up AGENTS.md / CLAUDE.md</span>
+<span class="t-mut"># teach your agent to query HINT</span>
 <span class="t-bd">hint apply</span></div>
           </div>
         </div>
       </div>
       <div class="qsstep reveal" data-d="1">
-        <div class="qsstep__h"><span class="qsstep__n">02</span><h3 style="color:var(--on-surface)">Compile, then keep it in sync</h3></div>
-        <p style="color:var(--on-surface-mut)">Drop a <code class="inl">.hint</code> companion next to any file and compile — referenced specs are pulled into the same prompt automatically. Not sure which spec covers a task? <code class="inl">hint search</code> ranks every spec by relevance, offline. Verify the result with <code class="inl">hint verify</code>, record it with <code class="inl">hint lock</code>; from then on, unchanged specs are skipped and <code class="inl">fix</code> reconciles only the blocks that drifted.</p>
+        <div class="qsstep__h"><span class="qsstep__n">02</span><h3 style="color:var(--on-surface)">Record it, then ask about a path</h3></div>
+        <p style="color:var(--on-surface-mut)">Write what a folder or a file needs future work to know, then ask what applies before you touch it — referenced knowledge comes along automatically. Don't know the path? <code class="inl">hint search</code> ranks every <code class="inl">.hint</code> offline. When a spec <em>declares</em> surfaces the code must contain, <code class="inl">hint verify</code> checks them for free — optional, and only for that case.</p>
         <div class="code-wrap on-dark">
-          <button class="code__copy" data-copy data-copy-text="hint search grpc server&#10;hint src/billing/invoice.ts | claude -p&#10;hint verify src/billing/invoice.ts&#10;hint lock src/billing/invoice.ts&#10;hint diff src/billing/invoice.ts&#10;hint --mode fix src/billing/invoice.ts | claude -p">Copy</button>
+          <button class="code__copy" data-copy data-copy-text="hint src/billing/invoice.ts&#10;hint search &quot;how are invoice totals stored&quot;&#10;hint --prompt src/billing/invoice.ts | claude -p&#10;hint verify src/billing/invoice.ts&#10;hint lock src/billing/invoice.ts">Copy</button>
           <div class="code">
-<div class="code__body"><span class="t-mut"># know the intent, not the path? find the closest specs (offline)</span>
-<span class="t-bd">hint search grpc server</span>
+<div class="code__body"><span class="t-mut"># what does this repo already know about this path?</span>
+<span class="t-bd">hint src/billing/invoice.ts</span>
 
-<span class="t-mut"># compile — referenced specs pulled in automatically</span>
-<span class="t-bd">hint src/billing/invoice.ts | claude -p</span>
+<span class="t-mut"># know the task, not the path? rank every .hint, offline</span>
+<span class="t-bd">hint search "how are invoice totals stored"</span>
 
-<span class="t-mut"># check every declared surface landed — deterministic, no tokens</span>
+<span class="t-mut"># handing work to a fresh agent? add the framing</span>
+<span class="t-bd">hint --prompt src/billing/invoice.ts | claude -p</span>
+
+<span class="t-mut"># optional: for specs that declare surfaces the code must contain</span>
 <span class="t-bd">hint verify src/billing/invoice.ts</span>
-
-<span class="t-mut"># record what you generated so unchanged specs are skipped</span>
-<span class="t-bd">hint lock src/billing/invoice.ts</span>
-
-<span class="t-mut"># when a spec drifts: see what changed, fix only that</span>
-<span class="t-bd">hint diff src/billing/invoice.ts</span>
-<span class="t-bd">hint --mode fix src/billing/invoice.ts | claude -p</span></div>
+<span class="t-bd">hint lock src/billing/invoice.ts</span></div>
           </div>
         </div>
       </div>
@@ -624,8 +621,8 @@
 <!-- FINAL CTA -->
 <section class="section">
   <div class="wrap cta-final reveal">
-    <h2 class="h2">Stop prompting. Start specifying.</h2>
-    <p class="lede">Keep the speed of AI and the control of a specification. Borders, not vibes.</p>
+    <h2 class="h2">Stop re-explaining your repo.</h2>
+    <p class="lede">Write it down once, next to the code. Every agent, every session, gets exactly what applies.</p>
     <div class="cta-final__btns">
       <a class="btn btn--primary" href="#quickstart">Get started</a>
       <a class="btn btn--ghost" href="for-software-engineers.html">For engineers</a>
@@ -642,7 +639,7 @@
         <div class="logo footer__logo">
           <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
         </div>
-        <p>Human Intent Native Transpiler. A Markdown-native specification language for professionals who work with AI and want predictable results.</p>
+        <p>A context compiler for coding agents. Repository knowledge in Markdown, scoped by path, inherited from the root down — so an agent gets what matters here, and nothing else.</p>
       </div>
       <div class="footer__col">
         <h5>Product</h5>
@@ -671,7 +668,7 @@
     </div>
     <div class="footer__bottom">
       <span>© 2026 openhint.dev · MIT licensed</span>
-      <span>Borders, not vibes.</span>
+      <span>Tell your agent what matters here.</span>
     </div>
   </div>
 </footer>

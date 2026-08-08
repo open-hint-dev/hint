@@ -4,7 +4,7 @@ import type { HintbookData } from './hintbook.js';
 import type { HintData } from './parser.js';
 import { findInstruction } from './compiler.js';
 import { readFile } from './helper.js';
-import { INSTRUCTION_MODE_DEFAULT, RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
+import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 import { collectFileNodes } from './lock.js';
 
 // A declared surface that must manifest by name in the generated output — the `keyword name` a spec
@@ -55,7 +55,7 @@ function isSubHint(hint: HintData): boolean {
 // The declared surfaces of a file node: every named block (at any depth) whose keyword resolves to an
 // instruction flagged `surface: true` by the active hintbooks. Constraint/scratch/input keywords
 // (`bad`, `rule`, `notes`, `read`) are never surfaces, so their names are not expected in the output.
-export function collectSurfaces(fileNode: HintData, hintbooks: HintbookData[], mode: string): Surface[] {
+export function collectSurfaces(fileNode: HintData, hintbooks: HintbookData[]): Surface[] {
     const surfaces: Surface[] = [];
 
     const walk = (nodes: HintData[]): void => {
@@ -64,7 +64,7 @@ export function collectSurfaces(fileNode: HintData, hintbooks: HintbookData[], m
                 continue;
             }
 
-            const instruction = findInstruction(hintbooks, mode, node.keyword);
+            const instruction = findInstruction(hintbooks, node.keyword);
 
             if (instruction?.metadata?.surface && node.name.trim()) {
                 surfaces.push({ keyword: node.keyword, name: node.name.trim() });
@@ -79,22 +79,15 @@ export function collectSurfaces(fileNode: HintData, hintbooks: HintbookData[], m
     return surfaces;
 }
 
-// Number of surface-flagged keyword instructions across the active hintbooks (active mode plus the
-// default-mode fallback). Zero means structural verification is a no-op for these books — callers use it
-// to tell the user to mark keywords `surface: true` rather than silently reporting everything verified.
-export function countSurfaceKeywords(hintbooks: HintbookData[], mode: string): number {
-    const resolvedMode = mode || INSTRUCTION_MODE_DEFAULT;
+// Number of surface-flagged keyword instructions across the active hintbooks. Zero means structural
+// verification is a no-op for these books — callers use it to say so rather than reporting a hollow pass.
+export function countSurfaceKeywords(hintbooks: HintbookData[]): number {
     let count = 0;
 
-    for (const modeName of new Set([
-        resolvedMode,
-        INSTRUCTION_MODE_DEFAULT,
-    ])) {
-        for (const hintbook of hintbooks) {
-            for (const instruction of hintbook.modes[modeName]?.instructions ?? []) {
-                if (instruction.metadata?.surface) {
-                    count += 1;
-                }
+    for (const hintbook of hintbooks) {
+        for (const instruction of hintbook.instructions) {
+            if (instruction.metadata?.surface) {
+                count += 1;
             }
         }
     }
@@ -103,19 +96,13 @@ export function countSurfaceKeywords(hintbooks: HintbookData[], mode: string): n
 }
 
 // Deterministic structural check of each file target against its spec: the generated output must exist
-// and mention every declared surface by name. Zero tokens, no language assumptions — the counterpart to
-// the semantic `--mode review` audit. A file with no declared surfaces verifies vacuously (`ok`).
-export async function verifyTargets(
-    projectRootPath: string,
-    hints: HintData[],
-    hintbooks: HintbookData[],
-    mode: string,
-): Promise<FileVerification[]> {
-    const resolvedMode = mode || INSTRUCTION_MODE_DEFAULT;
+// and mention every declared surface by name. Zero tokens, no language assumptions. A file with no
+// declared surfaces verifies vacuously (`ok`).
+export async function verifyTargets(projectRootPath: string, hints: HintData[], hintbooks: HintbookData[]): Promise<FileVerification[]> {
     const results: FileVerification[] = [];
 
     for (const { name, node } of collectFileNodes(hints)) {
-        const surfaces = collectSurfaces(node, hintbooks, resolvedMode);
+        const surfaces = collectSurfaces(node, hintbooks);
         const content = await readFile(Path.join(projectRootPath, name));
 
         if (content === null) {

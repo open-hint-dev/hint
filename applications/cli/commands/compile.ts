@@ -1,26 +1,27 @@
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
+import { EXIT_UNRESOLVED, reportResolution } from './report.js';
+
+export type CompileOptions = {
+    strict: boolean;
+    force: boolean;
+    refs: boolean;
+    prompt: boolean;
+    standalone: boolean;
+};
 
 export class CompileCommand implements ICommand {
     private paths: string[] = [];
-    private mode: string = '';
-    private dryRun: boolean = false;
-    private force: boolean = false;
-    private refs: boolean = true;
-    private standalone: boolean = false;
+    private options: CompileOptions = { strict: false, force: false, refs: true, prompt: false, standalone: false };
 
     constructor() {}
 
-    static new(paths: string[], mode: string, dryRun: boolean, force: boolean, refs: boolean, standalone: boolean = false): CompileCommand {
+    static new(paths: string[], options: CompileOptions): CompileCommand {
         const command = new CompileCommand();
 
         command.paths = paths;
-        command.mode = mode;
-        command.dryRun = dryRun;
-        command.force = force;
-        command.refs = refs;
-        command.standalone = standalone;
+        command.options = options;
 
         return command;
     }
@@ -35,18 +36,31 @@ export class CompileCommand implements ICommand {
         const config = await Transpiler.loadConfig(projectRootPath);
         const hintbooks = await Transpiler.loadHintbooks(projectRootPath, config?.books ?? []);
 
-        // Reference closure (on by default): pull the specs of referenced files into this one compilation so
-        // shared ancestors are emitted once, instead of the agent re-invoking `hint` per referenced file.
-        const paths = this.refs ? await Transpiler.resolveClosurePaths(projectRootPath, this.paths) : this.paths;
+        const resolution = await Transpiler.resolveRequests(projectRootPath, this.paths);
 
-        let hints = await Transpiler.parseHints(projectRootPath, paths, this.dryRun);
+        // The verdict goes out before anything else, because an agent that truncates output keeps the
+        // first lines. A run where every path resolved cleanly says nothing at all.
+        const unresolved = await reportResolution(projectRootPath, resolution);
+
+        if (this.options.strict && unresolved > 0) {
+            process.stderr.write(`hint: --strict: ${unresolved} of ${resolution.requests.length} path(s) have no spec of their own.\n`);
+            process.exitCode = EXIT_UNRESOLVED;
+
+            return;
+        }
+
+        // Reference closure (on by default): pull the specs of referenced files into this one render so
+        // shared ancestors are emitted once, instead of the agent re-invoking `hint` per referenced file.
+        const hintPaths = this.options.refs ? await Transpiler.resolveClosurePaths(projectRootPath, resolution.hintPaths) : resolution.hintPaths;
+
+        let hints = await Transpiler.parseHintFiles(projectRootPath, hintPaths);
 
         const lock = await Transpiler.loadLock(projectRootPath);
 
         // Hash-gate: when a lock exists (opt-in via `hint lock`), skip files whose spec, inherited context,
         // and the vocabulary they use are all unchanged and whose output still exists — so unchanged runs
         // cost no tokens. The effective hash folds in the hintbooks, so no separate book fingerprint is needed.
-        if (lock && !this.force) {
+        if (lock && !this.options.force) {
             const fileHashes = Transpiler.effectiveFileHashes(hints, hintbooks);
             const fresh = await Transpiler.selectFreshTargets(projectRootPath, fileHashes, lock);
 
@@ -55,38 +69,57 @@ export class CompileCommand implements ICommand {
 
                 hints = Transpiler.pruneFreshHints(hints, stale);
 
-                process.stderr.write(`hint: ${fresh.size} file(s) up to date, skipped (use --force to recompile).\n`);
-
-                if (hints.length === 0) {
-                    return;
-                }
+                process.stderr.write(`hint: ${fresh.size} file(s) up to date, skipped (use --force to include them).\n`);
             }
         }
 
-        // Drift guidance: when a lock exists, tell the agent which blocks changed — including any output
-        // edited underneath an unchanged spec. It renders only if the active mode defines a `__changes__`
-        // instruction (fix mode), so plain compiles are unaffected.
-        const targetHashes = lock
-            ? await Transpiler.hashTargetFiles(
-                  projectRootPath,
-                  Transpiler.collectFileNodes(hints).map((file) => file.name),
-              )
-            : undefined;
-        const changes = lock ? Transpiler.formatDrift(Transpiler.computeDrift(hints, lock, hintbooks, targetHashes)) : '';
-
-        const output = await Transpiler.compileHints(hints, hintbooks, this.mode, changes, this.standalone);
+        const context = Transpiler.renderContext(hints, hintbooks);
+        const output = this.options.prompt
+            ? Transpiler.renderPrompt(context, hintbooks, await this.promptOptions(projectRootPath, hints, hintbooks, lock))
+            : context;
 
         if (output) {
             warnIfBroad(hints, output);
 
             process.stdout.write(`${output}\n`);
         }
+
+        // Exit 2 means "you asked for something this repository does not have". Inheriting knowledge from
+        // an ancestor is a successful lookup, not a failure — otherwise the commonest case in a
+        // folder-knowledge repository would report an error on every call.
+        if (Transpiler.resolvedNothing(resolution)) {
+            process.exitCode = EXIT_UNRESOLVED;
+        }
+    }
+
+    // Reconciliation framing is contextual, not a mode the caller selects: it renders only when a lock
+    // exists and something actually drifted. Computing it costs a read per target, so it is skipped
+    // entirely on the default (context-only) path.
+    private async promptOptions(
+        projectRootPath: string,
+        hints: Transpiler.HintData[],
+        hintbooks: Transpiler.HintbookData[],
+        lock: Transpiler.LockData | null,
+    ): Promise<Transpiler.PromptOptions> {
+        if (!lock) {
+            return { standalone: this.options.standalone };
+        }
+
+        const targetHashes = await Transpiler.hashTargetFiles(
+            projectRootPath,
+            Transpiler.collectFileNodes(hints).map((file) => file.name),
+        );
+
+        return {
+            standalone: this.options.standalone,
+            changes: Transpiler.formatDrift(Transpiler.computeDrift(hints, lock, hintbooks, targetHashes)),
+        };
     }
 }
 
-// A run that pulls in a large slice of the tree is usually an accidental whole-repo compile (a broad
+// A run that pulls in a large slice of the tree is usually an accidental whole-repo render (a broad
 // glob, or a folder walked with references) rather than a focused task. Warn on stderr — never on
-// stdout, which the agent consumes as the spec — so the breadth is visible and can be narrowed.
+// stdout, which the agent consumes as the context — so the breadth is visible and can be narrowed.
 export const BROAD_TARGET_COUNT = 25;
 export const BROAD_TOKEN_ESTIMATE = 20_000;
 
@@ -100,14 +133,17 @@ export function isBroadCompile(targetCount: number, outputLength: number): boole
 }
 
 function warnIfBroad(hints: Transpiler.HintData[], output: string): void {
-    const targetCount = Transpiler.collectFileNodes(hints).length;
+    // Both kinds of scope count. A repository whose knowledge lives entirely in folder `_.hint` files
+    // has no file targets at all, and a file-only count could never flag a whole-repo sweep there.
+    const { files, folders } = Transpiler.countScopes(hints);
+    const targetCount = files + folders;
 
     if (!isBroadCompile(targetCount, output.length)) {
         return;
     }
 
     process.stderr.write(
-        `hint: compiled ${targetCount} file target(s), ~${estimateTokens(output.length).toLocaleString('en-US')} tokens. ` +
+        `hint: rendered ${targetCount} scope(s), ~${estimateTokens(output.length).toLocaleString('en-US')} tokens. ` +
             `If this is broader than the task needs, pass fewer paths or add --no-refs.\n`,
     );
 }

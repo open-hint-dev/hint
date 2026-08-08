@@ -12,8 +12,8 @@
 </script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HINT for Software Engineers — Specs that compile to prompts</title>
-<meta name="description" content="The software-engineer hintbook gives HINT a thirty-plus-keyword vocabulary for intent, architecture, data models, behavior, UI, and constraints — compiled into binding prompts for implement, fix, and review." />
+<title>HINT for Software Engineers — the knowledge that applies to this path</title>
+<meta name="description" content="The software-engineer hintbook gives HINT a vocabulary for architectural decisions, invariants, data models, function contracts, and anti-patterns — scoped to the paths they govern and returned to any coding agent." />
 <link rel="canonical" href="https://openhint.dev/for-software-engineers.html" />
 <link rel="icon" type="image/png" href="favicon.png" />
 <link rel="apple-touch-icon" href="favicon.png" />
@@ -277,7 +277,7 @@
 
       <div class="kwgroup">
         <div class="kwgroup__h">Spec-internal</div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">notes</span><small>note</small></div><div class="kwrow__d">Author-facing notes dropped from the compiled prompt — reminders and TODOs the agent never sees.</div></div>
+        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">notes</span><small>note</small></div><div class="kwrow__d">Author-facing notes dropped from the output — reminders and TODOs the agent never sees.</div></div>
       </div>
     </div>
   </div>
@@ -287,15 +287,15 @@
 <section class="section divider band" id="compile">
   <div class="wrap">
     <div class="reveal" style="max-width:60ch; margin-bottom:36px;">
-      <div class="eyebrow" style="margin-bottom:22px;">See it compile</div>
-      <h2 class="h2">One spec. A binding prompt. A reviewable report.</h2>
-      <p class="lede" style="margin-top:16px;">The same <code class="inl">.hint</code> file drives every mode. Watch the compression spec become a deterministic implementation prompt — then an audit report when run with <code class="inl">--mode review</code>.</p>
+      <div class="eyebrow" style="margin-bottom:22px;">See it work</div>
+      <h2 class="h2">One file. Scoped knowledge. A reviewable audit.</h2>
+      <p class="lede" style="margin-top:16px;">One <code class="inl">.hint</code> file, three uses. It is the knowledge an agent gets before touching the file, the brief when you hand the work to a fresh agent with <code class="inl">--prompt</code>, and the standard an audit is written against.</p>
     </div>
 
     <div class="reveal" data-tabs>
       <div class="tabs">
         <button data-tab="src" class="is-active">.hint source</button>
-        <button data-tab="out">compiled prompt</button>
+        <button data-tab="out">what applies here</button>
         <button data-tab="rep">review report</button>
       </div>
 
@@ -352,7 +352,7 @@
       </div>
 
       <div data-panel="rep" class="reveal">
-        <p style="color:var(--on-surface-mut); font-family:var(--font-mono); font-size:0.82rem; margin-bottom:16px;">$ hint --mode review src/compression/middleout.ts | claude -p</p>
+        <p style="color:var(--on-surface-mut); font-family:var(--font-mono); font-size:0.82rem; margin-bottom:16px;">$ hint verify src/compression/middleout.ts&nbsp;&nbsp;<span style="opacity:.6">→ exit 1</span><br />$ hint --prompt src/compression/middleout.ts | claude -p "Audit against the spec. Findings only."</p>
         <div class="finding">
           <div class="finding__h"><span class="sev sev--v">violation</span><span class="finding__loc">middleout.ts · L41–48 → bad LossyFallback</span></div>
           <p><b>The catch block falls back to <code class="inl">gzip()</code> on a failed pass.</b> The <code class="inl">LossyFallback</code> prohibition forbids any silent fallback. Minimal fix: re-throw <code class="inl">CompressionError</code>.</p>
@@ -371,34 +371,34 @@
   </div>
 </section>
 
-<!-- MODES -->
+<!-- OUTPUT SHAPES -->
 <section class="section divider" id="modes">
   <div class="wrap">
     <div class="reveal" style="margin-bottom:42px;">
-      <div class="eyebrow" style="margin-bottom:22px;">Three modes</div>
-      <h2 class="h2">Same spec. Different job.</h2>
+      <div class="eyebrow" style="margin-bottom:22px;">Two costs, three uses</div>
+      <h2 class="h2">Same knowledge. Different job.</h2>
     </div>
     <div class="grid-3 reveal">
       <div class="mode">
-        <div class="mode__k">compile · default</div>
-        <h3>Implement</h3>
-        <p class="mode__role">A senior engineer implementing the project from a binding specification.</p>
-        <p>Read it all, implement in dependency order, reuse declared modules, ship production quality — no placeholders, stubs, or TODOs.</p>
+        <div class="mode__k">default</div>
+        <h3>Load context</h3>
+        <p class="mode__role">What an agent already mid-session needs before it edits a file.</p>
+        <p>The decisions, invariants, and prohibitions that govern this path — inherited from the repo root down, and nothing else. No persona, no checklist, so it costs what it carries.</p>
         <code class="inl mode__cmd">hint src/...</code>
       </div>
       <div class="mode">
-        <div class="mode__k">--mode fix</div>
-        <h3>Repair</h3>
-        <p class="mode__role">Where the code and the spec disagree, the code is wrong.</p>
-        <p>Diagnose the root cause, make the smallest conforming change, and ship a regression test. With a <code class="inl">hint.lock</code> it reconciles only the blocks that drifted — and changes nothing when the code already conforms.</p>
-        <code class="inl mode__cmd">hint --mode fix</code>
+        <div class="mode__k">--prompt</div>
+        <h3>Hand off the work</h3>
+        <p class="mode__role">The same knowledge, framed for an agent starting cold.</p>
+        <p>Adds the senior-engineer role header and the verification-and-report footer. When a <code class="inl">hint.lock</code> exists and blocks have drifted, the drift list comes along automatically — scoping the work to what changed.</p>
+        <code class="inl mode__cmd">hint --prompt src/...</code>
       </div>
       <div class="mode">
-        <div class="mode__k">--mode review</div>
-        <h3>Audit</h3>
-        <p class="mode__role">Findings, never patches.</p>
-        <p>Walk the spec block by block, hunt declared anti-patterns, and report findings by severity with file ranges and minimal corrections.</p>
-        <code class="inl mode__cmd">hint --mode review</code>
+        <div class="mode__k">verify</div>
+        <h3>Gate it</h3>
+        <p class="mode__role">Deterministic, token-free, exits non-zero.</p>
+        <p>Every <code class="inl">func</code>, <code class="inl">entity</code>, <code class="inl">error</code> a spec declares must appear by name in the code. Catches a whole declaration dropped — a stubbed function, an unhandled error type — with no model involved.</p>
+        <code class="inl mode__cmd">hint verify src/...</code>
       </div>
     </div>
   </div>
@@ -410,15 +410,15 @@
     <div class="reveal" style="max-width:56ch; margin-bottom:40px;">
       <div class="eyebrow" style="margin-bottom:22px;">In practice · demo-pied-piper</div>
       <h2 class="h2">A compression engine, specified before it's written.</h2>
-      <p class="lede" style="margin-top:16px;">The Pied Piper demo repo shows a whole module declared in <code class="inl">.hint</code> first — then built, fixed, and reviewed entirely from the compiled prompts.</p>
+      <p class="lede" style="margin-top:16px;">The Pied Piper demo repo shows a whole module declared in <code class="inl">.hint</code> first — then built, reconciled, and audited entirely from the knowledge it carries.</p>
     </div>
     <div class="scenario reveal">
       <div class="scenario__steps">
         <div class="scstep"><span class="scstep__n">01</span><div><h4>Lay the baseline</h4><p>A root <code class="inl">_.hint</code> declares <code class="inl">lang</code> TypeScript, the <code class="inl">build</code> pipeline, and a <code class="inl">bad GlobalState</code> rule every file inherits.</p></div></div>
         <div class="scstep"><span class="scstep__n">02</span><div><h4>Specify the module</h4><p>Companion hints define the <code class="inl">CompressionResult</code> entity, the <code class="inl">compress</code> contract, its <code class="inl">flow</code>, and the <code class="inl">LossyFallback</code> prohibition.</p></div></div>
         <div class="scstep"><span class="scstep__n">03</span><div><h4>Compile &amp; implement</h4><p><code class="inl">hint src/compression | claude -p</code> emits the implementation prompt; the agent writes code in dependency order with the Weissman score exact.</p></div></div>
-        <div class="scstep"><span class="scstep__n">04</span><div><h4>Review every PR</h4><p><code class="inl">--mode review</code> in CI audits each change against the same spec — the lossy fallback never lands without a flagged violation.</p></div></div>
-        <div class="scstep"><span class="scstep__n">05</span><div><h4>Verify, lock &amp; reconcile</h4><p><code class="inl">hint verify</code> confirms every declared <code class="inl">func</code>, <code class="inl">entity</code>, and <code class="inl">error</code> actually landed — deterministic, no tokens — then <code class="inl">hint lock</code> records what shipped. Later <code class="inl">hint diff</code> shows which blocks a spec edit touched, and <code class="inl">--mode fix</code> corrects just those — the rest stays byte-for-byte.</p></div></div>
+        <div class="scstep"><span class="scstep__n">04</span><div><h4>Gate every PR</h4><p><code class="inl">hint verify</code> in CI, for free and with no model: a dropped declaration fails the build. Hand an agent <code class="inl">--prompt</code> output when you want the semantic read too.</p></div></div>
+        <div class="scstep"><span class="scstep__n">05</span><div><h4>Verify, lock &amp; reconcile</h4><p><code class="inl">hint verify</code> confirms every declared <code class="inl">func</code>, <code class="inl">entity</code>, and <code class="inl">error</code> actually landed — deterministic, no tokens — then <code class="inl">hint lock</code> records what shipped. Later <code class="inl">hint diff</code> shows which blocks a spec edit touched, and <code class="inl">--prompt</code> carries that list automatically so only those get corrected — the rest stays byte-for-byte.</p></div></div>
       </div>
       <div class="code-wrap">
         <div class="code">
@@ -469,24 +469,24 @@ before adding anything new.</span></div>
         </div>
       </div>
       <div class="code-wrap">
-        <button class="code__copy" data-copy data-copy-text="hint src/billing/invoice.ts | claude -p&#10;hint --mode fix src/billing/invoice.ts | claude -p&#10;hint --dry-run 'src/**/*.hint'">Copy</button>
+        <button class="code__copy" data-copy data-copy-text="hint src/billing/invoice.ts&#10;hint --prompt src/billing/invoice.ts | claude -p&#10;hint --strict 'src/**/*.hint' > /dev/null">Copy</button>
         <div class="code">
-          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">2 · compile &amp; ship</span></div>
-<div class="code__body"><span class="t-mut"># implement from the spec</span>
-<span class="t-bd">hint src/billing/invoice.ts | claude -p</span>
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">2 · query &amp; ship</span></div>
+<div class="code__body"><span class="t-mut"># what governs this file?</span>
+<span class="t-bd">hint src/billing/invoice.ts</span>
 
-<span class="t-mut"># repair against the spec</span>
-<span class="t-bd">hint --mode fix src/billing/invoice.ts \
+<span class="t-mut"># hand it to a fresh agent</span>
+<span class="t-bd">hint --prompt src/billing/invoice.ts \
   | claude -p</span>
 
-<span class="t-mut"># validate every spec in CI</span>
-<span class="t-bd">hint --dry-run 'src/**/*.hint'</span></div>
+<span class="t-mut"># CI gate: every named spec must resolve</span>
+<span class="t-bd">hint --strict 'src/**/*.hint' &gt; /dev/null</span></div>
         </div>
       </div>
     </div>
     <div class="reveal" style="margin-top:22px; display:flex; gap:14px; align-items:flex-start; padding:20px 24px; border:1px solid var(--accent-line); background:var(--accent-soft); border-radius:12px;">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="color:var(--accent); flex:none; margin-top:2px;"><path d="M4 4h16v12H8.5L4 19.5V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-      <p style="font-size:0.96rem; color:var(--ink-2); margin:0;"><strong>Then just keep talking to your agent.</strong> <code class="inl">hint apply</code> writes the HINT workflow into your <code class="inl">AGENTS.md</code> and <code class="inl">CLAUDE.md</code> — so Claude Code, Codex, and Cursor call <code class="inl">hint</code> on their own whenever a <code class="inl">.hint</code> spec is relevant. No need to run it by hand.</p>
+      <p style="font-size:0.96rem; color:var(--ink-2); margin:0;"><strong>Then just keep talking to your agent.</strong> <code class="inl">hint apply</code> writes a short block into your <code class="inl">AGENTS.md</code> and <code class="inl">CLAUDE.md</code> teaching an agent to query HINT before it edits — and to record durable findings back into the nearest <code class="inl">.hint</code>. Works the same for Claude Code, Codex, OpenCode, or your own.</p>
     </div>
   </div>
 </section>
@@ -511,14 +511,14 @@ before adding anything new.</span></div>
         <div class="logo footer__logo">
           <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
         </div>
-        <p>Human Intent Native Transpiler. A Markdown-native specification language for professionals who work with AI and want predictable results.</p>
+        <p>A context compiler for coding agents. Repository knowledge in Markdown, scoped by path, inherited from the root down — so an agent gets what matters here, and nothing else.</p>
       </div>
       <div class="footer__col">
         <h5>Product</h5>
         <ul>
           <li><a href="index.html#how">How it works</a></li>
           <li><a href="#vocabulary">Vocabulary</a></li>
-          <li><a href="#modes">Modes</a></li>
+          <li><a href="#modes">Output</a></li>
         </ul>
       </div>
       <div class="footer__col">
@@ -540,7 +540,7 @@ before adding anything new.</span></div>
     </div>
     <div class="footer__bottom">
       <span>© 2026 openhint.dev · MIT licensed</span>
-      <span>Borders, not vibes.</span>
+      <span>Tell your agent what matters here.</span>
     </div>
   </div>
 </footer>

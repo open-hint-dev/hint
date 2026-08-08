@@ -5,6 +5,8 @@ import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
 
+// One command answering the whole environment question: which CLI, which hintbooks, which versions,
+// and whether each one actually resolves on this machine.
 export class VersionCommand implements ICommand {
     static new(): VersionCommand {
         return new VersionCommand();
@@ -20,20 +22,36 @@ export class VersionCommand implements ICommand {
         }
 
         const config = await Transpiler.loadConfig(projectRootPath);
+        const books = config?.books ?? [];
 
-        for (const book of config?.books ?? []) {
-            const installed = (await Transpiler.resolveHintbookPaths(projectRootPath, book)).length > 0;
+        if (books.length === 0) {
+            process.stdout.write(`No hintbooks registered in ${Transpiler.CONFIG_FILE_YML}. Run 'hint add <book>' to install one.\n`);
 
-            if (!installed) {
+            return;
+        }
+
+        for (const book of books) {
+            const hintbookPaths = await Transpiler.resolveHintbookPaths(projectRootPath, book);
+
+            if (hintbookPaths.length === 0) {
                 process.stdout.write(`${book} (not installed)\n`);
                 continue;
             }
 
             const version = await Transpiler.resolveHintbookVersion(projectRootPath, book);
+            const locations = hintbookPaths.map((path) => displayPath(projectRootPath, path)).join(', ');
 
-            process.stdout.write(`${book} ${version ?? '(version unknown)'}\n`);
+            process.stdout.write(`${book} ${version ?? '(version unknown)'} — ${locations}\n`);
         }
     }
+}
+
+// Relative inside the project, absolute outside it — a book installed globally or linked from
+// elsewhere should not be reported as a wall of `../..`.
+function displayPath(projectRootPath: string, hintbookPath: string): string {
+    const relative = Path.relative(projectRootPath, hintbookPath);
+
+    return relative.startsWith('..') ? hintbookPath : relative;
 }
 
 export async function findCliVersion(): Promise<string> {

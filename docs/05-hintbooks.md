@@ -31,12 +31,9 @@ When several hintbooks define the same keyword, the first one in `books` order w
 ```
 my-hintbook/
 ├── hintbook.json          ← identity: marks this folder as a hintbook
-├── __system__.md          ← tag glossary, injected into AGENTS.md / CLAUDE.md by `hint instruct` (or prepended by `hint --standalone`)
-├── __header__.md          ← role definition that opens every compiled prompt
-├── __footer__.md          ← closing checklist that ends every compiled prompt
-├── __header__.fix.md      ← header for `--mode fix`
-├── __footer__.fix.md
-├── __mode__.fix.md        ← when and how agents should use `--mode fix`
+├── __system__.md          ← tag glossary, installed into AGENTS.md / CLAUDE.md by `hint apply` (or prepended by `hint --standalone`)
+├── __header__.md          ← role definition that opens `--prompt` output (not the default render)
+├── __footer__.md          ← closing checklist that ends `--prompt` output (not the default render)
 ├── __file__.md            ← wrapper for companion hint files
 ├── __folder__.md          ← wrapper for folder hints (_.hint)
 ├── entity.md              ← keyword instruction
@@ -105,27 +102,12 @@ surface: false
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `synonyms`    | Additional keywords that resolve to this instruction (`# application` → `app.md`).                                              |
 | `exclude`     | When `true`, blocks with this keyword are dropped from the output entirely — children included. Useful for spec-internal notes. |
-| `surface`     | When `true`, this keyword is a **verifiable surface**: `hint verify` requires each block's declared name to appear verbatim in the generated output, and `hint lock --strict` refuses to record a target until it does. Mark only keywords whose name is a code identifier or defined term that must appear unchanged (e.g. `func`, `entity`, `field`) — not ones whose name is a descriptive phrase. Has no effect on compiled output. |
+| `surface`     | When `true`, this keyword is a **verifiable surface**: `hint verify` requires each block's declared name to appear verbatim in the generated output, so `hint verify <path> && hint lock <path>` refuses to record a target until it does. Mark only keywords whose name is a code identifier or defined term that must appear unchanged (e.g. `func`, `entity`, `field`) — not ones whose name is a descriptive phrase. Has no effect on compiled output. |
 | `description` | A one-line summary of what the keyword declares. `hint author` lists it next to the keyword so an agent picks the right one when writing specs. Has no effect on compiled output. |
 
 ### Modes
 
-A `.{mode}.md` suffix in the file name assigns an instruction to a mode: `__header__.fix.md` is the `__header__` instruction of the `fix` mode. No suffix means the default mode, `compile`.
-
-At compile time, lookup tries the requested mode first and falls back to the default — so a mode only needs to override what actually differs (typically the header and footer; keyword templates are usually shared).
-
-Declare agent-facing mode guidance with `__mode__.<mode>.md`:
-
-```markdown
----
-name: Review
-description: Audit an implementation against its HINT specification.
----
-
-Use `hint --mode review <paths...>` when the user asks for a code review or conformance audit.
-```
-
-`hint modes` lists these files. If front matter includes `name` and `description`, the command shows them; otherwise the name falls back to the mode extracted from the file name. `hint apply` and `hint instruct` also copy the stripped mode guidance into `AGENTS.md` / `CLAUDE.md` so agents know when to choose each mode.
+A hintbook is **flat**: one `<keyword>.md` file per keyword, no mode dimension. Files carrying a second extension (`__header__.fix.md`, `__mode__.review.md`) are leftovers from the removed 1.x mode system and are ignored — an unmigrated book still loads its base vocabulary. See [migration](07-migration.md#2-modes-are-gone).
 
 ### Running instructions
 
@@ -133,12 +115,12 @@ Names of the form `__name__` are **running instructions** — structural slots t
 
 | Name         | Role                                                                                                                                                   |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `__header__` | Opens the compiled prompt: the agent's role and operating rules for the mode.                                                                          |
-| `__footer__` | Closes the prompt: verification checklist and report format.                                                                                           |
+| `__header__` | Opens `--prompt` output: the agent's role and operating rules. Not part of the default context render.                                                 |
+| `__footer__` | Closes `--prompt` output: verification checklist and report format. Not part of the default context render.                                            |
 | `__file__`   | Template wrapping each companion hint file; `{name}` is the target path, `{body}` the file preamble, `{children}` the rendered blocks.                 |
 | `__folder__` | Same for folder hints; `{name}` is the folder path (`.` for the project root).                                                                         |
-| `__system__` | `hint instruct` emits it for the agent context files (AGENTS.md / CLAUDE.md), and `hint --standalone` prepends it to the compiled prompt. Put the tag glossary and reading rules here. |
-| `__mode__`   | Not used during compilation — `__mode__.<mode>.md` describes when and how agents should compile with that mode.                                       |
+| `__system__` | `hint apply` installs it into the agent context files (AGENTS.md / CLAUDE.md), and `hint --standalone` prepends it. Put the tag glossary and reading rules here. |
+| `__changes__` | Rendered inside `--prompt` output only when a `hint.lock` exists and blocks have drifted; `{body}` is the block-level drift list. Never authored by hand. |
 
 ## Authoring guidelines
 

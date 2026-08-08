@@ -1,290 +1,269 @@
 # HINT CLI Reference
 
-The `hint` binary is the primary interface to the HINT transpiler. It compiles `.hint` specifications into AI-ready prompts, initializes projects, and manages hintbooks.
+The `hint` binary answers one question: **what does this repository already know about this path or this intent?** It returns that knowledge for any coding agent to consume, and manages the `.hint` files it comes from.
 
 ---
 
 ## Installation
-
-**Global install** (recommended for daily use):
 
 ```bash
 npm install -g @openhint/cli
 hint --help
 ```
 
-**Ad hoc** without installing:
-
-```bash
-npx @openhint/cli <paths...>
-```
+Ad hoc, without installing: `npx @openhint/cli <paths...>`.
 
 All commands locate the project root by walking up from the current directory to the nearest `hint.yml` / `hint.yaml`.
 
 ---
 
-## `hint <paths...>` — compile
+## Exit codes and streams
 
-The default command. Compiles the given specs and writes the prompt to **stdout** (all diagnostics go to stderr), so output pipes cleanly into agents and files:
+Uniform across every command that takes paths:
 
-```bash
-hint src/billing/invoice.ts | claude -p
-hint 'src/**/*.hint' > prompt.md
-```
+| Code | Meaning |
+| ---- | ------- |
+| `0` | The operation ran and succeeded. |
+| `1` | The operation ran and a check failed (a declared surface is missing; the project is not initialized). |
+| `2` | Nothing you asked for could be resolved — a path that is not in this repository, a glob that matched nothing, or a contract command with no target to work on. |
 
-### Path arguments
+**No command reports success over an empty set.** `hint lock` on a path with no lockable target, `hint diff` with nothing tracked, and `hint verify` with no file spec all exit `2` and say why.
 
-| You pass            | Compiles                                                                      |
-| ------------------- | ----------------------------------------------------------------------------- |
-| `src/login.ts.hint` | that hint file                                                                |
-| `src/login.ts`      | its companion `src/login.ts.hint` — even if `src/login.ts` does not exist yet |
-| `src`               | the folder's `src/_.hint`                                                     |
-| `'src/**/*.hint'`   | every glob match (quote globs to keep your shell out of it)                   |
-
-Every compiled file is wrapped in its folder-hint chain down from the project root, so inherited context is part of the output. By default the closure of files it references (its `# read` targets) is compiled in the same pass, with shared folder/root context deduplicated — so an agent gets everything in one prompt instead of re-invoking `hint` per referenced file.
-
-When a [`hint.lock`](#hint-lock-paths--record-generated-work) is present, compiling **skips** any file whose spec (with its inherited context) is unchanged **and** whose generated output still matches what was recorded at lock time. An unchanged run therefore produces no output and costs no tokens; a note on stderr reports what was skipped. Drift is bidirectional: editing the spec *or* editing the generated code underneath an unchanged spec both mark the file stale, so hand-edited output is recompiled rather than silently skipped. (Entries recorded before an output existed fall back to checking existence only.)
-
-### Options
-
-| Option          | Effect                                                                                                                                                                         |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--mode <mode>` | Compile with the given hintbook mode (e.g. `fix`, `review`). Defaults to the implementation mode, `compile`. Instructions missing from the mode fall back to the default mode. |
-| `--dry-run`     | Fail with a non-zero exit on hint files that cannot be resolved, instead of skipping them silently. Use it to validate specs in CI.                                            |
-| `--force`       | Recompile every named file even if a `hint.lock` marks it unchanged.                                                                                                          |
-| `--no-refs`     | Compile only the named specs; do not pull in the specs they reference. References are included by default.                                                                    |
-| `--standalone`  | Prepend the hintbook's tag glossary (`__system__`) to the output, so the prompt explains its own tags for an agent that never loaded `AGENTS.md` (e.g. a subagent).            |
-
-```bash
-hint --mode review src/billing | claude -p     # audit code against the spec
-hint --dry-run 'src/**/*.hint'                 # validate that every spec resolves
-hint --force src/billing/invoice.ts            # ignore the lock and recompile
-hint --standalone src/billing/invoice.ts       # include the tag glossary in the prompt
-```
-
-Compiling broadly — the repo root, a top-level folder, or a wide glob — pulls the whole project spec into one prompt and usually means the paths were cast wider than the task needs. When a run crosses roughly 25 file targets or ~20k estimated tokens, `hint` prints a one-line notice on **stderr** (never stdout, which the agent consumes as the spec) reporting the target count and token estimate; narrow the paths or add `--no-refs`. Scope compiles to the specific files a task touches — a folder path compiles only that folder's own `_.hint`, so use a glob (`hint 'src/billing/**'`) when you deliberately want a whole subtree.
-
-When the mode defines a drift instruction (the software-engineer book's `fix` mode does) and a `hint.lock` exists, the compiled prompt carries a block-level drift report — see [`hint diff`](#hint-diff-paths--show-what-drifted).
+- **stdout** carries the answer: the compiled knowledge (`hint`), the drift report (`hint diff`), the verification report (`hint verify`), JSON results (`hint search`), the authoring guidance (`hint author`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`, `hint version`).
+- **stderr** carries the verdict, warnings, prompts, and subprocess output. **The first stderr line is the one that matters** — agents commonly truncate command output, so the most important message is emitted first.
 
 ---
 
-## `hint search <query...>` — find the specs closest to an intent
+## `hint <paths...>` — what applies here
 
-Ranks every `.hint` file in the project against a free-text query and prints the closest matches as JSON — a fast, offline way for an agent to discover which specs are relevant to a task before it knows their paths, then compile them:
+The default command. Prints the repository knowledge that applies to the given paths:
 
 ```bash
-hint search grpc server
+hint src/auth/token.ts
+hint src/auth src/billing
+hint 'src/auth/**'
+```
+
+Output is the compiled knowledge and nothing else — no persona, no workflow instructions, no reporting format. **The cost is proportional to how much applies**: a path with a lot of governing knowledge returns a lot, a path with none returns nothing at all. That is what makes it cheap enough to run before an ordinary edit.
+
+### Path arguments
+
+| You pass | You get |
+| -------- | ------- |
+| `src/login.ts` | its companion `src/login.ts.hint`, plus every folder `_.hint` above it |
+| `src/login.ts.hint` | the same, addressed by the hint file directly |
+| `src` | that folder's own `src/_.hint`, plus its ancestors — **not** the specs beneath it |
+| `'src/**'` | every hint beneath `src`, ancestors emitted once |
+
+Knowledge is **inherited**: a path always picks up the folder `_.hint` chain from the project root down. A repository whose knowledge lives entirely in folder `_.hint` files — no companion specs at all — is a normal, fully supported setup.
+
+### What it tells you about the path
+
+| Situation | stderr | Exit |
+| --------- | ------ | ---- |
+| The path has knowledge of its own | *(silent)* | `0` |
+| The path exists but declares nothing of its own | `no spec of its own for <path>; returning inherited context from <ancestor>` | `0` |
+| The path is not in this repository | `<path> does not exist in this repository and has no spec; …` | `2` |
+| A glob matched nothing | `'<pattern>' matched no .hint files` | `2` |
+
+Inheriting is a **successful** lookup — the ancestor knowledge is the answer for that path. Only a path that names nothing in the repository is a failure. This is what stops the common case from looking like an error.
+
+### Options
+
+| Option | Effect |
+| ------ | ------ |
+| `--prompt` | Wrap the knowledge in a standalone implementation prompt (persona header, verification footer) for piping to a fresh agent. Not needed mid-session. |
+| `--strict` | Exit `2` when any named path has no spec of its own, instead of returning inherited context. Use it to validate specs in CI. |
+| `--force` | Ignore `hint.lock` and include every file, even unchanged ones. |
+| `--no-refs` | Return only the named specs, not the specs they reference. References are included by default. |
+| `--standalone` | Implies `--prompt`, and prepends the hintbook's tag glossary for an agent that never loaded `AGENTS.md`. |
+
+```bash
+hint --prompt src/auth/login.ts | claude -p    # a fresh agent implements against it
+hint --strict 'src/**/*.hint'                  # CI: every named spec must resolve
+```
+
+Referenced specs (a spec's `# read` targets and path links) are pulled in automatically with shared ancestors emitted once, so you never need a second call for a path the first one pointed at.
+
+**Breadth guard.** A run crossing roughly 25 scopes or ~20k estimated tokens prints a one-line notice on stderr with the scope count and token estimate. Both file and folder scopes count, so the guard works in a folder-knowledge-only repository too.
+
+**Reconciliation.** When a `hint.lock` exists and blocks have drifted, `--prompt` output carries a block-level drift report automatically — there is no mode to select. See [`hint diff`](#hint-diff-paths--show-what-drifted).
+
+---
+
+## `hint search <query...>` — which knowledge covers this intent
+
+Ranks every `.hint` in the project against a free-text query and prints JSON:
+
+```bash
+hint search "service account authentication"
 ```
 
 ```json
 {
-  "query": "grpc server",
+  "query": "service account authentication",
   "count": 2,
   "results": [
-    { "hint": "src/rpc/server.ts.hint", "score": 7.104 },
-    { "hint": "src/rpc/client.ts.hint", "score": 2.318 }
+    { "hint": "src/auth/_.hint", "target": "src/auth", "score": 6.12, "weak": false },
+    { "hint": "src/identity/_.hint", "target": "src/identity", "score": 1.84, "weak": true }
   ]
 }
 ```
 
-Each result is a **hint file path** (relative to the project root, ready to pass to `hint <path>`) and a relevance **score**; results are ordered closest-first and only positive scores are returned. The typical flow is `hint search <intent>` to locate the specs, then `hint <path...>` to compile the top hits.
+| Field | Meaning |
+| ----- | ------- |
+| `hint` | the hint file, relative to the project root |
+| `target` | the path that knowledge governs — pass this to `hint <path>` next |
+| `score` | BM25F relevance, closest first; only positive scores are returned |
+| `weak` | the result matched under half your query terms |
 
-Matching is deterministic and needs no model, service, or network — it scans the parsed specs directly and ranks them with BM25F over weighted zones (a spec's target path and declared names count for more than its prose). It splits identifiers so `grpcServer` / `grpc_server` / `rpc/server` all match `grpc`, `server`; bridges a small set of software synonyms and acronyms so `database` reaches a spec that only says `db`; and falls back to fuzzy matching for typos. Malformed specs (a broken `@include`, a cycle) are skipped rather than failing the search.
+**`weak` is advisory and never filters.** Scores are corpus-relative, so a high score says nothing about whether a hit is on topic; term coverage is the honest signal. A result flagged `weak` is still returned — a false `weak` costs a glance, a hidden result costs the knowledge. When every result is weak, a `no strong match` note goes to stderr.
 
-`--limit <n>` caps the number of results (default `20`; a negative value returns all). An empty query, or one no spec matches, yields an empty `results` array. Fails with `No hint.yml found` outside an initialized project.
+Matching is deterministic and local: no model, service, or network. It splits identifiers so `grpcServer` / `grpc_server` / `rpc/server` all match `grpc`, `server`; bridges a small set of software synonyms so `database` reaches a spec that only says `db`; and falls back to edit-distance-1 for typos. Malformed specs are skipped rather than failing the search.
 
----
-
-## `hint lock <paths...>` — record generated work
-
-Fingerprints the given specs and writes them to `hint.lock` in the project root, marking those targets as generated. Run it after an agent implements or drafts what a spec defines:
-
-```bash
-hint lock src/billing/invoice.ts
-```
-
-Afterwards, a plain `hint` run skips each recorded target while its spec — including inherited folder/root context — stays unchanged **and** its generated output is untouched, keeping repeated runs cheap and their output stable. The lock is deterministic and diff-friendly (sorted keys, no timestamps), so it reviews cleanly in version control. Each entry's hash folds in three things: the target's spec blocks, its inherited context, and the **vocabulary it uses** — the resolved instruction content of every keyword in its chain, plus the mode wrappers. So changing what a keyword *compiles to* invalidates exactly the files that use that keyword, and nothing else. This replaces the older hintbook-version fingerprint, which was both too broad (any book release invalidated every file) and too narrow (an in-place edit to a `file://` book with no version bump invalidated nothing). A separate `target` field records a content hash of the generated output, so a file edited underneath an unchanged spec is detected as drifted rather than skipped. Changes to a keyword's `description`, `synonyms`, or `surface` flag do **not** invalidate anything — they never affect compiled output.
-
-Locking is scoped to the paths you pass and merges into any existing `hint.lock`, so you can lock files as you finish them. Fails with `No hint.yml found` outside an initialized project.
-
-Pass `--strict` to gate recording on structural verification: each target is checked with the same rules as [`hint verify`](#hint-verify-paths--structurally-check-generated-output), and any file that fails (its output is missing, or a declared surface is absent from the code) is **not** recorded and is reported on stderr, with the command exiting non-zero. Passing files are still locked. Plain `hint lock` records unconditionally — verification is opt-in, so an unverified target never silently becomes "generated".
-
-```bash
-hint lock --strict src/billing/invoice.ts   # only record it if it structurally matches its spec
-```
+`--limit <n>` caps results (default `20`; negative returns all).
 
 ---
 
-## `hint verify <paths...>` — structurally check generated output
+## `hint author [paths...]` — how to write it down
 
-Deterministically checks each generated target against its spec, with **no** LLM call and no language-specific parsing: every **surface** a spec declares must appear by name in the output. It is the token-free, deterministic counterpart to the semantic `hint --mode review` audit — a presence lint that catches a whole surface omitted (a stubbed or forgotten function, an unhandled error type, an unused defined term), not a subtly wrong implementation.
-
-```bash
-hint verify src/billing/invoice.ts
-```
-
-A **surface** is any keyword a hintbook marks with `surface: true` in its instruction front matter — the declarations whose name must manifest in the output (e.g. `func`, `entity`, `error`, `party`, `clause`). Constraint, scratch, and input keywords (`bad`, `rule`, `notes`, `read`) are never surfaces, so their names are not expected in the code. If the active hintbooks declare no surface keywords, verification is a no-op and the command says so on stderr rather than reporting a hollow pass.
-
-Each file is reported as verified, **missing-output** (the target does not exist on disk), or **missing-surfaces** (the output exists but named declarations are absent — each one is listed). Failing files print to stdout and the command **exits non-zero**, so an agent loop or CI step can gate on structural conformance. `--mode <mode>` resolves keywords for a specific hintbook mode. Fails with `No hint.yml found` outside an initialized project.
-
----
-
-## `hint diff <paths...>` — show what drifted
-
-Compares the given specs against `hint.lock` and reports, per file, exactly which blocks changed since they were generated — a token-free way to scope a fix before running `hint --mode fix`:
+Prints the guidance for authoring `.hint` knowledge: the **keyword vocabulary** of the registered hintbooks first, then the file kinds, the syntax, and the full per-keyword reference.
 
 ```bash
-hint diff src/billing/invoice.ts
+hint author src/auth/token.ts
+hint author                      # vocabulary and rules alone
 ```
 
-Each file is reported as up to date, **new** (never locked), **inherited** (only its ancestor `_.hint` context changed), **output changed** (the spec is unchanged but the generated code was edited since it was locked — re-verify against the spec, then re-lock), or with the precise list of **changed / added / removed** blocks. Output goes to stdout; with no `hint.lock` it reports on stderr that nothing is being tracked yet. Fails with `No hint.yml found` outside an initialized project.
+The vocabulary comes first and fits on a screen, because picking a legal keyword is the decision an author actually has to make — truncating the output still leaves the part you came for. Extended descriptions and examples follow the index as `### keyword` sections, so multi-line content can never corrupt the table.
+
+Agents **may** read `.hint` files directly when authoring or editing them. The prohibition in the generated instruction block applies only to *consuming* knowledge, where `hint <path>` gives it to you with inheritance resolved.
+
+Fails outside an initialized project, or when no hintbooks are registered.
 
 ---
 
 ## `hint config` — initialize the project
 
 ```bash
-hint config
-```
-
-If no `hint.yml` exists, writes one in the current folder and proceeds. In a terminal it asks for a project name and description and offers to register the default hintbook (`npm://@openhint/hintbook-software-engineer`); when stdin is not a terminal it uses those defaults silently. If `hint.yml` already exists, it reports that and does nothing else.
-
-`hint config` only manages `hint.yml` — it does **not** touch the agent files. After initializing (and after any `hint add`/`hint remove`), run `hint apply` to write `AGENTS.md` / `CLAUDE.md` (or `hint instruct | claude -p` to have an agent do it):
-
-```bash
 hint config   # create hint.yml
-hint apply    # then write the agent files
+hint apply    # then write the agent bootstrap
 ```
+
+If no `hint.yml` exists, writes one in the current folder. In a terminal it asks for a project name and description; when stdin is not a terminal it uses defaults silently. If `hint.yml` already exists it reports that and does nothing else. It never touches the agent files.
 
 ---
 
-## `hint instruct` — set up the agent context files
-
-Prints an **AI agent prompt** to stdout that instructs an agent to maintain a single `<hint>...</hint>` block in `AGENTS.md` and `CLAUDE.md`, built from the current `hint.yml`. The block wraps the base HINT workflow instructions plus each registered hintbook's `__system__` glossary and `__mode__.<mode>.md` usage guidance in `<system_instructions_from_<hintbook-id>>` tags. The agent creates the files if needed, appends the block if missing, and otherwise replaces the existing `<hint>` block wholesale — so updated, added, or removed hintbooks propagate on every run. The prompt states explicitly that these are the only HINT instructions allowed in the files; anything HINT-related outside the block is removed.
-
-The command never edits `AGENTS.md` / `CLAUDE.md` itself. Apply the printed prompt with your agent, and re-run it whenever `hint.yml` changes:
-
-```bash
-hint instruct | claude -p --permission-mode acceptEdits
-```
-
-Warnings (e.g. an unresolved hintbook) go to stderr, so the pipe stays clean. Fails with `No hint.yml found` outside an initialized project.
-
-Because applying the prompt **writes** `AGENTS.md` / `CLAUDE.md`, a headless agent needs permission to edit files or it will stall asking for approval. With Claude Code, `--permission-mode acceptEdits` auto-approves those edits (`--dangerously-skip-permissions` bypasses all checks). See [Agent stalls on write approval](troubleshooting/11-agent-write-approval.md). To skip the agent entirely, use [`hint apply`](#hint-apply--write-the-agent-files-directly).
-
----
-
-## `hint apply` — write the agent files directly
+## `hint apply` — install the agent bootstrap
 
 ```bash
 hint apply
 ```
 
-Does what `hint instruct` asks an agent to do, but as a deterministic find-and-replace performed by the CLI itself — no agent, no piping, no permission prompt. Because the block is delimited by `<hint>...</hint>` tags, the CLI can locate and update it exactly. For each of `AGENTS.md` and `CLAUDE.md`:
+Writes a single `<hint>...</hint>` block into `AGENTS.md` and `CLAUDE.md`, as a deterministic find-and-replace by the CLI itself — no agent, no piping, no permission prompt.
 
-- If the file does not exist, it is created with the `<hint>` block as its content.
-- If it has no `<hint>` block, the block is appended after the existing content.
-- If it already has a `<hint>...</hint>` block, that block is replaced wholesale (re-running is idempotent and picks up added/removed/updated hintbooks).
-- If `CLAUDE.md` only `@AGENTS.md`-includes it, the block is written to `AGENTS.md` and any copy in `CLAUDE.md` is stripped to avoid duplication.
+The block is deliberately **small**: it teaches an agent how to query HINT and how to record what it learns, plus each hintbook's tag glossary. Repository knowledge itself stays in `.hint` and is never duplicated into agent files.
 
-It prints one short status line per file (`Created…`, `Updated the HINT block in…`, `…already up to date`). Use `hint instruct | claude -p` instead when you would rather an agent apply the changes. Fails with `No hint.yml found` outside an initialized project.
+- If the file does not exist, it is created with the block.
+- If it has no `<hint>` block, the block is appended.
+- If it already has one, that block is replaced wholesale (idempotent; picks up added/removed hintbooks).
+- If `CLAUDE.md` only `@AGENTS.md`-includes it, the block goes to `AGENTS.md` and any copy in `CLAUDE.md` is stripped.
 
----
-
-## `hint modes` — list available modes
-
-```bash
-hint modes
-```
-
-Lists modes declared by registered hintbooks through `__mode__.<mode>.md` files. The `mode` column is the value to pass to `hint --mode <mode>`. If a mode file starts with YAML front matter containing `name` and `description`, those are shown; otherwise the name falls back to the mode extracted from the file name.
-
-Warnings for unresolved hintbooks go to stderr. Fails with `No hint.yml found` outside an initialized project.
-
----
-
-## `hint author [paths...]` — prompt an agent to write hints
-
-Prints an **AI agent prompt** to stdout that teaches an agent to author `.hint` specifications: the file kinds and naming rules, the heading/body/nesting syntax, and — built from the registered hintbooks — the full **keyword vocabulary** with each keyword's synonyms and `description`. Pipe it to your agent, which then writes the `.hint` files:
-
-```bash
-hint author src/billing/invoice.ts | claude -p --permission-mode acceptEdits
-hint author                                          # vocabulary only, no specific target
-```
-
-Pass one or more target paths to scope the prompt to writing those specs; omit them for the vocabulary and rules alone. The descriptions come from each keyword instruction's `description` front matter, so a well-documented hintbook produces a richer prompt. The command never writes files itself — the agent does.
-
-This is the authoring counterpart to the default compile command: `hint author` helps create a spec, `hint <path...>` compiles an existing one. Warnings for unresolved hintbooks go to stderr. Fails with `No hint.yml found` outside an initialized project, or when no hintbooks are registered.
+Re-run it after any `hint add` / `hint remove`. Other agent runtimes can be pointed at HINT the same way — the block is plain markdown and the `.hint` files are the source of truth.
 
 ---
 
 ## `hint add <books...>` — install hintbooks
 
-Fetches each book, validates that it actually contains a hintbook (a `hintbook.json` must be discoverable), and registers it in the `books` array of `hint.yml`. Run `hint apply` afterwards to refresh `AGENTS.md` / `CLAUDE.md`:
+Fetches each book, validates that it contains a `hintbook.json`, and registers it in `hint.yml`. Run `hint apply` afterwards.
 
 ```bash
 hint add @openhint/hintbook-software-engineer
 hint add --local @openhint/hintbook-lawyer
 hint add https://github.com/acme/hintbooks-platform.git
-hint add git@github.com:acme/hintbooks-platform.git
 hint add file://hintbooks/team-conventions
-hint apply
 ```
 
-The source type is detected from the argument:
+| Argument | Action | Registered as |
+| -------- | ------ | ------------- |
+| `file://<path>` | validated only — nothing is fetched | `file://<path>` |
+| git URL (`git@…`, `ssh://…`, `git://…`, `http(s)://…`) | cloned into `hintbooks/<repo-name>` | `file://hintbooks/<repo-name>` |
+| anything else | `npm install --global <name>` (or into `hintbooks/` with `--local`) | `npm://<name>` |
 
-| Argument                                               | Action                                                                          | Registered as                  |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------- | ------------------------------ |
-| `file://<path>`                                        | validated only — nothing is fetched                                             | `file://<path>`                |
-| git URL (`git@…`, `ssh://…`, `git://…`, `http(s)://…`) | cloned into `hintbooks/<repo-name>` at the project root                         | `file://hintbooks/<repo-name>` |
-| anything else                                          | `npm install --global <name>` (or into the `hintbooks/` store with `--local`)   | `npm://<name>`                 |
-
-A book that installs but contains no `hintbook.json` fails with `No hintbook found` and is not registered. Entries are deduplicated — adding the same book twice is safe.
-
-**Where npm books are installed.** By default npm books are installed **globally** (`npm install --global`), so a single copy is shared across all your projects and your repository stays clean. Pass `--local` to install into a project-local store at `hintbooks/node_modules/` instead — useful for pinning a specific version per project or working offline from a checked-in copy. The local install uses an isolated npm prefix (`hintbooks/` gets its own private `package.json`), so the CLI never touches your project's `package.json`, lockfile, or `node_modules`; `hint add --local` therefore works the same in a plain project and inside a **yarn or pnpm workspace** — npm is never asked to parse the workspace's `workspace:*` dependencies, and you don't need yarn or pnpm installed. The `hintbooks/` folder is managed by HINT; add it to `.gitignore` if you don't want fetched books committed.
-
-`npm://` books are resolved from the project-local `hintbooks/node_modules/` first, then the project's `node_modules/`, then the global npm root (`npm root -g`) — so both `--local` and the default global install are picked up.
+npm books install globally by default, so one copy is shared across projects. `--local` installs into a project-local store at `hintbooks/node_modules/` using an isolated npm prefix, so the CLI never touches your project's `package.json`, lockfile, or `node_modules` — it works identically in a plain project and inside a yarn or pnpm workspace. Resolution order: project-local `hintbooks/node_modules/`, then the project's `node_modules/`, then the global npm root.
 
 ---
 
 ## `hint remove <books...>` — unregister hintbooks
 
-Removes each book from the `books` array of `hint.yml`. Nothing is uninstalled — npm packages and cloned folders stay on disk. Run `hint apply` afterwards to refresh `AGENTS.md` / `CLAUDE.md`:
+Removes each book from `hint.yml`. Nothing is uninstalled. Run `hint apply` afterwards.
 
 ```bash
-hint remove @openhint/hintbook-lawyer    # npm:// prefix may be omitted
-hint remove npm://@openhint/hintbook-lawyer
-hint remove file://hintbooks/team-conventions
-hint apply
+hint remove @openhint/hintbook-lawyer     # npm:// prefix may be omitted
 ```
-
-A book that is not registered fails with `Hintbook not registered` and leaves `hint.yml` untouched.
 
 ---
 
-## `hint version` — show versions
+## `hint version` — environment
 
-Prints the CLI version, followed by each hintbook registered in `hint.yml` and its installed version:
+Prints the CLI version, then every registered hintbook with its version and where it resolved from:
 
 ```
-@openhint/cli 1.0.1
-npm://@openhint/hintbook-lawyer 1.0.1
-file://hintbooks/team-conventions (version unknown)
+@openhint/cli 1.1.0
+npm://@openhint/hintbook-software-engineer 1.0.6 — /usr/local/lib/node_modules/@openhint/…/keywords
+file://hintbooks/team-conventions (version unknown) — hintbooks/team-conventions
 npm://@openhint/hintbook-chef (not installed)
 ```
 
-The hintbook version is read from the book's `package.json` (or a `version` field in `hintbook.json`). Outside a HINT project only the CLI version is printed.
+Versions come from the book's `package.json` (or a `version` field in `hintbook.json`). Outside a HINT project only the CLI version is printed.
 
 ---
 
-## `hint help` — show usage
+# Contracts
 
-Prints the command overview with usage examples. The same text is available via `hint --help`, and `hint <command> --help` shows the options of a single command.
+The commands below are an **optional specialization**. They apply only to companion `<file>.hint` specs that *declare* surfaces the code must contain. Folder knowledge has no single generated file to check, so these commands say so and exit `2` rather than reporting a hollow success. A repository that never uses them gets the full value of everything above.
+
+## `hint verify <paths...>` — is every declared surface present
+
+```bash
+hint verify src/billing/invoice.ts
+```
+
+Deterministically checks each generated target against its spec: every **surface** it declares must appear by name in the output. No model call, no language-specific parsing.
+
+A surface is any keyword a hintbook marks `surface: true` (e.g. `func`, `entity`, `error`, `party`, `clause`). Constraint and scratch keywords (`bad`, `rule`, `notes`, `read`) are never surfaces.
+
+| Result | Exit |
+| ------ | ---- |
+| every declared surface present | `0` |
+| a target is missing, or a declared surface is absent | `1`, with the specifics on stdout |
+| no file spec matched, or the books declare no surface keywords | `2`, with the reason on stderr |
+
+It is a presence lint — it catches a whole surface omitted (a stubbed function, an unhandled error type), not a subtly wrong implementation. Compose it: `hint verify <path> && hint lock <path>`.
+
+## `hint lock <paths...>` — record a contract snapshot
+
+```bash
+hint lock src/billing/invoice.ts
+```
+
+Fingerprints the given specs into `hint.lock`. Afterwards a plain `hint` run skips each recorded target while its spec, its inherited context, and the vocabulary it uses all stay unchanged **and** its generated output is untouched.
+
+Each entry's hash folds in the target's own blocks, its inherited context, and the resolved instruction content of every keyword in its chain — so changing what a keyword *renders to* invalidates exactly the files using it. A separate `target` hash records the generated output, so code edited underneath an unchanged spec is detected as drifted rather than skipped. Changes to a keyword's `description`, `synonyms`, or `surface` flag invalidate nothing, because they never affect output.
+
+**Only companion `<file>.hint` specs are lockable.** Passing a folder, a `_.hint`, or a nonexistent path reports what it resolved to and why it was skipped, and exits `2` if nothing at all was lockable. The lock file is not written when it could not be populated. It is deterministic and diff-friendly (sorted keys, no timestamps).
+
+## `hint diff <paths...>` — show what drifted
+
+```bash
+hint diff src/billing/invoice.ts
+```
+
+Reports, per file, which blocks changed since they were generated: **new** (never locked), **inherited** (only ancestor context or vocabulary changed), **output changed** (spec unchanged, code edited), or the precise **changed / added / removed** block list.
+
+A clean comparison says how many files it checked (`3 file(s) compared — all up to date`). With no lock, an empty lock, or no tracked file matching the given paths, it says so and exits `2` — it never claims everything is up to date about a set it did not populate.
 
 ---
 
-## Exit codes and streams
+## Migrating to 1.1
 
-- **stdout** carries the command's primary output: the compiled prompt (`hint`), the drift report (`hint diff`), the verification report (`hint verify`), the search results (`hint search`, as JSON), the agent prompt to pipe to your agent (`hint instruct`, `hint author`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`), listings (`hint list`, `hint modes`), or the version report (`hint version`). Only `hint`, `hint instruct`, and `hint author` are meant to be piped into an agent. `hint lock` writes only `hint.lock` and reports how many files it recorded on stderr.
-- **stderr** carries interactive prompts, subprocess (git/npm) output, warnings, and errors.
-- Exit code `0` on success, `1` on any failure (unresolvable specs under `--dry-run`, missing project, failed installs, invalid hintbooks) — and, additionally, when `hint verify` finds a target that fails structural verification or `hint lock --strict` refuses one.
+See [`docs/07-migration.md`](07-migration.md).

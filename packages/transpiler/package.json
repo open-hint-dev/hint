@@ -1,7 +1,7 @@
 {
     "name": "@openhint/transpiler",
     "version": "0.0.0",
-    "description": "The HINT engine — compiles markdown-native .hint specifications into deterministic, high-density prompts for AI agents.",
+    "description": "The HINT engine — resolves a path or query to the scoped, inherited repository knowledge that applies to it, from markdown-native .hint files.",
     "private": true,
     "type": "module",
     "scripts": {

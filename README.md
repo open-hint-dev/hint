@@ -3,189 +3,180 @@
 </p>
 
 <p align="center">
-  <img alt="spec" src="https://img.shields.io/badge/spec-v1.0.0-black">
+  <img alt="version" src="https://img.shields.io/badge/version-1.1-black">
   <img alt="format" src="https://img.shields.io/badge/format-Markdown%E2%80%91native-blue">
-  <img alt="output" src="https://img.shields.io/badge/output-LLM%20prompt%20payload-6e40c9">
+  <img alt="output" src="https://img.shields.io/badge/output-scoped%20repo%20context-6e40c9">
+  <img alt="agents" src="https://img.shields.io/badge/agents-neutral-0aa">
   <img alt="license" src="https://img.shields.io/badge/license-MIT-green">
 </p>
 
 <h1 align="center">
-  HINT — Human Intent Native Transpiler
+  HINT — a context compiler for coding agents
 </h1>
 
-> **Precision prompt engineering for predictable AI outcomes.**
+> **Tell your coding agent what matters here.**
 
-I built HINT because I got tired of watching AI turn small tasks into sprawling code changes. You ask for one feature and get extra abstractions, new files, and architecture decisions you never made. The code may work. Now you own all of it.
+Every coding agent starts each session knowing nothing about your repository. So teams write it down — in `CLAUDE.md`, in `AGENTS.md`, in a wiki nobody reads. Those files grow, apply everywhere at once, and get loaded whole on every task. Half of what an agent reads is irrelevant to what it is about to do, and the half that mattered was three hundred lines down.
 
-I want the speed without giving up control.
+HINT is a **context compiler**. Repository knowledge lives in `.hint` files next to the code it describes, versioned in git. Ask HINT about a path or an intent, and it returns the subset that applies — inherited from the root down, and nothing more.
 
-Then it became clear the problem is not about code at all. Every professional who hands work to an AI faces the same trade: speed for control. A lawyer gets a contract with clauses nobody asked for. An analyst gets a report with invented numbers. **HINT is designed for professionals seeking a structured, systematic approach to working with AI to achieve predictable results.** Software engineering is just the first vocabulary — engineers get [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer), lawyers get [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer), and any profession can publish its own.
+```text
+repository knowledge → .hint → scope + inheritance → retrieval → minimal relevant context → your agent
+```
 
-### A language you already speak
-
-HINT is not just another spec-driven workflow. It is a native-speaking specification language. English describes the deliverable. HINT adds enough structure to make that description precise — and enough enforcement to make it binding.
-
-- A `.hint` file lives next to the work it defines.
-- `src/controllers/auth.py.hint` defines `src/controllers/auth.py`.
-- `contracts/nda.md.hint` defines `contracts/nda.md`.
-- You declare entities, functions, errors, and rules — or parties, clauses, obligations, and red lines. The vocabulary is pluggable.
-- The agent reports missing decisions instead of quietly making them.
-
-Think of `.hint` as closer to `.py`, `.ts`, or a signed term sheet than to a ticket or planning document.
-
-### How it is different
-
-For software, compare it with spec-driven development tools:
-
-| Approach                                              | What it controls                                                         |
-| ----------------------------------------------------- | ------------------------------------------------------------------------ |
-| [OpenSpec](https://github.com/Fission-AI/OpenSpec)    | Proposals, behavioral specs, tasks, and spec changes                     |
-| [GitHub Spec Kit](https://github.com/github/spec-kit) | The workflow from feature spec to plan, tasks, and implementation        |
-| **HINT**                                              | The source boundary: what exists, where it lives, and how it must behave |
-
-You still ask an AI agent to produce the final work. But you do not hand it a vague prompt and hope its decisions match yours. HINT compiles your declarations and rules into a strict, deterministic prompt — the same specs and the same vocabulary always produce the same contract.
-
-**You decide what exists, what gets reused, and what must never happen. The AI handles the production.**
+It works underneath Claude Code, Codex, OpenCode, Cline, or anything else that can run a command. HINT does not implement, plan, or replace your agent. It answers one question: *what does this repository already know about what I am about to touch?*
 
 ---
 
 ## See it work
 
-`src/domain/auth/login.ts.hint` — you write the borders:
+Knowledge lives where the code lives. `packages/gateway/auth/_.hint`:
 
 ```markdown
-Login flow for the auth domain.
+# decision Gateway owns external authentication {#auth_boundary}
 
-# read src/infrastructure/security/tokens.ts
+All external auth terminates at the gateway; downstream services trust its signed
+context header and never re-authenticate. Rationale: one place to rotate keys and
+audit access. Consequence: a service needing identity reads the header — it does
+not call the identity database.
 
-Core JWT signing wrapper — reuse it, never reimplement signing.
+# invariant Token verification goes through TokenVerifier {#token_path}
 
-# entity Credentials {#credentials}
+Every path that accepts a bearer token calls `TokenVerifier.verify`. No handler
+parses or trusts a token itself, including in tests.
 
-- username: string (authenticated email pattern)
-- password: string (min 8 chars, argon2-hashed)
+# bad Direct identity DB access from the gateway
 
-# func executeLogin
-
-Authenticates a user and issues a bearer token.
-
-## arg inputs
-
-Payload from the login route, shaped as Credentials.
-
-## result
-
-A signed bearer token string.
-
-## error InvalidCredentialsException
-
-User missing or password mismatch.
-
-## flow
-
-1. Look up the username, fetch the secure profile.
-2. If missing, throw InvalidCredentialsException.
-3. Compare the password against the stored argon2 hash.
-4. On success, sign a token via the token engine and return it.
-
-# bad UserExistenceLeak
-
-Never reveal whether a user exists in failure messages.
+The gateway has no credentials for the identity database and must never acquire
+them. If you need a field it holds, extend the signed context header instead.
 ```
+
+Ask what applies before you touch a file:
 
 ```bash
-hint src/domain/auth/login.ts | claude -p
+$ hint packages/gateway/auth/token.go
 ```
 
-The compiler wraps the file in its folder context and renders every block into a binding tag the agent has a glossary for — `<function_contract>`, `<error>`, `<prohibited_anti_patterns>` — framed by a role header and a verification footer. The agent:
+```text
+<folder_context path=".">
+  <critical_system_mandates name="FailClosed">
+  Security-sensitive operations fail closed.
+  </critical_system_mandates>
 
-- writes `login.ts` — exactly the surface declared, nothing adjacent;
-- writes a regression test for `InvalidCredentialsException` that fails without the guard;
-- reads the real `tokens.ts` before touching it, instead of guessing at its API;
-- closes with a report mapping the code back to your blocks — and tells you where the spec was thin (no token TTL declared? that's in the report, not silently defaulted).
-
-Add a `# rule` for the TTL, recompile — gap gone.
-
-### Not just code
-
-The same machinery drafts legal documents. Swap the hintbook and `contracts/nda.md.hint` declares parties, defined terms, obligations, and red lines:
-
-```markdown
-# party Discloser {#discloser}
-
-Acme Corp., a company registered in England, No. 0123456.
-
-# clause Confidentiality
-
-## obligation NonDisclosure
-
-The Receiving Party shall not disclose Confidential Information to any third party.
-
-# prohibition
-
-- No non-compete or non-solicit obligations in this NDA.
+  <folder_context path="packages/gateway/auth">
+    <architectural_decision name="Gateway owns external authentication" id="auth_boundary">…</architectural_decision>
+    <system_invariant name="Token verification goes through TokenVerifier" id="token_path">…</system_invariant>
+    <prohibited_anti_patterns name="Direct identity DB access from the gateway">…</prohibited_anti_patterns>
+  </folder_context>
+</folder_context>
 ```
 
-The compiled prompt makes the assistant draft inside those borders — defined terms used with total discipline, no invented facts, figures, or citations, gaps reported instead of filled. See [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer).
+`hint: no spec of its own for packages/gateway/auth/token.go; returning inherited context from packages/gateway/auth/_.hint`
+
+That is the whole output — the applicable knowledge and a one-line note on stderr saying where it came from. No persona, no workflow instructions, no reporting format. A path nothing applies to returns nothing, so calling `hint` before an edit is cheap enough to do on reflex.
+
+When you know the intent but not the path:
+
+```bash
+$ hint search "service account authentication"
+{
+  "query": "service account authentication",
+  "count": 2,
+  "results": [
+    { "hint": "packages/gateway/auth/_.hint", "target": "packages/gateway/auth", "score": 6.12, "weak": false },
+    { "hint": "packages/identity/_.hint",     "target": "packages/identity",     "score": 1.84, "weak": true  }
+  ]
+}
+```
+
+Offline, deterministic, no model call, no files read into context. `weak` flags a hit that matched under half your query terms — advisory, never hidden.
+
+---
+
+## Why not just a bigger CLAUDE.md
+
+| | `CLAUDE.md` / `AGENTS.md` | HINT |
+| --- | --- | --- |
+| **Scope** | one file, applies to everything | per path, inherited root → folder → file |
+| **Cost** | loaded whole, every task | proportional to what applies |
+| **Retrieval** | none — the agent reads it all | `hint search`, offline and ranked |
+| **Typing** | prose | typed blocks (`decision`, `invariant`, `rule`, `bad`, …) |
+| **Ownership** | one tool's convention | the repository's, in git, agent-neutral |
+| **Enforcement** | none | optional: declared surfaces verified mechanically |
+
+HINT is not a replacement for those files — `hint apply` writes a short block into them telling your agent how to query HINT. That block stays small; the knowledge stays in `.hint`.
 
 ---
 
 ## Quick start
 
-**1. Initialize** — `hint config` creates `hint.yml` (marks the project root); `hint apply` then writes the workflow into your `AGENTS.md` / `CLAUDE.md`:
+**1. Initialize**
 
 ```bash
 npm install -g @openhint/cli
-hint config                                    # create hint.yml
-hint add @openhint/hintbook-software-engineer  # building software
-hint add @openhint/hintbook-lawyer             # drafting legal documents
-hint apply                                     # wire up AGENTS.md / CLAUDE.md
+hint config                                    # create hint.yml at the project root
+hint add @openhint/hintbook-software-engineer  # a keyword vocabulary
+hint apply                                     # tell your agent how to query HINT
 ```
 
-Install the hintbook for your profession — or both, or your own. `hint config`, `hint add`, and `hint remove` only touch `hint.yml`; run `hint apply` once afterwards to write the changes into your agent files (or `hint instruct | claude -p --permission-mode acceptEdits` to have your agent do it).
-
-**2. Set baselines** — a root `_.hint` holds the global defaults every folder and file inherits:
+**2. Write down what the repository knows.** A root `_.hint` holds project-wide baselines; a folder `_.hint` holds what applies to that subsystem and everything under it. A repository whose knowledge lives entirely in folder hints is a normal, fully supported setup — most do.
 
 ```markdown
 # lang TypeScript
 
 Node.js v22+, ESM only.
 
-# dep
+# rule Migrations are never edited after merge
 
-- Express.js, Zod
-- Prefer native modules; avoid bloated utilities.
+Add a new migration instead. The deploy pipeline replays them in order from an
+empty database on every staging rebuild.
 
-# build
+# bad Retry loops around the payment gateway
 
-- npm run build
-- make test
+The gateway is not idempotent below the charge-token layer. Retrying a failed
+charge double-bills. Surface the failure instead.
 ```
 
-**3. Companion files** — drop a `*.hint` next to any file you want built. Context lives where your code lives.
+Run `hint author` for the keyword vocabulary before writing. Agents may read `.hint` files directly when authoring them — that restriction applies only to *consuming* knowledge, where `hint <path>` gives you inheritance already resolved.
 
-**4. Compile & run** — `hint 'src/**/*.hint' | claude -p`. A spec is compiled together with any files it references (its `# read` targets), shared context included once. Use `--mode fix` to repair code against the spec, `--mode review` to audit it. When an agent knows the intent but not the path, `hint search grpc server` ranks every spec in the project by relevance (offline, no model) and returns the closest hint files to compile.
+**3. Query it.** `hint <path>` before touching a file; `hint search "<intent>"` when you do not know the path. Both are cheap. Pipe to an agent that has no other instructions with `hint --prompt <path> | claude -p`, which adds implementation framing around the same knowledge.
 
-**5. Verify & keep it in sync** — after the work is generated, `hint verify <path>` checks — deterministically, no tokens — that every declared surface (each `func`, `entity`, `error`…) actually appears in the output, so a stubbed or forgotten declaration is caught before you trust it. Then `hint lock <path>` records the work; later `hint` runs skip specs that haven't changed, so repeated runs cost no tokens. Drift is bidirectional: editing the spec *or* editing the generated code marks the file stale. When a spec drifts, `hint diff <path>` lists exactly which blocks changed and `hint --mode fix <path>` reconciles only those — the loop converges instead of rewriting from scratch. Use `hint lock --strict` to refuse recording anything that does not verify.
+**4. Record what you learn.** When a session discovers something durable — a decision, an invariant, an operational hazard, an approach that does not work — write it into the most specific `.hint` that applies. It is versioned with the code and available to every tool, instead of decaying in one agent's memory file.
 
 Full walkthrough → [`docs/02-quick-start.md`](docs/02-quick-start.md).
 
 ---
 
-## What the prompt enforces
+## Contracts (optional)
 
-No new syntax — the compiler wraps your spec in a border contract that makes the AI:
+Beyond recording knowledge, a `.hint` can *declare* things the code must contain — a `func`, an `entity`, an `error`. When it does, HINT can check them mechanically:
+
+```bash
+hint verify src/auth/login.ts   # every declared surface present in the code? exits non-zero if not
+hint lock   src/auth/login.ts   # snapshot; later `hint` runs skip unchanged specs
+hint diff   src/auth/login.ts   # which blocks drifted since that snapshot
+```
+
+Deterministic and token-free — no model involved. This is a specialization, not the main path: it only applies to companion `<file>.hint` specs, and a repository that never uses it gets the full value of everything above. When these commands have nothing to work on they say so and exit non-zero, rather than reporting a hollow success.
+
+Exit codes across the CLI: `0` succeeded · `1` a check failed · `2` nothing you asked for matched.
+
+---
+
+## What `--prompt` framing adds
+
+With `--prompt`, the same knowledge is wrapped in a border contract that makes a fresh agent:
 
 - **Stay in scope** — only the files, types, and fields you declared. Nothing adjacent.
 - **Implement, not redesign** — your architecture, not its own; simplest construct that fits; declared modules reused, never duplicated.
 - **Skip stubs** — every path built; scratch thoughts go in `# notes` (stripped at compile).
 - **Surface conflicts and gaps** — contradictions between blocks are reported, not silently resolved; unspecified decisions are listed back to you.
 - **Cover errors** — every `error` block gets a fail-then-pass regression test.
-- **Reconcile, don't rewrite** — in `fix` mode against a `hint.lock`, only the blocks that drifted are touched; conforming work is left as-is, so re-running on an unchanged spec is a no-op.
+- **Reconcile, don't rewrite** — when a `hint.lock` exists and blocks have drifted, only those blocks are touched; conforming work is left as-is. This framing appears automatically when there is drift — there is no mode to select.
 - **Honor per-file control** — a companion beside each file; root → folder → file context nests visibly in the output.
 - **Verify before finishing** — the footer walks the agent block by block: implemented, prohibited patterns absent, names and types exact, build and tests passing.
 
-Each hintbook defines the enforcement that matters in its profession — for the lawyer book that means defined-term discipline and a hard ban on invented facts, figures, and citations. Role wrappers per mode → [`docs/modes.md`](https://github.com/open-hint-dev/hintbook-software-engineer/blob/main/docs/modes.md).
+Each hintbook defines the enforcement that matters in its profession — for the lawyer book that means defined-term discipline and a hard ban on invented facts, figures, and citations. None of this is in the default output: framing is a wrapper, and the compiled knowledge is the artifact.
 
 ---
 
@@ -203,13 +194,14 @@ The transpiler core has **no built-in keywords** — it understands files, headi
 | `func` (`arg` / `result` / `error` / `flow`)   | Typed implementation contracts                                             |
 | `ui` (`form` / `block` / `image`)              | UI surfaces                                                                |
 | `action`                                       | Reusable macro behaviors                                                   |
+| `decision` / `invariant`                       | Settled architectural decisions with rationale / properties that must always hold |
 | `res` / `rule`                                 | Static assets / non-negotiable mandates                                    |
 | `good` / `bad`                                 | Required patterns / prohibited anti-patterns                               |
 | `example` / `test`                             | Few-shot examples / verification criteria                                  |
 | `notes`                                        | Private scratchpad — stripped at compile                                   |
 | `read` / `@include`                            | LLM reads a file at run time / inline a file at compile time               |
 
-Modes: implement (default), `fix` (repair code against the spec), `review` (audit and report). Keyword reference → [keywords.md](https://github.com/open-hint-dev/hintbook-software-engineer/blob/main/docs/keywords.md).
+Keyword reference → [keywords.md](https://github.com/open-hint-dev/hintbook-software-engineer/blob/main/docs/keywords.md).
 
 ### Legal drafting — [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer)
 
@@ -227,7 +219,7 @@ Modes: implement (default), `fix` (repair code against the spec), `review` (audi
 | `notes`                                                      | Private scratchpad — stripped at compile                                    |
 | `read` / `precedent` / `style`                               | Read source documents / model documents to replicate / drafting style       |
 
-Modes: draft (default), `fix` (revise a deviating document), `review` (audit with quoted findings). Every footer notes the output still requires licensed counsel. Keyword reference → [keywords.md](https://github.com/open-hint-dev/hintbook-lawyer/blob/main/docs/keywords.md).
+Every `--prompt` footer notes the output still requires licensed counsel. Keyword reference → [keywords.md](https://github.com/open-hint-dev/hintbook-lawyer/blob/main/docs/keywords.md).
 
 In both books long forms are synonyms (`# application` = `# app`, `# provision` = `# clause`). Swap or extend a book — or publish your own profession's vocabulary — without touching the compiler. A hintbook is just a folder of markdown files: the HTML-like tags in the official books are a convention that works well for AI agents, not a requirement, and authoring one takes no programming experience — if you can write markdown, you can build the vocabulary for your profession. Full grammar → [`docs/03-syntax.md`](docs/03-syntax.md); authoring guide → [`docs/05-hintbooks.md`](docs/05-hintbooks.md).
 
@@ -243,8 +235,9 @@ In both books long forms are synonyms (`# application` = `# app`, `# provision` 
 | [`docs/04-how-it-works.md`](docs/04-how-it-works.md) | The compilation pipeline                  |
 | [`docs/05-hintbooks.md`](docs/05-hintbooks.md)       | Using, authoring, and shipping hintbooks  |
 | [`docs/06-cli.md`](docs/06-cli.md)                   | CLI reference                             |
+| [`docs/07-migration.md`](docs/07-migration.md) | Breaking changes in 1.1 and how to migrate |
 
 ---
 
-**Status** — spec stable at v1.0.0. Engine under [`packages/transpiler/`](packages/transpiler/README.md), CLI under [`applications/cli/`](applications/cli/README.md), official hintbooks in their own repositories ([software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer), [lawyer](https://github.com/open-hint-dev/hintbook-lawyer)). Issues and PRs welcome.
+**Status** — 1.1; see [`docs/07-migration.md`](docs/07-migration.md) for the breaking changes. Engine under [`packages/transpiler/`](packages/transpiler/README.md), CLI under [`applications/cli/`](applications/cli/README.md), official hintbooks in their own repositories ([software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer), [lawyer](https://github.com/open-hint-dev/hintbook-lawyer)). Issues and PRs welcome.
 **License** — MIT, see [`LICENSE`](LICENSE).
