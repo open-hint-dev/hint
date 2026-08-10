@@ -24,7 +24,7 @@ export function buildHintBlock(sections: HintbookSection[]): string {
     const parts = [Transpiler.CONFIG_INSTRUCTION.trim()];
 
     for (const section of sections) {
-        const tag = `hint_tag_glossary_from_${section.id}`;
+        const tag = `hint_glossary_from_${section.id}`;
 
         parts.push(`<${tag}>\n\n${section.content}\n\n</${tag}>`);
     }
@@ -32,13 +32,19 @@ export function buildHintBlock(sections: HintbookSection[]): string {
     return `<${HINT_TAG}>\n\n${parts.join('\n\n')}\n\n</${HINT_TAG}>`;
 }
 
+// A hintbook id becomes part of a tag name, so it is reduced to lowercase letters, digits, and
+// underscores — every other character, including the hyphens npm package names are full of, collapses
+// to a single underscore. `@openhint/hintbook-software-engineer` reads as `hintbook_software_engineer`.
 function hintbookSectionId(hintbook: Transpiler.HintbookData, hintbookPath: string): string {
     const raw = hintbook.id || hintbook.name || Path.basename(hintbookPath);
 
-    return raw
+    const sanitized = raw
         .toLowerCase()
-        .replace(/[^a-z0-9_-]+/g, '-')
-        .replace(/^-+|-+$/g, '');
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+    // A name made entirely of punctuation would otherwise leave a dangling `hint_glossary_from_`.
+    return sanitized || 'hintbook';
 }
 
 export async function collectHintbookSections(projectRootPath: string, config: Transpiler.ConfigData): Promise<HintbookSection[]> {

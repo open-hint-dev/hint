@@ -237,7 +237,7 @@ describe('cli', () => {
                 ]) {
                     const content = await FsPromises.readFile(Path.join(temporaryPath, fileName), 'utf8');
                     expect(content.match(/<hint>/g)).toHaveLength(1);
-                    expect(content).toContain('<hint_tag_glossary_from_demo>');
+                    expect(content).toContain('<hint_glossary_from_demo>');
                     // The bootstrap teaches how to query HINT; it must not try to be the CLI manual.
                     expect(content).toContain('hint --help');
                     expect(content).toContain('hint search');
@@ -248,6 +248,30 @@ describe('cli', () => {
 
                 const reapplied = await FsPromises.readFile(Path.join(temporaryPath, 'AGENTS.md'), 'utf8');
                 expect(reapplied.match(/<hint>/g)).toHaveLength(1);
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
+
+        it('reduces a hintbook id to letters, digits, and underscores in the glossary tag', async () => {
+            const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-cli-test-'));
+
+            try {
+                await FsPromises.writeFile(Path.join(temporaryPath, 'hint.yml'), 'name: temp\nbooks:\n  - file://book\n', 'utf8');
+                await FsPromises.mkdir(Path.join(temporaryPath, 'book'));
+                // Hyphens, a scope slash, an @, and a dot — everything an npm package name throws at a tag.
+                await FsPromises.writeFile(Path.join(temporaryPath, 'book', 'hintbook.json'), '{ "id": "@acme/Hintbook-Platform.v2" }\n', 'utf8');
+                await FsPromises.writeFile(Path.join(temporaryPath, 'book', '__system__.md'), '# system\nGlossary.\n', 'utf8');
+
+                await runCli(['apply'], temporaryPath);
+
+                const content = await FsPromises.readFile(Path.join(temporaryPath, 'AGENTS.md'), 'utf8');
+
+                expect(content).toContain('<hint_glossary_from_acme_hintbook_platform_v2>');
+                expect(content).toContain('</hint_glossary_from_acme_hintbook_platform_v2>');
+                // No run of separators may survive as a hyphen or a doubled underscore.
+                expect(content).not.toMatch(/<hint_glossary_from_[a-z0-9_]*[^a-z0-9_>]/);
+                expect(content).not.toContain('__acme');
             } finally {
                 await FsPromises.rm(temporaryPath, { recursive: true, force: true });
             }
