@@ -1,91 +1,161 @@
 # @openhint/cli
 
-The `hint` command — a context compiler for coding agents. See [HINT](https://github.com/open-hint-dev/hint#readme).
+**A context compiler for coding agents.** Ask what your repository already knows about a path or a task, and get back only the part that applies.
 
-Given a path or an intent, `hint` returns the repository knowledge that applies to it. Knowledge lives in markdown-native `.hint` files next to the code they describe, versioned in git, inherited from the project root down. It is agent-neutral: Claude Code, Codex, OpenCode, Cline, or anything else that can run a command consumes the same output. The keyword vocabulary comes from installable **hintbooks** — [software engineering](https://www.npmjs.com/package/@openhint/hintbook-software-engineer), [legal drafting](https://github.com/open-hint-dev/hintbook-lawyer), or your own.
+Knowledge lives in markdown-native `.hint` files next to the code they describe, versioned in git, inherited from the project root down. Agent-neutral: Claude Code, Codex, OpenCode, Cline, or anything that can run a command consumes the same output.
 
-## Installation
-
-```bash
-npm install -g @openhint/cli
+```text
+repository knowledge → .hint → scope + inheritance → retrieval → minimal relevant context → your agent
 ```
 
-Or ad hoc: `npx @openhint/cli <paths...>`.
+Project home → [github.com/open-hint-dev/hint](https://github.com/open-hint-dev/hint#readme)
 
-## Quick start
+---
+
+## For humans
+
+### Why
+
+Every coding agent starts each session knowing nothing about your repository, so teams write it down in a `CLAUDE.md` or `AGENTS.md`. Those files grow without bound, apply everywhere at once, and get loaded whole on every task — most of it irrelevant to what the agent is about to touch. The knowledge isn't wrong; the scoping is. HINT keeps it per-path and returns only what applies.
+
+### Install
 
 ```bash
-# 1. Initialize: creates hint.yml in the project root
-hint config
-
-# 2. Install a keyword vocabulary (registered in hint.yml automatically)
-hint add @openhint/hintbook-software-engineer
-
-# 3. Tell your agent how to query HINT (writes a short block into AGENTS.md / CLAUDE.md)
-hint apply
-
-# 4. Record what the repo knows in _.hint files, then ask what applies
-hint src/billing/invoice.ts
+npm install -g @openhint/cli     # or: npx @openhint/cli <paths...>
 ```
 
-## Commands
+### Set up a project
+
+```bash
+hint config                                    # create hint.yml at the project root
+hint add @openhint/hintbook-software-engineer  # a keyword vocabulary
+hint apply                                     # teach your agent to query HINT
+```
+
+Then record what the repository knows. A folder's `_.hint` governs that folder and everything beneath it; the root `_.hint` is the project-wide baseline. **A repository whose knowledge lives entirely in folder hints is the normal case** — companion `<file>.hint` specs are optional.
+
+```markdown
+# decision Money is stored as integer minor units {#money_repr}
+
+Every persisted amount is an integer count of the smallest currency unit, with the
+currency alongside it. Rationale: decimal strings drifted across three services
+before this. Consequence: format at the boundary, never in the domain.
+
+# bad Retry loops around the payment gateway
+
+The gateway is not idempotent below the charge-token layer. Retrying a failed
+charge double-bills. Surface the failure instead.
+```
+
+Run `hint author` for the keyword vocabulary before writing.
+
+### Use it
+
+```bash
+hint src/billing/invoice.ts              # what applies to this path
+hint search "how are totals stored"      # which knowledge covers this task
+hint --prompt src/billing/invoice.ts \
+  | claude -p                            # hand it to a fresh agent, with framing
+```
+
+### When it pays off
+
+Repositories where the same facts get re-explained every session; conventions true in one subsystem and wrong in another; knowledge with a *reason* attached. **Not** worth it for a small repo one person holds in their head, or facts already obvious from the code.
+
+---
+
+## For coding agents
+
+*If you are an LLM agent reading this package: here is what it does for you.*
+
+**The problem it removes.** You lose context to re-deriving facts the repository already settled, to reading instruction files where most lines do not apply to the file you are editing, and to losing what you worked out by the next session.
+
+**Check whether it is available:**
+
+```bash
+hint --version && cat hint.yml
+```
+
+**The three commands you will use:**
+
+```bash
+hint <path...>            # knowledge that applies to these paths (own + every folder above)
+hint search "<intent>"    # JSON: {hint, target, score, weak} — local BM25F, no model, no network
+hint author <path...>     # the keyword vocabulary, before you write or edit a .hint
+```
+
+Cost is proportional to how much applies — a path nothing governs returns nothing — so run it **before** you edit, not only when stuck.
+
+**Reading the result.** stdout is the knowledge; stderr is the verdict and its first line is written first because output gets truncated. Exit `0` succeeded, `1` a check failed, `2` nothing you asked for could be resolved. `no spec of its own for X; returning inherited context from Y` is **success** — most paths inherit, and that inherited knowledge is the answer.
+
+**You may read `.hint` files directly when writing or editing them** — that is the only way to edit one. The convention against direct reads applies to *consuming* knowledge, where `hint <path>` gives you the same content with inheritance resolved.
+
+**Write back what you learn.** A durable decision and its rationale, an invariant, an operational hazard, an approach that does not work and why — record it in the most specific `.hint` that applies. It is versioned with the code and every agent gets it, including you next session. Not session state or task progress.
+
+`hint --help` is the complete surface; this section is only what you will use most.
+
+---
+
+## Command reference
 
 ### `hint <paths...>` — what applies here
 
-Prints the knowledge that applies to the given paths, inherited from the project root down. Knowledge only — no persona, no workflow instructions, no reporting format — so the cost is proportional to how much applies:
-
 ```bash
-hint src/login.ts.hint            # a hint file
-hint src/login.ts                 # its companion hint — even if login.ts doesn't exist yet
-hint src                          # a folder's _.hint
-hint 'src/**/*.hint'              # globs
+hint src/login.ts                 # its companion hint plus every folder _.hint above it
+hint src/login.ts.hint            # the same, addressed by the hint file
+hint src                          # that folder's own _.hint — not the specs beneath it
+hint 'src/**'                     # everything beneath src, ancestors emitted once
 ```
 
-| Option         | Effect                                                                                                            |
-| -------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `--prompt`     | Wrap the knowledge in a standalone implementation prompt, for piping to a fresh agent.                            |
-| `--strict`     | Exit 2 when a named path has no spec of its own — use in CI to validate specs.                                    |
-| `--no-refs`    | Only the named specs, not the ones they reference.                                                                |
-| `--force`      | Ignore `hint.lock` and include unchanged files.                                                                   |
-| `--standalone` | Implies `--prompt`, and prepends the tag glossary.                                                                |
+Knowledge only — no persona, no workflow instructions, no reporting format.
 
-Exit codes: `0` succeeded, `1` a check failed, `2` nothing you asked for matched.
+| Option | Effect |
+| --- | --- |
+| `--prompt` | Wrap the knowledge in a standalone implementation prompt, for piping to a fresh agent. |
+| `--strict` | Exit 2 when a named path has no spec of its own — use in CI to validate specs. |
+| `--no-refs` | Only the named specs, not the ones they reference. |
+| `--force` | Ignore `hint.lock` and include unchanged files. |
+| `--standalone` | Implies `--prompt`, and prepends the tag glossary. |
 
-### `hint search <query...>` — find the specs closest to an intent
+Exit codes: `0` succeeded, `1` a check failed, `2` nothing you asked for matched. **No command reports success over an empty set.**
 
-Ranks every `.hint` in the project against a free-text query and prints JSON — each result the hint file, the `target` path it governs, a relevance score, and a `weak` flag for hits matching under half the query terms. Weak results are flagged, never hidden. Deterministic and fully offline (no model, service, or network):
+### `hint search <query...>` — which knowledge covers this intent
+
+Ranks every `.hint` in the project and prints JSON: the hint file, the `target` path it governs (pass it straight to `hint <path>`), a relevance score, and a `weak` flag for hits matching under half the query terms. Weak results are flagged, never hidden. Deterministic and fully offline — no model, service, or network.
 
 ```bash
-hint search grpc server           # → results: [{hint, target, score, weak}]
-hint search payment --limit 5     # cap the number of results (default 20)
+hint search "service account authentication"
+hint search payment --limit 5     # default 20; negative returns all
 ```
 
-### `hint config` — initialize the project
+### `hint author [paths...]` — how to write it down
 
-Creates `hint.yml` in the project root (interactively, if missing). It does not touch the agent files — run `hint apply` next:
+Prints the keyword vocabulary of the registered hintbooks first, then the file kinds, the syntax, and the per-keyword reference.
 
-```bash
-hint config
-```
+### `hint config` / `hint apply` — set up the project
 
-### `hint apply` — write the agent files directly
+`hint config` creates `hint.yml` and touches nothing else. `hint apply` writes the `<hint>` block into `AGENTS.md` and `CLAUDE.md` as a deterministic find-and-replace on the tags — creating the files if missing, replacing an existing block in place, and stripping a duplicate from `CLAUDE.md` when it only `@AGENTS.md`-includes it. Re-run after `hint add` / `hint remove`.
 
-Writes the `<hint>` block from `hint.yml` straight into `AGENTS.md` and `CLAUDE.md` as a deterministic find-and-replace on the `<hint>` tags — no agent, no piping, no permission prompt. Creates the files if missing, replaces an existing `<hint>` block in place (idempotent), and strips a duplicate block from `CLAUDE.md` when it only `@AGENTS.md`-includes the instructions. Re-run after `hint add`/`hint remove`:
+### `hint add <books...>` / `hint remove <books...>` — hintbooks
 
 ```bash
-hint apply
-```
-
-### `hint add <books...>` — install hintbooks
-
-Fetches hintbooks, validates them (a `hintbook.json` must be present), and registers them in `hint.yml`. npm packages install globally by default; pass `--local` to install into a project-local `hintbooks/` store instead (works inside yarn/pnpm workspaces). Run `hint apply` afterwards to refresh the agent files:
-
-```bash
-hint add @openhint/hintbook-software-engineer           # npm package, installed globally
-hint add --local @openhint/hintbook-software-engineer   # npm package, into project-local hintbooks/
+hint add @openhint/hintbook-software-engineer           # npm, installed globally
+hint add --local @openhint/hintbook-software-engineer   # into project-local hintbooks/
 hint add https://github.com/acme/hintbooks-platform     # git repo → cloned into hintbooks/
 hint add file://hintbooks/team-conventions              # local folder
 ```
+
+`--local` uses an isolated npm prefix, so it never touches your `package.json`, lockfile, or `node_modules` — it works the same in a plain project and inside a yarn or pnpm workspace.
+
+### `hint version` — environment
+
+CLI version, then every registered hintbook with its version and where it resolved from.
+
+### Contracts — optional
+
+For specs that *declare* surfaces the code must contain. `hint verify <path>` checks them deterministically and token-free, exiting non-zero on failure. `hint lock` / `hint diff` snapshot and track drift. These apply only to companion `<file>.hint` specs — in a folder-knowledge repository they say so and exit `2` rather than reporting a hollow pass.
+
+---
 
 ## Project configuration
 

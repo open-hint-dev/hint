@@ -30,6 +30,24 @@ Durable knowledge that outlives a task and that future work would otherwise have
 
 Not session state, not task progress, not anything that stops being true when the work ends.
 
+## When HINT is the right tool
+
+It pays off where the cost is recurring:
+
+- **The same facts get re-explained every session.** Why this service does not call that database; which retry is forbidden and why. Someone already knew — it was just never written where an agent would find it.
+- **Conventions differ by subsystem.** Strict typing here, a legacy exception there; one wire format in the gateway, another at the edge. A single global instruction file handles this badly: it either states the rule too broadly or omits it.
+- **The knowledge has a reason attached.** A bare rule gets overturned the first time it is inconvenient. A decision with its rationale tells the next reader whether a new situation is still covered.
+- **More than one agent, or an expectation of switching.** `.hint` is repository-owned and outlives the tool that reads it.
+- **Somebody is going to regenerate this.** When a spec declares surfaces the code must contain, the contract layer can verify them mechanically.
+
+It does not pay off, and you should say so plainly, when:
+
+- the repository is small enough that one person holds it in their head;
+- the facts are already obvious from the code — restating them is duplication that will drift;
+- the "knowledge" is really task state: what is in progress, what to do next, what was just tried.
+
+HINT stores what stays true. If a note stops being true when the task ends, it does not belong in a `.hint`.
+
 ## Scope and inheritance
 
 Knowledge is keyed to a path and inherited down the tree:
