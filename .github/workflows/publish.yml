@@ -38,6 +38,9 @@ jobs:
               with:
                   node-version: 24
                   registry-url: https://registry.npmjs.org
+                  # Yarn is only usable once corepack is enabled below, so setup-node
+                  # must not probe it for a cache directory with the global yarn 1.
+                  package-manager-cache: false
 
             - name: Enable Yarn
               run: corepack enable
