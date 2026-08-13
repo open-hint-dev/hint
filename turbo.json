@@ -1,6 +1,16 @@
 {
     "$schema": "https://turbo.build/schema.json",
     "globalEnv": ["VERSION"],
+    "globalPassThroughEnv": [
+        "ACTIONS_ID_TOKEN_REQUEST_TOKEN",
+        "ACTIONS_ID_TOKEN_REQUEST_URL",
+        "CI",
+        "GITHUB_*",
+        "NODE_AUTH_TOKEN",
+        "NPM_CONFIG_*",
+        "RUNNER_*",
+        "npm_config_*"
+    ],
     "tasks": {
         "clean": {
             "dependsOn": ["^clean"]
