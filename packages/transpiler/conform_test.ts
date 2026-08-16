@@ -55,6 +55,28 @@ describe('collectExpectations', () => {
         expect(collectExpectations(node, hintbooks)[0]!.params).toEqual([{ name: 'x', type: 'number' }]);
     });
 
+    // Vocabularies flag `field` as a surface in its own right. Without consuming it as a member of the
+    // structure it sits under, every field would also be looked for as a top-level symbol and reported
+    // missing from a file that contains it perfectly well.
+    it('does not promote a member to a surface of its own', () => {
+        const node = file([
+            block('entity', 'Invoice', [
+                block('field', 'id: string'),
+                block('field', 'total: Decimal'),
+            ]),
+        ]);
+
+        const expectations = collectExpectations(node, [
+            { instructions: [...hintbooks[0]!.instructions.filter((i) => i.name !== 'field'), { name: 'field', content: '', metadata: { surface: true } }] },
+        ]);
+
+        expect(expectations.map((expectation) => expectation.name)).toEqual(['Invoice']);
+        expect(expectations[0]!.fields).toEqual([
+            { name: 'id', type: 'string' },
+            { name: 'total', type: 'Decimal' },
+        ]);
+    });
+
     it('ignores a block whose keyword is not a surface', () => {
         expect(collectExpectations(file([block('decision', 'Use integers')]), hintbooks)).toEqual([]);
     });

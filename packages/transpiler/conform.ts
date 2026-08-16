@@ -82,29 +82,41 @@ export function collectExpectations(fileNode: HintData, hintbooks: HintbookData[
                 continue;
             }
 
-            if (findInstruction(hintbooks, node.keyword)?.metadata?.surface && node.name.trim()) {
-                const { ident } = splitName(node.name);
-                const params: SymbolMember[] = [];
-                const fields: SymbolMember[] = [];
+            if (!findInstruction(hintbooks, node.keyword)?.metadata?.surface || !node.name.trim()) {
+                walk(node.children);
 
-                let returns: string | undefined;
-
-                for (const child of node.children) {
-                    if (matches(hintbooks, child.keyword, PARAM_KEYWORDS)) {
-                        params.push(member(child));
-                    } else if (matches(hintbooks, child.keyword, FIELD_KEYWORDS)) {
-                        fields.push(member(child));
-                    } else if (matches(hintbooks, child.keyword, RESULT_KEYWORDS)) {
-                        const declared = splitName(child.name);
-
-                        returns = declared.type || declared.ident || undefined;
-                    }
-                }
-
-                expectations.push({ keyword: node.keyword, name: ident, params, fields, returns });
+                continue;
             }
 
-            walk(node.children);
+            const { ident } = splitName(node.name);
+            const params: SymbolMember[] = [];
+            const fields: SymbolMember[] = [];
+            // A member of a surface is not a surface of its own. `## field total` under `# entity
+            // Invoice` describes a property of Invoice, and vocabularies do flag `field` itself as a
+            // surface — so without this, every field would additionally be looked for as a top-level
+            // symbol and reported missing from a file that contains it perfectly well.
+            const consumed = new Set<HintData>();
+
+            let returns: string | undefined;
+
+            for (const child of node.children) {
+                if (matches(hintbooks, child.keyword, PARAM_KEYWORDS)) {
+                    params.push(member(child));
+                    consumed.add(child);
+                } else if (matches(hintbooks, child.keyword, FIELD_KEYWORDS)) {
+                    fields.push(member(child));
+                    consumed.add(child);
+                } else if (matches(hintbooks, child.keyword, RESULT_KEYWORDS)) {
+                    const declared = splitName(child.name);
+
+                    returns = declared.type || declared.ident || undefined;
+                    consumed.add(child);
+                }
+            }
+
+            expectations.push({ keyword: node.keyword, name: ident, params, fields, returns });
+
+            walk(node.children.filter((child) => !consumed.has(child)));
         }
     };
 
