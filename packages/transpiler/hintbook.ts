@@ -59,6 +59,10 @@ export type HintbookData = {
     // out of the engine: a language is a plugin on the same footing as a vocabulary, and its absence
     // degrades verification to the presence lint rather than breaking it.
     symbols?: string;
+    // How this target's symbol kinds map onto the vocabulary's keywords, for `hint extract`. Declared
+    // rather than inferred, because the engine knows no keywords and a template cannot be read
+    // backwards from its output.
+    extract?: Record<string, string>;
     instructions: InstructionData[];
 };
 
@@ -89,6 +93,27 @@ function instructionName(file: string, extension: string): string | null {
     const name = Path.basename(file, extension);
 
     return Path.extname(name) === '' ? name : null;
+}
+
+// Only string-to-string entries survive, so a malformed manifest degrades to "no extract support"
+// rather than producing blocks whose keyword is `undefined`.
+function parseExtractMap(value: unknown): Record<string, string> | undefined {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return undefined;
+    }
+
+    const map: Record<string, string> = {};
+
+    for (const [
+        kind,
+        keyword,
+    ] of Object.entries(value as Record<string, unknown>)) {
+        if (typeof keyword === 'string' && keyword.trim()) {
+            map[kind] = keyword.trim();
+        }
+    }
+
+    return Object.keys(map).length > 0 ? map : undefined;
 }
 
 function metadataStrings(value: unknown): string[] | undefined {
@@ -123,6 +148,7 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
         data.match = metadataStrings(manifest.match);
         data.comment = typeof manifest.comment === 'string' && manifest.comment.trim() ? manifest.comment.trim() : undefined;
         data.symbols = typeof manifest.symbols === 'string' && manifest.symbols.trim() ? manifest.symbols.trim() : undefined;
+        data.extract = parseExtractMap(manifest.extract);
     }
 
     const extension = data.target ? TEMPLATE_EXTENSION : INSTRUCTION_EXTENSION;

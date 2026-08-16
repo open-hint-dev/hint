@@ -206,6 +206,22 @@ hint remove @openhint/hintbook-lawyer     # npm:// prefix may be omitted
 
 ---
 
+## `hint extract <paths...>` — draft specs from code that exists
+
+```bash
+hint extract src/billing          # draft a .hint beside every source file
+hint extract --stdout src/a.ts    # preview
+hint extract --overwrite src      # replace drafts that already exist
+```
+
+Reads each source file through its target's language adapter and drafts a `.hint` from the symbols it declares. Deterministic; no model. An existing spec is left alone unless `--overwrite` — a draft assembled from code cannot be worth more than knowledge somebody wrote.
+
+The draft records **shape only**, and says so in its own preamble. The rationale is the half no parser can recover, and it is the half worth having.
+
+Requires an emit pack that declares both a `symbols` adapter and an `extract` map for the target; without one it says so and exits `2`. Full reference → [`docs/08-emit.md`](08-emit.md#hint-extract--the-brownfield-on-ramp).
+
+---
+
 ## `hint status` — what has come loose
 
 Recorded knowledge decays in ways nobody notices at the time: a spec is not updated after a run, a target is renamed and its `.hint` is left behind, code is edited underneath a locked spec. Each is invisible from any single path. `hint status` walks every `.hint` in the project and reports what has drifted away from the code it describes.

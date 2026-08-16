@@ -153,7 +153,13 @@ An **adapter** is an emit pack that declares a `symbols` command — an external
 
 Only what the spec stated is checked, so no existing spec becomes stricter by installing an adapter. An adapter that is missing or fails degrades to the presence lint, never to a pass.
 
-## 12. Library API (`@openhint/transpiler`)
+## 12. New: `hint extract`
+
+Additive. Requires an emit pack declaring both a `symbols` adapter and an `extract` map; without one the command says so and exits `2`.
+
+Drafts a `.hint` from the symbols a source file declares, so a repository that did not start spec-first has a way in. The draft records shape only and says so — the rationale is the half no parser can recover.
+
+## 13. Library API (`@openhint/transpiler`)
 
 Only relevant if you embed the engine.
 
@@ -172,5 +178,6 @@ Only relevant if you embed the engine.
 | — | new (staleness): `readGitSnapshot`, `measureStaleness`, `collectContractScopes`, `inspectProject`, `formatStatus` |
 | — | new (emit): `selectEmitter`, `planEmit`, `renderArtifact`, `mergeArtifact`, `renderTemplate`; `HintbookData` gained `target` / `match` / `comment` / `symbols` |
 | — | new (conformance): `readSymbols`, `collectExpectations`, `compareExpectations`, `inspectHoles` |
+| — | new (extraction): `extractMap`, `draftSpec`; `HintbookData` gained `extract` |
 
 The pipeline is now explicit — `resolve → parse → select → render` — so a different renderer (structured output, a different framing) can be added without touching resolution.

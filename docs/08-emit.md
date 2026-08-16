@@ -282,6 +282,32 @@ Keeping this external is deliberate. Vendoring a TypeScript, Go, and Python pars
 
 ---
 
+## `hint extract` — the brownfield on-ramp
+
+Every other part of HINT assumes the spec came first. A repository that did not start that way needs a way in, or adoption means writing every spec by hand — which is why most spec-driven tooling only ever gets used on greenfield work.
+
+```bash
+hint extract src/billing          # draft a .hint beside every source file
+hint extract --stdout src/a.ts    # preview
+hint extract --overwrite src      # replace drafts that already exist
+```
+
+It reads the same symbol table `verify` compares against, so a language costs one adapter and gets conformance checking and brownfield adoption together. The emit pack declares how its symbol kinds map onto the vocabulary — the engine knows no keywords, and a template cannot be read backwards:
+
+```json
+"extract": {
+    "function": "func", "interface": "entity", "class": "entity",
+    "type": "entity", "enum": "entity", "const": "data",
+    "param": "arg", "field": "field", "result": "result"
+}
+```
+
+A kind the pack has not mapped is skipped rather than guessed at. An existing `.hint` is knowledge somebody wrote and is left alone unless `--overwrite`.
+
+**What it cannot recover is the half that matters**, and the draft says so in its own preamble: shape is in the code already, and a spec that only restates the code is a copy that will drift. The work after running it is to add the rationale — the decisions, the invariants, the approaches that were tried and abandoned — and delete whatever was already obvious.
+
+---
+
 ## Where this sits
 
 Emission is the third rung of the spec-driven ladder, and a repository does not have to pick one rung for all of itself:

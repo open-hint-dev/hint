@@ -439,3 +439,113 @@ describe('cli verify — conformance via an adapter', () => {
         expect(result.stderr).not.toContain('against the code');
     });
 });
+
+// The brownfield on-ramp: without it, adoption means writing every spec by hand, which is why most
+// spec-driven tooling only ever gets used on greenfield work.
+describe('cli extract', () => {
+    async function withAdapter(): Promise<string> {
+        const root = await makeProject();
+
+        await write(root, 'books/keywords/func.md', '<function_contract>{name}</function_contract>');
+        await write(root, 'books/keywords/arg.md', '<argument>{name}</argument>');
+        await write(root, 'books/keywords/result.md', '<return>{name}</return>');
+        await write(
+            root,
+            'adapter.mjs',
+            `process.stdout.write(JSON.stringify({ symbols: [
+                { kind: 'interface', name: 'Invoice', fields: [{ name: 'id', type: 'string' }, { name: 'notes' }] },
+                { kind: 'function', name: 'settle', params: [{ name: 'invoice', type: 'Invoice' }], returns: 'Receipt' },
+                { kind: 'namespace', name: 'ignored' },
+            ] }));\n`,
+        );
+        await write(
+            root,
+            'books/ts/hintbook.json',
+            JSON.stringify({
+                id: 'emit-ts',
+                target: 'typescript',
+                match: ['*.ts'],
+                comment: '// {text}',
+                symbols: 'node adapter.mjs {file}',
+                extract: { interface: 'entity', function: 'func', param: 'arg', field: 'field', result: 'result' },
+            }),
+        );
+
+        await write(root, 'src/invoice.ts', 'export const a = 1;\n');
+
+        return root;
+    }
+
+    it('drafts a spec from the symbols the adapter reports', async () => {
+        const root = await withAdapter();
+
+        const result = await runCli(['extract', 'src/invoice.ts'], root);
+        const spec = await FsPromises.readFile(Path.join(root, 'src/invoice.ts.hint'), 'utf8');
+
+        expect(result.stderr).toContain('drafted 1 spec(s)');
+        expect(spec).toContain('# entity Invoice');
+        expect(spec).toContain('## field id: string');
+        // A type the adapter could not determine is left off, exactly as a spec that never stated one.
+        expect(spec).toContain('## field notes');
+        expect(spec).toContain('# func settle');
+        expect(spec).toContain('## arg invoice: Invoice');
+        expect(spec).toContain('## result: Receipt');
+    });
+
+    // The half a parser cannot recover is the half that matters, and a draft that reads as finished
+    // knowledge is worse than no draft at all.
+    it('says out loud that the draft records shape only', async () => {
+        const root = await withAdapter();
+
+        await runCli(['extract', 'src/invoice.ts'], root);
+
+        const spec = await FsPromises.readFile(Path.join(root, 'src/invoice.ts.hint'), 'utf8');
+
+        expect(spec).toContain('it does not yet record why');
+        expect((await runCli(['extract', '--overwrite', 'src/invoice.ts'], root)).stderr).toContain('Add the rationale');
+    });
+
+    it('skips a kind the target did not map, rather than inventing a keyword', async () => {
+        const root = await withAdapter();
+
+        await runCli(['extract', 'src/invoice.ts'], root);
+
+        expect(await FsPromises.readFile(Path.join(root, 'src/invoice.ts.hint'), 'utf8')).not.toContain('ignored');
+    });
+
+    it('leaves an existing spec alone unless forced', async () => {
+        const root = await withAdapter();
+
+        await write(root, 'src/invoice.ts.hint', '# decision Hand written\n\nKeep me.\n');
+
+        const result = await runCli(['extract', 'src/invoice.ts'], root);
+
+        expect(result.stderr).toContain('already exist and were left alone');
+        expect(await FsPromises.readFile(Path.join(root, 'src/invoice.ts.hint'), 'utf8')).toContain('Keep me.');
+
+        await runCli(['extract', '--overwrite', 'src/invoice.ts'], root);
+
+        expect(await FsPromises.readFile(Path.join(root, 'src/invoice.ts.hint'), 'utf8')).toContain('# entity Invoice');
+    });
+
+    it('reads a folder without trying to draft a spec from a spec', async () => {
+        const root = await withAdapter();
+
+        await write(root, 'src/other.ts', 'export const b = 2;\n');
+        await runCli(['extract', 'src'], root);
+
+        expect((await runCli(['extract', 'src'], root)).stderr).toContain('2 spec(s) already exist');
+        await expect(FsPromises.access(Path.join(root, 'src/invoice.ts.hint.hint'))).rejects.toThrow();
+    });
+
+    it('exits 2 when no emit pack declares an adapter and an extract map', async () => {
+        const root = await makeProject();
+
+        await write(root, 'src/invoice.ts', 'export const a = 1;\n');
+
+        const result = await runCli(['extract', 'src/invoice.ts'], root);
+
+        expect(result.exitCode).toBe(2);
+        expect(result.stderr).toContain('no emit pack declaring an adapter and an extract map');
+    });
+});

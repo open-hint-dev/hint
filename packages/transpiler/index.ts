@@ -3,6 +3,7 @@ export * from './compiler.js';
 export * from './config.js';
 export * from './conform.js';
 export * from './emit.js';
+export * from './extract.js';
 export * from './git.js';
 export * from './helper.js';
 export * from './hintbook.js';
