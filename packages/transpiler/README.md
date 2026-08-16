@@ -82,6 +82,7 @@ Producing the artifact a spec describes — deterministic, model-free, and optio
 | Export | Purpose |
 | ------ | ------- |
 | `readSymbols(projectRootPath, command, file)` | Runs a language adapter and parses its symbol table. `null` for any failure — a half-understood table produces confident, wrong findings, which is worse than falling back to the presence lint. |
+| `extractMap(emitter)` / `draftSpec(symbols, map)` | Drafts a spec from a symbol table, using the kind→keyword map the emit pack declares. A kind with no mapping is skipped rather than guessed at. |
 | `collectExpectations(fileNode, hintbooks)` | What the spec declared about each surface, reduced to what a symbol table can be compared with. |
 | `compareExpectations(expectations, symbols)` | Findings. Only what the spec stated is checked: a member with no declared type is never type-checked. |
 

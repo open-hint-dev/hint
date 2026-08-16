@@ -968,6 +968,22 @@ hint remove @openhint/hintbook-lawyer     # npm:// prefix may be omitted
 
 ---
 
+## `hint extract <paths...>` — draft specs from code that exists
+
+```bash
+hint extract src/billing          # draft a .hint beside every source file
+hint extract --stdout src/a.ts    # preview
+hint extract --overwrite src      # replace drafts that already exist
+```
+
+Reads each source file through its target's language adapter and drafts a `.hint` from the symbols it declares. Deterministic; no model. An existing spec is left alone unless `--overwrite` — a draft assembled from code cannot be worth more than knowledge somebody wrote.
+
+The draft records **shape only**, and says so in its own preamble. The rationale is the half no parser can recover, and it is the half worth having.
+
+Requires an emit pack that declares both a `symbols` adapter and an `extract` map for the target; without one it says so and exits `2`. Full reference → [`docs/08-emit.md`](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md#hint-extract--the-brownfield-on-ramp).
+
+---
+
 ## `hint status` — what has come loose
 
 Recorded knowledge decays in ways nobody notices at the time: a spec is not updated after a run, a target is renamed and its `.hint` is left behind, code is edited underneath a locked spec. Each is invisible from any single path. `hint status` walks every `.hint` in the project and reports what has drifted away from the code it describes.
@@ -1284,7 +1300,13 @@ An **adapter** is an emit pack that declares a `symbols` command — an external
 
 Only what the spec stated is checked, so no existing spec becomes stricter by installing an adapter. An adapter that is missing or fails degrades to the presence lint, never to a pass.
 
-## 12. Library API (`@openhint/transpiler`)
+## 12. New: `hint extract`
+
+Additive. Requires an emit pack declaring both a `symbols` adapter and an `extract` map; without one the command says so and exits `2`.
+
+Drafts a `.hint` from the symbols a source file declares, so a repository that did not start spec-first has a way in. The draft records shape only and says so — the rationale is the half no parser can recover.
+
+## 13. Library API (`@openhint/transpiler`)
 
 Only relevant if you embed the engine.
 
@@ -1303,6 +1325,7 @@ Only relevant if you embed the engine.
 | — | new (staleness): `readGitSnapshot`, `measureStaleness`, `collectContractScopes`, `inspectProject`, `formatStatus` |
 | — | new (emit): `selectEmitter`, `planEmit`, `renderArtifact`, `mergeArtifact`, `renderTemplate`; `HintbookData` gained `target` / `match` / `comment` / `symbols` |
 | — | new (conformance): `readSymbols`, `collectExpectations`, `compareExpectations`, `inspectHoles` |
+| — | new (extraction): `extractMap`, `draftSpec`; `HintbookData` gained `extract` |
 
 The pipeline is now explicit — `resolve → parse → select → render` — so a different renderer (structured output, a different framing) can be added without touching resolution.
 
@@ -1592,6 +1615,32 @@ An adapter is an external command that reports a file's symbols as JSON:
 `@openhint/adapter-typescript` is the reference implementation, and `@openhint/hintbook-software-engineer` already declares it. It parses syntactically — no program, no type checker, no `tsconfig` resolution — and reports each type as the annotation the author *wrote*, because that is what a human-written spec can honestly be compared against.
 
 Keeping this external is deliberate. Vendoring a TypeScript, Go, and Python parser into the CLI would multiply its install size and its failure modes, and would put language expertise in the one place that has stayed language-free. Vocabularies are plugins; languages should be too — and an adapter that is missing or broken degrades `verify` to the presence lint rather than to a pass it never established.
+
+---
+
+## `hint extract` — the brownfield on-ramp
+
+Every other part of HINT assumes the spec came first. A repository that did not start that way needs a way in, or adoption means writing every spec by hand — which is why most spec-driven tooling only ever gets used on greenfield work.
+
+```bash
+hint extract src/billing          # draft a .hint beside every source file
+hint extract --stdout src/a.ts    # preview
+hint extract --overwrite src      # replace drafts that already exist
+```
+
+It reads the same symbol table `verify` compares against, so a language costs one adapter and gets conformance checking and brownfield adoption together. The emit pack declares how its symbol kinds map onto the vocabulary — the engine knows no keywords, and a template cannot be read backwards:
+
+```json
+"extract": {
+    "function": "func", "interface": "entity", "class": "entity",
+    "type": "entity", "enum": "entity", "const": "data",
+    "param": "arg", "field": "field", "result": "result"
+}
+```
+
+A kind the pack has not mapped is skipped rather than guessed at. An existing `.hint` is knowledge somebody wrote and is left alone unless `--overwrite`.
+
+**What it cannot recover is the half that matters**, and the draft says so in its own preamble: shape is in the code already, and a spec that only restates the code is a copy that will drift. The work after running it is to add the rationale — the decisions, the invariants, the approaches that were tried and abandoned — and delete whatever was already obvious.
 
 ---
 

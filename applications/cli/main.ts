@@ -2,6 +2,7 @@ import * as Transpiler from '@openhint/transpiler';
 import { Command, Option } from 'commander';
 
 import type { EmitOptions } from './commands/emit.js';
+import type { ExtractOptions } from './commands/extract.js';
 import type { StatusOptions } from './commands/status.js';
 import { AddCommand } from './commands/add.js';
 import { ApplyCommand } from './commands/apply.js';
@@ -10,6 +11,7 @@ import { CompileCommand } from './commands/compile.js';
 import { ConfigCommand } from './commands/config.js';
 import { DiffCommand } from './commands/diff.js';
 import { EmitCommand } from './commands/emit.js';
+import { ExtractCommand } from './commands/extract.js';
 import { LockCommand } from './commands/lock.js';
 import { RemoveCommand } from './commands/remove.js';
 import { SearchCommand } from './commands/search.js';
@@ -36,6 +38,7 @@ const EXAMPLES = `Examples:
   hint search "service account auth"   which knowledge covers this intent (JSON)
   hint author src/auth/token.ts        how to write or update a .hint spec
   hint status                          which recorded knowledge has come loose from the code
+  hint extract src/billing             draft specs from code that already exists
   hint emit src/billing/invoice.ts     write the artifact this spec produces
   hint emit --check                    CI: every artifact still matches its spec
   hint apply                           install HINT instructions into AGENTS.md / CLAUDE.md
@@ -135,6 +138,20 @@ export async function main(): Promise<void> {
         .argument('<books...>', 'hintbooks to remove (the npm:// or file:// prefix may be omitted)')
         .action(async (books: string[]) => {
             await RemoveCommand.new(books).execute();
+        });
+
+    program
+        .command('extract')
+        .description(
+            'Draft a .hint spec from code that already exists, using the language adapter of the ' +
+                'registered emit packs. Records shape only — the rationale is the half no parser can ' +
+                'recover, and the draft says so. Existing specs are left alone unless --force.',
+        )
+        .argument('<paths...>', 'source files or folders to read')
+        .option('--stdout', 'print the drafts instead of writing them', false)
+        .option('--overwrite', 'replace a .hint that already exists', false)
+        .action(async (paths: string[], options: ExtractOptions) => {
+            await ExtractCommand.new(paths, options).execute();
         });
 
     program
