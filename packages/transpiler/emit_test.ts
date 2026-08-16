@@ -220,6 +220,8 @@ async function makeProject(): Promise<string> {
     await write(root, 'books/keywords/result.md', '<return>{name}</return>');
     await write(root, 'books/keywords/decision.md', '<decision>{name}</decision>');
     await write(root, 'books/keywords/bad.md', '<prohibited>{name}</prohibited>');
+    // A hintbook marks a keyword excluded to say it must never leave the spec.
+    await write(root, 'books/keywords/notes.md', '---\nexclude: true\n---\n\n{body}');
 
     await write(root, 'books/ts/hintbook.json', '{"id":"emit-ts","target":"typescript","match":["*.ts"],"comment":"// {text}"}');
     await write(root, 'books/ts/entity.tmpl', '{doc}\nexport interface {name} {\n    {children:field sep="\\n"}\n}');
@@ -348,7 +350,36 @@ describe('renderArtifact', () => {
         expect(renderArtifact(without.plan.units[0]!, without.hintbooks)).toContain('run() {');
     });
 
-    it('carries the inherited constraints into the hole', async () => {
+    // A hole carries what is about *this* hole: the constraints declared inside the block that owns
+    // it, in full, and the file's own — not a copy of the whole inherited chain.
+    it('carries the owning block’s constraints into the hole, in full', async () => {
+        const root = await makeProject();
+
+        await write(root, 'src/svc.ts.hint', '# func settle\n\nSettles an invoice.\n\n## bad Partial writes\n\nNever persist half a settlement.\nRoll back instead.\n');
+
+        const { hintbooks, plan } = await planFor(root, ['src/svc.ts']);
+        const artifact = renderArtifact(plan.units[0]!, hintbooks);
+
+        expect(artifact).toContain('// Honor:');
+        expect(artifact).toContain('//   bad Partial writes:');
+        expect(artifact).toContain('//     Never persist half a settlement.');
+        expect(artifact).toContain('//     Roll back instead.');
+        expect(artifact).toMatch(/\n {4}\/\/ hint:hole\(body\) spec=[0-9a-f]{8}/);
+    });
+
+    it('carries a sibling constraint from the same file', async () => {
+        const root = await makeProject();
+
+        await write(root, 'src/svc.ts.hint', '# bad SilentDefaults\n\nNever coerce invalid input valid.\n\n# func settle\n\nSettles an invoice.\n');
+
+        const { hintbooks, plan } = await planFor(root, ['src/svc.ts']);
+
+        expect(renderArtifact(plan.units[0]!, hintbooks)).toContain('//   bad SilentDefaults:');
+    });
+
+    // Reproducing the inherited chain inside every hole of every file would duplicate the retrieval
+    // layer into the artifact, which is the opposite of the reason scoping exists.
+    it('names inherited folder knowledge rather than inlining it', async () => {
         const root = await makeProject();
 
         await write(root, '_.hint', '# decision Money is integer minor units\n\nBecause decimals drifted.\n');
@@ -358,14 +389,22 @@ describe('renderArtifact', () => {
         const { hintbooks, plan } = await planFor(root, ['src/svc.ts']);
         const artifact = renderArtifact(plan.units[0]!, hintbooks);
 
-        expect(artifact).toContain('// hint:hole(body)');
-        expect(artifact).toContain('// Settles an invoice.');
-        expect(artifact).toContain('// Honor:');
-        expect(artifact).toContain('decision Money is integer minor units — Because decimals drifted.  (root)');
-        expect(artifact).toContain('bad SilentDefaults — Never coerce invalid input valid.  (src)');
-        // The hole keeps the indentation of the template line it sat on.
-        expect(artifact).toContain('\n    // Settles an invoice.');
-        expect(artifact).toMatch(/\n {4}\/\/ hint:hole\(body\) spec=[0-9a-f]{8}/);
+        expect(artifact).toContain('plus the knowledge inherited from ., src — run `hint src/svc.ts`');
+        expect(artifact).not.toContain('Because decimals drifted.');
+        expect(artifact).not.toContain('Never coerce invalid input valid.');
+    });
+
+    // A generated file is the last place a hintbook's "never leaves the spec" promise may quietly break.
+    it('never puts an excluded block into a hole', async () => {
+        const root = await makeProject();
+
+        await write(root, 'src/svc.ts.hint', '# func settle\n\nSettles an invoice.\n\n## notes\n\nAsk legal whether netting is allowed.\n');
+
+        const { hintbooks, plan } = await planFor(root, ['src/svc.ts']);
+        const artifact = renderArtifact(plan.units[0]!, hintbooks);
+
+        expect(artifact).not.toContain('Ask legal');
+        expect(artifact).not.toContain('notes');
     });
 
     // The proof that the model generalizes past code: no holes, no adapter, no model.

@@ -3,6 +3,7 @@ import * as Path from 'node:path';
 import type { HintbookData, InstructionData } from './hintbook.js';
 import type { HintData } from './parser.js';
 import type { Placeholder, Resolved } from './template.js';
+import { findInstruction } from './compiler.js';
 import { toGitPath } from './git.js';
 import { emitPacks, RUNNING_FILE, RUNNING_FOLDER, vocabularyBooks } from './hintbook.js';
 import { hashHint } from './lock.js';
@@ -185,42 +186,82 @@ export function splitName(name: string): { ident: string; type: string } {
     return { ident: name.slice(0, colon).trim(), type: name.slice(colon + 1).trim() };
 }
 
-// The first line of a block's body, for the one-line constraint summaries a hole carries.
+// A constraint as it appears in a hole: its label, then its body in full, indented under it.
+//
+// In full, not summarized — because the constraints reaching a hole are now scoped to the block that
+// owns it, so there are a handful rather than a repository's worth, and the one that matters most is
+// usually a step list. A `flow` truncated to its first line is exactly the wrong half.
 function summarize(hint: HintData): string {
-    const first = hint.body
-        .split('\n')
-        .map((line) => line.trim())
-        .find((line) => line.length > 0);
     const label = hint.name ? `${hint.keyword} ${hint.name}` : hint.keyword;
+    const body = hint.body.trim();
 
-    return first ? `${label} — ${first}` : label;
-}
-
-// What a hole must be written to honor: every block in scope that produces no code in this target.
-// Derived rather than declared — a block with an emit template becomes the artifact, a block without
-// one exists to constrain it — so no keyword list is hardcoded and a new vocabulary needs no changes.
-export function collectConstraints(unit: EmitUnit, hintbooks: HintbookData[]): string[] {
-    const constraints: string[] = [];
-
-    const collect = (nodes: HintData[], origin: string): void => {
-        for (const node of nodes) {
-            if (isScope(node)) {
-                continue;
-            }
-
-            if (findEmitTemplate(unit.emitter, hintbooks, node.keyword)) {
-                continue;
-            }
-
-            constraints.push(origin ? `${summarize(node)}  (${origin})` : summarize(node));
-        }
-    };
-
-    for (const ancestor of unit.ancestors) {
-        collect(ancestor.children, ancestor.name === '.' ? 'root' : ancestor.name);
+    if (!body) {
+        return label;
     }
 
-    collect(unit.node.children, '');
+    return [
+        `${label}:`,
+        ...body.split('\n').map((line) => `  ${line}`.trimEnd()),
+    ].join('\n');
+}
+
+// Whether a block contributes text to a hole: it must produce no code in this target, and must not be
+// excluded by its own vocabulary. Derived rather than declared — a block with an emit template becomes
+// the artifact, a block without one exists to constrain it — so no keyword list is hardcoded.
+//
+// `exclude` is honoured here as strictly as it is at render time. A hintbook marks a keyword excluded
+// to say it must never leave the spec (`notes` is a private scratchpad), and a generated file is the
+// last place that promise may quietly break.
+function isConstraint(node: HintData, unit: EmitUnit, hintbooks: HintbookData[]): boolean {
+    if (isScope(node) || findEmitTemplate(unit.emitter, hintbooks, node.keyword)) {
+        return false;
+    }
+
+    return !findInstruction(hintbooks, node.keyword)?.metadata?.exclude;
+}
+
+// Constraint blocks anywhere beneath `node`, in document order. Recursive on purpose: a `flow` or a
+// declared error nested under a `func` is the specification of that function's body, and it is the
+// most relevant thing a hole can carry.
+function collectBeneath(node: HintData, unit: EmitUnit, hintbooks: HintbookData[], into: HintData[]): void {
+    for (const child of node.children) {
+        if (isScope(child)) {
+            continue;
+        }
+
+        if (isConstraint(child, unit, hintbooks)) {
+            into.push(child);
+        }
+
+        collectBeneath(child, unit, hintbooks, into);
+    }
+}
+
+// What a hole must be written to honor, narrowed to what is actually about this hole: the constraints
+// declared inside the block that owns it, then the file's own.
+//
+// Inherited folder knowledge is named, not inlined. `hint <path>` already returns that chain in full,
+// and reproducing it inside every hole of every file would duplicate the retrieval layer into the
+// artifact — which is the opposite of the reason scoping exists.
+export function collectConstraints(unit: EmitUnit, hintbooks: HintbookData[], owner?: HintData): string[] {
+    const own: HintData[] = [];
+
+    if (owner) {
+        collectBeneath(owner, unit, hintbooks, own);
+    }
+
+    for (const node of unit.node.children) {
+        if (node !== owner && isConstraint(node, unit, hintbooks)) {
+            own.push(node);
+        }
+    }
+
+    const constraints = own.map(summarize);
+    const inherited = unit.ancestors.map((ancestor) => (ancestor.name === '.' ? '.' : ancestor.name)).filter((name) => name !== '');
+
+    if (inherited.length > 0) {
+        constraints.push(`plus the knowledge inherited from ${inherited.join(', ')} — run \`hint ${unit.output}\``);
+    }
 
     return constraints;
 }
@@ -254,7 +295,10 @@ export function renderHole(options: HoleOptions): string {
 
     if (options.constraints.length > 0) {
         header.push('Honor:');
-        header.push(...options.constraints.map((constraint) => `  ${constraint}`));
+
+        for (const constraint of options.constraints) {
+            header.push(...constraint.split('\n').map((line) => `  ${line}`.trimEnd()));
+        }
     }
 
     header.push(`${MARKER_HOLE}(${options.label})${options.spec ? ` spec=${options.spec}` : ''}`);
@@ -268,7 +312,7 @@ export function renderHole(options: HoleOptions): string {
         .join('\n');
 }
 
-function renderBlock(hint: HintData, unit: EmitUnit, hintbooks: HintbookData[], constraints: string[]): string {
+function renderBlock(hint: HintData, unit: EmitUnit, hintbooks: HintbookData[]): string {
     const template = findEmitTemplate(unit.emitter, hintbooks, hint.keyword);
 
     // No template, no output. This is the whole anti-bloat mechanism, and nothing configures it: a
@@ -290,7 +334,7 @@ function renderBlock(hint: HintData, unit: EmitUnit, hintbooks: HintbookData[], 
             return wanted === null || (canonicalKeyword(hintbooks, child.keyword) ?? child.keyword) === wanted;
         });
 
-        const rendered = matched.map((child) => renderBlock(child, unit, hintbooks, constraints)).filter(Boolean);
+        const rendered = matched.map((child) => renderBlock(child, unit, hintbooks)).filter(Boolean);
         const value = single ? (rendered[0] ?? '') : rendered.join(placeholder.separator ?? '\n');
 
         return resolvedValue(value, placeholder);
@@ -322,7 +366,7 @@ function renderBlock(hint: HintData, unit: EmitUnit, hintbooks: HintbookData[], 
             case 'hole':
                 return {
                     value: renderHole({
-                        constraints,
+                        constraints: collectConstraints(unit, hintbooks, hint),
                         comment: unit.emitter.comment,
                         label: placeholder.argument ?? 'body',
                         intent: hint.body.trim(),
@@ -344,11 +388,9 @@ function renderBlock(hint: HintData, unit: EmitUnit, hintbooks: HintbookData[], 
 // The artifact a single spec produces. Deterministic: the same spec and the same emitter always give
 // byte-identical output, which is what makes `--check` an assertion rather than an opinion.
 export function renderArtifact(unit: EmitUnit, hintbooks: HintbookData[]): string {
-    const constraints = collectConstraints(unit, hintbooks);
-
     const blocks = unit.node.children
         .filter((child) => !isScope(child))
-        .map((child) => renderBlock(child, unit, hintbooks, constraints))
+        .map((child) => renderBlock(child, unit, hintbooks))
         .filter(Boolean);
 
     return blocks.join('\n\n');

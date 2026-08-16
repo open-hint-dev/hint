@@ -96,6 +96,8 @@ Emit templates use the same `{placeholder}` shape as instruction templates, plus
 
 A multi-line expansion is re-indented to the column its placeholder sat on, so a hole written one indent in emits a block one indent in.
 
+**A child keyword only appears if its parent's template asks for it.** Giving `error` a template does nothing unless some template says `{children:error}`. When a keyword describes behaviour rather than a declaration — the software vocabulary's `error` is "throw X when Y" — leaving it without a template is the right choice: it then reaches the implementer as a hole constraint instead.
+
 **Braces that mean themselves are left alone.** A `{` opens a placeholder only when a well-formed expression closes it on the same line, and only when the target defines that name with the right arity. `func f() {`, `type X = { id: string }`, and `` `${x}` `` all pass through untouched.
 
 ### A type is always optional
@@ -148,20 +150,31 @@ emit/markdown/obligation.tmpl {ident} shall {body}
 
 A hole is a region the deterministic emitter provably cannot fill. It is emitted with the constraints that govern it already attached, assembled from the same root-down chain `hint <path>` returns:
 
-```ts
-export function validateInvoice(invoice: Invoice, options): Invoice {
-    // Validates an Invoice before persisting.
+```go
+func main() (any, error) {
     // Honor:
-    //   rule FailClosed — Security-sensitive operations fail closed.  (root)
-    //   decision Money is stored as integer minor units — …  (src)
-    //   bad SilentDefaults — Never coerce an invalid Invoice valid.  (src)
-    // hint:hole(body) spec=992daa68
-    throw new Error("not implemented");
+    //   flow:
+    //     1. Read all of stdin and trim surrounding whitespace.
+    //     2. If the trimmed payload is empty, emit `PP_EMPTY_INPUT` and stop.
+    //     3. Generate the `request_id` (UUID v4 from `crypto/rand`).
+    //   error PP_EMPTY_INPUT:
+    //     Raised when stdin is empty or whitespace-only. Emit the shared error envelope…
+    //   plus the knowledge inherited from ., orchestrator-go — run `hint orchestrator-go/main.go`
+    // hint:hole(body) spec=ac816893
+    return nil, errors.New("not implemented")
     // hint:end
 }
 ```
 
-The constraint list is **derived, not declared**: it is every block in scope that produces no code in this target. A block with an emit template becomes the artifact; a block without one exists to constrain it. No keyword list is hardcoded, so a new vocabulary needs no changes.
+The constraint list is **derived, not declared**: it is every block that produces no code in this target. A block with an emit template becomes the artifact; a block without one exists to constrain it. No keyword list is hardcoded, so a new vocabulary needs no changes.
+
+Three rules keep it useful rather than noisy:
+
+- **Scoped to the hole.** Constraints come from the block that owns the hole — recursively, so a `flow` or a declared `error` nested under a `func` is the specification of that function's body — plus the file's own blocks. Not the whole repository.
+- **In full, not summarized.** Because the list is scoped, it is a handful of blocks rather than a repository's worth. A `flow` truncated to its first line would be exactly the wrong half.
+- **Inherited folder knowledge is named, not inlined.** `hint <path>` already returns that chain in full; reproducing it inside every hole of every file would duplicate the retrieval layer into the artifact, which is the opposite of the reason scoping exists.
+
+**A keyword the hintbook marks `exclude: true` never reaches a hole.** That flag is how a vocabulary says a block must never leave the spec — `notes` is a private scratchpad — and a generated file is the last place that promise may quietly break.
 
 **A filled hole is never overwritten.** Everything between the marker and `hint:end` belongs to whoever wrote it. The instructions sit *above* the marker precisely so the regenerated header stays outside that span.
 

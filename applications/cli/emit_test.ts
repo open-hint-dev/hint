@@ -309,7 +309,7 @@ describe('cli emit — holes', () => {
         const root = await withHoles();
 
         await write(root, '_.hint', '# decision Money is integer minor units\n\nBecause decimals drifted.\n');
-        await write(root, 'src/svc.ts.hint', '# func settle\n\nSettles an invoice.\n');
+        await write(root, 'src/svc.ts.hint', '# func settle\n\nSettles an invoice.\n\n## decision Net before writing\n\nNet the ledger first.\n');
 
         await runCli(['emit', 'src/svc.ts'], root);
 
@@ -317,7 +317,9 @@ describe('cli emit — holes', () => {
 
         expect(content).toContain('// Settles an invoice.');
         expect(content).toContain('// Honor:');
-        expect(content).toContain('decision Money is integer minor units');
+        expect(content).toContain('//   decision Net before writing:');
+        expect(content).toContain('//     Net the ledger first.');
+        expect(content).toContain('plus the knowledge inherited from ., src — run `hint src/svc.ts`');
         expect(content).toMatch(/\/\/ hint:hole\(body\) spec=[0-9a-f]{8}/);
         expect(content).toContain('throw new Error("todo");');
     });
