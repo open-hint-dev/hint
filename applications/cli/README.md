@@ -162,6 +162,15 @@ hint search payment --limit 5     # default 20; negative returns all
 
 Prints the keyword vocabulary of the registered hintbooks first, then the file kinds, the syntax, and the per-keyword reference.
 
+### `hint extract <paths...>` — draft specs from code that exists
+
+Reads each source file through its target's language adapter and drafts a `.hint` from the symbols it declares — the on-ramp for a repository that did not start spec-first. An existing spec is left alone unless `--overwrite`. The draft records shape only and says so; the rationale is the half no parser can recover.
+
+```bash
+hint extract src/billing
+hint extract --stdout src/billing/invoice.ts
+```
+
 ### `hint status` — what has come loose
 
 Walks every `.hint` in the project and reports what has drifted away from the code it describes: `stale` (the code moved substantially since the hint's last commit), `orphan` (the target was deleted or renamed), `outdated` / `unfilled` (a hole implemented against an older spec, or not implemented at all), `drifted` / `unlocked` (against `hint.lock`), and `pending` (a spec written ahead of its target — informational, counted on stderr, listed only under `--json`).
