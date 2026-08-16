@@ -549,3 +549,35 @@ describe('cli extract', () => {
         expect(result.stderr).toContain('no emit pack declaring an adapter and an extract map');
     });
 });
+
+describe('cli extract — the other paths', () => {
+    it('prints to stdout and writes nothing', async () => {
+        const root = await makeProject();
+
+        await write(root, 'books/ts/hintbook.json', JSON.stringify({
+            id: 'emit-ts',
+            target: 'typescript',
+            match: ['*.ts'],
+            comment: '// {text}',
+            symbols: 'node adapter.mjs {file}',
+            extract: { interface: 'entity', field: 'field' },
+        }));
+        await write(root, 'adapter.mjs', `process.stdout.write(JSON.stringify({ symbols: [{ kind: 'interface', name: 'Invoice', fields: [{ name: 'id', type: 'string' }] }] }));\n`);
+        await write(root, 'src/invoice.ts', 'export const a = 1;\n');
+
+        const result = await runCli(['extract', '--stdout', 'src/invoice.ts'], root);
+
+        expect(result.stdout).toContain('# entity Invoice');
+        expect(result.stdout).toContain('## field id: string');
+        await expect(FsPromises.access(Path.join(root, 'src/invoice.ts.hint'))).rejects.toThrow();
+    });
+
+    it('names a path that is not in the repository', async () => {
+        const root = await makeProject();
+
+        const result = await runCli(['extract', 'src/nope.ts'], root);
+
+        expect(result.exitCode).toBe(2);
+        expect(result.stderr).toContain('src/nope.ts does not exist in this repository');
+    });
+});

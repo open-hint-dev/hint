@@ -638,6 +638,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@openhint/adapter-typescript@workspace:applications/adapter-typescript":
+  version: 0.0.0-use.local
+  resolution: "@openhint/adapter-typescript@workspace:applications/adapter-typescript"
+  dependencies:
+    "@openhint/preset-eslint": "workspace:*"
+    "@openhint/preset-typescript": "workspace:*"
+    eslint: "npm:*"
+    typescript: "npm:*"
+    vite: "npm:*"
+  bin:
+    hint-adapter-typescript: ./index.js
+  languageName: unknown
+  linkType: soft
+
 "@openhint/cli@workspace:applications/cli":
   version: 0.0.0-use.local
   resolution: "@openhint/cli@workspace:applications/cli"
