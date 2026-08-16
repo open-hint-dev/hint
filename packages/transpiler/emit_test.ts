@@ -483,3 +483,49 @@ describe('collectImports', () => {
         expect(await importsFor('# func run\n\nbody\n\n## arg options\n')).toEqual([]);
     });
 });
+
+// The advice has to shrink as the work gets done. A list that is identical on every re-emit however
+// much of it is handled is furniture, and an agent reading the file learns to skip furniture.
+describe('import advice against what the file already has', () => {
+    async function renderWith(preamble: string): Promise<string> {
+        const root = await makeProject();
+
+        await write(
+            root,
+            'books/ts/hintbook.json',
+            JSON.stringify({ id: 'emit-ts', target: 'typescript', match: ['*.ts'], comment: '// {text}', builtins: ['string'] }),
+        );
+        await write(root, 'books/ts/__imports__.tmpl', 'Needs importing:\n{names sep="\\n"}');
+        await write(root, 'books/ts/func.tmpl', 'function {name}() {}');
+        await write(root, 'src/a.ts.hint', '# func run\n\nbody\n\n## arg entry: Entry\n\n## result: Receipt\n');
+
+        const { hintbooks, plan } = await planFor(root, ['src/a.ts']);
+
+        return renderArtifact(plan.units[0]!, hintbooks, preamble);
+    }
+
+    it('lists everything outstanding when nothing has been imported', async () => {
+        const artifact = await renderWith('');
+
+        expect(artifact).toContain('Entry');
+        expect(artifact).toContain('Receipt');
+    });
+
+    it('drops a name the file above the region already brought in', async () => {
+        const artifact = await renderWith('import { Entry } from "./entry.js";');
+
+        expect(artifact).not.toContain('Entry');
+        expect(artifact).toContain('Receipt');
+    });
+
+    // Nothing left to say is said by saying nothing — that is the signal the zone is finished.
+    it('emits no advice at all once every name is accounted for', async () => {
+        expect(await renderWith('import { Entry, Receipt } from "./m.js";')).not.toContain('Needs importing');
+    });
+
+    // A prefix match would call `Receipt` handled because the file mentions `ReceiptStore`, and an
+    // under-advised import is the one direction that fails silently in this comment.
+    it('does not count a longer name that merely contains it', async () => {
+        expect(await renderWith('import { ReceiptStore } from "./m.js";')).toContain('Receipt');
+    });
+});

@@ -3,6 +3,14 @@ import * as Transpiler from '@openhint/transpiler';
 import type { ICommand } from './command.js';
 import { EXIT_FAILED, EXIT_UNRESOLVED, reportResolution } from './report.js';
 
+// An adapter this project declared that could not be run. Distinct from having no adapter at all,
+// which is a supported configuration and says nothing.
+type AdapterFailure = {
+    file: string;
+    target: string;
+    reason: string;
+};
+
 export class VerifyCommand implements ICommand {
     private paths: string[] = [];
 
@@ -56,6 +64,19 @@ export class VerifyCommand implements ICommand {
 
         const conformed = await this.conform(projectRootPath, hints, hintbooks);
 
+        // A configured adapter that did not answer is a broken install, and the run has just silently
+        // downgraded to the weaker check. Said before the verdict, because the verdict is worth less
+        // than the reader thinks it is.
+        for (const failure of conformed.failures) {
+            // The reason is the adapter's own first stderr line, so it is quoted rather than folded
+            // into the sentence — it is a message from another program, not a phrase of ours.
+            process.stderr.write(
+                `hint: ${failure.file} — the '${failure.target}' adapter did not answer (${failure.reason}), ` +
+                    `so it was checked by declared name only, not against the code. ` +
+                    `Fix or remove "symbols" in that emit pack to get shape checking back.\n`,
+            );
+        }
+
         // Files an adapter covered are checked by shape; the rest fall back to the presence lint, so a
         // project that has installed no adapter behaves exactly as it did before.
         const linted = (await Transpiler.verifyTargets(projectRootPath, hints, hintbooks)).filter((result) => !conformed.checked.has(result.name));
@@ -67,10 +88,12 @@ export class VerifyCommand implements ICommand {
             .join('\n');
 
         if (!summary) {
+            // Never "every declared surface is present" when nothing was checked against the code: the
+            // sentence has to name the weaker check it actually performed.
             const how =
                 conformed.checked.size > 0
                     ? `${conformed.checked.size} against the code, ${linted.length} by declared name`
-                    : 'every declared surface is present';
+                    : `every declared surface is present by name${conformed.failures.length > 0 ? ' — no file was checked against the code' : ''}`;
 
             process.stderr.write(`hint: verified ${files.length} file(s) — ${how}.\n`);
 
@@ -89,27 +112,32 @@ export class VerifyCommand implements ICommand {
         projectRootPath: string,
         hints: Transpiler.HintData[],
         hintbooks: Transpiler.HintbookData[],
-    ): Promise<{ summary: string; checked: Set<string> }> {
+    ): Promise<{ summary: string; checked: Set<string>; failures: AdapterFailure[] }> {
         const checked = new Set<string>();
+        const failures: AdapterFailure[] = [];
         const sections: string[] = [];
 
         for (const { name, node } of Transpiler.collectFileNodes(hints)) {
             const emitter = Transpiler.selectEmitter(hintbooks, name);
-            const symbols = await Transpiler.readSymbols(projectRootPath, emitter?.symbols, name);
+            const reading = await Transpiler.readSymbols(projectRootPath, emitter?.symbols, name);
 
-            if (symbols === null) {
+            if (reading.symbols === null) {
+                if (reading.failure) {
+                    failures.push({ file: name, target: emitter?.target ?? 'unknown', reason: reading.failure });
+                }
+
                 continue;
             }
 
             checked.add(name);
 
-            const findings = Transpiler.compareExpectations(Transpiler.collectExpectations(node, hintbooks), symbols);
+            const findings = Transpiler.compareExpectations(Transpiler.collectExpectations(node, hintbooks), reading.symbols);
 
             if (findings.length > 0) {
                 sections.push(Transpiler.formatFindings(name, findings));
             }
         }
 
-        return { summary: sections.join('\n'), checked };
+        return { summary: sections.join('\n'), checked, failures };
     }
 }

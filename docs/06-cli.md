@@ -340,6 +340,17 @@ A surface is any keyword a hintbook marks `surface: true` (e.g. `func`, `entity`
 
 **Without an adapter it is a presence lint**, as before: the declared name must appear somewhere in the output. An adapter that is absent, fails, or returns something unreadable degrades to that lint rather than to a pass it never established. The summary says which files were checked which way.
 
+**A configured adapter that does not answer is said out loud.** Having no adapter is a supported configuration and passes in silence; having one that is broken is not the same thing, and collapsing the two is how a project silently loses shape checking it believes it has — the command 404s, every file falls back to the name lint, and the run reports a clean verification of a check that never ran. The adapter's own reason is quoted:
+
+```
+hint: src/billing.ts — the 'typescript' adapter did not answer (npm error code E404), so it was
+      checked by declared name only, not against the code. Fix or remove "symbols" in that emit
+      pack to get shape checking back.
+hint: verified 1 file(s) — every declared surface is present by name — no file was checked against the code.
+```
+
+It is an observation, not a failure: the exit code still reflects the specs, because an adapter that cannot run is a broken install rather than a spec somebody violated.
+
 | Result | Exit |
 | ------ | ---- |
 | every declared surface present | `0` |

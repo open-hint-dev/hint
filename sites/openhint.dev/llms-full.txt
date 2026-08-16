@@ -5,7 +5,6 @@
 
 ---
 
-
 <!-- ============================================================ -->
 <!-- CORE DOCS — Introduction -->
 <!-- ============================================================ -->
@@ -162,7 +161,6 @@ The authoring guidance follows from the same observation. Knowledge that *explai
 - [CLI Reference](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md) — every command and flag.
 - [Emit](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md) — producing artifacts from specs, and authoring an emitter.
 - [Migrating to 1.1](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md) — what changed and why.
-
 
 <!-- ============================================================ -->
 <!-- CORE DOCS — Quick Start -->
@@ -369,12 +367,56 @@ The freshness gate is on **generation only**. A plain `hint src/billing/invoice.
 
 A locked spec recompiles the moment its content (or inherited folder/root context) or its target file changes — editing the generated code underneath an unchanged spec counts as drift too; `--force` recompiles regardless. See the [CLI reference](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md#hint-verify-paths--structurally-check-generated-output) for `hint verify`, `hint lock`, and `hint diff`.
 
+## 9. Optional: let the spec produce the file
+
+Steps 1–8 keep the spec and the code as two things that must agree. The last rung removes the duplication: for the part of a file that is machine-derivable, the spec *is* the source and the file is generated from it. This needs an emit pack — a hintbook that ships templates for a target language — and nothing above changes if you never install one.
+
+With the software-engineer hintbook's TypeScript pack registered, the spec from step 6 produces its file:
+
+```bash
+hint emit src/billing/invoice.ts
+```
+
+```ts
+// hint:begin — generated from src/billing/invoice.ts.hint. Edits between the markers are replaced; write inside a hole, or outside hint:end.
+// Needs importing above this region — this project decides from where:
+//   ValidationError
+
+// The persisted invoice record.
+export interface Invoice {
+    // UUID v7, generated at creation.
+    id: string;
+    // Decimal string with two fraction digits. Never use floating point.
+    total: string;
+}
+
+// Validates an Invoice before persisting.
+export function validateInvoice(invoice: Invoice): Invoice {
+    // Honor:
+    //   decision Money is stored as integer minor units
+    // hint:hole(#validate:body) spec=44cc996a — your code; kept across re-emits.
+    throw new Error("Not implemented.");
+    // hint:end of hole.
+}
+// hint:end — everything below is yours; put helpers here.
+```
+
+The file has three zones and both boundaries say which is which. Above the region: your imports. Inside it: what the spec owns, replaced on every run — except the **holes**, which are the parts a template provably cannot fill. Write the implementation inside the hole and it survives every re-emission, with the constraints that govern it printed right above it. Below `hint:end`: helpers, and anything else that is yours.
+
+Change the spec, run `hint emit` again, and the declarations move while the bodies stay. If a body was written against a version of the spec that has since changed, the run says so by name. If the block that owned a body is gone, the write is **refused** rather than losing the work.
+
+```bash
+hint emit --check    # CI: every generated file still equals what its spec produces
+```
+
+Two things worth knowing before you reach for this: a folder `_.hint` never emits — only a companion `<file>.hint` has a single output — and `hint emit` will not append a region to a file somebody already wrote by hand. Both are covered in [Emit](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md), along with `hint extract` for drafting specs from code that already exists.
+
 ## Where to go next
 
 - [Syntax](https://github.com/open-hint-dev/hint/blob/main/docs/03-syntax.md) — folder hints, ids, includes, and the full structural grammar.
 - [Hintbooks](https://github.com/open-hint-dev/hint/blob/main/docs/05-hintbooks.md) — what your keywords render into, and how to write your own vocabulary.
 - [CLI Reference](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md) — every command, flag, and exit code.
-
+- [Emit](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md) — the three rungs, writing an emit pack, and drafting specs from existing code.
 
 <!-- ============================================================ -->
 <!-- CORE DOCS — Syntax Specification -->
@@ -514,7 +556,6 @@ validate the payment fields before persisting
 @include "../shared/context.md"
 ```
 
-
 <!-- ============================================================ -->
 <!-- CORE DOCS — How It Works (the pipeline) -->
 <!-- ============================================================ -->
@@ -599,7 +640,6 @@ See [Hintbooks](https://github.com/open-hint-dev/hint/blob/main/docs/05-hintbook
 Every stage is deterministic: sorted traversal, stable tree synthesis, ordered hintbook lookup, and pure template interpolation. The same knowledge and hintbooks always produce byte-identical output — which makes it a reviewable, diffable artifact.
 
 That determinism is what the `hint.lock` builds on. Each generated target is fingerprinted by a hash over its blocks and its inherited context; [`hint lock`](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md#hint-lock-paths--record-generated-work) records those fingerprints, later `--prompt` runs compare against them to skip unchanged specs, and [`hint diff`](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md#hint-diff-paths--show-what-drifted) reports the exact blocks that differ — turning "regenerate everything" into "reconcile only what moved."
-
 
 <!-- ============================================================ -->
 <!-- CORE DOCS — Hintbooks (Authoring & Distribution) -->
@@ -754,7 +794,6 @@ For npm distribution, publish the package with `hintbook.json` and the keyword f
 
 - [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) is the official general-purpose vocabulary and the best example to copy from: thirty-plus keywords across intent, data, behavior, UI, and constraint declarations, three modes, and a complete system glossary.
 - [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) shows the same machinery applied outside software entirely — legal document drafting with `party`, `clause`, `obligation`, and red-line vocabulary. Use it as the template when your domain is not code.
-
 
 <!-- ============================================================ -->
 <!-- CORE DOCS — CLI Reference -->
@@ -1102,6 +1141,17 @@ A surface is any keyword a hintbook marks `surface: true` (e.g. `func`, `entity`
 
 **Without an adapter it is a presence lint**, as before: the declared name must appear somewhere in the output. An adapter that is absent, fails, or returns something unreadable degrades to that lint rather than to a pass it never established. The summary says which files were checked which way.
 
+**A configured adapter that does not answer is said out loud.** Having no adapter is a supported configuration and passes in silence; having one that is broken is not the same thing, and collapsing the two is how a project silently loses shape checking it believes it has — the command 404s, every file falls back to the name lint, and the run reports a clean verification of a check that never ran. The adapter's own reason is quoted:
+
+```
+hint: src/billing.ts — the 'typescript' adapter did not answer (npm error code E404), so it was
+      checked by declared name only, not against the code. Fix or remove "symbols" in that emit
+      pack to get shape checking back.
+hint: verified 1 file(s) — every declared surface is present by name — no file was checked against the code.
+```
+
+It is an observation, not a failure: the exit code still reflects the specs, because an adapter that cannot run is a broken install rather than a spec somebody violated.
+
 | Result | Exit |
 | ------ | ---- |
 | every declared surface present | `0` |
@@ -1141,7 +1191,6 @@ A clean comparison says how many files it checked (`3 file(s) compared — all u
 ## Migrating to 1.1
 
 See [`docs/07-migration.md`](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md).
-
 
 <!-- ============================================================ -->
 <!-- CORE DOCS — Migrating to 1.1 -->
@@ -1331,7 +1380,6 @@ Only relevant if you embed the engine.
 
 The pipeline is now explicit — `resolve → parse → select → render` — so a different renderer (structured output, a different framing) can be added without touching resolution.
 
-
 <!-- ============================================================ -->
 <!-- CORE DOCS — Emit (artifacts from specs) -->
 <!-- ============================================================ -->
@@ -1501,11 +1549,13 @@ func main() (any, error) {
     //   error PP_EMPTY_INPUT:
     //     Raised when stdin is empty or whitespace-only. Emit the shared error envelope…
     //   plus the knowledge inherited from ., orchestrator-go — run `hint orchestrator-go/main.go`
-    // hint:hole(body) spec=ac816893
+    // hint:hole(#run:body) spec=ac816893 — your code; kept across re-emits.
     return nil, errors.New("not implemented")
-    // hint:end
+    // hint:end of hole.
 }
 ```
+
+Both of a hole's markers say what they are. A hole terminates with the same `hint:end` token the region does — the parser tells them apart by nesting, but a reader looking at the file cannot, and the reader this is built for is an agent deciding where its code is allowed to go.
 
 The constraint list is **derived, not declared**: it is every block that produces no code in this target. A block with an emit template becomes the artifact; a block without one exists to constrain it. No keyword list is hardcoded, so a new vocabulary needs no changes.
 
@@ -1560,6 +1610,8 @@ The emitter knows the type names a spec used. It can never know which module of 
 ```
 
 The list is every identifier the spec refers to that the file does not declare itself and the language does not provide. `builtins` in the pack manifest is what the language provides; a top-level block with a template is what the file declares. Rendered through the pack's optional `__imports__` template — no template, no comment, like every other keyword.
+
+**The list shrinks as you work.** A name the file already mentions above the region has been dealt with and is dropped, and once nothing is outstanding the comment disappears entirely. A list identical on every re-emit however much of it is done is furniture, and a reader paying for the whole file learns to skip furniture; vanishing is how the zone reports itself finished. The check is presence, not parsing — an import renamed on its way in still counts as handled, and the failure direction is a *missing* import, which the compiler says out loud.
 
 ```json
 "builtins": ["string", "number", "boolean", "void", "Promise", "…"]
@@ -1705,6 +1757,8 @@ An adapter is an external command that reports a file's symbols as JSON:
 
 Keeping this external is deliberate. Vendoring a TypeScript, Go, and Python parser into the CLI would multiply its install size and its failure modes, and would put language expertise in the one place that has stayed language-free. Vocabularies are plugins; languages should be too — and an adapter that is missing or broken degrades `verify` to the presence lint rather than to a pass it never established.
 
+Missing and broken are not the same, and `verify` keeps them apart. No adapter is a supported configuration and says nothing. An adapter that *was* configured and could not be run — a command that does not resolve, a crash, a timeout, output that will not parse — is [named on stderr with its own reason](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md#hint-verify-paths--structurally-check-generated-output), because the alternative is a project that believes it has shape checking while a failing command quietly checks nothing.
+
 ---
 
 ## `hint extract` — the brownfield on-ramp
@@ -1752,7 +1806,6 @@ None of this needs configuring — it falls out of what was written. Strictness 
 - [CLI Reference](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md) — every command and flag.
 - [Hintbooks](https://github.com/open-hint-dev/hint/blob/main/docs/05-hintbooks.md) — authoring a vocabulary.
 - [Introduction](https://github.com/open-hint-dev/hint/blob/main/docs/01-intro.md) — Spec-as-Source, and why the generator is optional.
-
 
 <!-- ============================================================ -->
 <!-- HINTBOOK: software-engineer — Keyword Reference -->

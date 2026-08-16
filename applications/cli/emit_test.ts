@@ -577,8 +577,10 @@ describe('cli verify — conformance via an adapter', () => {
         expect((await runCli(['verify', 'src/svc.ts'], root)).stdout).toContain('returns void, spec says Receipt');
     });
 
-    // An adapter that cannot answer must degrade to the old presence lint, never to a pass.
-    it('falls back to the presence lint when the adapter fails', async () => {
+    // An adapter that cannot answer must degrade to the old presence lint, never to a pass. The
+    // degrading is fine; degrading *quietly* is the bug — a project that believes it has shape
+    // checking would keep believing it while a 404'd command silently checked nothing.
+    it('says out loud that a configured adapter did not answer', async () => {
         const root = await withAdapter([]);
 
         await write(root, 'adapter.mjs', 'process.exit(3);\n');
@@ -587,7 +589,41 @@ describe('cli verify — conformance via an adapter', () => {
 
         // `settle` does appear in the file, so the presence lint passes — but it was not checked by shape.
         expect(result.exitCode).toBeUndefined();
-        expect(result.stderr).not.toContain('against the code');
+        expect(result.stderr).toContain("the 'typescript' adapter did not answer");
+        expect(result.stderr).toContain('checked by declared name only');
+        expect(result.stderr).not.toContain('1 against the code');
+    });
+
+    it('names the reason the adapter gave, rather than a generic failure', async () => {
+        const root = await withAdapter([]);
+
+        await write(root, 'adapter.mjs', 'process.stderr.write("cannot find module typescript\\n"); process.exit(1);\n');
+
+        expect((await runCli(['verify', 'src/svc.ts'], root)).stderr).toContain('cannot find module typescript');
+    });
+
+    // An adapter that exits cleanly and prints nonsense is as broken as one that crashes, and easier
+    // to miss — the old code could not tell it apart from having no adapter at all.
+    it('treats unreadable output as a broken adapter, not as an absent one', async () => {
+        const root = await withAdapter([]);
+
+        await write(root, 'adapter.mjs', 'process.stdout.write("not json at all\\n");\n');
+
+        expect((await runCli(['verify', 'src/svc.ts'], root)).stderr).toContain('produced no readable symbol table');
+    });
+
+    // The supported configuration, and it must stay silent: most projects have no adapter and the
+    // presence lint is the whole of what they ever asked for.
+    it('says nothing when no adapter is configured at all', async () => {
+        const root = await withAdapter([]);
+
+        await write(root, 'books/ts/hintbook.json', '{"id":"emit-ts","target":"typescript","match":["*.ts"],"comment":"// {text}"}');
+
+        const result = await runCli(['verify', 'src/svc.ts'], root);
+
+        expect(result.exitCode).toBeUndefined();
+        expect(result.stderr).not.toContain('adapter');
+        expect(result.stderr).toContain('every declared surface is present by name');
     });
 });
 

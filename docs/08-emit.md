@@ -163,11 +163,13 @@ func main() (any, error) {
     //   error PP_EMPTY_INPUT:
     //     Raised when stdin is empty or whitespace-only. Emit the shared error envelope…
     //   plus the knowledge inherited from ., orchestrator-go — run `hint orchestrator-go/main.go`
-    // hint:hole(body) spec=ac816893
+    // hint:hole(#run:body) spec=ac816893 — your code; kept across re-emits.
     return nil, errors.New("not implemented")
-    // hint:end
+    // hint:end of hole.
 }
 ```
+
+Both of a hole's markers say what they are. A hole terminates with the same `hint:end` token the region does — the parser tells them apart by nesting, but a reader looking at the file cannot, and the reader this is built for is an agent deciding where its code is allowed to go.
 
 The constraint list is **derived, not declared**: it is every block that produces no code in this target. A block with an emit template becomes the artifact; a block without one exists to constrain it. No keyword list is hardcoded, so a new vocabulary needs no changes.
 
@@ -222,6 +224,8 @@ The emitter knows the type names a spec used. It can never know which module of 
 ```
 
 The list is every identifier the spec refers to that the file does not declare itself and the language does not provide. `builtins` in the pack manifest is what the language provides; a top-level block with a template is what the file declares. Rendered through the pack's optional `__imports__` template — no template, no comment, like every other keyword.
+
+**The list shrinks as you work.** A name the file already mentions above the region has been dealt with and is dropped, and once nothing is outstanding the comment disappears entirely. A list identical on every re-emit however much of it is done is furniture, and a reader paying for the whole file learns to skip furniture; vanishing is how the zone reports itself finished. The check is presence, not parsing — an import renamed on its way in still counts as handled, and the failure direction is a *missing* import, which the compiler says out loud.
 
 ```json
 "builtins": ["string", "number", "boolean", "void", "Promise", "…"]
@@ -366,6 +370,8 @@ An adapter is an external command that reports a file's symbols as JSON:
 `@openhint/adapter-typescript` is the reference implementation, and `@openhint/hintbook-software-engineer` already declares it. It parses syntactically — no program, no type checker, no `tsconfig` resolution — and reports each type as the annotation the author *wrote*, because that is what a human-written spec can honestly be compared against.
 
 Keeping this external is deliberate. Vendoring a TypeScript, Go, and Python parser into the CLI would multiply its install size and its failure modes, and would put language expertise in the one place that has stayed language-free. Vocabularies are plugins; languages should be too — and an adapter that is missing or broken degrades `verify` to the presence lint rather than to a pass it never established.
+
+Missing and broken are not the same, and `verify` keeps them apart. No adapter is a supported configuration and says nothing. An adapter that *was* configured and could not be run — a command that does not resolve, a crash, a timeout, output that will not parse — is [named on stderr with its own reason](06-cli.md#hint-verify-paths--structurally-check-generated-output), because the alternative is a project that believes it has shape checking while a failing command quietly checks nothing.
 
 ---
 
