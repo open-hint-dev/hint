@@ -70,15 +70,15 @@ export class ExtractCommand implements ICommand {
                 continue;
             }
 
-            const symbols = await Transpiler.readSymbols(projectRootPath, emitter.symbols, source);
+            const reading = await Transpiler.readSymbols(projectRootPath, emitter.symbols, source);
 
-            if (symbols === null) {
-                process.stderr.write(`hint: ${source} — the '${emitter.target}' adapter returned nothing; skipped.\n`);
+            if (reading.symbols === null) {
+                process.stderr.write(`hint: ${source} — the '${emitter.target}' adapter ${reading.failure ?? 'returned nothing'}; skipped.\n`);
 
                 continue;
             }
 
-            drafted.push(await this.draft(projectRootPath, source, Transpiler.draftSpec(symbols, map)));
+            drafted.push(await this.draft(projectRootPath, source, Transpiler.draftSpec(reading.symbols, map)));
         }
 
         this.report(drafted, sources.length, unsupported);

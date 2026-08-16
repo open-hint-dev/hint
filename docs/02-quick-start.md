@@ -199,8 +199,53 @@ The freshness gate is on **generation only**. A plain `hint src/billing/invoice.
 
 A locked spec recompiles the moment its content (or inherited folder/root context) or its target file changes — editing the generated code underneath an unchanged spec counts as drift too; `--force` recompiles regardless. See the [CLI reference](06-cli.md#hint-verify-paths--structurally-check-generated-output) for `hint verify`, `hint lock`, and `hint diff`.
 
+## 9. Optional: let the spec produce the file
+
+Steps 1–8 keep the spec and the code as two things that must agree. The last rung removes the duplication: for the part of a file that is machine-derivable, the spec *is* the source and the file is generated from it. This needs an emit pack — a hintbook that ships templates for a target language — and nothing above changes if you never install one.
+
+With the software-engineer hintbook's TypeScript pack registered, the spec from step 6 produces its file:
+
+```bash
+hint emit src/billing/invoice.ts
+```
+
+```ts
+// hint:begin — generated from src/billing/invoice.ts.hint. Edits between the markers are replaced; write inside a hole, or outside hint:end.
+// Needs importing above this region — this project decides from where:
+//   ValidationError
+
+// The persisted invoice record.
+export interface Invoice {
+    // UUID v7, generated at creation.
+    id: string;
+    // Decimal string with two fraction digits. Never use floating point.
+    total: string;
+}
+
+// Validates an Invoice before persisting.
+export function validateInvoice(invoice: Invoice): Invoice {
+    // Honor:
+    //   decision Money is stored as integer minor units
+    // hint:hole(#validate:body) spec=44cc996a — your code; kept across re-emits.
+    throw new Error("Not implemented.");
+    // hint:end of hole.
+}
+// hint:end — everything below is yours; put helpers here.
+```
+
+The file has three zones and both boundaries say which is which. Above the region: your imports. Inside it: what the spec owns, replaced on every run — except the **holes**, which are the parts a template provably cannot fill. Write the implementation inside the hole and it survives every re-emission, with the constraints that govern it printed right above it. Below `hint:end`: helpers, and anything else that is yours.
+
+Change the spec, run `hint emit` again, and the declarations move while the bodies stay. If a body was written against a version of the spec that has since changed, the run says so by name. If the block that owned a body is gone, the write is **refused** rather than losing the work.
+
+```bash
+hint emit --check    # CI: every generated file still equals what its spec produces
+```
+
+Two things worth knowing before you reach for this: a folder `_.hint` never emits — only a companion `<file>.hint` has a single output — and `hint emit` will not append a region to a file somebody already wrote by hand. Both are covered in [Emit](08-emit.md), along with `hint extract` for drafting specs from code that already exists.
+
 ## Where to go next
 
 - [Syntax](03-syntax.md) — folder hints, ids, includes, and the full structural grammar.
 - [Hintbooks](05-hintbooks.md) — what your keywords render into, and how to write your own vocabulary.
 - [CLI Reference](06-cli.md) — every command, flag, and exit code.
+- [Emit](08-emit.md) — the three rungs, writing an emit pack, and drafting specs from existing code.

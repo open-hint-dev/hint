@@ -89,15 +89,15 @@ export class EmitCommand implements ICommand {
         const written: Written[] = [];
 
         for (const unit of plan.units) {
-            const artifact = Transpiler.renderArtifact(unit, hintbooks);
-
             if (this.options.stdout) {
-                process.stdout.write(`${artifact}\n`);
+                // Nothing on disk is consulted: what goes to stdout is what the spec produces for a
+                // file that does not exist yet, which is the only reading that is the same every run.
+                process.stdout.write(`${Transpiler.renderArtifact(unit, hintbooks)}\n`);
 
                 continue;
             }
 
-            written.push(await this.applyUnit(projectRootPath, unit, artifact));
+            written.push(await this.applyUnit(projectRootPath, unit, hintbooks));
         }
 
         if (this.options.stdout) {
@@ -112,9 +112,12 @@ export class EmitCommand implements ICommand {
     // Merge, then either compare or write. The comparison is against the *merged* result rather than
     // the raw artifact, so a filled hole is never reported as a difference — otherwise `--check` would
     // fail every repository the moment anyone implemented anything.
-    private async applyUnit(projectRootPath: string, unit: Transpiler.EmitUnit, artifact: string): Promise<Written> {
+    private async applyUnit(projectRootPath: string, unit: Transpiler.EmitUnit, hintbooks: Transpiler.HintbookData[]): Promise<Written> {
         const outputPath = Path.join(projectRootPath, unit.output);
         const existing = await Transpiler.readFile(outputPath);
+        // Rendered against what the file already has above the region, so the import advice covers only
+        // what is still outstanding. Same file in, same artifact out, which is what --check rests on.
+        const artifact = Transpiler.renderArtifact(unit, hintbooks, Transpiler.readPreamble(existing));
         const merged = Transpiler.mergeArtifact(existing, artifact, unit.emitter.comment, `${unit.output}${Transpiler.HINT_EXT}`);
 
         const orphaned = merged.orphaned.map((hole) => hole.label);

@@ -300,12 +300,15 @@ export function renderHole(options: HoleOptions): string {
         }
     }
 
-    header.push(`${MARKER_HOLE}(${options.label})${options.spec ? ` spec=${options.spec}` : ''}`);
+    // Both markers name the zone they open and close. A hole terminates with the same `hint:end` token
+    // as the region does — the parser tells them apart by nesting, but a reader looking at the file
+    // cannot, and the reader here is an agent deciding where its code is allowed to go.
+    header.push(`${MARKER_HOLE}(${options.label})${options.spec ? ` spec=${options.spec}` : ''} — your code; kept across re-emits.`);
 
     return [
         commentBlock(options.comment, header.join('\n')),
         options.stub,
-        commentBlock(options.comment, MARKER_END),
+        commentBlock(options.comment, `${MARKER_END} of hole.`),
     ]
         .filter((part) => part !== '')
         .join('\n');
@@ -430,6 +433,16 @@ function identifiers(type: string): string[] {
     return type.match(/[A-Za-z_$][A-Za-z0-9_$]*/g) ?? [];
 }
 
+// Whether a stretch of text names an identifier, on its own rather than inside a longer word — so
+// `Receipt` is not found by a preamble that only mentions `ReceiptStore`.
+function mentions(text: string, name: string): boolean {
+    if (!text) {
+        return false;
+    }
+
+    return new RegExp(`(?<![A-Za-z0-9_$])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![A-Za-z0-9_$])`).test(text);
+}
+
 // The names this file's spec refers to but does not declare, and which the language does not provide.
 // This is the whole of what an emitter can honestly say about imports: it knows the type names a spec
 // used, and it can never know which module of this project provides them.
@@ -474,7 +487,10 @@ export function collectImports(unit: EmitUnit, hintbooks: HintbookData[]): strin
 
 // The artifact a single spec produces. Deterministic: the same spec and the same emitter always give
 // byte-identical output, which is what makes `--check` an assertion rather than an opinion.
-export function renderArtifact(unit: EmitUnit, hintbooks: HintbookData[]): string {
+// `preamble` is whatever the target file already holds above the generated region — the zone where
+// imports go. It is passed in rather than read here so this layer stays a pure function of the spec:
+// the caller that owns the file says what is already there.
+export function renderArtifact(unit: EmitUnit, hintbooks: HintbookData[], preamble = ''): string {
     const context: RenderContext = { unit, hintbooks, holes: new Set() };
 
     const blocks = unit.node.children
@@ -482,7 +498,7 @@ export function renderArtifact(unit: EmitUnit, hintbooks: HintbookData[]): strin
         .map((child) => renderBlock(child, blockKey(child, ''), context))
         .filter(Boolean);
 
-    const imports = renderImports(unit, hintbooks);
+    const imports = renderImports(unit, hintbooks, preamble);
 
     return [
         imports,
@@ -495,14 +511,21 @@ export function renderArtifact(unit: EmitUnit, hintbooks: HintbookData[]): strin
 // Rendered once per artifact, through the pack's optional `__imports__` template. Absent template,
 // no output — the same rule every other keyword follows, so a pack that would rather say nothing
 // about imports simply ships no template for them.
-function renderImports(unit: EmitUnit, hintbooks: HintbookData[]): string {
+function renderImports(unit: EmitUnit, hintbooks: HintbookData[], preamble: string): string {
     const template = unit.emitter.instructions.find((instruction) => instruction.name === RUNNING_IMPORTS);
 
     if (!template) {
         return '';
     }
 
-    const names = collectImports(unit, hintbooks);
+    // A name the preamble already mentions has been dealt with. Without this the list is the same on
+    // every re-emit however much of it is done, so it stops being a checklist and becomes furniture an
+    // agent learns to skip. Shrinking to nothing is the signal that there is nothing left to import.
+    //
+    // Presence, not parsing: an import renamed on its way in still counts as handled, and the failure
+    // direction is a missing import — which the compiler says out loud, unlike anything this comment
+    // could get wrong quietly.
+    const names = collectImports(unit, hintbooks).filter((name) => !mentions(preamble, name));
 
     if (names.length === 0) {
         return '';
