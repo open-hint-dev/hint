@@ -2,7 +2,7 @@
     "name": "@openhint/cli",
     "version": "0.0.0",
     "private": true,
-    "description": "The hint command — a context compiler for coding agents. Ask what your repository already knows about a path or an intent, and get back only the knowledge that applies.",
+    "description": "The hint command — Spec-as-Source for any repository. Ask what the spec says about a path or an intent, get back only the part that governs it, and hear when the work has drifted away from it.",
     "type": "module",
     "bin": {
         "hint": "./index.js"

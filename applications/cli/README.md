@@ -1,11 +1,13 @@
 # @openhint/cli
 
-**A context compiler for coding agents.** Ask what your repository already knows about a path or a task, and get back only the part that applies.
+**Spec-as-Source for any repository.** The spec is the artifact you maintain; the implementation answers to it. Ask what governs a path or a task, and get back only the part that applies.
 
-Knowledge lives in markdown-native `.hint` files next to the code they describe, versioned in git, inherited from the project root down. Agent-neutral: Claude Code, Codex, OpenCode, Cline, or anything that can run a command consumes the same output.
+Intent lives in markdown-native `.hint` files next to what they govern, versioned in git, inherited from the project root down. Agent-neutral: Claude Code, Codex, OpenCode, Cline, or anything that can run a command consumes the same output. And not only for code — the keyword vocabulary is installed, not compiled in, so the same machinery specifies a law firm's matters.
 
 ```text
-repository knowledge → .hint → scope + inheritance → retrieval → minimal relevant context → your agent
+spec (.hint) → scope + inheritance → retrieval → the governing intent → whoever does the work
+                     ↑                                                          │
+                     └──────────── drift reported back ─────────────────────────┘
 ```
 
 Project home → [github.com/open-hint-dev/hint](https://github.com/open-hint-dev/hint#readme)
@@ -14,9 +16,15 @@ Project home → [github.com/open-hint-dev/hint](https://github.com/open-hint-de
 
 ## For humans
 
-### Why
+### Spec-as-Source, without the generator
 
-Every coding agent starts each session knowing nothing about your repository, so teams write it down in a `CLAUDE.md` or `AGENTS.md`. Those files grow without bound, apply everywhere at once, and get loaded whole on every task — most of it irrelevant to what the agent is about to touch. The knowledge isn't wrong; the scoping is. HINT keeps it per-path and returns only what applies.
+Spec-as-source usually comes with a second clause attached — *and the code is regenerated from the spec* — and that clause is what has kept the idea impractical: generation from a language model is non-deterministic, so every upgrade is a re-roll and every hand edit fights the generator.
+
+HINT drops the generator, not the source of truth. The `.hint` files hold the intent; humans and agents write the implementation; HINT couples the two with **retrieval before the work** (`hint <path>` returns exactly the spec that governs it) and **drift detection after it** (`hint status`, plus an advisory line on every read). No model call, no network, deterministic end to end.
+
+Where a spec describes something machine-derivable, `hint emit` produces it from templates the hintbook supplies, and `hint emit --check` lets CI assert that what is committed still equals what the spec produces. What the emitter cannot derive becomes a hole carrying its inherited constraints; filled holes and hand-written code both survive re-emission.
+
+The same reasoning applies to the older habit of one big `CLAUDE.md`: the knowledge isn't wrong, the scoping is. HINT keeps it per-path and returns only what applies.
 
 ### Install
 
@@ -54,19 +62,38 @@ Run `hint author` for the keyword vocabulary before writing.
 ```bash
 hint src/billing/invoice.ts              # what applies to this path
 hint search "how are totals stored"      # which knowledge covers this task
+hint status                              # what has come loose from the code it describes
+hint emit src/billing/invoice.ts         # write the artifact this spec produces
 hint --prompt src/billing/invoice.ts \
   | claude -p                            # hand it to a fresh agent, with framing
 ```
 
+### Keeping it current
+
+Recorded knowledge decays quietly — a spec not updated after a run, a `.hint` left behind by a rename. HINT does not address that by asking harder; anything depending on a step *after* the work is done gets skipped. The signal rides the read instead, on stderr, advisory only:
+
+```
+hint: 9 of 11 files under src/billing changed since src/billing/_.hint was last updated, and it
+      records knowledge — re-check it against the code and update it if it no longer holds.
+```
+
+The measure is git — the share of a scope's files changed since the hint's last commit — with a tighter threshold for specs that declare surfaces (they restate the code) than for ones that only explain it (rationale survives refactoring). `hint status` applies it to the whole repository and also finds specs whose target was deleted; `hint status --exit-code` gates CI.
+
+### Beyond code
+
+The engine knows **no keywords at all** — it understands files, headings, nesting, and inheritance. What a `decision`, an `invariant`, a `clause`, or an `obligation` *means* comes from a **hintbook**: a flat folder of Markdown templates installed like a dependency. Swap the hintbook and the same machinery specifies a different profession — [`hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) works from `party`, `clause`, `obligation`, `redline`. Authoring one takes no programming.
+
 ### When it pays off
 
-Repositories where the same facts get re-explained every session; conventions true in one subsystem and wrong in another; knowledge with a *reason* attached. **Not** worth it for a small repo one person holds in their head, or facts already obvious from the code.
+Repositories where the same facts get re-explained every session; conventions true in one subsystem and wrong in another; intent with a *reason* attached. **Not** worth it for a small repo one person holds in their head, or facts already obvious from the code.
 
 ---
 
 ## For coding agents
 
 *If you are an LLM agent reading this package: here is what it does for you.*
+
+**What this is.** The repository keeps its intent in `.hint` files and treats them as the source of truth: the spec is maintained, the implementation answers to it. `hint` hands you the part of that spec governing whatever you are about to touch, and tells you when the implementation has drifted from it. Nothing is generated for you — you do the work, against a stated intent instead of a guessed one.
 
 **The problem it removes.** You lose context to re-deriving facts the repository already settled, to reading instruction files where most lines do not apply to the file you are editing, and to losing what you worked out by the next session.
 
@@ -76,17 +103,20 @@ Repositories where the same facts get re-explained every session; conventions tr
 hint --version && cat hint.yml
 ```
 
-**The three commands you will use:**
+**The commands you will use:**
 
 ```bash
 hint <path...>            # knowledge that applies to these paths (own + every folder above)
 hint search "<intent>"    # JSON: {hint, target, score, weak} — local BM25F, no model, no network
 hint author <path...>     # the keyword vocabulary, before you write or edit a .hint
+hint status               # what has come loose from the code it describes
 ```
 
 Cost is proportional to how much applies — a path nothing governs returns nothing — so run it **before** you edit, not only when stuck.
 
 **Reading the result.** stdout is the knowledge; stderr is the verdict and its first line is written first because output gets truncated. Exit `0` succeeded, `1` a check failed, `2` nothing you asked for could be resolved. `no spec of its own for X; returning inherited context from Y` is **success** — most paths inherit, and that inherited knowledge is the answer.
+
+**If stderr says the knowledge is stale**, the code under that hint has moved a long way since anyone revisited it. Exit code and output are unchanged — it is an observation. Read the knowledge, decide whether it still holds, and if it does not, fix it in the change you are already making, then commit the `.hint` with the code.
 
 **You may read `.hint` files directly when writing or editing them** — that is the only way to edit one. The convention against direct reads applies to *consuming* knowledge, where `hint <path>` gives you the same content with inheritance resolved.
 
@@ -131,6 +161,31 @@ hint search payment --limit 5     # default 20; negative returns all
 ### `hint author [paths...]` — how to write it down
 
 Prints the keyword vocabulary of the registered hintbooks first, then the file kinds, the syntax, and the per-keyword reference.
+
+### `hint status` — what has come loose
+
+Walks every `.hint` in the project and reports what has drifted away from the code it describes: `stale` (the code moved substantially since the hint's last commit), `orphan` (the target was deleted or renamed), `drifted` / `unlocked` (against `hint.lock`), and `pending` (a spec written ahead of its target — informational, counted on stderr, listed only under `--json`).
+
+```bash
+hint status                 # the inventory
+hint status --json          # machine-readable
+hint status --exit-code     # exit 1 on findings, for CI
+```
+
+Staleness and orphan detection need git; outside a repository they are skipped and stderr says so. Exit `2` when the project has no `.hint` files at all.
+
+### `hint emit <paths...>` — produce the artifact a spec describes
+
+Renders each spec through the emit templates of the registered hintbooks — deterministic, model-free, byte-identical for identical input. Only companion `<file>.hint` specs emit; a folder hint has no single output and never does. Code outside the `hint:begin` … `hint:end` region is preserved, and a filled hole body is never overwritten.
+
+```bash
+hint emit src/billing/invoice.ts    # write it
+hint emit --check                   # CI: exit 1 when an artifact no longer matches its spec
+hint emit --stdout src/billing      # preview
+hint emit --target go src/svc       # force an emitter
+```
+
+Full reference → [`docs/08-emit.md`](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md).
 
 ### `hint config` / `hint apply` — set up the project
 

@@ -233,9 +233,14 @@ function stringifyHintBody(nodes: RootContent[]): string {
 
 function parseHeading(heading: Heading): HintData {
     const [
-        keyword = '',
+        first = '',
         ...nameParts
     ] = mdastToString(heading).trim().split(/\s+/);
+
+    // `## result: Invoice` is how a person writes it; the tokenizer would otherwise read the keyword
+    // as `result:` and match no instruction at all. Normalizing the trailing colon keeps authoring a
+    // matter of writing English rather than of knowing where the split happens.
+    const keyword = first.replace(/:+$/, '');
 
     return {
         level: heading.depth,
@@ -340,6 +345,38 @@ export async function listHintFiles(projectRootPath: string): Promise<string[]> 
     return results.sort();
 }
 
+// The hint files that other hints pull in with `@include`. A fragment exists to be inlined, not to
+// describe a path: it has no target, and anything inventorying the project has to leave it out rather
+// than report every shared fragment as a spec whose target was never written. Scanning every hint
+// (fragments included) covers fragments that include other fragments. Paths are absolute.
+export async function collectIncludedPaths(projectRootPath: string, hintPaths: string[]): Promise<Set<string>> {
+    const included = new Set<string>();
+
+    for (const hintPath of hintPaths) {
+        const content = await readFile(hintPath);
+
+        if (content === null) {
+            continue;
+        }
+
+        for (const line of content.split('\n')) {
+            const target = parseIncludeDirective(line);
+
+            if (target === null) {
+                continue;
+            }
+
+            const resolved = await resolveIncludePath(target, hintPath, projectRootPath);
+
+            if (resolved !== null) {
+                included.add(resolved);
+            }
+        }
+    }
+
+    return included;
+}
+
 // Parses an already-resolved set of hint paths into the nested context tree. This is the form
 // commands use, so path resolution stays in `resolve.ts` and is reported on rather than repeated.
 export async function parseHintFiles(projectRootPath: string, hintPaths: string[]): Promise<HintData[]> {
@@ -358,6 +395,37 @@ export async function parseHintFiles(projectRootPath: string, hintPaths: string[
 
 export async function parseHints(projectRootPath: string, paths: string[]): Promise<HintData[]> {
     return parseHintFiles(projectRootPath, await normalizeHintPaths(projectRootPath, paths));
+}
+
+export type ScopeNode = {
+    // Repository-relative path of what the scope describes: a file, a folder, or `.` for the root.
+    name: string;
+    kind: 'file' | 'folder';
+    node: HintData;
+};
+
+// Every scope in a parsed tree, files and folders alike, paired with its node. `collectFileNodes`
+// covers only file targets because the contract layer only applies to those; anything that reasons
+// about knowledge in general — staleness, inventories — has to see folder scopes too, since a
+// repository may have nothing else.
+export function collectScopeNodes(hints: HintData[]): ScopeNode[] {
+    const scopes: ScopeNode[] = [];
+
+    const walk = (nodes: HintData[]): void => {
+        for (const node of nodes) {
+            if (node.keyword === RUNNING_FILE) {
+                scopes.push({ name: node.name, kind: 'file', node });
+            } else if (node.keyword === RUNNING_FOLDER) {
+                scopes.push({ name: node.name, kind: 'folder', node });
+
+                walk(node.children);
+            }
+        }
+    };
+
+    walk(hints);
+
+    return scopes;
 }
 
 // How many scopes a parsed tree actually carries, split by kind. Folder scopes count: a repository

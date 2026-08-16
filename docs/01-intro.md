@@ -2,19 +2,42 @@
 
 ## What is HINT?
 
-HINT is a **context compiler for coding agents**. It answers one question:
+HINT is **Spec-as-Source for any repository**. The spec is the artifact you maintain; the implementation answers to it. It exists to answer one question:
 
-> Given a task, a path, or both — what does this repository already know that matters for the work about to happen?
+> Given a task, a path, or both — what does this repository's spec say about the work about to happen?
 
-Every coding agent starts each session knowing nothing about your repository. Teams compensate by writing it down: a `CLAUDE.md`, an `AGENTS.md`, a wiki. Those files grow without bound, apply everywhere at once, and are loaded whole on every task. Most of what an agent reads is irrelevant to what it is about to touch, and the part that mattered was three hundred lines down.
-
-HINT stores that knowledge in markdown-native `.hint` files next to the code they describe, versioned in git, and returns only the subset that applies to the path or intent you ask about.
+The intent lives in markdown-native `.hint` files next to what they govern, versioned in git, inherited from the project root down. Ask about a path or a task and HINT returns only the part that applies.
 
 ```text
-repository knowledge → .hint → scope + inheritance → retrieval → minimal relevant context → your agent
+spec (.hint) → scope + inheritance → retrieval → the governing intent → whoever does the work
+                     ↑                                                          │
+                     └──────────── drift reported back ─────────────────────────┘
 ```
 
 It is **agent-neutral**. Claude Code, Codex, OpenCode, Cline, a CI script, or a custom agent all consume the same output. HINT does not implement, plan, or replace an agent — it works underneath one.
+
+## Spec-as-Source, without the generator
+
+**Spec-as-Source** is the position that the specification — not the code — is the artifact you maintain and the authority the work answers to. It is the far end of the spec-driven spectrum: `spec-first` writes a spec and discards it, `spec-anchored` keeps it alive in CI, `spec-as-source` makes it *the* source.
+
+The usual formulation attaches a second clause: *and the code is regenerated from the spec.* That clause is what has kept the idea impractical. Generation from a language model is non-deterministic, so every upgrade is a re-roll, every hand edit fights the generator, and drift and hallucination return through the door built for them.
+
+**HINT drops the generator, not the source of truth.** The `.hint` files hold the intent. Humans and agents write the implementation. The two stay coupled through two mechanisms that involve no model at all:
+
+- **Retrieval before the work.** `hint <path>` returns the part of the spec that governs that path and nothing else, cheaply enough to run before every edit.
+- **Drift detection after it.** `hint status`, and an advisory line on every read, say when the implementation has moved away from the spec that governs it — while the correction is still cheap. See [Keeping it current](#keeping-it-current).
+
+Deterministic end to end: no model call, no network, no vendor.
+
+Where a spec describes something machine-derivable, **`hint emit` closes the loop**: it renders the artifact the spec produces — types, schemas, error enums, a contract document — through templates the hintbook supplies, and `hint emit --check` lets CI assert that what is committed still equals what the spec produces. Code outside the generated region and any hand-written implementation are preserved, so regeneration is safe to re-run. See [Emit](08-emit.md). This is optional too: a repository that only records knowledge never installs an emitter.
+
+## Why it does not have to be about code
+
+The engine has **no built-in keywords**. It understands files, headings, nesting, and inheritance; what a `decision`, an `invariant`, a `clause`, or an `obligation` *means* comes from an installed **hintbook**. Every other tool in this category compiles its vocabulary in, which is why every one of them is about software.
+
+Swap the hintbook and the same machinery specifies a different profession — [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) works from `party`, `clause`, `obligation`, `right`, and `redline`, over a law firm's matters instead of a codebase. Nothing in the engine changes. Authoring a hintbook takes no programming — see [Hintbooks](05-hintbooks.md).
+
+Read "code" below as "whatever this repository holds"; the software vocabulary is the default, not a constraint.
 
 ## What belongs in a `.hint`
 
@@ -59,7 +82,7 @@ Asking about `src/auth/login.ts` returns its companion knowledge plus every fold
 
 ## The architecture: a small core, extensible vocabulary
 
-HINT deliberately has **no built-in keywords**. The engine understands only structure:
+The engine understands only structure:
 
 - **Files** — companion hints, folder hints, and detached `.hint` stores.
 - **Headings** — every markdown heading is a typed block. `# decision Gateway owns auth {#auth_boundary}` has a keyword (`decision`), a name, an optional stable id, and a body running to the next heading. Heading depth nests blocks into a tree.
@@ -69,7 +92,7 @@ What each keyword _means_ — and what text it renders to — is defined by **hi
 This split keeps the core honest and the vocabulary open:
 
 - The engine never hard-codes what a `decision` is. Swap or extend the hintbook and the same `.hint` files render in a different dialect.
-- Teams publish their own hintbooks (npm packages, git repositories, or plain folders) tuned to their stack — and the vocabulary need not be about code at all: [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) works from `party`, `clause`, and `obligation` blocks.
+- Teams publish their own hintbooks (npm packages, git repositories, or plain folders) tuned to their stack — or to their profession, as [described above](#why-it-does-not-have-to-be-about-code).
 - Authoring one requires no programming. Instructions are markdown files with `{name}`-style placeholders. If you can write markdown, you can build the vocabulary for your profession.
 - The official starting point is [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer).
 
@@ -85,6 +108,19 @@ When a `.hint` goes further and *declares* surfaces the code must contain — a 
 - `hint lock` / `hint diff` — snapshot what was generated; report which blocks drifted since.
 
 This is a specialization, not the main path. It applies only to companion `<file>.hint` specs, and a repository that never uses it gets the full value of everything above.
+
+## Keeping it current
+
+Recorded knowledge decays, and it decays quietly: an agent finishes a task and does not come back to update the spec, a file is renamed and its `.hint` is left behind, a block that restated a signature is now describing code that no longer exists. Nothing fails; the knowledge just gets less true, and the next reader is misled with the authority of a spec behind it.
+
+HINT does not try to fix this by asking harder. Anything that depends on remembering a step *after* the work is done gets skipped. Instead:
+
+- **The signal rides the read.** `hint <path>` is already run before an edit, so that is where staleness is reported: when the code under the governing hint has moved substantially since that hint was last committed, stderr says so. Advisory only — it never changes the output or the exit code. The correction is cheapest in the change you are already making.
+- **The measure is git, and it is scope-relative** — the share of a scope's files that changed since the hint's last commit — so it means the same thing for a one-file companion spec and for the repository root.
+- **The threshold depends on what the knowledge is.** A spec that *declares surfaces* restates the shape of the code and goes wrong as soon as the code moves. A `decision` or an `invariant` explains *why* the code is the way it is, and survives refactoring. Holding both to one bar would either miss the first or nag about the second until the signal is ignored.
+- **[`hint status`](06-cli.md#hint-status--what-has-come-loose) is the inventory pass** — the whole repository at once: knowledge the code has moved away from, specs whose target was deleted, drift against `hint.lock`. Run it in CI with `--exit-code`, or at the start of a session.
+
+The authoring guidance follows from the same observation. Knowledge that *explains* keeps; knowledge that *restates* the code is a copy that begins drifting immediately. Quoting the contents of another file into a spec is the worst case of it — a snapshot that goes stale silently. Reference the path and state the constraint instead.
 
 ## Principles
 
@@ -111,4 +147,5 @@ This is a specialization, not the main path. It applies only to companion `<file
 - [How It Works](04-how-it-works.md) — the resolve → parse → render pipeline in detail.
 - [Hintbooks](05-hintbooks.md) — using, authoring, and distributing keyword vocabularies.
 - [CLI Reference](06-cli.md) — every command and flag.
+- [Emit](08-emit.md) — producing artifacts from specs, and authoring an emitter.
 - [Migrating to 1.1](07-migration.md) — what changed and why.

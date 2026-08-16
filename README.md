@@ -4,31 +4,56 @@
 
 <p align="center">
   <img alt="version" src="https://img.shields.io/badge/version-1.1-black">
+  <img alt="paradigm" src="https://img.shields.io/badge/paradigm-Spec%E2%80%91as%E2%80%91Source-6e40c9">
   <img alt="format" src="https://img.shields.io/badge/format-Markdown%E2%80%91native-blue">
-  <img alt="output" src="https://img.shields.io/badge/output-scoped%20repo%20context-6e40c9">
   <img alt="agents" src="https://img.shields.io/badge/agents-neutral-0aa">
+  <img alt="domains" src="https://img.shields.io/badge/domains-code%20%C2%B7%20law%20%C2%B7%20yours-e8590c">
   <img alt="license" src="https://img.shields.io/badge/license-MIT-green">
 </p>
 
 <h1 align="center">
-  HINT — a context compiler for coding agents
+  HINT — Spec-as-Source for any repository
 </h1>
 
-> **Tell your coding agent what matters here.**
+> **The spec is the source. Your code answers to it.**
 
-Repository knowledge — decisions, invariants, constraints, hazards — lives in `.hint` files next to the code it describes, versioned in git. Ask HINT about a path or a task, and it returns the subset that applies. Nothing else.
+The intent — decisions, invariants, constraints, obligations, hazards — lives in `.hint` files next to what they govern, versioned in git. That is the artifact you maintain. Ask HINT about a path or a task and it returns the part of the spec that governs it, and tells you when the work has drifted away from it.
 
 ```text
-repository knowledge → .hint → scope + inheritance → retrieval → minimal relevant context → your agent
+spec (.hint) → scope + inheritance → retrieval → the governing intent → whoever does the work
+                     ↑                                                          │
+                     └──────────── drift reported back ─────────────────────────┘
 ```
 
-Works underneath Claude Code, Codex, OpenCode, Cline, or anything that can run a command.
+Works underneath Claude Code, Codex, OpenCode, Cline, or anything that can run a command. **And it is not only about code** — the vocabulary is installed, not compiled in, so the same machinery specifies a law firm's matters. [See below](#beyond-code).
 
 **Two ways to read this page:** [**For humans**](#for-humans) — what it is and how to adopt it. [**For coding agents**](#for-coding-agents) — an operational briefing, if you are an LLM that landed in this repo.
 
 ---
 
 # For humans
+
+## Spec-as-Source, without the generator
+
+**Spec-as-Source** is the position that the specification — not the code — is the artifact you maintain and the authority the work answers to. It is the far end of the spec-driven spectrum: `spec-first` writes a spec and throws it away, `spec-anchored` keeps it alive in CI, `spec-as-source` makes it *the* source.
+
+The industry usually attaches a second clause to it: *and the code is regenerated from the spec.* That clause is what has kept the idea impractical. Generation from a language model is non-deterministic, so every upgrade is a re-roll, every hand edit is a fight with the generator, and drift and hallucination come back in through the door you built for them.
+
+**HINT drops the generator, not the source of truth.** The `.hint` files hold the intent. Humans and agents write the implementation. HINT keeps the two coupled by two mechanisms that need no model at all:
+
+- **Retrieval before the work** — `hint <path>` returns the part of the spec that governs that path, inherited from the repository root down, and nothing else. Cheap enough to run before every edit.
+- **Drift detection after it** — `hint status` and an advisory line on every read say when the implementation has moved away from the spec that governs it, so the spec is corrected while the correction is still cheap.
+
+Spec-as-source enforced by retrieval and drift, instead of by regeneration. No model call, no network, no lock-in, deterministic end to end.
+
+And where a spec describes something machine-derivable, **`hint emit` closes the loop** — deterministically, still without a model:
+
+```bash
+hint emit src/billing/invoice.ts    # write the artifact this spec produces
+hint emit --check                   # CI: what is committed equals what the spec produces
+```
+
+Templates come from the hintbook, so a keyword renders one way in TypeScript and another in Go — or into a clause of a contract. What the emitter cannot derive becomes a **hole**, carrying the inherited constraints it must be written against; a filled hole is never overwritten, and code outside the generated region is never touched, so re-running is safe. A repository that only records knowledge never installs an emitter and loses nothing. → [`docs/08-emit.md`](docs/08-emit.md)
 
 ## The problem
 
@@ -85,6 +110,39 @@ $ hint search "service account authentication"
 
 Offline, deterministic, no model call, nothing read into context. `weak` flags a hit that matched under half your query terms — advisory, never hidden.
 
+## Beyond code
+
+Every other tool in this category has its vocabulary compiled in, which is why every one of them is about software. HINT's engine knows **no keywords at all** — it understands files, headings, nesting, and inheritance. What a `decision`, an `invariant`, a `clause`, or an `obligation` *means* comes from a **hintbook**: a flat folder of Markdown templates you install like a dependency.
+
+Swap the hintbook and the same machinery specifies a different profession.
+
+| | A software repository | A law firm's matter repository |
+| --- | --- | --- |
+| Hintbook | [`hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) | [`hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) |
+| Vocabulary | `decision` `invariant` `func` `entity` `rule` `bad` | `party` `clause` `obligation` `right` `exception` `redline` |
+| A scope | `src/billing/_.hint` governs the billing subsystem | `clients/acme/nda/_.hint` governs that matter |
+| What the worker gets before touching it | the constraints that apply to this file | the constraints that apply to this document |
+| What drift means | the code moved away from the spec | the document moved away from the position |
+
+Nothing in the engine changes between those two columns. Authoring a hintbook takes no programming — it is Markdown files with `{name}`-style placeholders — so a profession that can write down its own rules can have a vocabulary for them.
+
+Working example: [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt), a law firm's matters specified in `.hint`. Guide → [`docs/05-hintbooks.md`](docs/05-hintbooks.md).
+
+## Where HINT sits
+
+Spec-driven development went mainstream in 2026 and every major vendor shipped a flavor — GitHub Spec Kit, AWS Kiro, Tessl, BMAD, OpenSpec, Google Antigravity. They are solving a real problem, and they are solving it a particular way:
+
+| | Spec Kit · Kiro · Tessl · … | HINT |
+| --- | --- | --- |
+| **Unit of spec** | one central folder, per feature (`.specify/specs/<feature>/`, `.kiro/specs/<feature>/`) | per path, inherited root → folder → file |
+| **Contents** | requirements + design + a `tasks.md` with statuses | durable intent only — never task state |
+| **Lifetime** | the feature | the repository |
+| **Coupling to the work** | regeneration | retrieval before, drift detection after |
+| **Ownership** | the vendor's ecosystem and, sometimes, its billing perimeter | your repository, in git, agent-neutral |
+| **Domain** | software | any — the vocabulary is installed, not compiled in |
+
+The per-feature shape is the one that matters most in practice: it cannot say *"strict typing here, and a documented exception in the legacy module."* Scoping is not a detail — it is the reason a single global instruction file fails, and a single central spec folder fails the same way for the same reason.
+
 ## Why not just a bigger CLAUDE.md
 
 | | `CLAUDE.md` / `AGENTS.md` | HINT |
@@ -120,13 +178,35 @@ Full walkthrough → [`docs/02-quick-start.md`](docs/02-quick-start.md).
 
 **When it does not:** a small repo one person holds in their head; facts already obvious from the code; anything that stops being true when the task ends. HINT stores durable knowledge, not session state.
 
+## Keeping it current
+
+Recorded knowledge decays quietly. An agent finishes a task and does not come back to update the spec; a file is renamed and its `.hint` is left behind; a block that restated a signature now describes code that no longer exists. Nothing fails — the knowledge just gets less true, and the next reader is misled with the authority of a spec behind it.
+
+HINT does not address this by asking harder. Anything that depends on remembering a step *after* the work is done gets skipped. The signal rides the read instead, since `hint <path>` is already run before an edit:
+
+```
+hint: 9 of 11 files under src/billing changed since src/billing/_.hint was last updated,
+      and it records knowledge — re-check it against the code and update it if it no longer holds.
+```
+
+Advisory only — it never changes the output or the exit code. The measure is git: the share of a scope's files that changed since the hint's last commit, so it means the same thing for a one-file companion spec and for the repository root. The threshold depends on what the knowledge is. A spec that *declares surfaces* restates the shape of the code and goes wrong as soon as the code moves; a `decision` explains *why* the code is that way and survives refactoring. One bar for both would either miss the first or nag about the second until the signal is ignored.
+
+For the whole repository at once:
+
+```bash
+hint status                 # what has come loose: stale, orphaned, drifted, unlocked
+hint status --exit-code     # exit 1 on findings, for CI
+```
+
+`orphan` is the one nothing else catches — a `.hint` whose target was deleted or renamed.
+
 ## Contracts — optional
 
 A `.hint` can go further and *declare* surfaces the code must contain — a `func`, an `entity`, an `error`. Then HINT can check them mechanically, with no model involved:
 
 ```bash
 hint verify src/auth/login.ts   # every declared surface present? exits non-zero if not
-hint lock   src/auth/login.ts   # snapshot, so later runs skip unchanged work
+hint lock   src/auth/login.ts   # snapshot, so later --prompt runs skip unchanged work
 hint diff   src/auth/login.ts   # which blocks drifted since that snapshot
 ```
 
@@ -136,9 +216,7 @@ Separately, `hint --prompt <path>` wraps the same knowledge in a standalone impl
 
 ## Vocabulary
 
-The engine has **no built-in keywords** — it understands files, headings (`# keyword Name {#id}`), nesting, and `@include`. Meaning comes from **hintbooks**: installable packages of instruction templates registered in `hint.yml`, one per profession or team.
-
-[`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer):
+Keywords come from the hintbooks registered in `hint.yml` ([why](#beyond-code)). The official starting point for software is [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer):
 
 | Keywords | Purpose |
 | --- | --- |
@@ -156,9 +234,7 @@ The engine has **no built-in keywords** — it understands files, headings (`# k
 
 Long forms are synonyms (`# application` = `# app`). Keyword reference → [keywords.md](https://github.com/open-hint-dev/hintbook-software-engineer/blob/main/docs/keywords.md).
 
-The vocabulary need not be about code: [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) works from `party`, `clause`, `obligation`, `redline`, and `authority` — the same machinery applied to legal drafting, and the reference for adapting HINT to another profession. A hintbook is a flat folder of markdown files; authoring one takes no programming.
-
-Grammar → [`docs/03-syntax.md`](docs/03-syntax.md) · authoring a hintbook → [`docs/05-hintbooks.md`](docs/05-hintbooks.md).
+Grammar → [`docs/03-syntax.md`](docs/03-syntax.md) · authoring your own vocabulary → [`docs/05-hintbooks.md`](docs/05-hintbooks.md).
 
 ## Docs
 
@@ -171,6 +247,7 @@ Grammar → [`docs/03-syntax.md`](docs/03-syntax.md) · authoring a hintbook →
 | [`docs/05-hintbooks.md`](docs/05-hintbooks.md) | Using, authoring, and shipping hintbooks |
 | [`docs/06-cli.md`](docs/06-cli.md) | CLI reference — every command, flag, and exit code |
 | [`docs/07-migration.md`](docs/07-migration.md) | Breaking changes in 1.1 and how to migrate |
+| [`docs/08-emit.md`](docs/08-emit.md) | Producing artifacts from specs; authoring an emitter |
 
 Working examples: [demo-pied-piper](https://github.com/open-hint-dev/demo-pied-piper) (a polyglot monorepo) · [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt) (a law firm's document repository).
 
@@ -182,7 +259,7 @@ Working examples: [demo-pied-piper](https://github.com/open-hint-dev/demo-pied-p
 
 ## What HINT gives you
 
-A command that answers **"what does this repository already know about the file I am about to edit?"** — and returns only that, not a whole instruction file.
+This repository keeps its intent in `.hint` files, and treats them as the source of truth — the spec is maintained, the implementation answers to it. `hint` is the command that hands you the part of that spec which governs whatever you are about to touch, and tells you when the implementation has drifted from it. Nothing is generated for you; you do the work, against a stated intent instead of a guessed one.
 
 You already lose time and context to three things HINT removes:
 
@@ -217,6 +294,16 @@ hint author <path...>       # the keyword vocabulary, before you write or edit a
 - Empty stdout with exit `0` means there is genuinely nothing to say. Proceed normally.
 - `no spec of its own for X; returning inherited context from Y` is **success**, not a warning. Most paths have no `.hint` of their own and inherit from a folder above. That inherited knowledge is the answer.
 
+## If stderr says the knowledge is stale
+
+```
+hint: 9 of 11 files under src/billing changed since src/billing/_.hint was last updated, and it records knowledge — …
+```
+
+That is an observation, not an error: exit code and output are unchanged. It means the code under that hint has moved a long way since anyone revisited it. Read the knowledge, decide whether it still holds, and if it does not, fix it **in the change you are already making** — that is the only moment the correction is cheap. Then commit the `.hint` with the code.
+
+`hint status` applies the same check to the whole repository, and also finds specs whose target was deleted or renamed. Worth running once at the start of a session in an unfamiliar repository.
+
 ## Two rules worth knowing
 
 **You may read `.hint` files directly when you are writing or editing them.** That is the only way to edit one. The convention against reading them directly applies to *consuming* knowledge — for that, `hint <path>` gives you the same content with inheritance already resolved and irrelevant scopes excluded.
@@ -224,6 +311,8 @@ hint author <path...>       # the keyword vocabulary, before you write or edit a
 **Write back what you learn.** When you discover something durable that future work should know — an architectural decision and its rationale, an invariant, an operational hazard, a security constraint, an approach that does not work and why — record it in the most specific `.hint` that applies: the file's companion `<file>.hint`, else the folder's `_.hint`, else the root `_.hint`. Run `hint author` first for the vocabulary.
 
 Prefer this over a private memory file. It is versioned with the code, reviewed in the same diff, and every agent on the repository gets it — including you, next session.
+
+Write knowledge that *explains* — a decision and its rationale, an invariant, a hazard — not knowledge that *restates* code. A block copying a signature, a schema, or the contents of another file is a snapshot that goes stale silently and then misleads the next reader with a spec's authority behind it. Reference the path and state the constraint instead.
 
 Do **not** record session state, task progress, or anything that stops being true when the task ends.
 

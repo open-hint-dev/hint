@@ -1,6 +1,6 @@
 # @openhint/transpiler
 
-The engine behind [HINT](https://github.com/open-hint-dev/hint#readme) — a context compiler for coding agents. It resolves a path or a query to the markdown-native repository knowledge that applies to it, with folder-to-root inheritance, and renders it for any agent to consume. Software code and legal documents are two of its vocabularies.
+The engine behind [HINT](https://github.com/open-hint-dev/hint#readme) — Spec-as-Source for any repository. It resolves a path or a query to the markdown-native spec that governs it, with folder-to-root inheritance, and renders it for any agent to consume. It has no built-in keyword vocabulary, so the same engine serves software code and legal documents alike.
 
 This package is the library; the command-line interface lives in [`@openhint/cli`](https://www.npmjs.com/package/@openhint/cli).
 
@@ -51,6 +51,31 @@ const prompt = renderPrompt(context, hintbooks);
 | `renderContext(hints, hintbooks)`            | Render blocks through hintbook keywords (synonym matching, `exclude` handling, `{id}` / `{name}` / `{body}` / `{children}` interpolation, empty-wrapper elision). The core artifact — no framing.                                       |
 | `renderPrompt(context, hintbooks, options)`  | Wrap rendered context in `__header__` / `__footer__`, optionally the `__system__` glossary (`standalone`) and the `__changes__` drift section (`changes`).                                                                              |
 | `countScopes(hints)`                         | File and folder scope counts in a parsed tree — what a breadth guard needs in a repository with no companion specs.                                                                                                                    |
+| `collectScopeNodes(hints)`                   | Every scope in a parsed tree, folders included, paired with its node. `collectFileNodes` covers only file targets, which is all the contract layer applies to.                                                                          |
+| `collectIncludedPaths(projectRootPath, hintPaths)` | The hint files other hints pull in with `@include`. Fragments describe no path, so an inventory has to leave them out.                                                                                                           |
+
+### Staleness
+
+Recorded knowledge decays quietly, and anything depending on a maintenance step *after* the work is done gets skipped. These read git to say when the code under a scope has moved since its knowledge was last written.
+
+| Export                                                | Purpose                                                                                                                                                                                                     |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `readGitSnapshot(projectRootPath, paths?)`            | One shared read of the tracked non-hint files and the paths with uncommitted work. `null` outside a git repository — the signal turns off rather than degrading into guesses. `paths` narrows it to the scopes in question. |
+| `measureStaleness(projectRootPath, snapshot, scope)`  | The share of a scope's files changed between its hint's last commit and `HEAD`. `null` whenever there is nothing honest to say: no commit, an in-flight edit, or no tracked files.                            |
+| `collectContractScopes(hints, hintbooks)`             | Which scopes declare surfaces, keyed by target — derived from the hintbooks' `surface: true` flag. Contract scopes restate the code and get the tighter threshold (`CONTRACT_CHANGE_RATIO` vs `KNOWLEDGE_CHANGE_RATIO`). |
+| `inspectProject(projectRootPath, hintbooks)`          | The repository-wide inventory behind `hint status`: `stale`, `orphan`, `drifted`, `unlocked`, `pending`. `formatStatus` / `countFindings` / `countPending` render and score it.                               |
+
+### Emit
+
+Producing the artifact a spec describes — deterministic, model-free, and optional. See [`docs/08-emit.md`](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md).
+
+| Export | Purpose |
+| ------ | ------- |
+| `selectEmitter(hintbooks, outputPath, target?)` | The emit pack that renders this output, chosen by glob on the output path or by an explicit target. Language knowledge lives in the pack, never in the engine. |
+| `planEmit(hints, hintbooks, target?)` | Which specs produce what, before anything renders. Only companion file scopes become units — a folder scope describes everything beneath it and has no single output. |
+| `renderArtifact(unit, hintbooks)` | The artifact one spec produces. A block with no template in this target emits nothing; that absence is the whole reason output stays small. |
+| `mergeArtifact(existing, artifact, comment?)` | Splices the artifact into the `hint:begin` … `hint:end` region, preserving code outside it and any filled hole body. Reports holes whose governing spec has since moved. |
+| `renderTemplate(template, resolve)` | The emit template language: `{children:kw sep=", "}`, `{child:kw}`, `{ident}` / `{type}`, `{?…}` optional groups, `{name\|fallback}`, `{hole:label}`. Braces that mean themselves are left alone. |
 
 ### Hintbooks
 
@@ -68,7 +93,7 @@ const prompt = renderPrompt(context, hintbooks);
 | `findConfig`, `loadConfig`, `saveConfig` | Locate, read, and write the project's `ConfigData` (`name`, `description`, `books`, `ignore`). |
 | `CONFIG_INSTRUCTION`                     | The AGENTS.md / CLAUDE.md bootstrap block installed by `hint apply`.                           |
 
-Constants for the running vocabulary (`RUNNING_FILE`, `RUNNING_FOLDER`, `RUNNING_HEADER`, `RUNNING_FOOTER`, `RUNNING_SYSTEM`, `RUNNING_CHANGES`), placeholders (`PLACEHOLDER_ID`, `PLACEHOLDER_NAME`, `PLACEHOLDER_BODY`, `PLACEHOLDER_CHILDREN`), and book prefixes (`URL_FILE_PREFIX`, `URL_NPM_PREFIX`) are exported alongside the types `HintData`, `HintFileData`, `HintbookData`, `InstructionData`, `Resolution`, `PathRequest`, and `ConfigData`.
+Constants for the running vocabulary (`RUNNING_FILE`, `RUNNING_FOLDER`, `RUNNING_HEADER`, `RUNNING_FOOTER`, `RUNNING_SYSTEM`, `RUNNING_CHANGES`), placeholders (`PLACEHOLDER_ID`, `PLACEHOLDER_NAME`, `PLACEHOLDER_BODY`, `PLACEHOLDER_CHILDREN`), and book prefixes (`URL_FILE_PREFIX`, `URL_NPM_PREFIX`) are exported alongside the types `HintData`, `HintFileData`, `HintbookData`, `InstructionData`, `Resolution`, `PathRequest`, `ScopeNode`, `ScopeStaleness`, `StatusEntry`, `StatusReport`, and `ConfigData`.
 
 Migrating to 1.1 → [`docs/07-migration.md`](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md).
 
