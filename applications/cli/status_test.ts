@@ -416,3 +416,52 @@ describe('staleness on the read path', () => {
         expect(result.stderr).toBe('');
     });
 });
+
+// Two of the seven inventory rows come from the contract layer, and both had no test at all — the
+// lock branch of `inspectProject` was never entered by anything.
+describe('status — the lock rows', () => {
+    async function locked(): Promise<string> {
+        const root = await makeProject();
+
+        await write(root, 'src/login.ts', 'export const a = 1;\n');
+        await write(root, 'src/login.ts.hint', '# func executeLogin\n\nSigns a user in.\n');
+        await commit(root, 'init');
+
+        return root;
+    }
+
+    it('reports a companion spec that a locking project never locked', async () => {
+        const root = await locked();
+
+        await write(root, 'src/other.ts', 'export const b = 2;\n');
+        await write(root, 'src/other.ts.hint', '# func other\n\nDoes something else.\n');
+        await runCli(['lock', 'src/login.ts'], root);
+        await commit(root, 'lock one of two');
+
+        const result = await runCli(['status'], root);
+
+        expect(result.stdout).toContain('unlocked');
+        expect(result.stdout).toContain('src/other.ts.hint');
+        expect(result.stdout).toContain('never been locked');
+    });
+
+    it('reports a locked target whose spec has moved since', async () => {
+        const root = await locked();
+
+        await runCli(['lock', 'src/login.ts'], root);
+        await write(root, 'src/login.ts.hint', '# func executeLogin\n\nSigns a user in, and now records the attempt.\n');
+        await commit(root, 'move the spec');
+
+        const result = await runCli(['status'], root);
+
+        expect(result.stdout).toContain('drifted');
+        expect(result.stdout).toContain('src/login.ts.hint');
+    });
+
+    it('says nothing about a lock in a project that has none', async () => {
+        const result = await runCli(['status'], await locked());
+
+        expect(result.stdout).not.toContain('unlocked');
+        expect(result.stderr).toContain('nothing has come loose');
+    });
+});
