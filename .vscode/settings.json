@@ -61,5 +61,6 @@
     "search.exclude": {
         "**/node_modules": true,
         "**/.git": true
-    }
+    },
+    "explorerExcludeManager.backup": {}
 }
