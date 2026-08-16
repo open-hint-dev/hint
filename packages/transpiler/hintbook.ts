@@ -9,6 +9,9 @@ import { matter } from 'vfile-matter';
 import { HINTBOOKS_FOLDER, isPathExists, isPathFolder, NODE_MODULES_FOLDER, readFile, URL_FILE_PREFIX, URL_NPM_PREFIX } from './helper.js';
 
 const INSTRUCTION_EXTENSION = '.md';
+// Emit templates are `<keyword>.tmpl` rather than `<keyword>.md`: they hold code, not prose, and the
+// separate extension keeps markdown tooling from reflowing a Go function into a paragraph.
+const TEMPLATE_EXTENSION = '.tmpl';
 
 export const HINTBOOK_FILE_NAME = 'hintbook.json';
 
@@ -42,20 +45,60 @@ export type HintbookData = {
     id?: string;
     name?: string;
     description?: string;
+    // Present only on an emit pack — a book whose `<keyword>.tmpl` files render an artifact instead of
+    // an instruction. Its presence is the whole distinction between the two kinds of book, so one
+    // loader, one registry, and one first-wins precedence rule serve both.
+    target?: string;
+    // Globs matched against the *output* path, so a file extension selects the emitter and the engine
+    // never learns a language. Empty means the pack is only selectable by an explicit `--target`.
+    match?: string[];
+    // How this target writes a comment, as a `{text}` template — `// {text}`, `# {text}`,
+    // `<!-- {text} -->`. Region markers and rendered documentation both go through it.
+    comment?: string;
+    // Optional external command reporting the real symbols of a file as JSON. Keeps language parsers
+    // out of the engine: a language is a plugin on the same footing as a vocabulary, and its absence
+    // degrades verification to the presence lint rather than breaking it.
+    symbols?: string;
     instructions: InstructionData[];
 };
 
-// A hintbook is a flat folder of `<keyword>.md` instructions. Files carrying a second extension
-// (`__header__.fix.md`, `__mode__.review.md`) are variants from the removed mode system; they are
-// ignored so an older hintbook still loads its base vocabulary instead of failing or double-binding.
-function instructionName(file: string): string | null {
-    if (Path.extname(file) !== INSTRUCTION_EXTENSION) {
+// True for a book that renders artifacts rather than instructions. Every consumer of the vocabulary —
+// rendering, the author prompt, the glossary, lock's vocabulary hash — has to exclude these, because
+// `resolveHintbookPaths` returns folders sorted, and `emit/go` sorts before `keywords`.
+export function isEmitPack(hintbook: HintbookData): boolean {
+    return Boolean(hintbook.target);
+}
+
+export function vocabularyBooks(hintbooks: HintbookData[]): HintbookData[] {
+    return hintbooks.filter((hintbook) => !isEmitPack(hintbook));
+}
+
+export function emitPacks(hintbooks: HintbookData[]): HintbookData[] {
+    return hintbooks.filter(isEmitPack);
+}
+
+// A hintbook is a flat folder of `<keyword>.md` instructions — or, for an emit pack, `<keyword>.tmpl`
+// templates. Files carrying a second extension (`__header__.fix.md`, `__mode__.review.md`) are
+// variants from the removed mode system; they are ignored so an older hintbook still loads its base
+// vocabulary instead of failing or double-binding.
+function instructionName(file: string, extension: string): string | null {
+    if (Path.extname(file) !== extension) {
         return null;
     }
 
-    const name = Path.basename(file, INSTRUCTION_EXTENSION);
+    const name = Path.basename(file, extension);
 
     return Path.extname(name) === '' ? name : null;
+}
+
+function metadataStrings(value: unknown): string[] | undefined {
+    if (!Array.isArray(value)) {
+        return undefined;
+    }
+
+    const strings = value.filter((entry): entry is string => typeof entry === 'string' && entry.trim() !== '');
+
+    return strings.length > 0 ? strings : undefined;
 }
 
 function metadataString(metadata: MetaData, key: 'description' | 'name'): string {
@@ -67,20 +110,26 @@ function metadataString(metadata: MetaData, key: 'description' | 'name'): string
 export async function loadHintbook(hintbookPath: string): Promise<HintbookData> {
     const data: HintbookData = { instructions: [] };
 
+    // The manifest is read before the folder is walked, because `target` decides which file extension
+    // counts as a template here — readdir order must not be able to change what loads.
+    const manifest = JSON.parse((await readFile(Path.join(hintbookPath, HINTBOOK_FILE_NAME))) ?? '{}');
+
+    data.id = manifest.id || '';
+    data.name = manifest.name || '';
+    data.description = manifest.description || '';
+
+    if (typeof manifest.target === 'string' && manifest.target.trim()) {
+        data.target = manifest.target.trim();
+        data.match = metadataStrings(manifest.match);
+        data.comment = typeof manifest.comment === 'string' && manifest.comment.trim() ? manifest.comment.trim() : undefined;
+        data.symbols = typeof manifest.symbols === 'string' && manifest.symbols.trim() ? manifest.symbols.trim() : undefined;
+    }
+
+    const extension = data.target ? TEMPLATE_EXTENSION : INSTRUCTION_EXTENSION;
     const files = await FsPromises.readdir(hintbookPath);
 
     for (const file of files) {
-        if (file === HINTBOOK_FILE_NAME) {
-            const hintbookJson = JSON.parse((await readFile(Path.join(hintbookPath, file))) ?? '{}');
-
-            data.id = hintbookJson.id || '';
-            data.name = hintbookJson.name || '';
-            data.description = hintbookJson.description || '';
-
-            continue;
-        }
-
-        const name = instructionName(file);
+        const name = instructionName(file, extension);
 
         if (!name) {
             continue;

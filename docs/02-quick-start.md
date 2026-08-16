@@ -166,6 +166,21 @@ hint --prompt src/billing/invoice.ts | claude -p
 hint --strict 'src/**/*.hint'
 ```
 
+### Keeping it honest
+
+Knowledge goes stale quietly. When the code under the hint governing a path has moved a long way since that hint was last committed, stderr says so on the read itself:
+
+```
+hint: 9 of 11 files under src/billing changed since src/billing/_.hint was last updated, and it records knowledge — re-check it against the code and update it if it no longer holds.
+```
+
+It is an observation, not a failure — the output and exit code are unchanged. For the whole repository at once, including specs whose target was deleted:
+
+```bash
+hint status                 # what has come loose
+hint status --exit-code     # exit 1 on findings, for CI
+```
+
 ## 8. Optional: contracts
 
 For companion specs that declare surfaces, HINT can check them mechanically — no model involved. Skip this section entirely if your repository only records knowledge; everything above works without it.
@@ -173,10 +188,12 @@ For companion specs that declare surfaces, HINT can check them mechanically — 
 ```bash
 hint verify src/billing/invoice.ts          # deterministic, token-free: every declared surface present?
 hint lock src/billing/invoice.ts            # mark the target as generated
-hint src/billing/invoice.ts                 # now a no-op while the spec is unchanged (skipped)
+hint --prompt src/billing/invoice.ts        # a no-op while the spec is unchanged (skipped)
 hint diff src/billing/invoice.ts            # after an edit: lists exactly which blocks drifted
-hint --prompt src/billing/invoice.ts       # the drift list is carried automatically; the fix is scoped to those blocks
+hint --prompt src/billing/invoice.ts        # now carries that drift list; the fix is scoped to those blocks
 ```
+
+The freshness gate is on **generation only**. A plain `hint src/billing/invoice.ts` always returns everything that applies, however fresh the lock — a read is a question about what the repository knows, and it must not be answered with silence just because the code is stable.
 
 `hint verify` reads the generated file and checks that every declared surface (each `func`, `entity`, `error`…) appears in it — catching a stubbed or forgotten declaration for zero tokens, before you lock. Compose the two with `hint verify <path> && hint lock <path>`.
 

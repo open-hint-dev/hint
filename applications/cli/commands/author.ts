@@ -63,6 +63,14 @@ export class AuthorCommand implements ICommand {
 
             for (const hintbookPath of hintbookPaths) {
                 const hintbook = await Transpiler.loadHintbook(hintbookPath);
+
+                // An emit pack ships `<keyword>.tmpl` artifact templates, not vocabulary. Listing them
+                // here would advertise a keyword per target and, since folders resolve sorted, would
+                // shadow the real definition an author needs to read.
+                if (Transpiler.isEmitPack(hintbook)) {
+                    continue;
+                }
+
                 const source = hintbook.id || hintbook.name || Path.basename(hintbookPath);
 
                 for (const instruction of hintbook.instructions) {
@@ -102,6 +110,8 @@ function buildAuthorPrompt(keywords: Keyword[], paths: string[]): string {
         '## Keyword vocabulary',
         "The first word of every heading must be one of these keywords (or a synonym) registered by this project's hintbooks. A heading whose keyword is unknown is passed through as plain markdown and carries no binding meaning.",
         formatKeywordIndex(keywords),
+        '## What lasts, and what rots',
+        DURABILITY,
         '## File kinds and naming',
         FILE_KINDS,
         '## Syntax',
@@ -112,6 +122,17 @@ function buildAuthorPrompt(keywords: Keyword[], paths: string[]): string {
         OUTPUT_RULES,
     ].join('\n\n');
 }
+
+// Which blocks an author reaches for decides how much maintenance the spec will demand for the rest of
+// its life, and that is not obvious from the vocabulary table. Knowledge that explains survives
+// refactoring; knowledge that restates the code is a copy that starts drifting the moment the code moves.
+const DURABILITY = [
+    '- **Prefer explaining over restating.** A decision with its rationale, an invariant, a hazard, a convention the code does not make obvious — these stay true across refactors. A block that repeats a signature, a schema, or a field list is a copy of the code, and the copy is what goes stale.',
+    '- **Never quote the contents of another file.** A fenced snapshot of a config, a schema, or an ignore file drifts silently and then steers the next reader wrong, with the authority of a spec behind it. Reference the file by path and state the constraint it has to satisfy.',
+    '- **Always give the reason.** A bare rule gets overturned the first time it is inconvenient. A rule with its rationale tells the next reader whether a new situation is still covered — which is the whole reason to write it down instead of leaving it to be rediscovered.',
+    '- **Declare surfaces only when something will check them.** Surface keywords make the spec a contract the code must satisfy, which buys `hint verify` and `hint lock` at the cost of maintaining a restatement of the code. If nobody will regenerate or verify this file, do not declare surfaces.',
+    '- Knowledge that is already obvious from the code is duplication, and duplication drifts. Leave it out.',
+].join('\n');
 
 const FILE_KINDS = [
     '- **Folder knowledge** — `_.hint` applies to its folder and everything beneath it. The root `_.hint` is the project-wide baseline. This is the most common kind: a repository that only ever uses folder hints is a normal, fully supported setup.',
@@ -140,6 +161,7 @@ const OUTPUT_RULES = [
     '- Keep it declarative and minimal: state what must be true and why. Do not write the implementation.',
     '- Reuse stable ids when revising so references stay intact.',
     '- After writing, run `hint <path>` to see exactly what a coding agent will receive.',
+    '- Commit the `.hint` in the same change as the code it describes. Staleness is measured from the hint’s last commit against the churn beneath it, so a hint committed with its code starts clean.',
 ].join('\n');
 
 // One row per keyword, single-line cells. Descriptions in a hintbook are multi-line YAML block scalars

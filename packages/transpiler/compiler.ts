@@ -12,6 +12,7 @@ import {
     RUNNING_FOOTER,
     RUNNING_HEADER,
     RUNNING_SYSTEM,
+    vocabularyBooks,
 } from './hintbook.js';
 
 export type PromptOptions = {
@@ -42,8 +43,12 @@ function isEmptyStructuralWrapper(hint: HintData): boolean {
 // Resolves a keyword to its instruction, matching by name or by one of its declared synonyms. The
 // first hintbook that defines the keyword wins. Exported so drift and verification resolve keywords
 // by exactly the rules the renderer uses.
+//
+// Emit packs are skipped: their `<keyword>.tmpl` files are artifacts, not instructions, and hintbook
+// folders resolve in sorted order — `emit/go` sorts before `keywords`, so without this filter an emit
+// template would win the lookup and be rendered into an agent's context as if it were prose.
 export function findInstruction(hintbooks: HintbookData[], keyword: string): InstructionData | null {
-    for (const hintbook of hintbooks) {
+    for (const hintbook of vocabularyBooks(hintbooks)) {
         const instruction = hintbook.instructions.find((candidate) => candidate.name === keyword || candidate.metadata?.synonyms?.includes(keyword));
 
         if (instruction) {

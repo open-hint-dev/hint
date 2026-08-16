@@ -65,6 +65,7 @@ Knowledge is **inherited**: a path always picks up the folder `_.hint` chain fro
 | The path exists but declares nothing of its own | `no spec of its own for <path>; returning inherited context from <ancestor>` | `0` |
 | The path is not in this repository | `<path> does not exist in this repository and has no spec; …` | `2` |
 | A glob matched nothing | `'<pattern>' matched no .hint files` | `2` |
+| The code under the governing hint has moved a long way since it was written | `<n> of <m> files under <scope> changed since <hint> was last updated, and it records knowledge — re-check it…` | `0` |
 
 Inheriting is a **successful** lookup — the ancestor knowledge is the answer for that path. Only a path that names nothing in the repository is a failure. This is what stops the common case from looking like an error.
 
@@ -74,7 +75,7 @@ Inheriting is a **successful** lookup — the ancestor knowledge is the answer f
 | ------ | ------ |
 | `--prompt` | Wrap the knowledge in a standalone implementation prompt (persona header, verification footer) for piping to a fresh agent. Not needed mid-session. |
 | `--strict` | Exit `2` when any named path has no spec of its own, instead of returning inherited context. Use it to validate specs in CI. |
-| `--force` | Ignore `hint.lock` and include every file, even unchanged ones. |
+| `--force` | Ignore `hint.lock` and regenerate every file, even unchanged ones. Only affects `--prompt`; a plain read is never gated. |
 | `--no-refs` | Return only the named specs, not the specs they reference. References are included by default. |
 | `--standalone` | Implies `--prompt`, and prepends the hintbook's tag glossary for an agent that never loaded `AGENTS.md`. |
 
@@ -86,6 +87,8 @@ hint --strict 'src/**/*.hint'                  # CI: every named spec must resol
 Referenced specs (a spec's `# read` targets and path links) are pulled in automatically with shared ancestors emitted once, so you never need a second call for a path the first one pointed at.
 
 **Breadth guard.** A run crossing roughly 25 scopes or ~20k estimated tokens prints a one-line notice on stderr with the scope count and token estimate. Both file and folder scopes count, so the guard works in a folder-knowledge-only repository too.
+
+**Staleness.** For each path you name — not the reference closure — the hint that governs it (its own spec, else the nearest ancestor `_.hint`) is checked against git, and stderr says so when the code beneath it has moved substantially since that hint was last committed. Advisory: it never changes the exit code or the output. It stays silent outside git, for a hint that has never been committed, for one with uncommitted changes (you are editing it right now), and for a call naming more than ten paths. At most three lines per run. `hint status` applies the same measure to the whole project.
 
 **Reconciliation.** When a `hint.lock` exists and blocks have drifted, `--prompt` output carries a block-level drift report automatically — there is no mode to select. See [`hint diff`](#hint-diff-paths--show-what-drifted).
 
@@ -203,6 +206,76 @@ hint remove @openhint/hintbook-lawyer     # npm:// prefix may be omitted
 
 ---
 
+## `hint status` — what has come loose
+
+Recorded knowledge decays in ways nobody notices at the time: a spec is not updated after a run, a target is renamed and its `.hint` is left behind, code is edited underneath a locked spec. Each is invisible from any single path. `hint status` walks every `.hint` in the project and reports what has drifted away from the code it describes.
+
+```bash
+hint status                 # the inventory
+hint status --json          # machine-readable, includes the informational rows
+hint status --exit-code     # exit 1 when anything needs attention, for CI
+```
+
+```
+orphan    src/legacy/old.ts.hint    target was removed from the repository
+drifted   src/billing/invoice.ts    2 block(s) drifted since it was locked: func total, entity Invoice
+stale     src/auth/_.hint           9 of 11 files under the target changed since this hint was last updated
+unlocked  src/gateway/handler.go    companion spec has never been locked
+```
+
+| Row | What it means |
+| --- | --- |
+| `orphan` | The target was deleted or renamed. The knowledge now describes nothing — move it or delete it. |
+| `drifted` | The target is tracked in `hint.lock` and no longer matches what was locked. Run `hint diff <path>` for the block list. |
+| `stale` | The code under the scope has moved substantially since the hint was last committed. An observation, not a verdict. |
+| `unlocked` | A companion spec in a project that uses `hint.lock`, never locked. Only reported when a lock exists. |
+| `pending` | The target has not been written yet — a spec written ahead of its code. Supported and expected, so it is counted on stderr and listed only under `--json`, never in the table. |
+
+**Staleness is measured against git**, as the share of a scope's files that changed between the hint's last commit and `HEAD`. That is why it means the same thing for a single-file companion spec and for the repository root. Two thresholds apply, because two kinds of knowledge decay at different rates:
+
+- A scope that **declares surfaces** (`func`, `entity`, `field` — whatever the hintbooks flag `surface: true`) restates the shape of the code, so it is flagged once a fifth of its files move.
+- A scope that only **explains** (`decision`, `invariant`, `rule`, `bad`) records why the code is the way it is, which survives refactoring. It is flagged only past half.
+
+Outside a git repository, or when git is unavailable, staleness and orphan detection are skipped and stderr says so — an unmeasurable scope is never reported as a healthy one. Hint files that exist only to be `@include`d are fragments describing no path, and are left out of the inventory entirely.
+
+Exit `0` when the inventory is clean, `2` when the project has no `.hint` files at all, and `1` only with `--exit-code` and at least one finding. Without `--exit-code` it always exits `0` on a populated project, so it is safe to run from a hook.
+
+### Wiring it in
+
+A read-time signal catches what the person editing that path can fix. It does not catch what nobody happened to read. That is the inventory's job, and it wants a scheduled reader:
+
+```yaml
+# .github/workflows/hint.yml — the librarian pass
+- run: npx @openhint/cli status --exit-code
+```
+
+Run it on a schedule rather than per-PR if the repository is large and the backlog is old — a gate that fails on day one gets disabled. `--json` if you want to file the findings instead of failing.
+
+The other placement worth knowing: a hook on **session end**, which is the one mechanism that does not depend on the agent remembering anything. In Claude Code, a `Stop` hook running `hint status` puts the current inventory in front of the agent before it finishes. This is agent-specific, so it is a recipe rather than a feature — HINT itself stays neutral, and `hint status` is a plain command any tool can call.
+
+---
+
+## `hint emit <paths...>` — produce the artifact a spec describes
+
+```bash
+hint emit src/billing/invoice.ts    # write the artifact
+hint emit --check                   # CI: what is committed equals what the spec produces
+hint emit --stdout src/billing      # preview without touching the working tree
+hint emit --target go src/svc       # force an emitter instead of inferring one
+```
+
+Renders each spec through the emit templates of the registered hintbooks. Deterministic and model-free — the same spec and the same templates always produce byte-identical output.
+
+**Only companion `<file>.hint` specs emit.** A folder `_.hint` describes everything beneath it and has no single output, so it never emits; it supplies the constraints an unfilled hole is written against. A folder argument is expanded to its subtree.
+
+Code outside the `hint:begin` … `hint:end` region is preserved, and a hole body that has been filled is never overwritten — a spec that moved underneath one is reported instead.
+
+Exit `0` succeeded, `1` `--check` found a difference, `2` nothing to emit — and it says which of the three reasons applied rather than reporting a clean build over an empty set.
+
+Full reference, including template syntax and how to author an emitter → [`docs/08-emit.md`](08-emit.md).
+
+---
+
 ## `hint version` — environment
 
 Prints the CLI version, then every registered hintbook with its version and where it resolved from:
@@ -246,7 +319,9 @@ It is a presence lint — it catches a whole surface omitted (a stubbed function
 hint lock src/billing/invoice.ts
 ```
 
-Fingerprints the given specs into `hint.lock`. Afterwards a plain `hint` run skips each recorded target while its spec, its inherited context, and the vocabulary it uses all stay unchanged **and** its generated output is untouched.
+Fingerprints the given specs into `hint.lock`. Afterwards a `hint --prompt` run skips each recorded target while its spec, its inherited context, and the vocabulary it uses all stay unchanged **and** its generated output is untouched.
+
+**The gate applies to generation only.** A plain `hint <path>` always returns everything that applies, however fresh the lock — a read is a question about what the repository knows, and answering it with silence because the code happens to be stable would make what an agent learns depend on the state of `hint.lock`.
 
 Each entry's hash folds in the target's own blocks, its inherited context, and the resolved instruction content of every keyword in its chain — so changing what a keyword *renders to* invalidates exactly the files using it. A separate `target` hash records the generated output, so code edited underneath an unchanged spec is detected as drifted rather than skipped. Changes to a keyword's `description`, `synonyms`, or `surface` flag invalidate nothing, because they never affect output.
 
