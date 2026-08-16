@@ -364,7 +364,7 @@ describe('renderArtifact', () => {
         expect(artifact).toContain('//   bad Partial writes:');
         expect(artifact).toContain('//     Never persist half a settlement.');
         expect(artifact).toContain('//     Roll back instead.');
-        expect(artifact).toMatch(/\n {4}\/\/ hint:hole\(body\) spec=[0-9a-f]{8}/);
+        expect(artifact).toMatch(/\n {4}\/\/ hint:hole\(func settle:body\) spec=[0-9a-f]{8}/);
     });
 
     it('carries a sibling constraint from the same file', async () => {

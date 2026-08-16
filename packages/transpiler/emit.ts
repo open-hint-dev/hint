@@ -312,7 +312,47 @@ export function renderHole(options: HoleOptions): string {
         .join('\n');
 }
 
-function renderBlock(hint: HintData, unit: EmitUnit, hintbooks: HintbookData[]): string {
+// Everything one render of one artifact needs. `holes` is the set of labels already emitted into it,
+// so a collision is suffixed rather than silently producing two regions that address the same body.
+type RenderContext = {
+    unit: EmitUnit;
+    hintbooks: HintbookData[];
+    holes: Set<string>;
+};
+
+// The address of a block within its file. A declared `{#id}` wins outright and stands alone, because
+// an id is unique by construction and survives a rename — and a hole body is the one thing in the
+// artifact that cannot be regenerated, so its address has to be the most stable one available.
+function blockKey(hint: HintData, parentKey: string): string {
+    if (hint.id) {
+        return `#${hint.id}`;
+    }
+
+    const segment = hint.name ? `${hint.keyword} ${hint.name}` : hint.keyword;
+
+    return parentKey ? `${parentKey} > ${segment}` : segment;
+}
+
+// A hole is addressed by the block that owns it, never by the label its template happens to use.
+// Every `func` in a file renders the same `{hole:body}`, so an unqualified label made two functions
+// address the same body — and re-emission then wrote one implementation into both, reporting success.
+function holeLabel(context: RenderContext, key: string, label: string): string {
+    const base = key ? `${key}:${label}` : label;
+
+    let unique = base;
+    let suffix = 2;
+
+    while (context.holes.has(unique)) {
+        unique = `${base}#${suffix++}`;
+    }
+
+    context.holes.add(unique);
+
+    return unique;
+}
+
+function renderBlock(hint: HintData, key: string, context: RenderContext): string {
+    const { unit, hintbooks } = context;
     const template = findEmitTemplate(unit.emitter, hintbooks, hint.keyword);
 
     // No template, no output. This is the whole anti-bloat mechanism, and nothing configures it: a
@@ -334,7 +374,7 @@ function renderBlock(hint: HintData, unit: EmitUnit, hintbooks: HintbookData[]):
             return wanted === null || (canonicalKeyword(hintbooks, child.keyword) ?? child.keyword) === wanted;
         });
 
-        const rendered = matched.map((child) => renderBlock(child, unit, hintbooks)).filter(Boolean);
+        const rendered = matched.map((child) => renderBlock(child, blockKey(child, key), context)).filter(Boolean);
         const value = single ? (rendered[0] ?? '') : rendered.join(placeholder.separator ?? '\n');
 
         return resolvedValue(value, placeholder);
@@ -368,7 +408,7 @@ function renderBlock(hint: HintData, unit: EmitUnit, hintbooks: HintbookData[]):
                     value: renderHole({
                         constraints: collectConstraints(unit, hintbooks, hint),
                         comment: unit.emitter.comment,
-                        label: placeholder.argument ?? 'body',
+                        label: holeLabel(context, key, placeholder.argument ?? 'body'),
                         intent: hint.body.trim(),
                         spec: hashHint(hint).slice(0, 8),
                         stub: placeholder.fallback ?? '',
@@ -388,9 +428,11 @@ function renderBlock(hint: HintData, unit: EmitUnit, hintbooks: HintbookData[]):
 // The artifact a single spec produces. Deterministic: the same spec and the same emitter always give
 // byte-identical output, which is what makes `--check` an assertion rather than an opinion.
 export function renderArtifact(unit: EmitUnit, hintbooks: HintbookData[]): string {
+    const context: RenderContext = { unit, hintbooks, holes: new Set() };
+
     const blocks = unit.node.children
         .filter((child) => !isScope(child))
-        .map((child) => renderBlock(child, unit, hintbooks))
+        .map((child) => renderBlock(child, blockKey(child, ''), context))
         .filter(Boolean);
 
     return blocks.join('\n\n');

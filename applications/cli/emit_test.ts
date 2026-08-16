@@ -320,7 +320,7 @@ describe('cli emit — holes', () => {
         expect(content).toContain('//   decision Net before writing:');
         expect(content).toContain('//     Net the ledger first.');
         expect(content).toContain('plus the knowledge inherited from ., src — run `hint src/svc.ts`');
-        expect(content).toMatch(/\/\/ hint:hole\(body\) spec=[0-9a-f]{8}/);
+        expect(content).toMatch(/\/\/ hint:hole\(func settle:body\) spec=[0-9a-f]{8}/);
         expect(content).toContain('throw new Error("todo");');
     });
 
@@ -359,9 +359,107 @@ describe('cli emit — holes', () => {
         const result = await runCli(['emit', 'src/svc.ts'], root);
         const content = await FsPromises.readFile(outputPath, 'utf8');
 
-        expect(result.stderr).toContain('spec changed since body was implemented');
+        expect(result.stderr).toContain('spec changed since func settle:body was implemented');
         expect(content).toContain('return ledger.settle(invoice);');
         expect(content).toContain('emits a receipt');
+    });
+
+    // The label used to come from the template, so every `func` in a file rendered `hint:hole(body)`
+    // and re-emission wrote one implementation into all of them — reporting success while doing it.
+    it('keeps two implementations in one file apart', async () => {
+        const root = await withHoles();
+
+        await write(root, 'src/svc.ts.hint', '# func settle\n\nSettles an invoice.\n\n# func refund\n\nRefunds an invoice.\n');
+        await runCli(['emit', 'src/svc.ts'], root);
+
+        const outputPath = Path.join(root, 'src/svc.ts');
+        const filled = (await FsPromises.readFile(outputPath, 'utf8'))
+            .replace('throw new Error("todo");', 'return ledger.settle(x);')
+            .replace('throw new Error("todo");', 'return ledger.refund(x);');
+
+        await FsPromises.writeFile(outputPath, filled, 'utf8');
+        await runCli(['emit', 'src/svc.ts'], root);
+
+        const content = await FsPromises.readFile(outputPath, 'utf8');
+
+        expect(content).toContain('hint:hole(func settle:body)');
+        expect(content).toContain('hint:hole(func refund:body)');
+        expect(content.indexOf('return ledger.settle(x);')).toBeLessThan(content.indexOf('export function refund'));
+        expect(content.indexOf('return ledger.refund(x);')).toBeGreaterThan(content.indexOf('export function refund'));
+    });
+
+    // An implementation the new artifact has nowhere to put would simply vanish, and vanished work
+    // cannot be recovered — so the write is refused and the labels are named.
+    it('refuses to write when an implemented hole has nowhere to go', async () => {
+        const root = await withHoles();
+
+        await write(root, 'src/svc.ts.hint', '# func settle\n\nSettles an invoice.\n');
+        await runCli(['emit', 'src/svc.ts'], root);
+
+        const outputPath = Path.join(root, 'src/svc.ts');
+        const filled = (await FsPromises.readFile(outputPath, 'utf8')).replace('throw new Error("todo");', 'return ledger.settle(x);');
+
+        await FsPromises.writeFile(outputPath, filled, 'utf8');
+        // The block is renamed, so its body has no home in the new artifact.
+        await write(root, 'src/svc.ts.hint', '# func settleInvoice\n\nSettles an invoice.\n');
+
+        const result = await runCli(['emit', 'src/svc.ts'], root);
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain('not written');
+        expect(result.stderr).toContain('func settle:body');
+        expect(await FsPromises.readFile(outputPath, 'utf8')).toContain('return ledger.settle(x);');
+
+        const forced = await runCli(['emit', '--drop-orphans', 'src/svc.ts'], root);
+
+        expect(forced.exitCode).toBeUndefined();
+        expect(await FsPromises.readFile(outputPath, 'utf8')).not.toContain('return ledger.settle(x);');
+    });
+
+    // A `{#id}` is unique by construction and survives a rename, which is exactly what the one part of
+    // the artifact that cannot be regenerated needs.
+    it('follows a renamed block when it carries a stable id', async () => {
+        const root = await withHoles();
+
+        await write(root, 'src/svc.ts.hint', '# func settle {#settle_impl}\n\nSettles an invoice.\n');
+        await runCli(['emit', 'src/svc.ts'], root);
+
+        const outputPath = Path.join(root, 'src/svc.ts');
+        const filled = (await FsPromises.readFile(outputPath, 'utf8')).replace('throw new Error("todo");', 'return ledger.settle(x);');
+
+        await FsPromises.writeFile(outputPath, filled, 'utf8');
+        await write(root, 'src/svc.ts.hint', '# func settleInvoice {#settle_impl}\n\nSettles an invoice.\n');
+
+        const result = await runCli(['emit', 'src/svc.ts'], root);
+
+        expect(result.exitCode).toBeUndefined();
+
+        const content = await FsPromises.readFile(outputPath, 'utf8');
+
+        expect(content).toContain('export function settleInvoice()');
+        expect(content).toContain('return ledger.settle(x);');
+        expect(content).toContain('hint:hole(#settle_impl:body)');
+    });
+
+    // Files written before labels were qualified carry the bare form. A single hole is unambiguous, so
+    // its body is adopted rather than replaced by a stub.
+    it('adopts a body written under the old unqualified label', async () => {
+        const root = await withHoles();
+
+        await write(root, 'src/svc.ts.hint', '# func settle\n\nSettles an invoice.\n');
+        await runCli(['emit', 'src/svc.ts'], root);
+
+        const outputPath = Path.join(root, 'src/svc.ts');
+        const legacy = (await FsPromises.readFile(outputPath, 'utf8'))
+            .replace('hint:hole(func settle:body)', 'hint:hole(body)')
+            .replace('throw new Error("todo");', 'return ledger.settle(x);');
+
+        await FsPromises.writeFile(outputPath, legacy, 'utf8');
+
+        const result = await runCli(['emit', 'src/svc.ts'], root);
+
+        expect(result.exitCode).toBeUndefined();
+        expect(await FsPromises.readFile(outputPath, 'utf8')).toContain('return ledger.settle(x);');
     });
 
     it('does not report a filled hole as a --check difference', async () => {

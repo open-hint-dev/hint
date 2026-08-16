@@ -176,6 +176,8 @@ Three rules keep it useful rather than noisy:
 
 **A keyword the hintbook marks `exclude: true` never reaches a hole.** That flag is how a vocabulary says a block must never leave the spec — `notes` is a private scratchpad — and a generated file is the last place that promise may quietly break.
 
+**A hole is addressed by the block that owns it**, not by the label its template uses. Every `func` renders the same `{hole:body}`, so an unqualified label made two functions in one file address the same body — and re-emission wrote one implementation into both while reporting success. The marker carries `<block>:<label>`, and a declared `{#id}` replaces the block part outright, because an id survives a rename and a hole body is the one thing in the artifact that cannot be regenerated.
+
 **A filled hole is never overwritten.** Everything between the marker and `hint:end` belongs to whoever wrote it. The instructions sit *above* the marker precisely so the regenerated header stays outside that span.
 
 `spec=` records a hash of the governing block when the body was written. When the spec later changes, the hashes diverge and `hint emit` says so — the body is still not touched, only flagged:
@@ -206,8 +208,40 @@ export function settle(invoice: Invoice) {   // hand-written — never touched
 | The output exists with a region | The region's contents are replaced; everything outside is preserved. |
 | The output exists with **no** region | The file is kept in full and gains a region at the end — adopting a hand-written file never begins by truncating it. |
 | A hole body was filled | Carried over verbatim; reported if its governing spec moved. |
+| A filled body has nowhere to go | **The write is refused.** The spec block that owned it was removed or renamed, so re-emission would delete work nobody can get back. |
 
 Markers are matched by their token, not by comment syntax, so `//`, `#`, and `<!-- -->` all work.
+
+---
+
+### When an implementation has nowhere to go
+
+```
+hint: src/svc.ts — not written: 1 implemented hole(s) have nowhere to go (func settle:body).
+      The spec block that owned them was removed or renamed. Restore it, give it a stable {#id}
+      so a rename is followed, move the code out of the generated region, or pass --drop-orphans
+      to discard it.
+```
+
+Exit `1`, and the file is left exactly as it was. Giving a block a stable `{#id}` up front is what makes a rename a non-event: the body follows the id rather than the name.
+
+---
+
+## The lifecycle
+
+What actually happens across a full cycle, and what survives each step:
+
+| Step | Generated declarations | Hole bodies | Code outside the region |
+| --- | --- | --- | --- |
+| `hint emit` on a new spec | written | stubs | — |
+| an agent implements | untouched | **written by the agent** | the agent may add anything |
+| the spec changes | — | — | — |
+| `hint emit --check` | reports a difference, exit `1` | — | — |
+| `hint emit` again | **regenerated** | **preserved**, flagged if their spec moved | **untouched** |
+
+Nothing is rewritten from scratch. An agent revisits only the bodies whose governing spec actually moved — `hint status` lists them as `outdated`, and the emit run names them. A body whose spec is unchanged is never touched and never re-derived.
+
+The one thing that is *not* preserved is code written **inside the generated region but outside a hole**. That space belongs to the emitter. Put hand-written code outside `hint:end`, or give it a hole in the spec.
 
 ---
 
