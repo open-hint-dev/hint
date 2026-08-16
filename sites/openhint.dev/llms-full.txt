@@ -1067,9 +1067,21 @@ The commands below are an **optional specialization**. They apply only to compan
 hint verify src/billing/invoice.ts
 ```
 
-Deterministically checks each generated target against its spec: every **surface** it declares must appear by name in the output. No model call, no language-specific parsing.
+Deterministically checks each target against its spec. No model call.
 
 A surface is any keyword a hintbook marks `surface: true` (e.g. `func`, `entity`, `error`, `party`, `clause`). Constraint and scratch keywords (`bad`, `rule`, `notes`, `read`) are never surfaces.
+
+**With a language adapter, the check is about shape.** When the emit pack for a target declares a `symbols` command, `verify` asks it what the file actually contains and compares the declared parameters, their types, the return type, and the fields of a structure:
+
+```
+- src/billing/settle.ts: 2 conformance failure(s):
+    - func settle — parameter 'invoice' is string, spec says Invoice
+    - func settle — returns void, spec says Receipt
+```
+
+**Only what the spec stated is checked.** `## arg invoice` asserts that a parameter called `invoice` exists and nothing about its type; `## arg invoice: Invoice` asserts both. Strictness is proportional to how much the author chose to write down — checking a type nobody wrote would turn authoring back into programming.
+
+**Without an adapter it is a presence lint**, as before: the declared name must appear somewhere in the output. An adapter that is absent, fails, or returns something unreadable degrades to that lint rather than to a pass it never established. The summary says which files were checked which way.
 
 | Result | Exit |
 | ------ | ---- |
@@ -1077,7 +1089,9 @@ A surface is any keyword a hintbook marks `surface: true` (e.g. `func`, `entity`
 | a target is missing, or a declared surface is absent | `1`, with the specifics on stdout |
 | no file spec matched, or the books declare no surface keywords | `2`, with the reason on stderr |
 
-It is a presence lint — it catches a whole surface omitted (a stubbed function, an unhandled error type), not a subtly wrong implementation. Compose it: `hint verify <path> && hint lock <path>`.
+Compose it: `hint verify <path> && hint lock <path>`.
+
+An adapter is an ordinary emit pack that declares `symbols` — it may carry no templates at all, in which case it is a pure language adapter. See [`docs/08-emit.md`](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md#emit-packs).
 
 ## `hint lock <paths...>` — record a contract snapshot
 
@@ -1261,7 +1275,15 @@ Additive; nothing to migrate. Nothing changes for a project that installs no emi
 
 `hint emit --check` asserts in CI that what is committed equals what the spec produces. See [`docs/08-emit.md`](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md).
 
-## 11. Library API (`@openhint/transpiler`)
+## 11. `hint verify` checks shape when an adapter is installed
+
+Additive. Without an adapter, `verify` behaves exactly as it did.
+
+An **adapter** is an emit pack that declares a `symbols` command — an external process reporting the file's real symbols as JSON. When one covers a target, `verify` compares the declared parameters, their types, the return type, and a structure's fields instead of only checking that the name appears somewhere in the file.
+
+Only what the spec stated is checked, so no existing spec becomes stricter by installing an adapter. An adapter that is missing or fails degrades to the presence lint, never to a pass.
+
+## 12. Library API (`@openhint/transpiler`)
 
 Only relevant if you embed the engine.
 
@@ -1279,6 +1301,7 @@ Only relevant if you embed the engine.
 | — | new: `resolveRequests`, `resolvedNothing`, `matchedNothing`, `findNearestFolderHint`, `hintTargetName`, `parseHintFiles`, `countScopes`, `collectScopeNodes`, `collectIncludedPaths` |
 | — | new (staleness): `readGitSnapshot`, `measureStaleness`, `collectContractScopes`, `inspectProject`, `formatStatus` |
 | — | new (emit): `selectEmitter`, `planEmit`, `renderArtifact`, `mergeArtifact`, `renderTemplate`; `HintbookData` gained `target` / `match` / `comment` / `symbols` |
+| — | new (conformance): `readSymbols`, `collectExpectations`, `compareExpectations`, `inspectHoles` |
 
 The pipeline is now explicit — `resolve → parse → select → render` — so a different renderer (structured output, a different framing) can be added without touching resolution.
 
@@ -1360,7 +1383,7 @@ Hintbook resolution globs `**/hintbook.json` recursively, so a project that regi
 | `target` | Names the emitter. Its presence is what makes this an emit pack rather than a vocabulary. Overridable per run with `--target`. |
 | `match` | Globs matched against the **output** path, so the file extension selects the emitter and the engine never learns a language. A pattern with no `/` matches the basename. Omit it to make the pack selectable only by an explicit `--target`. |
 | `comment` | How this target writes a comment, as a `{text}` pattern — `// {text}`, `# {text}`, `<!-- {text} -->`. Used for region markers and for `{doc}`. |
-| `symbols` | Reserved: an external command reporting a file's real symbols as JSON, for AST-backed `verify` and `extract`. Not yet consumed. |
+| `symbols` | An external command reporting a file's real symbols as JSON, consumed by `hint verify`. `{file}` is substituted; the path is passed as one argument, never through a shell. A pack may declare only this and carry no templates, making it a pure language adapter. |
 
 An emit pack ships no glossary and defines no vocabulary. It never appears in `hint author` output, never contributes to the `AGENTS.md` glossary, and never shadows an instruction — which matters because hintbook folders resolve in sorted order, and `emit/go` sorts before `keywords`.
 
@@ -1542,6 +1565,30 @@ unfilled  src/billing/refund.ts     1 hole(s) still hold their emitted stub: bod
 Both are **derived, not tracked** — a fresh render supplies the stubs, the file on disk supplies what was written — so there is no bookkeeping file that could itself fall out of date.
 
 There is deliberately no separate hole list in `hint --prompt`. The constraints already sit inline at each hole in the artifact, and copying them into the prompt as well would repeat exactly the duplication that scoping exists to prevent. An agent implementing a hole reads the file it is editing.
+
+---
+
+## Language adapters
+
+Emission produces the shape a spec describes. The other direction — does the file actually contain it? — needs to read the code, and that is the one thing the engine deliberately cannot do.
+
+An adapter is an external command that reports a file's symbols as JSON:
+
+```json
+{
+    "symbols": [
+        { "kind": "function", "name": "settle",
+          "params": [{ "name": "invoice", "type": "Invoice" }],
+          "returns": "Receipt" },
+        { "kind": "interface", "name": "Invoice",
+          "fields": [{ "name": "total", "type": "Decimal" }] }
+    ]
+}
+```
+
+`kind` is the adapter's own word for it; nothing in HINT interprets it, so a new language needs no changes here. A member with no `type` is treated exactly like a spec that stated none.
+
+Keeping this external is deliberate. Vendoring a TypeScript, Go, and Python parser into the CLI would multiply its install size and its failure modes, and would put language expertise in the one place that has stayed language-free. Vocabularies are plugins; languages should be too — and an adapter that is missing or broken degrades `verify` to the presence lint rather than to a pass it never established.
 
 ---
 
