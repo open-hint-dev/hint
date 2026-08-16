@@ -86,7 +86,7 @@ async function makeProject(initGit = true): Promise<string> {
     // The only keyword flagged `surface: true`, so it is the only one that makes a scope a contract.
     await write(root, 'books/keywords/func.md', '---\nsurface: true\n---\n\n<function name="{name}">\n\n{body}\n\n</function>');
     await write(root, 'books/ts/hintbook.json', '{"id":"emit-ts","target":"typescript","match":["*.ts"],"comment":"// {text}"}');
-    await write(root, 'books/ts/func.tmpl', 'export function {name}() {\n    {hole:body|throw new Error("todo");}\n}');
+    await write(root, 'books/ts/func.tmpl', '{?{doc}\n}export function {name}() {\n    {hole:body|throw new Error("todo");}\n}');
 
     if (initGit) {
         await git(root, 'init', '-q');

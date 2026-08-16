@@ -192,9 +192,17 @@ export type MergeResult = {
     orphaned: Hole[];
 };
 
-function wrap(artifact: string, comment: string | undefined): string {
+// The opening marker states the contract, in the file, at the exact place somebody is tempted to
+// break it. A helper written between the markers is replaced on the next emit and — unlike a hole
+// body with nowhere to go — cannot be told apart from a declaration the spec stopped making, so it
+// cannot be detected and refused. Saying so costs one line and is the only defence available.
+function wrap(artifact: string, comment: string | undefined, specPath: string | undefined): string {
+    const opening = specPath
+        ? `${MARKER_BEGIN} — generated from ${specPath}. Edits between the markers are replaced; write inside a hole, or outside hint:end.`
+        : MARKER_BEGIN;
+
     return [
-        commentBlock(comment, MARKER_BEGIN),
+        commentBlock(comment, opening),
         artifact,
         commentBlock(comment, MARKER_END),
     ].join('\n');
@@ -202,11 +210,11 @@ function wrap(artifact: string, comment: string | undefined): string {
 
 // `existing` is null when the output does not exist yet. An existing file with no region keeps all of
 // its content and gains one at the end — adopting a hand-written file must never begin by truncating it.
-export function mergeArtifact(existing: string | null, artifact: string, comment?: string): MergeResult {
+export function mergeArtifact(existing: string | null, artifact: string, comment?: string, specPath?: string): MergeResult {
     const preserved = existing === null ? new Map<string, Hole>() : extractHoles(existing);
     const stubs = extractHoles(artifact);
     const { content: restoredArtifact, restored, drifted, consumed } = restoreHoles(artifact, preserved);
-    const region = wrap(restoredArtifact, comment);
+    const region = wrap(restoredArtifact, comment, specPath);
 
     // A body only counts as orphaned if somebody wrote it: an untouched stub carries nothing to lose.
     const orphaned = [...preserved.values()].filter(

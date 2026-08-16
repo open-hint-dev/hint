@@ -206,7 +206,14 @@ describe('cli emit — writing', () => {
 
         expect(result.stderr).toContain('1 created');
         expect(await FsPromises.readFile(Path.join(root, 'src/invoice.ts'), 'utf8')).toBe(
-            ['// hint:begin', 'export interface Invoice {', '    id: string;', '}', '// hint:end', ''].join('\n'),
+            [
+                '// hint:begin — generated from src/invoice.ts.hint. Edits between the markers are replaced; write inside a hole, or outside hint:end.',
+                'export interface Invoice {',
+                '    id: string;',
+                '}',
+                '// hint:end',
+                '',
+            ].join('\n'),
         );
     });
 
@@ -342,7 +349,9 @@ describe('cli emit — holes', () => {
         const root = await makeProject();
 
         await write(root, 'books/keywords/func.md', '<function_contract>{name}</function_contract>');
-        await write(root, 'books/ts/func.tmpl', 'export function {name}() {\n    {hole:body|throw new Error("todo");}\n}');
+        // Mirrors the shipped pack: `{doc}` is how a template puts the block's intent in the file, and
+        // the hole no longer repeats it.
+        await write(root, 'books/ts/func.tmpl', '{?{doc}\n}export function {name}() {\n    {hole:body|throw new Error("todo");}\n}');
 
         return root;
     }
@@ -357,7 +366,8 @@ describe('cli emit — holes', () => {
 
         const content = await FsPromises.readFile(Path.join(root, 'src/svc.ts'), 'utf8');
 
-        expect(content).toContain('// Settles an invoice.');
+        // The block's own body appears once, from `{doc}` above the function — not again in the hole.
+        expect(content.match(/Settles an invoice\./g)).toHaveLength(1);
         expect(content).toContain('// Honor:');
         expect(content).toContain('//   decision Net before writing:');
         expect(content).toContain('//     Net the ledger first.');
@@ -404,6 +414,7 @@ describe('cli emit — holes', () => {
         expect(result.stderr).toContain('spec changed since func settle:body was implemented');
         expect(content).toContain('return ledger.settle(invoice);');
         expect(content).toContain('emits a receipt');
+        expect(content.match(/emits a receipt/g)).toHaveLength(1);
     });
 
     // The label used to come from the template, so every `func` in a file rendered `hint:hole(body)`
