@@ -77,6 +77,19 @@ export function findRegion(content: string): Region | null {
     return null;
 }
 
+// The zone above the generated region — where imports live, and the only part of the file that can
+// answer "has this name already been brought in". Empty for a file with no region yet, which is the
+// honest answer: nothing has been imported.
+export function readPreamble(content: string | null): string {
+    if (!content) {
+        return '';
+    }
+
+    const region = findRegion(content);
+
+    return region ? lines(content).slice(0, region.begin).join('\n') : '';
+}
+
 // Every filled hole inside `content`, keyed by label. The body is whatever sits between the hole
 // marker and its `hint:end` — including a body that is still the emitted default, which costs
 // nothing to preserve and keeps the rule simple: what is inside a hole belongs to whoever wrote it.

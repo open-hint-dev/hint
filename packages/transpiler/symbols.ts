@@ -100,12 +100,40 @@ export function adapterCommand(template: string, file: string): string[] {
         .map((part) => part.replace('{file}', file));
 }
 
-// The symbols an adapter reports for a file, or null when there is no honest answer: no adapter
-// configured, the command failed, or its output could not be read. Every caller degrades to the
-// presence lint on null rather than reporting a pass it did not establish.
-export async function readSymbols(projectRootPath: string, command: string | undefined, file: string): Promise<CodeSymbol[] | null> {
+// What an adapter had to say. `symbols` is null whenever there is no honest answer, and the two ways
+// that happens are kept apart on purpose:
+//
+//   - no adapter configured for this target — expected, and the caller degrades to the presence lint
+//     exactly as a project without adapters always has;
+//   - an adapter *was* configured and did not answer — a broken install, and the caller must say so.
+//
+// Collapsing the two is how a project silently loses shape checking it believes it has: the command
+// 404s, every file falls back to the name lint, and the run reports a clean verification of a check
+// that never ran. `failure` exists so that cannot happen quietly.
+export type SymbolReading = {
+    symbols: CodeSymbol[] | null;
+    failure?: string;
+};
+
+function describe(error: unknown): string {
+    const reason = error as { code?: string; killed?: boolean; stderr?: string };
+
+    if (reason?.killed) {
+        return `timed out after ${ADAPTER_TIMEOUT_MS / 1000}s`;
+    }
+
+    const stderr = (reason?.stderr ?? '').trim().split('\n')[0]?.trim();
+
+    if (stderr) {
+        return stderr;
+    }
+
+    return reason?.code ? `failed (${reason.code})` : 'failed';
+}
+
+export async function readSymbols(projectRootPath: string, command: string | undefined, file: string): Promise<SymbolReading> {
     if (!command) {
-        return null;
+        return { symbols: null };
     }
 
     const [
@@ -114,7 +142,7 @@ export async function readSymbols(projectRootPath: string, command: string | und
     ] = adapterCommand(command, file);
 
     if (!executable) {
-        return null;
+        return { symbols: null, failure: 'the configured command is empty' };
     }
 
     try {
@@ -125,8 +153,12 @@ export async function readSymbols(projectRootPath: string, command: string | und
             windowsHide: true,
         });
 
-        return parseSymbols(stdout);
-    } catch {
-        return null;
+        const symbols = parseSymbols(stdout);
+
+        // An adapter that exits cleanly and prints something unreadable is as broken as one that
+        // crashes, and is easier to miss — it is a contract violation, not a missing install.
+        return symbols === null ? { symbols: null, failure: 'produced no readable symbol table' } : { symbols };
+    } catch (error) {
+        return { symbols: null, failure: describe(error) };
     }
 }
