@@ -115,7 +115,7 @@ export class EmitCommand implements ICommand {
     private async applyUnit(projectRootPath: string, unit: Transpiler.EmitUnit, artifact: string): Promise<Written> {
         const outputPath = Path.join(projectRootPath, unit.output);
         const existing = await Transpiler.readFile(outputPath);
-        const merged = Transpiler.mergeArtifact(existing, artifact, unit.emitter.comment);
+        const merged = Transpiler.mergeArtifact(existing, artifact, unit.emitter.comment, `${unit.output}${Transpiler.HINT_EXT}`);
 
         const orphaned = merged.orphaned.map((hole) => hole.label);
 

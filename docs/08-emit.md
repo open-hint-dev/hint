@@ -193,14 +193,20 @@ hint: src/invoice.ts — spec changed since body was implemented; re-check the b
 The orthodox formulation of spec-as-source fails on contact with reality because it forbids hand-editing the output. Guarded regions dissolve the problem: the generator owns the marked span, the human owns everything else, and both survive regeneration.
 
 ```ts
-// hint:begin
+import { Decimal } from './money.js';        // above the region — yours
+
+// hint:begin — generated from src/billing/invoice.ts.hint. Edits between the markers are replaced; write inside a hole, or outside hint:end.
 export interface Invoice { … }
 // hint:end
 
-export function settle(invoice: Invoice) {   // hand-written — never touched
+export function settle(invoice: Invoice) {   // below the region — yours
     return ledger.settle(invoice);
 }
 ```
+
+The opening marker states the contract in the file, at the exact place somebody is tempted to break it. That is the only defence available for this one: a helper written between the markers is replaced on the next emit and — unlike a filled hole with nowhere to go — cannot be told apart from a declaration the spec stopped making, so it cannot be detected and refused.
+
+**Where your own code goes.** Imports above the region, helpers below it, implementations inside a hole. All three survive re-emission; nothing else between the markers does.
 
 | Situation | What happens |
 | --- | --- |
