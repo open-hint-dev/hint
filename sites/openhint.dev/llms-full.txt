@@ -979,16 +979,19 @@ hint status --exit-code     # exit 1 when anything needs attention, for CI
 
 ```
 orphan    src/legacy/old.ts.hint    target was removed from the repository
-drifted   src/billing/invoice.ts    2 block(s) drifted since it was locked: func total, entity Invoice
+outdated  src/billing/settle.ts     1 implemented hole(s) written against an older spec: body
 stale     src/auth/_.hint           9 of 11 files under the target changed since this hint was last updated
+unfilled  src/billing/refund.ts     1 hole(s) still hold their emitted stub: body
 unlocked  src/gateway/handler.go    companion spec has never been locked
 ```
 
 | Row | What it means |
 | --- | --- |
 | `orphan` | The target was deleted or renamed. The knowledge now describes nothing — move it or delete it. |
+| `outdated` | A hole was implemented against a spec that has since changed. The most precise finding available: it names a body and a spec version. |
 | `drifted` | The target is tracked in `hint.lock` and no longer matches what was locked. Run `hint diff <path>` for the block list. |
 | `stale` | The code under the scope has moved substantially since the hint was last committed. An observation, not a verdict. |
+| `unfilled` | The spec declares holes that still hold their emitted stub — work asked for and not yet done. |
 | `unlocked` | A companion spec in a project that uses `hint.lock`, never locked. Only reported when a lock exists. |
 | `pending` | The target has not been written yet — a spec written ahead of its code. Supported and expected, so it is counted on stderr and listed only under `--json`, never in the table. |
 
@@ -996,6 +999,8 @@ unlocked  src/gateway/handler.go    companion spec has never been locked
 
 - A scope that **declares surfaces** (`func`, `entity`, `field` — whatever the hintbooks flag `surface: true`) restates the shape of the code, so it is flagged once a fifth of its files move.
 - A scope that only **explains** (`decision`, `invariant`, `rule`, `bad`) records why the code is the way it is, which survives refactoring. It is flagged only past half.
+
+`outdated` and `unfilled` are derived, not tracked: a fresh render supplies the stubs, the file on disk supplies what was actually written, so there is no bookkeeping file that could itself fall out of date. They appear only in a project that has an emitter.
 
 Outside a git repository, or when git is unavailable, staleness and orphan detection are skipped and stderr says so — an unmeasurable scope is never reported as a healthy one. Hint files that exist only to be `@include`d are fragments describing no path, and are left out of the inventory entirely.
 
@@ -1522,6 +1527,21 @@ The comparison is against the **merged** result, not the raw artifact, so a fill
 | `--target <name>` | Force an emitter instead of selecting one from the output path. |
 
 Exit codes follow the usual taxonomy: `0` succeeded, `1` a check failed, `2` nothing resolved. A run that matched no emittable spec says which of the three reasons applied — no emitters registered, no emitter for these output paths, or only folder hints matched — rather than reporting a clean build over an empty set.
+
+---
+
+## Knowing what is left
+
+`hint emit` reports hole state for the paths it was given. [`hint status`](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md#hint-status--what-has-come-loose) does it repository-wide, as part of the same inventory that reports stale and orphaned knowledge:
+
+```
+outdated  src/billing/settle.ts     1 implemented hole(s) written against an older spec: body
+unfilled  src/billing/refund.ts     1 hole(s) still hold their emitted stub: body
+```
+
+Both are **derived, not tracked** — a fresh render supplies the stubs, the file on disk supplies what was written — so there is no bookkeeping file that could itself fall out of date.
+
+There is deliberately no separate hole list in `hint --prompt`. The constraints already sit inline at each hole in the artifact, and copying them into the prompt as well would repeat exactly the duplication that scoping exists to prevent. An agent implementing a hole reads the file it is editing.
 
 ---
 

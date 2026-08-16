@@ -164,7 +164,7 @@ Prints the keyword vocabulary of the registered hintbooks first, then the file k
 
 ### `hint status` — what has come loose
 
-Walks every `.hint` in the project and reports what has drifted away from the code it describes: `stale` (the code moved substantially since the hint's last commit), `orphan` (the target was deleted or renamed), `drifted` / `unlocked` (against `hint.lock`), and `pending` (a spec written ahead of its target — informational, counted on stderr, listed only under `--json`).
+Walks every `.hint` in the project and reports what has drifted away from the code it describes: `stale` (the code moved substantially since the hint's last commit), `orphan` (the target was deleted or renamed), `outdated` / `unfilled` (a hole implemented against an older spec, or not implemented at all), `drifted` / `unlocked` (against `hint.lock`), and `pending` (a spec written ahead of its target — informational, counted on stderr, listed only under `--json`).
 
 ```bash
 hint status                 # the inventory
