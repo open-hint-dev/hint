@@ -271,7 +271,6 @@ export type HoleOptions = {
     constraints: string[];
     comment?: string;
     label: string;
-    intent: string;
     // Hash of the governing spec block. Recorded on the marker so a body written against an older
     // version of the spec can be reported later instead of quietly standing.
     spec: string;
@@ -289,10 +288,9 @@ export type HoleOptions = {
 export function renderHole(options: HoleOptions): string {
     const header = [];
 
-    if (options.intent) {
-        header.push(...options.intent.split('\n').map((line) => line.trimEnd()));
-    }
-
+    // The block's own body is deliberately not repeated here. A template that wants it renders `{doc}`
+    // immediately above, and printing it twice costs context on every read of the file for nothing —
+    // which matters most for the reader this is built for, who pays for the whole file each time.
     if (options.constraints.length > 0) {
         header.push('Honor:');
 
@@ -409,7 +407,6 @@ function renderBlock(hint: HintData, key: string, context: RenderContext): strin
                         constraints: collectConstraints(unit, hintbooks, hint),
                         comment: unit.emitter.comment,
                         label: holeLabel(context, key, placeholder.argument ?? 'body'),
-                        intent: hint.body.trim(),
                         spec: hashHint(hint).slice(0, 8),
                         stub: placeholder.fallback ?? '',
                     }),
