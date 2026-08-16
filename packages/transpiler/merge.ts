@@ -107,10 +107,25 @@ export function extractHoles(content: string): Map<string, Hole> {
 // Substitutes preserved bodies into a freshly rendered artifact. The hole's header — its instructions
 // and the current spec hash — is regenerated every time, because that is the part the spec owns; only
 // what sits between the marker and `hint:end` is carried over.
-function restoreHoles(artifact: string, preserved: Map<string, Hole>): { content: string; restored: number; drifted: string[] } {
+// Hole labels used to be the bare template label (`body`), which collided across blocks. A file
+// written before they were qualified still carries the old form, so a new key falls back to matching
+// on its trailing label — but only when that label appears exactly once on disk. Ambiguity is
+// precisely the case the old scheme got wrong, and guessing there would repeat the damage.
+function legacyMatch(preserved: Map<string, Hole>, key: string): Hole | undefined {
+    const label = key.split(':').pop() ?? key;
+    const candidates = [...preserved.values()].filter((hole) => hole.label === label);
+
+    return candidates.length === 1 ? candidates[0] : undefined;
+}
+
+function restoreHoles(
+    artifact: string,
+    preserved: Map<string, Hole>,
+): { content: string; restored: number; drifted: string[]; consumed: Set<string> } {
     const source = lines(artifact);
     const output: string[] = [];
     const drifted: string[] = [];
+    const consumed = new Set<string>();
 
     let restored = 0;
     let skipping: string | null = null;
@@ -133,11 +148,14 @@ function restoreHoles(artifact: string, preserved: Map<string, Hole>): { content
             continue;
         }
 
-        const hole = preserved.get(match[1] ?? '');
+        const key = match[1] ?? '';
+        const hole = preserved.get(key) ?? legacyMatch(preserved, key);
 
         if (!hole) {
             continue;
         }
+
+        consumed.add(hole.label);
 
         // The body stays whatever it was; a spec that has moved since is reported, never silently
         // resolved. Whether the change invalidates the implementation is a judgement, not a rewrite.
@@ -153,7 +171,7 @@ function restoreHoles(artifact: string, preserved: Map<string, Hole>): { content
         skipping = hole.label;
     }
 
-    return { content: output.join('\n'), restored, drifted };
+    return { content: output.join('\n'), restored, drifted, consumed };
 }
 
 export type MergeResult = {
@@ -164,6 +182,10 @@ export type MergeResult = {
     drifted: string[];
     // Whether the file had no generated region — a new file, or an existing one gaining its first.
     created: boolean;
+    // Implementations on disk that the new artifact has nowhere to put — the spec block that owned
+    // them was removed or renamed. Writing would delete work nobody can get back, so the caller is
+    // expected to refuse rather than to proceed quietly.
+    orphaned: Hole[];
 };
 
 function wrap(artifact: string, comment: string | undefined): string {
@@ -178,11 +200,17 @@ function wrap(artifact: string, comment: string | undefined): string {
 // its content and gains one at the end — adopting a hand-written file must never begin by truncating it.
 export function mergeArtifact(existing: string | null, artifact: string, comment?: string): MergeResult {
     const preserved = existing === null ? new Map<string, Hole>() : extractHoles(existing);
-    const { content: restoredArtifact, restored, drifted } = restoreHoles(artifact, preserved);
+    const stubs = extractHoles(artifact);
+    const { content: restoredArtifact, restored, drifted, consumed } = restoreHoles(artifact, preserved);
     const region = wrap(restoredArtifact, comment);
 
+    // A body only counts as orphaned if somebody wrote it: an untouched stub carries nothing to lose.
+    const orphaned = [...preserved.values()].filter(
+        (hole) => !consumed.has(hole.label) && hole.body.trim() !== '' && hole.body.trim() !== stubs.get(hole.label)?.body.trim(),
+    );
+
     if (existing === null) {
-        return { content: `${region}\n`, restored, drifted, created: true };
+        return { content: `${region}\n`, restored, drifted, created: true, orphaned };
     }
 
     const found = findRegion(existing);
@@ -190,7 +218,7 @@ export function mergeArtifact(existing: string | null, artifact: string, comment
     if (!found) {
         const separator = existing.endsWith('\n\n') ? '' : existing.endsWith('\n') ? '\n' : '\n\n';
 
-        return { content: `${existing}${separator}${region}\n`, restored, drifted, created: true };
+        return { content: `${existing}${separator}${region}\n`, restored, drifted, created: true, orphaned };
     }
 
     const source = lines(existing);
@@ -200,7 +228,7 @@ export function mergeArtifact(existing: string | null, artifact: string, comment
         ...source.slice(found.end + 1),
     ];
 
-    return { content: merged.join('\n'), restored, drifted, created: false };
+    return { content: merged.join('\n'), restored, drifted, created: false, orphaned };
 }
 
 export type HoleState = {

@@ -10,21 +10,26 @@ export type EmitOptions = {
     target?: string;
     stdout: boolean;
     check: boolean;
+    // Write even when re-emission would leave an implementation with nowhere to go. Not `--force`: the
+    // root command already defines that, and a program-level flag never reaches a subcommand.
+    dropOrphans: boolean;
 };
 
-// What happened to one output. `differs` only occurs under --check; without it the file is written.
-type Outcome = 'created' | 'updated' | 'unchanged' | 'differs';
+// What happened to one output. `differs` only occurs under --check; `refused` means writing would
+// have deleted an implementation, which is the one outcome worth failing over.
+type Outcome = 'created' | 'updated' | 'unchanged' | 'differs' | 'refused';
 
 type Written = {
     output: string;
     outcome: Outcome;
     restored: number;
     drifted: string[];
+    orphaned: string[];
 };
 
 export class EmitCommand implements ICommand {
     private paths: string[] = [];
-    private options: EmitOptions = { stdout: false, check: false };
+    private options: EmitOptions = { stdout: false, check: false, dropOrphans: false };
 
     constructor() {}
 
@@ -109,6 +114,15 @@ export class EmitCommand implements ICommand {
         const existing = await Transpiler.readFile(outputPath);
         const merged = Transpiler.mergeArtifact(existing, artifact, unit.emitter.comment);
 
+        const orphaned = merged.orphaned.map((hole) => hole.label);
+
+        // An implementation the new artifact has nowhere to put would simply vanish, and vanished work
+        // cannot be recovered. The write is refused and the labels are named; the fix is to restore the
+        // spec block, give it a stable `{#id}` so a rename is followed, or move the code out by hand.
+        if (orphaned.length > 0 && !this.options.dropOrphans && !this.options.check) {
+            return { output: unit.output, outcome: 'refused', restored: 0, drifted: [], orphaned };
+        }
+
         const unchanged = existing === merged.content;
         const outcome: Outcome = unchanged ? 'unchanged' : this.options.check ? 'differs' : merged.created ? 'created' : 'updated';
 
@@ -117,7 +131,7 @@ export class EmitCommand implements ICommand {
             await Transpiler.writeFile(outputPath, merged.content);
         }
 
-        return { output: unit.output, outcome, restored: merged.restored, drifted: merged.drifted };
+        return { output: unit.output, outcome, restored: merged.restored, drifted: merged.drifted, orphaned };
     }
 
     // A folder never emits, so `hint emit src/` can only mean "everything beneath src". Reading it the
@@ -194,6 +208,7 @@ export class EmitCommand implements ICommand {
                     'created',
                     'updated',
                     'unchanged',
+                    'refused',
                 ] as const
             )
                 .map((outcome) => ({ outcome, count: written.filter((entry) => entry.outcome === outcome).length }))
@@ -201,6 +216,21 @@ export class EmitCommand implements ICommand {
                 .map((entry) => `${entry.count} ${entry.outcome}`);
 
             process.stderr.write(`hint: ${counts.join(', ')}.\n`);
+        }
+
+        const refused = written.filter((entry) => entry.outcome === 'refused');
+
+        for (const entry of refused) {
+            process.stderr.write(
+                `hint: ${entry.output} — not written: ${entry.orphaned.length} implemented hole(s) have nowhere to go ` +
+                    `(${entry.orphaned.join(', ')}). The spec block that owned them was removed or renamed. Restore it, ` +
+                    `give it a stable {#id} so a rename is followed, move the code out of the generated region, or pass ` +
+                    `--drop-orphans to discard it.\n`,
+            );
+        }
+
+        if (refused.length > 0) {
+            process.exitCode = EXIT_FAILED;
         }
 
         const restored = written.reduce((total, entry) => total + entry.restored, 0);

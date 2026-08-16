@@ -289,7 +289,7 @@ Renders each spec through the emit templates of the registered hintbooks. Determ
 
 **Only companion `<file>.hint` specs emit.** A folder `_.hint` describes everything beneath it and has no single output, so it never emits; it supplies the constraints an unfilled hole is written against. A folder argument is expanded to its subtree.
 
-Code outside the `hint:begin` … `hint:end` region is preserved, and a hole body that has been filled is never overwritten — a spec that moved underneath one is reported instead.
+Code outside the `hint:begin` … `hint:end` region is preserved, and a hole body that has been filled is never overwritten — a spec that moved underneath one is reported instead. When a filled body has nowhere left to go, because the spec block that owned it was removed or renamed, the write is **refused** and the labels are named; `--drop-orphans` discards them deliberately.
 
 Exit `0` succeeded, `1` `--check` found a difference, `2` nothing to emit — and it says which of the three reasons applied rather than reporting a clean build over an empty set.
 
