@@ -77,6 +77,14 @@ Producing the artifact a spec describes — deterministic, model-free, and optio
 | `mergeArtifact(existing, artifact, comment?)` | Splices the artifact into the `hint:begin` … `hint:end` region, preserving code outside it and any filled hole body. Reports holes whose governing spec has since moved. |
 | `renderTemplate(template, resolve)` | The emit template language: `{children:kw sep=", "}`, `{child:kw}`, `{ident}` / `{type}`, `{?…}` optional groups, `{name\|fallback}`, `{hole:label}`. Braces that mean themselves are left alone. |
 
+### Conformance
+
+| Export | Purpose |
+| ------ | ------- |
+| `readSymbols(projectRootPath, command, file)` | Runs a language adapter and parses its symbol table. `null` for any failure — a half-understood table produces confident, wrong findings, which is worse than falling back to the presence lint. |
+| `collectExpectations(fileNode, hintbooks)` | What the spec declared about each surface, reduced to what a symbol table can be compared with. |
+| `compareExpectations(expectations, symbols)` | Findings. Only what the spec stated is checked: a member with no declared type is never type-checked. |
+
 ### Hintbooks
 
 | Export                                        | Purpose                                                                                                                                  |

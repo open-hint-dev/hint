@@ -1,6 +1,7 @@
 export * from './closure.js';
 export * from './compiler.js';
 export * from './config.js';
+export * from './conform.js';
 export * from './emit.js';
 export * from './git.js';
 export * from './helper.js';
@@ -12,4 +13,5 @@ export * from './resolve.js';
 export * from './search.js';
 export * from './staleness.js';
 export * from './status.js';
+export * from './symbols.js';
 export * from './verify.js';

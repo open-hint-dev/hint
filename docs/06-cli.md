@@ -306,9 +306,21 @@ The commands below are an **optional specialization**. They apply only to compan
 hint verify src/billing/invoice.ts
 ```
 
-Deterministically checks each generated target against its spec: every **surface** it declares must appear by name in the output. No model call, no language-specific parsing.
+Deterministically checks each target against its spec. No model call.
 
 A surface is any keyword a hintbook marks `surface: true` (e.g. `func`, `entity`, `error`, `party`, `clause`). Constraint and scratch keywords (`bad`, `rule`, `notes`, `read`) are never surfaces.
+
+**With a language adapter, the check is about shape.** When the emit pack for a target declares a `symbols` command, `verify` asks it what the file actually contains and compares the declared parameters, their types, the return type, and the fields of a structure:
+
+```
+- src/billing/settle.ts: 2 conformance failure(s):
+    - func settle — parameter 'invoice' is string, spec says Invoice
+    - func settle — returns void, spec says Receipt
+```
+
+**Only what the spec stated is checked.** `## arg invoice` asserts that a parameter called `invoice` exists and nothing about its type; `## arg invoice: Invoice` asserts both. Strictness is proportional to how much the author chose to write down — checking a type nobody wrote would turn authoring back into programming.
+
+**Without an adapter it is a presence lint**, as before: the declared name must appear somewhere in the output. An adapter that is absent, fails, or returns something unreadable degrades to that lint rather than to a pass it never established. The summary says which files were checked which way.
 
 | Result | Exit |
 | ------ | ---- |
@@ -316,7 +328,9 @@ A surface is any keyword a hintbook marks `surface: true` (e.g. `func`, `entity`
 | a target is missing, or a declared surface is absent | `1`, with the specifics on stdout |
 | no file spec matched, or the books declare no surface keywords | `2`, with the reason on stderr |
 
-It is a presence lint — it catches a whole surface omitted (a stubbed function, an unhandled error type), not a subtly wrong implementation. Compose it: `hint verify <path> && hint lock <path>`.
+Compose it: `hint verify <path> && hint lock <path>`.
+
+An adapter is an ordinary emit pack that declares `symbols` — it may carry no templates at all, in which case it is a pure language adapter. See [`docs/08-emit.md`](08-emit.md#emit-packs).
 
 ## `hint lock <paths...>` — record a contract snapshot
 
