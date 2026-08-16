@@ -1,11 +1,26 @@
+import { execFile } from 'node:child_process';
+import * as FsPromises from 'node:fs/promises';
+import * as Os from 'node:os';
+import * as Path from 'node:path';
+import { promisify } from 'node:util';
+
 import type { HintbookData } from './hintbook.js';
 import type { HintData } from './parser.js';
 import type { StatusReport } from './status.js';
-import { isUnderScope, toGitPath } from './git.js';
+import { isUnderScope, readGitSnapshot, toGitPath } from './git.js';
 import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 import { collectScopeNodes } from './parser.js';
-import { collectContractScopes, formatStaleness } from './staleness.js';
+import { collectContractScopes, formatStaleness, measureStaleness } from './staleness.js';
 import { countFindings, countPending, formatStatus } from './status.js';
+
+const execFileAsync = promisify(execFile);
+const nested: string[] = [];
+
+afterAll(async () => {
+    for (const root of nested) {
+        await FsPromises.rm(root, { recursive: true, force: true });
+    }
+});
 
 function block(keyword: string, name: string, children: HintData[] = []): HintData {
     return { level: 1, keyword, id: '', name, body: '', children };
@@ -125,5 +140,70 @@ describe('status report', () => {
 
     it('renders nothing at all when there is nothing to report', () => {
         expect(formatStatus({ ...report, entries: [] })).toBe('');
+    });
+});
+
+// `git status --porcelain` reports from the *git* root, unlike every other read here, so a HINT
+// project sitting inside a larger repository needs the prefix stripped or nothing ever matches.
+describe('readGitSnapshot in a nested project', () => {
+    it('reports dirty paths relative to the project root, not the git root', async () => {
+        const root = await FsPromises.mkdtemp(Path.join(await FsPromises.realpath(Os.tmpdir()), 'hint-nested-'));
+
+        nested.push(root);
+
+        const project = Path.join(root, 'packages', 'app');
+
+        await FsPromises.mkdir(Path.join(project, 'src'), { recursive: true });
+        await FsPromises.writeFile(Path.join(project, 'src', 'a.ts'), 'export const a = 1;\n', 'utf8');
+
+        await execFileAsync('git', ['init', '-q'], { cwd: root });
+        await execFileAsync('git', ['config', 'user.email', 'test@example.com'], { cwd: root });
+        await execFileAsync('git', ['config', 'user.name', 'Test'], { cwd: root });
+        await execFileAsync('git', ['add', '-A'], { cwd: root });
+        await execFileAsync('git', ['commit', '-q', '-m', 'init'], { cwd: root });
+
+        await FsPromises.writeFile(Path.join(project, 'src', 'a.ts'), 'export const a = 2;\n', 'utf8');
+
+        const snapshot = await readGitSnapshot(project);
+
+        expect(snapshot).not.toBeNull();
+        expect(snapshot!.trackedFiles).toEqual(['src/a.ts']);
+        expect([...snapshot!.dirty]).toEqual(['src/a.ts']);
+    });
+
+    it('returns null when asked about no paths at all', async () => {
+        expect(await readGitSnapshot(process.cwd(), [])).toBeNull();
+    });
+
+    it('returns null outside a git repository', async () => {
+        const root = await FsPromises.mkdtemp(Path.join(await FsPromises.realpath(Os.tmpdir()), 'hint-nogit-'));
+
+        nested.push(root);
+
+        expect(await readGitSnapshot(root)).toBeNull();
+    });
+});
+
+// The three ways `measureStaleness` has nothing honest to say. Each returns null rather than a
+// reading, because an unmeasurable scope must never be reported as a fresh one.
+describe('measureStaleness declines to guess', () => {
+    const scope = { hintPath: 'src/_.hint', target: 'src', contract: false };
+
+    it('says nothing while the hint file itself is being edited', async () => {
+        const snapshot = { trackedFiles: ['src/a.ts'], dirty: new Set(['src/_.hint']) };
+
+        expect(await measureStaleness(process.cwd(), snapshot, scope)).toBeNull();
+    });
+
+    it('says nothing when the scope has no tracked files to measure against', async () => {
+        const snapshot = { trackedFiles: [], dirty: new Set<string>() };
+
+        expect(await measureStaleness(process.cwd(), snapshot, scope)).toBeNull();
+    });
+
+    it('says nothing for a hint that has never been committed', async () => {
+        const snapshot = { trackedFiles: ['src/a.ts'], dirty: new Set<string>() };
+
+        expect(await measureStaleness(process.cwd(), snapshot, { ...scope, hintPath: 'src/never-committed-anywhere.hint' })).toBeNull();
     });
 });

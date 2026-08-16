@@ -99,7 +99,11 @@ export const IsomorphicBuildConfig = () =>
         ],
     });
 
-export const CliBuildConfig = () =>
+// A CLI is bundled self-contained so it can be installed and run with nothing else present. `external`
+// is the escape hatch for a runtime dependency too heavy to inline — a package whose `npx` would
+// otherwise download the whole of it on every cold run. Anything listed here must stay declared in the
+// package's `dependencies`, since it is now resolved at install time rather than built in.
+export const CliBuildConfig = (external: string[] = []) =>
     Vite.defineConfig({
         build: {
             outDir: packageReleaseDir(),
@@ -109,6 +113,7 @@ export const CliBuildConfig = () =>
                 external: [
                     /^node:/,
                     ...Module.builtinModules,
+                    ...external,
                 ],
                 output: {
                     banner: '#!/usr/bin/env node',
@@ -118,6 +123,7 @@ export const CliBuildConfig = () =>
         },
         ssr: {
             noExternal: true,
+            external,
         },
         esbuild: {
             target: 'ES2024',
