@@ -244,18 +244,60 @@ describe('cli emit — writing', () => {
         expect(content).toContain('export function settle(invoice: Invoice) {');
     });
 
-    it('adopts an existing hand-written file without truncating it', async () => {
+    // Appending a region to a file that already has content puts a second copy of every declaration
+    // into it. That does not fail loudly — it produces a file that no longer compiles — so it has to
+    // be an explicit decision rather than a cheerful "created".
+    it('refuses to append a region to a file it does not manage', async () => {
+        const root = await makeProject();
+
+        await write(root, 'src/invoice.ts', 'export interface Invoice { id: string }\n');
+        await write(root, 'src/invoice.ts.hint', '# entity Invoice\n\nbody\n\n## field id: string\n');
+
+        const result = await runCli(['emit', 'src/invoice.ts'], root);
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain('already has content and no hint:begin region');
+        expect(await FsPromises.readFile(Path.join(root, 'src/invoice.ts'), 'utf8')).toBe('export interface Invoice { id: string }\n');
+    });
+
+    it('adopts an existing file when asked to, without truncating it', async () => {
         const root = await makeProject();
 
         await write(root, 'src/invoice.ts', 'export const VERSION = 1;\n');
         await write(root, 'src/invoice.ts.hint', '# entity Invoice\n\nbody\n\n## field id: string\n');
 
-        await runCli(['emit', 'src/invoice.ts'], root);
+        await runCli(['emit', '--adopt', 'src/invoice.ts'], root);
 
         const content = await FsPromises.readFile(Path.join(root, 'src/invoice.ts'), 'utf8');
 
         expect(content).toContain('export const VERSION = 1;');
         expect(content).toContain('export interface Invoice {');
+    });
+
+    // Once the region exists the file is managed, so subsequent runs need no flag.
+    it('needs no flag once the file carries a region', async () => {
+        const root = await makeProject();
+
+        await write(root, 'src/invoice.ts', 'export const VERSION = 1;\n');
+        await write(root, 'src/invoice.ts.hint', '# entity Invoice\n\nbody\n\n## field id: string\n');
+        await runCli(['emit', '--adopt', 'src/invoice.ts'], root);
+
+        await write(root, 'src/invoice.ts.hint', '# entity Invoice\n\nbody\n\n## field id: string\n\n## field total: Decimal\n');
+
+        const result = await runCli(['emit', 'src/invoice.ts'], root);
+
+        expect(result.exitCode).toBeUndefined();
+        expect(await FsPromises.readFile(Path.join(root, 'src/invoice.ts'), 'utf8')).toContain('total: Decimal;');
+    });
+
+    // An empty file is not a file anybody wrote into, so it is managed without ceremony.
+    it('treats an empty file as unmanaged-but-free', async () => {
+        const root = await makeProject();
+
+        await write(root, 'src/invoice.ts', '');
+        await write(root, 'src/invoice.ts.hint', '# entity Invoice\n\nbody\n\n## field id: string\n');
+
+        expect((await runCli(['emit', 'src/invoice.ts'], root)).exitCode).toBeUndefined();
     });
 });
 

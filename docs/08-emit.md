@@ -206,11 +206,32 @@ export function settle(invoice: Invoice) {   // hand-written — never touched
 | --- | --- |
 | The output does not exist | Created, wrapped in a region. |
 | The output exists with a region | The region's contents are replaced; everything outside is preserved. |
-| The output exists with **no** region | The file is kept in full and gains a region at the end — adopting a hand-written file never begins by truncating it. |
+| The output exists with **no** region and no content | Managed without ceremony: an empty file is not one anybody wrote into. |
+| The output exists with **no** region and content | **The write is refused.** Appending a region would put a second copy of every declaration into a file that already has them. `--adopt` does it deliberately. |
 | A hole body was filled | Carried over verbatim; reported if its governing spec moved. |
 | A filled body has nowhere to go | **The write is refused.** The spec block that owned it was removed or renamed, so re-emission would delete work nobody can get back. |
 
 Markers are matched by their token, not by comment syntax, so `//`, `#`, and `<!-- -->` all work.
+
+---
+
+### Adopting a file that already exists
+
+The first `hint emit` against a file somebody wrote by hand does **not** write:
+
+```
+hint: src/ledger.ts — not written: the file already has content and no hint:begin region, so
+      emitting would append a second copy of everything the spec declares. Delete the
+      hand-written declarations the spec now owns and pass --adopt, or keep the spec at the
+      verify rung and run 'hint verify' instead.
+```
+
+This is the trap `hint extract` walks straight into if nothing stops it: you draft a spec *from* existing code, and emitting it back duplicates every declaration — producing a file that no longer compiles, from a command that reported success.
+
+There are two honest ways forward, and which one is right depends on what you want the spec to be:
+
+- **Keep it at the anchored rung.** The spec describes code you maintain by hand; `hint verify` checks the code still matches it. This is what `hint extract` is for, and no emitter is involved.
+- **Move it to the source rung.** Delete the declarations the spec now owns — leaving imports, helpers, and anything else — then `hint emit --adopt` once. From then on the file carries a region and needs no flag.
 
 ---
 
@@ -326,7 +347,9 @@ hint extract --stdout src/a.ts    # preview
 hint extract --overwrite src      # replace drafts that already exist
 ```
 
-It reads the same symbol table `verify` compares against, so a language costs one adapter and gets conformance checking and brownfield adoption together. The emit pack declares how its symbol kinds map onto the vocabulary — the engine knows no keywords, and a template cannot be read backwards:
+It reads the same symbol table `verify` compares against, so a language costs one adapter and gets conformance checking and brownfield adoption together.
+
+**A drafted spec belongs at the anchored rung, not the source rung.** It describes code that already exists and that you go on maintaining by hand, so the command that pairs with it is `hint verify`. Emitting it back into the file it came from would duplicate every declaration — which is why [`hint emit` refuses](#adopting-a-file-that-already-exists) to append a region to a file that already has content. The emit pack declares how its symbol kinds map onto the vocabulary — the engine knows no keywords, and a template cannot be read backwards:
 
 ```json
 "extract": {

@@ -180,8 +180,12 @@ export type MergeResult = {
     restored: number;
     // Labels whose governing spec changed since the body was written.
     drifted: string[];
-    // Whether the file had no generated region — a new file, or an existing one gaining its first.
+    // The output did not exist at all and was written from scratch.
     created: boolean;
+    // The output existed, held content, and had no generated region. Appending one duplicates every
+    // declaration the spec makes, which does not fail loudly — it produces a file that no longer
+    // compiles — so the caller is expected to make this an explicit decision rather than a default.
+    adopted: boolean;
     // Implementations on disk that the new artifact has nowhere to put — the spec block that owned
     // them was removed or renamed. Writing would delete work nobody can get back, so the caller is
     // expected to refuse rather than to proceed quietly.
@@ -210,7 +214,7 @@ export function mergeArtifact(existing: string | null, artifact: string, comment
     );
 
     if (existing === null) {
-        return { content: `${region}\n`, restored, drifted, created: true, orphaned };
+        return { content: `${region}\n`, restored, drifted, created: true, adopted: false, orphaned };
     }
 
     const found = findRegion(existing);
@@ -218,7 +222,7 @@ export function mergeArtifact(existing: string | null, artifact: string, comment
     if (!found) {
         const separator = existing.endsWith('\n\n') ? '' : existing.endsWith('\n') ? '\n' : '\n\n';
 
-        return { content: `${existing}${separator}${region}\n`, restored, drifted, created: true, orphaned };
+        return { content: `${existing}${separator}${region}\n`, restored, drifted, created: false, adopted: existing.trim() !== '', orphaned };
     }
 
     const source = lines(existing);
@@ -228,7 +232,7 @@ export function mergeArtifact(existing: string | null, artifact: string, comment
         ...source.slice(found.end + 1),
     ];
 
-    return { content: merged.join('\n'), restored, drifted, created: false, orphaned };
+    return { content: merged.join('\n'), restored, drifted, created: false, adopted: false, orphaned };
 }
 
 export type HoleState = {

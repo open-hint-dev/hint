@@ -179,12 +179,14 @@ export async function main(): Promise<void> {
         .option('--stdout', 'print the artifacts instead of writing them', false)
         .option('--target <name>', 'force an emitter instead of selecting one from the output path')
         .option('--drop-orphans', 'write even when an implemented hole has nowhere left to go, discarding it', false)
-        .action(async (paths: string[], options: { target?: string; check: boolean; stdout: boolean; dropOrphans: boolean }) => {
+        .option('--adopt', 'append a generated region to a file that already has content and none', false)
+        .action(async (paths: string[], options: { target?: string; check: boolean; stdout: boolean; dropOrphans: boolean; adopt: boolean }) => {
             await EmitCommand.new(paths, {
                 target: options.target,
                 stdout: options.stdout,
                 check: options.check,
                 dropOrphans: options.dropOrphans,
+                adopt: options.adopt,
             }).execute();
         });
 

@@ -291,6 +291,8 @@ Renders each spec through the emit templates of the registered hintbooks. Determ
 
 Code outside the `hint:begin` … `hint:end` region is preserved, and a hole body that has been filled is never overwritten — a spec that moved underneath one is reported instead. When a filled body has nowhere left to go, because the spec block that owned it was removed or renamed, the write is **refused** and the labels are named; `--drop-orphans` discards them deliberately.
 
+**A file that already has content and no region is not written either.** Appending one would put a second copy of every declaration into it. `--adopt` does it deliberately, once the declarations the spec now owns have been removed.
+
 Exit `0` succeeded, `1` `--check` found a difference, `2` nothing to emit — and it says which of the three reasons applied rather than reporting a clean build over an empty set.
 
 Full reference, including template syntax and how to author an emitter → [`docs/08-emit.md`](08-emit.md).
