@@ -1,7 +1,7 @@
 {
     "name": "@openhint/transpiler",
     "version": "0.0.0",
-    "description": "The HINT engine — resolves a path or query to the scoped, inherited repository knowledge that applies to it, from markdown-native .hint files.",
+    "description": "The HINT engine — Spec-as-Source for any repository. Resolves a path or query to the scoped, inherited spec that governs it, from markdown-native .hint files, with no built-in keyword vocabulary.",
     "private": true,
     "type": "module",
     "scripts": {

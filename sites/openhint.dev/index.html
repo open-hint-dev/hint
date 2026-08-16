@@ -12,8 +12,8 @@
 </script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HINT — a context compiler for coding agents</title>
-<meta name="description" content="HINT tells your coding agent what matters here. Repository knowledge in Markdown-native .hint files, scoped by path, inherited from the root down — ask about a path or an intent and get back only what applies." />
+<title>HINT — Spec-as-Source for any repository</title>
+<meta name="description" content="Spec-as-Source without the generator. Your intent lives in Markdown-native .hint files scoped by path and inherited from the root down; HINT returns the part of the spec that governs what you are about to touch, and reports when the work has drifted from it. Agent-neutral, deterministic, and not only for code." />
 <link rel="canonical" href="https://openhint.dev" />
 <link rel="icon" type="image/png" href="favicon.png" />
 <link rel="apple-touch-icon" href="favicon.png" />
@@ -126,6 +126,17 @@
 .callout p { color: var(--ink-2); font-size: 0.97rem; }
 
 /* principles dark band */
+/* comparison tables */
+.cmp { width: 100%; border-collapse: collapse; font-size: 0.93rem; }
+.cmp th, .cmp td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+.cmp thead th { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); border-bottom: 1px solid var(--line); font-weight: 500; }
+.cmp thead th:last-child { color: var(--accent); }
+.cmp tbody td:first-child { color: var(--ink-3); white-space: nowrap; }
+.cmp tbody td:nth-child(2) { color: var(--ink-2); }
+.cmp tbody td:last-child { color: var(--ink); }
+.cmp tbody tr:last-child td { border-bottom: 0; }
+@media (max-width: 720px) { .cmp { font-size: 0.85rem; } .cmp th, .cmp td { padding: 10px 10px; } }
+
 .band { background: var(--surface); color: var(--on-surface); }
 .band .eyebrow { color: var(--accent-bright); }
 .band .eyebrow::before { background: var(--accent-bright); }
@@ -222,9 +233,9 @@
 <header class="hero">
   <div class="wrap hero__grid">
     <div class="hero__text">
-      <div class="eyebrow hero__kicker">Scoped · Inherited · Retrievable · Agent-neutral</div>
-      <h1 class="display">Tell your agent<br />what <span class="em">matters here</span>.</h1>
-      <p class="lede">Your coding agent starts every session knowing nothing about your repository. HINT keeps that knowledge in Markdown files next to the code, and returns only the part that applies to the path or task at hand.</p>
+      <div class="eyebrow hero__kicker">Spec-as-Source · Scoped · Inherited · Agent-neutral · Any profession</div>
+      <h1 class="display">The spec is<br />the <span class="em">source</span>.</h1>
+      <p class="lede">Your intent lives in Markdown files next to what they govern, and that is the artifact you maintain. HINT returns the part of the spec that applies to the path at hand — and tells you when the work has drifted away from it. No generator, no model call, no vendor.</p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="#quickstart">
           Quick start
@@ -236,7 +247,7 @@
         <span><span class="pr">$</span> npm install -g @openhint/cli</span>
         <button data-copy data-copy-text="npm install -g @openhint/cli">Copy</button>
       </div>
-      <p class="hero__note" style="margin-top:16px;">Agent-neutral — Claude Code, Codex, OpenCode, Cline, or your own.</p>
+      <p class="hero__note" style="margin-top:16px;">Agent-neutral — Claude Code, Codex, OpenCode, Cline, or your own. Software or law, same engine.</p>
     </div>
 
     <!-- DEMO -->
@@ -326,7 +337,7 @@
         </div>
         <div class="demo__connector">
           <span class="ln"></span>
-          <span class="chip"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>hint src/api/invoice.ts</span>
+          <span class="chip"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>hint contracts/nda.md</span>
           <span class="ln"></span>
         </div>
         <div class="code-wrap">
@@ -360,14 +371,85 @@
 <div class="divider"></div>
 <div class="wrap">
   <div class="agents">
-    <span>Same spec. Same hintbook. <b>Byte-identical output, every time.</b></span>
-    <span style="margin-left:auto;">No new syntax — <b>100% valid Markdown</b></span>
+    <span>The spec is maintained. <b>The implementation answers to it.</b></span>
+    <span style="margin-left:auto;">No generator — <b>retrieval before, drift detection after</b></span>
   </div>
 </div>
 <div class="divider"></div>
 
+<!-- SPEC AS SOURCE -->
+<section class="section" id="paradigm">
+  <div class="wrap">
+    <div class="reveal" style="max-width:68ch; margin-bottom:44px;">
+      <div class="eyebrow" style="margin-bottom:22px;">The paradigm</div>
+      <h2 class="h2">Spec-as-Source, without the generator.</h2>
+      <p class="lede" style="margin-top:18px;"><b>Spec-as-Source</b> is the position that the specification — not the code — is the artifact you maintain and the authority the work answers to. The usual formulation attaches a second clause: <em>and the code is regenerated from the spec.</em> That clause is what has kept the idea impractical. Generation from a language model is non-deterministic, so every upgrade is a re-roll, every hand edit fights the generator, and drift comes back through the door built for it.</p>
+      <p class="lede" style="margin-top:18px;">HINT drops the generator, not the source of truth. The <code class="inl">.hint</code> files hold the intent. Humans and agents do the work. The two stay coupled by two mechanisms that involve no model at all.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card feat reveal" data-d="1">
+        <svg class="feat__ico" viewBox="0 0 32 32" fill="none"><path d="M16 4v14M16 18l-5-5M16 18l5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 22v6h22v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3 class="h3">Retrieval before the work</h3>
+        <p><code class="inl">hint &lt;path&gt;</code> returns the part of the spec that governs that path, inherited root-first, and nothing else. Cheap enough to run before every edit — which is the only way it gets run.</p>
+      </div>
+      <div class="card feat reveal" data-d="2">
+        <svg class="feat__ico" viewBox="0 0 32 32" fill="none"><path d="M4 20c4-10 8-10 12 0s8 10 12 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="20" r="2.4" fill="currentColor"/></svg>
+        <h3 class="h3">Drift detection after it</h3>
+        <p><code class="inl">hint status</code>, and an advisory line on every read, say when the implementation has moved away from the spec governing it — while the correction is still cheap.</p>
+      </div>
+      <div class="card feat reveal" data-d="3">
+        <svg class="feat__ico" viewBox="0 0 32 32" fill="none"><rect x="5" y="5" width="22" height="22" rx="4" stroke="currentColor" stroke-width="2"/><path d="M11 16l3.5 3.5L21 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3 class="h3">Deterministic end to end</h3>
+        <p>No model call, no network, no vendor perimeter. The same spec and the same hintbook always render byte-identical output — reviewable in a normal diff.</p>
+      </div>
+    </div>
+    <div class="reveal" style="margin-top:34px; overflow-x:auto;">
+      <table class="cmp">
+        <thead><tr><th></th><th>Spec Kit · Kiro · Tessl · …</th><th>HINT</th></tr></thead>
+        <tbody>
+          <tr><td>Unit of spec</td><td>one central folder, per feature</td><td><b>per path, inherited root → folder → file</b></td></tr>
+          <tr><td>Contents</td><td>requirements, design, tasks with statuses</td><td><b>durable intent only — never task state</b></td></tr>
+          <tr><td>Lifetime</td><td>the feature</td><td><b>the repository</b></td></tr>
+          <tr><td>Coupling to the work</td><td>regeneration</td><td><b>retrieval before, drift detection after</b></td></tr>
+          <tr><td>Ownership</td><td>the vendor's ecosystem</td><td><b>your repository, in git, agent-neutral</b></td></tr>
+          <tr><td>Domain</td><td>software</td><td><b>any — the vocabulary is installed, not compiled in</b></td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:16px; color:var(--ink-2); max-width:70ch;">The per-feature shape is the one that matters most in practice: it cannot say <em>“strict typing here, and a documented exception in the legacy module.”</em> Scoping is not a detail — it is the reason one global instruction file fails, and one central spec folder fails the same way for the same reason.</p>
+    </div>
+  </div>
+</section>
+
+<!-- BEYOND CODE -->
+<section class="section divider" id="beyond-code">
+  <div class="wrap">
+    <div class="reveal" style="max-width:68ch; margin-bottom:40px;">
+      <div class="eyebrow" style="margin-bottom:22px;">Beyond code</div>
+      <h2 class="h2">The engine ships with no vocabulary at all.</h2>
+      <p class="lede" style="margin-top:18px;">Every other tool in this category has its vocabulary compiled in, which is why every one of them is about software. HINT's engine knows <b>no keywords at all</b> — it understands files, headings, nesting, and inheritance. What a <code class="inl">decision</code>, an <code class="inl">invariant</code>, a <code class="inl">clause</code>, or an <code class="inl">obligation</code> <em>means</em> comes from a <b>hintbook</b>: a flat folder of Markdown templates you install like a dependency.</p>
+    </div>
+    <div class="reveal" style="overflow-x:auto;">
+      <table class="cmp">
+        <thead><tr><th></th><th>A software repository</th><th>A law firm's matters</th></tr></thead>
+        <tbody>
+          <tr><td>Hintbook</td><td><code class="inl">hintbook-software-engineer</code></td><td><code class="inl">hintbook-lawyer</code></td></tr>
+          <tr><td>Vocabulary</td><td><code class="inl">decision</code> <code class="inl">invariant</code> <code class="inl">func</code> <code class="inl">entity</code> <code class="inl">bad</code></td><td><code class="inl">party</code> <code class="inl">clause</code> <code class="inl">obligation</code> <code class="inl">right</code> <code class="inl">redline</code></td></tr>
+          <tr><td>A scope</td><td><code class="inl">src/billing/_.hint</code> governs billing</td><td><code class="inl">clients/acme/nda/_.hint</code> governs that matter</td></tr>
+          <tr><td>Before touching it</td><td>the constraints that apply to this file</td><td>the constraints that apply to this document</td></tr>
+          <tr><td>Drift means</td><td>the code moved away from the spec</td><td>the document moved away from the position</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="reveal" style="margin-top:22px; color:var(--ink-2); max-width:70ch;">Nothing in the engine changes between those two columns — that is the whole point. Authoring a hintbook takes no programming: Markdown files with <code class="inl">{name}</code>-style placeholders. A profession that can write down its own rules can have a vocabulary for them.</p>
+    <div class="hero__cta reveal" style="margin-top:26px;">
+      <a class="btn btn--ghost" href="#professions">Every profession</a>
+      <a class="btn btn--ghost" href="https://github.com/open-hint-dev/demo-pearson-specter-litt" target="_blank" rel="noopener">A law firm, specified in .hint</a>
+    </div>
+  </div>
+</section>
+
 <!-- WHAT IS HINT -->
-<section class="section" id="what">
+<section class="section divider" id="what">
   <div class="wrap">
     <div class="reveal" style="max-width:64ch; margin-bottom:48px;">
       <div class="eyebrow" style="margin-bottom:22px;">What is HINT</div>
@@ -595,15 +677,18 @@
       </div>
       <div class="qsstep reveal" data-d="1">
         <div class="qsstep__h"><span class="qsstep__n">02</span><h3 style="color:var(--on-surface)">Record it, then ask about a path</h3></div>
-        <p style="color:var(--on-surface-mut)">Write what a folder or a file needs future work to know, then ask what applies before you touch it — referenced knowledge comes along automatically. Don't know the path? <code class="inl">hint search</code> ranks every <code class="inl">.hint</code> offline. When a spec <em>declares</em> surfaces the code must contain, <code class="inl">hint verify</code> checks them for free — optional, and only for that case.</p>
+        <p style="color:var(--on-surface-mut)">Write what a folder or a file needs future work to know, then ask what applies before you touch it — referenced knowledge comes along automatically. Don't know the path? <code class="inl">hint search</code> ranks every <code class="inl">.hint</code> offline. Knowledge decays quietly, so <code class="inl">hint</code> says on stderr when the code under a hint has moved since anyone revisited it, and <code class="inl">hint status</code> inventories the whole repository. When a spec <em>declares</em> surfaces the code must contain, <code class="inl">hint verify</code> checks them for free — optional, and only for that case.</p>
         <div class="code-wrap on-dark">
-          <button class="code__copy" data-copy data-copy-text="hint src/billing/invoice.ts&#10;hint search &quot;how are invoice totals stored&quot;&#10;hint --prompt src/billing/invoice.ts | claude -p&#10;hint verify src/billing/invoice.ts&#10;hint lock src/billing/invoice.ts">Copy</button>
+          <button class="code__copy" data-copy data-copy-text="hint src/billing/invoice.ts&#10;hint search &quot;how are invoice totals stored&quot;&#10;hint status&#10;hint --prompt src/billing/invoice.ts | claude -p&#10;hint verify src/billing/invoice.ts&#10;hint lock src/billing/invoice.ts">Copy</button>
           <div class="code">
 <div class="code__body"><span class="t-mut"># what does this repo already know about this path?</span>
 <span class="t-bd">hint src/billing/invoice.ts</span>
 
 <span class="t-mut"># know the task, not the path? rank every .hint, offline</span>
 <span class="t-bd">hint search "how are invoice totals stored"</span>
+
+<span class="t-mut"># what has come loose from the code it describes?</span>
+<span class="t-bd">hint status</span>
 
 <span class="t-mut"># handing work to a fresh agent? add the framing</span>
 <span class="t-bd">hint --prompt src/billing/invoice.ts | claude -p</span>
@@ -639,7 +724,7 @@
         <div class="logo footer__logo">
           <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
         </div>
-        <p>A context compiler for coding agents. Repository knowledge in Markdown, scoped by path, inherited from the root down — so an agent gets what matters here, and nothing else.</p>
+        <p>Spec-as-Source for any repository. Your intent in Markdown, scoped by path and inherited from the root down — so an agent gets what governs here, and nothing else.</p>
       </div>
       <div class="footer__col">
         <h5>Product</h5>

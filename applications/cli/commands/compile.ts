@@ -1,7 +1,7 @@
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
-import { EXIT_UNRESOLVED, reportResolution } from './report.js';
+import { EXIT_UNRESOLVED, reportResolution, reportStaleness } from './report.js';
 
 export type CompileOptions = {
     strict: boolean;
@@ -55,12 +55,21 @@ export class CompileCommand implements ICommand {
 
         let hints = await Transpiler.parseHintFiles(projectRootPath, hintPaths);
 
+        // Measured before the lock gate prunes anything, so the staleness of a scope is reported whether
+        // or not its output happens to be up to date. Which kind of knowledge a scope holds decides how
+        // far the code may move before it is worth saying anything.
+        await reportStaleness(projectRootPath, resolution, Transpiler.collectContractScopes(hints, hintbooks));
+
         const lock = await Transpiler.loadLock(projectRootPath);
 
         // Hash-gate: when a lock exists (opt-in via `hint lock`), skip files whose spec, inherited context,
-        // and the vocabulary they use are all unchanged and whose output still exists — so unchanged runs
-        // cost no tokens. The effective hash folds in the hintbooks, so no separate book fingerprint is needed.
-        if (lock && !this.options.force) {
+        // and the vocabulary they use are all unchanged and whose output still exists — so regenerating
+        // costs no tokens. The effective hash folds in the hintbooks, so no separate book fingerprint is needed.
+        //
+        // Generation only. A plain `hint <path>` is a question about what this repository knows, and the
+        // answer cannot be "nothing, it is up to date": that withholds knowledge precisely when the code is
+        // stable, and makes what an agent learns about a path depend on the state of `hint.lock`.
+        if (lock && this.options.prompt && !this.options.force) {
             const fileHashes = Transpiler.effectiveFileHashes(hints, hintbooks);
             const fresh = await Transpiler.selectFreshTargets(projectRootPath, fileHashes, lock);
 

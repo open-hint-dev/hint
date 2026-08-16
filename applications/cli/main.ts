@@ -1,15 +1,19 @@
 import * as Transpiler from '@openhint/transpiler';
 import { Command, Option } from 'commander';
 
+import type { EmitOptions } from './commands/emit.js';
+import type { StatusOptions } from './commands/status.js';
 import { AddCommand } from './commands/add.js';
 import { ApplyCommand } from './commands/apply.js';
 import { AuthorCommand } from './commands/author.js';
 import { CompileCommand } from './commands/compile.js';
 import { ConfigCommand } from './commands/config.js';
 import { DiffCommand } from './commands/diff.js';
+import { EmitCommand } from './commands/emit.js';
 import { LockCommand } from './commands/lock.js';
 import { RemoveCommand } from './commands/remove.js';
 import { SearchCommand } from './commands/search.js';
+import { StatusCommand } from './commands/status.js';
 import { VerifyCommand } from './commands/verify.js';
 import { findCliVersion, VersionCommand } from './commands/version.js';
 
@@ -31,6 +35,9 @@ const EXAMPLES = `Examples:
   hint src/auth/token.ts               what HINT knowledge applies to this path
   hint search "service account auth"   which knowledge covers this intent (JSON)
   hint author src/auth/token.ts        how to write or update a .hint spec
+  hint status                          which recorded knowledge has come loose from the code
+  hint emit src/billing/invoice.ts     write the artifact this spec produces
+  hint emit --check                    CI: every artifact still matches its spec
   hint apply                           install HINT instructions into AGENTS.md / CLAUDE.md
   hint version                         CLI version and installed hintbooks
 
@@ -51,7 +58,7 @@ export async function main(): Promise<void> {
         .argument('[paths...]', 'paths to source files, folders, or .hint files (globs supported)')
         .option('--prompt', 'wrap the knowledge in a standalone implementation prompt, for piping to a fresh agent', false)
         .option('--strict', 'exit non-zero when a given path has no spec of its own, instead of returning inherited context', false)
-        .option('--force', 'ignore hint.lock and include every file, even unchanged ones', false)
+        .option('--force', 'ignore hint.lock and regenerate every file, even unchanged ones (affects --prompt; a plain read is never gated)', false)
         .option('--no-refs', 'return only the named specs, not the specs they reference (references are included by default)')
         .option('--standalone', 'implies --prompt, and prepends the tag glossary for an agent that never loaded AGENTS.md', false)
         // Renamed to --strict, which says what it does. Accepted silently so existing scripts keep working.
@@ -131,6 +138,34 @@ export async function main(): Promise<void> {
         });
 
     program
+        .command('status')
+        .description(
+            'Inventory every .hint in the project and report what has come loose from the code it describes: ' +
+                'knowledge the code has moved away from, specs whose target was deleted, and drift against hint.lock.',
+        )
+        .option('--json', 'print the inventory as JSON instead of a table', false)
+        .option('--exit-code', 'exit 1 when anything needs attention, for CI', false)
+        .action(async (options: StatusOptions) => {
+            await StatusCommand.new(options).execute();
+        });
+
+    program
+        .command('emit')
+        .description(
+            'Write the artifacts the given specs produce, through the emit templates of the registered ' +
+                'hintbooks. Deterministic and model-free. Code outside the generated region and any filled ' +
+                'hole body are preserved. Only companion <file>.hint specs emit; a folder hint describes ' +
+                'everything beneath it and has no single output.',
+        )
+        .argument('<paths...>', 'paths to companion specs or the files they describe (globs supported)')
+        .option('--check', 'do not write; exit 1 when an artifact differs from what its spec produces', false)
+        .option('--stdout', 'print the artifacts instead of writing them', false)
+        .option('--target <name>', 'force an emitter instead of selecting one from the output path')
+        .action(async (paths: string[], options: { target?: string; check: boolean; stdout: boolean }) => {
+            await EmitCommand.new(paths, { target: options.target, stdout: options.stdout, check: options.check }).execute();
+        });
+
+    program
         .command('version')
         .description(`Print the CLI version and the hintbooks registered in ${Transpiler.CONFIG_FILE_YML}, with their versions.`)
         .action(async () => {
@@ -152,7 +187,7 @@ export async function main(): Promise<void> {
         .command('lock')
         .description(
             'Contracts: record the current spec hashes into hint.lock, marking the given files as generated. ' +
-                'Later plain `hint` runs then skip files whose specs are unchanged. Only companion <file>.hint specs are lockable.',
+                'Later `hint --prompt` runs then skip files whose specs are unchanged; a plain read is never gated. Only companion <file>.hint specs are lockable.',
         )
         .argument('<paths...>', 'paths to companion specs or the files they describe (globs supported)')
         .action(async (paths: string[]) => {

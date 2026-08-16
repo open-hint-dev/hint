@@ -1,6 +1,6 @@
-# HINT — a context compiler for coding agents — Full Documentation
+# HINT — Spec-as-Source for any repository — Full Documentation
 
-> HINT answers one question for a coding agent: what does this repository already know that matters for the work about to happen? Durable knowledge lives in Markdown-native `.hint` files next to the code they describe, versioned in git; given a path or an intent, `hint` returns the subset that applies, inherited from the project root down. This file concatenates the complete HINT documentation and both official hintbook references for LLM consumption.
+> HINT is Spec-as-Source: the specification is the artifact you maintain and the authority the work answers to — but without the regeneration clause the term usually carries. The intent lives in Markdown-native `.hint` files next to whatever they govern, versioned in git; given a path or an intent, `hint` returns the part of the spec that applies, inherited from the project root down, and reports when the work has drifted away from it. The engine has no built-in keyword vocabulary, so the same machinery serves a codebase and a law firm's matters alike. This file concatenates the complete HINT documentation and both official hintbook references for LLM consumption.
 > Website: https://openhint.dev  ·  Source: https://github.com/open-hint-dev/hint  ·  Version: 1.1
 
 ---
@@ -14,19 +14,42 @@
 
 ## What is HINT?
 
-HINT is a **context compiler for coding agents**. It answers one question:
+HINT is **Spec-as-Source for any repository**. The spec is the artifact you maintain; the implementation answers to it. It exists to answer one question:
 
-> Given a task, a path, or both — what does this repository already know that matters for the work about to happen?
+> Given a task, a path, or both — what does this repository's spec say about the work about to happen?
 
-Every coding agent starts each session knowing nothing about your repository. Teams compensate by writing it down: a `CLAUDE.md`, an `AGENTS.md`, a wiki. Those files grow without bound, apply everywhere at once, and are loaded whole on every task. Most of what an agent reads is irrelevant to what it is about to touch, and the part that mattered was three hundred lines down.
-
-HINT stores that knowledge in markdown-native `.hint` files next to the code they describe, versioned in git, and returns only the subset that applies to the path or intent you ask about.
+The intent lives in markdown-native `.hint` files next to what they govern, versioned in git, inherited from the project root down. Ask about a path or a task and HINT returns only the part that applies.
 
 ```text
-repository knowledge → .hint → scope + inheritance → retrieval → minimal relevant context → your agent
+spec (.hint) → scope + inheritance → retrieval → the governing intent → whoever does the work
+                     ↑                                                          │
+                     └──────────── drift reported back ─────────────────────────┘
 ```
 
 It is **agent-neutral**. Claude Code, Codex, OpenCode, Cline, a CI script, or a custom agent all consume the same output. HINT does not implement, plan, or replace an agent — it works underneath one.
+
+## Spec-as-Source, without the generator
+
+**Spec-as-Source** is the position that the specification — not the code — is the artifact you maintain and the authority the work answers to. It is the far end of the spec-driven spectrum: `spec-first` writes a spec and discards it, `spec-anchored` keeps it alive in CI, `spec-as-source` makes it *the* source.
+
+The usual formulation attaches a second clause: *and the code is regenerated from the spec.* That clause is what has kept the idea impractical. Generation from a language model is non-deterministic, so every upgrade is a re-roll, every hand edit fights the generator, and drift and hallucination return through the door built for them.
+
+**HINT drops the generator, not the source of truth.** The `.hint` files hold the intent. Humans and agents write the implementation. The two stay coupled through two mechanisms that involve no model at all:
+
+- **Retrieval before the work.** `hint <path>` returns the part of the spec that governs that path and nothing else, cheaply enough to run before every edit.
+- **Drift detection after it.** `hint status`, and an advisory line on every read, say when the implementation has moved away from the spec that governs it — while the correction is still cheap. See [Keeping it current](#keeping-it-current).
+
+Deterministic end to end: no model call, no network, no vendor.
+
+Where a spec describes something machine-derivable, **`hint emit` closes the loop**: it renders the artifact the spec produces — types, schemas, error enums, a contract document — through templates the hintbook supplies, and `hint emit --check` lets CI assert that what is committed still equals what the spec produces. Code outside the generated region and any hand-written implementation are preserved, so regeneration is safe to re-run. See [Emit](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md). This is optional too: a repository that only records knowledge never installs an emitter.
+
+## Why it does not have to be about code
+
+The engine has **no built-in keywords**. It understands files, headings, nesting, and inheritance; what a `decision`, an `invariant`, a `clause`, or an `obligation` *means* comes from an installed **hintbook**. Every other tool in this category compiles its vocabulary in, which is why every one of them is about software.
+
+Swap the hintbook and the same machinery specifies a different profession — [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) works from `party`, `clause`, `obligation`, `right`, and `redline`, over a law firm's matters instead of a codebase. Nothing in the engine changes. Authoring a hintbook takes no programming — see [Hintbooks](https://github.com/open-hint-dev/hint/blob/main/docs/05-hintbooks.md).
+
+Read "code" below as "whatever this repository holds"; the software vocabulary is the default, not a constraint.
 
 ## What belongs in a `.hint`
 
@@ -71,7 +94,7 @@ Asking about `src/auth/login.ts` returns its companion knowledge plus every fold
 
 ## The architecture: a small core, extensible vocabulary
 
-HINT deliberately has **no built-in keywords**. The engine understands only structure:
+The engine understands only structure:
 
 - **Files** — companion hints, folder hints, and detached `.hint` stores.
 - **Headings** — every markdown heading is a typed block. `# decision Gateway owns auth {#auth_boundary}` has a keyword (`decision`), a name, an optional stable id, and a body running to the next heading. Heading depth nests blocks into a tree.
@@ -81,7 +104,7 @@ What each keyword _means_ — and what text it renders to — is defined by **hi
 This split keeps the core honest and the vocabulary open:
 
 - The engine never hard-codes what a `decision` is. Swap or extend the hintbook and the same `.hint` files render in a different dialect.
-- Teams publish their own hintbooks (npm packages, git repositories, or plain folders) tuned to their stack — and the vocabulary need not be about code at all: [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) works from `party`, `clause`, and `obligation` blocks.
+- Teams publish their own hintbooks (npm packages, git repositories, or plain folders) tuned to their stack — or to their profession, as [described above](#why-it-does-not-have-to-be-about-code).
 - Authoring one requires no programming. Instructions are markdown files with `{name}`-style placeholders. If you can write markdown, you can build the vocabulary for your profession.
 - The official starting point is [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer).
 
@@ -97,6 +120,19 @@ When a `.hint` goes further and *declares* surfaces the code must contain — a 
 - `hint lock` / `hint diff` — snapshot what was generated; report which blocks drifted since.
 
 This is a specialization, not the main path. It applies only to companion `<file>.hint` specs, and a repository that never uses it gets the full value of everything above.
+
+## Keeping it current
+
+Recorded knowledge decays, and it decays quietly: an agent finishes a task and does not come back to update the spec, a file is renamed and its `.hint` is left behind, a block that restated a signature is now describing code that no longer exists. Nothing fails; the knowledge just gets less true, and the next reader is misled with the authority of a spec behind it.
+
+HINT does not try to fix this by asking harder. Anything that depends on remembering a step *after* the work is done gets skipped. Instead:
+
+- **The signal rides the read.** `hint <path>` is already run before an edit, so that is where staleness is reported: when the code under the governing hint has moved substantially since that hint was last committed, stderr says so. Advisory only — it never changes the output or the exit code. The correction is cheapest in the change you are already making.
+- **The measure is git, and it is scope-relative** — the share of a scope's files that changed since the hint's last commit — so it means the same thing for a one-file companion spec and for the repository root.
+- **The threshold depends on what the knowledge is.** A spec that *declares surfaces* restates the shape of the code and goes wrong as soon as the code moves. A `decision` or an `invariant` explains *why* the code is the way it is, and survives refactoring. Holding both to one bar would either miss the first or nag about the second until the signal is ignored.
+- **[`hint status`](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md#hint-status--what-has-come-loose) is the inventory pass** — the whole repository at once: knowledge the code has moved away from, specs whose target was deleted, drift against `hint.lock`. Run it in CI with `--exit-code`, or at the start of a session.
+
+The authoring guidance follows from the same observation. Knowledge that *explains* keeps; knowledge that *restates* the code is a copy that begins drifting immediately. Quoting the contents of another file into a spec is the worst case of it — a snapshot that goes stale silently. Reference the path and state the constraint instead.
 
 ## Principles
 
@@ -123,6 +159,7 @@ This is a specialization, not the main path. It applies only to companion `<file
 - [How It Works](https://github.com/open-hint-dev/hint/blob/main/docs/04-how-it-works.md) — the resolve → parse → render pipeline in detail.
 - [Hintbooks](https://github.com/open-hint-dev/hint/blob/main/docs/05-hintbooks.md) — using, authoring, and distributing keyword vocabularies.
 - [CLI Reference](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md) — every command and flag.
+- [Emit](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md) — producing artifacts from specs, and authoring an emitter.
 - [Migrating to 1.1](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md) — what changed and why.
 
 
@@ -298,6 +335,21 @@ hint --prompt src/billing/invoice.ts | claude -p
 hint --strict 'src/**/*.hint'
 ```
 
+### Keeping it honest
+
+Knowledge goes stale quietly. When the code under the hint governing a path has moved a long way since that hint was last committed, stderr says so on the read itself:
+
+```
+hint: 9 of 11 files under src/billing changed since src/billing/_.hint was last updated, and it records knowledge — re-check it against the code and update it if it no longer holds.
+```
+
+It is an observation, not a failure — the output and exit code are unchanged. For the whole repository at once, including specs whose target was deleted:
+
+```bash
+hint status                 # what has come loose
+hint status --exit-code     # exit 1 on findings, for CI
+```
+
 ## 8. Optional: contracts
 
 For companion specs that declare surfaces, HINT can check them mechanically — no model involved. Skip this section entirely if your repository only records knowledge; everything above works without it.
@@ -305,14 +357,16 @@ For companion specs that declare surfaces, HINT can check them mechanically — 
 ```bash
 hint verify src/billing/invoice.ts          # deterministic, token-free: every declared surface present?
 hint lock src/billing/invoice.ts            # mark the target as generated
-hint src/billing/invoice.ts                 # now a no-op while the spec is unchanged (skipped)
+hint --prompt src/billing/invoice.ts        # a no-op while the spec is unchanged (skipped)
 hint diff src/billing/invoice.ts            # after an edit: lists exactly which blocks drifted
-hint --prompt src/billing/invoice.ts       # the drift list is carried automatically; the fix is scoped to those blocks
+hint --prompt src/billing/invoice.ts        # now carries that drift list; the fix is scoped to those blocks
 ```
+
+The freshness gate is on **generation only**. A plain `hint src/billing/invoice.ts` always returns everything that applies, however fresh the lock — a read is a question about what the repository knows, and it must not be answered with silence just because the code is stable.
 
 `hint verify` reads the generated file and checks that every declared surface (each `func`, `entity`, `error`…) appears in it — catching a stubbed or forgotten declaration for zero tokens, before you lock. Compose the two with `hint verify <path> && hint lock <path>`.
 
-A locked spec recompiles the moment its content (or inherited folder/root context) or its target file changes — editing the generated code underneath an unchanged spec counts as drift too; `--force` recompiles regardless. See the [CLI reference](06-cli.md#hint-verify-paths--structurally-check-generated-output) for `hint verify`, `hint lock`, and `hint diff`.
+A locked spec recompiles the moment its content (or inherited folder/root context) or its target file changes — editing the generated code underneath an unchanged spec counts as drift too; `--force` recompiles regardless. See the [CLI reference](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md#hint-verify-paths--structurally-check-generated-output) for `hint verify`, `hint lock`, and `hint diff`.
 
 ## Where to go next
 
@@ -543,7 +597,7 @@ See [Hintbooks](https://github.com/open-hint-dev/hint/blob/main/docs/05-hintbook
 
 Every stage is deterministic: sorted traversal, stable tree synthesis, ordered hintbook lookup, and pure template interpolation. The same knowledge and hintbooks always produce byte-identical output — which makes it a reviewable, diffable artifact.
 
-That determinism is what the `hint.lock` builds on. Each generated target is fingerprinted by a hash over its blocks and its inherited context; [`hint lock`](06-cli.md#hint-lock-paths--record-generated-work) records those fingerprints, later runs compare against them to skip unchanged specs, and [`hint diff`](06-cli.md#hint-diff-paths--show-what-drifted) reports the exact blocks that differ — turning "regenerate everything" into "reconcile only what moved."
+That determinism is what the `hint.lock` builds on. Each generated target is fingerprinted by a hash over its blocks and its inherited context; [`hint lock`](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md#hint-lock-paths--record-generated-work) records those fingerprints, later `--prompt` runs compare against them to skip unchanged specs, and [`hint diff`](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md#hint-diff-paths--show-what-drifted) reports the exact blocks that differ — turning "regenerate everything" into "reconcile only what moved."
 
 
 <!-- ============================================================ -->
@@ -659,7 +713,7 @@ surface: false
 
 ### Modes
 
-A hintbook is **flat**: one `<keyword>.md` file per keyword, no mode dimension. Files carrying a second extension (`__header__.fix.md`, `__mode__.review.md`) are leftovers from the removed 1.x mode system and are ignored — an unmigrated book still loads its base vocabulary. See [migration](07-migration.md#2-modes-are-gone).
+A hintbook is **flat**: one `<keyword>.md` file per keyword, no mode dimension. Files carrying a second extension (`__header__.fix.md`, `__mode__.review.md`) are leftovers from the removed 1.x mode system and are ignored — an unmigrated book still loads its base vocabulary. See [migration](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md#2-modes-are-gone).
 
 ### Running instructions
 
@@ -772,6 +826,7 @@ Knowledge is **inherited**: a path always picks up the folder `_.hint` chain fro
 | The path exists but declares nothing of its own | `no spec of its own for <path>; returning inherited context from <ancestor>` | `0` |
 | The path is not in this repository | `<path> does not exist in this repository and has no spec; …` | `2` |
 | A glob matched nothing | `'<pattern>' matched no .hint files` | `2` |
+| The code under the governing hint has moved a long way since it was written | `<n> of <m> files under <scope> changed since <hint> was last updated, and it records knowledge — re-check it…` | `0` |
 
 Inheriting is a **successful** lookup — the ancestor knowledge is the answer for that path. Only a path that names nothing in the repository is a failure. This is what stops the common case from looking like an error.
 
@@ -781,7 +836,7 @@ Inheriting is a **successful** lookup — the ancestor knowledge is the answer f
 | ------ | ------ |
 | `--prompt` | Wrap the knowledge in a standalone implementation prompt (persona header, verification footer) for piping to a fresh agent. Not needed mid-session. |
 | `--strict` | Exit `2` when any named path has no spec of its own, instead of returning inherited context. Use it to validate specs in CI. |
-| `--force` | Ignore `hint.lock` and include every file, even unchanged ones. |
+| `--force` | Ignore `hint.lock` and regenerate every file, even unchanged ones. Only affects `--prompt`; a plain read is never gated. |
 | `--no-refs` | Return only the named specs, not the specs they reference. References are included by default. |
 | `--standalone` | Implies `--prompt`, and prepends the hintbook's tag glossary for an agent that never loaded `AGENTS.md`. |
 
@@ -793,6 +848,8 @@ hint --strict 'src/**/*.hint'                  # CI: every named spec must resol
 Referenced specs (a spec's `# read` targets and path links) are pulled in automatically with shared ancestors emitted once, so you never need a second call for a path the first one pointed at.
 
 **Breadth guard.** A run crossing roughly 25 scopes or ~20k estimated tokens prints a one-line notice on stderr with the scope count and token estimate. Both file and folder scopes count, so the guard works in a folder-knowledge-only repository too.
+
+**Staleness.** For each path you name — not the reference closure — the hint that governs it (its own spec, else the nearest ancestor `_.hint`) is checked against git, and stderr says so when the code beneath it has moved substantially since that hint was last committed. Advisory: it never changes the exit code or the output. It stays silent outside git, for a hint that has never been committed, for one with uncommitted changes (you are editing it right now), and for a call naming more than ten paths. At most three lines per run. `hint status` applies the same measure to the whole project.
 
 **Reconciliation.** When a `hint.lock` exists and blocks have drifted, `--prompt` output carries a block-level drift report automatically — there is no mode to select. See [`hint diff`](#hint-diff-paths--show-what-drifted).
 
@@ -910,6 +967,76 @@ hint remove @openhint/hintbook-lawyer     # npm:// prefix may be omitted
 
 ---
 
+## `hint status` — what has come loose
+
+Recorded knowledge decays in ways nobody notices at the time: a spec is not updated after a run, a target is renamed and its `.hint` is left behind, code is edited underneath a locked spec. Each is invisible from any single path. `hint status` walks every `.hint` in the project and reports what has drifted away from the code it describes.
+
+```bash
+hint status                 # the inventory
+hint status --json          # machine-readable, includes the informational rows
+hint status --exit-code     # exit 1 when anything needs attention, for CI
+```
+
+```
+orphan    src/legacy/old.ts.hint    target was removed from the repository
+drifted   src/billing/invoice.ts    2 block(s) drifted since it was locked: func total, entity Invoice
+stale     src/auth/_.hint           9 of 11 files under the target changed since this hint was last updated
+unlocked  src/gateway/handler.go    companion spec has never been locked
+```
+
+| Row | What it means |
+| --- | --- |
+| `orphan` | The target was deleted or renamed. The knowledge now describes nothing — move it or delete it. |
+| `drifted` | The target is tracked in `hint.lock` and no longer matches what was locked. Run `hint diff <path>` for the block list. |
+| `stale` | The code under the scope has moved substantially since the hint was last committed. An observation, not a verdict. |
+| `unlocked` | A companion spec in a project that uses `hint.lock`, never locked. Only reported when a lock exists. |
+| `pending` | The target has not been written yet — a spec written ahead of its code. Supported and expected, so it is counted on stderr and listed only under `--json`, never in the table. |
+
+**Staleness is measured against git**, as the share of a scope's files that changed between the hint's last commit and `HEAD`. That is why it means the same thing for a single-file companion spec and for the repository root. Two thresholds apply, because two kinds of knowledge decay at different rates:
+
+- A scope that **declares surfaces** (`func`, `entity`, `field` — whatever the hintbooks flag `surface: true`) restates the shape of the code, so it is flagged once a fifth of its files move.
+- A scope that only **explains** (`decision`, `invariant`, `rule`, `bad`) records why the code is the way it is, which survives refactoring. It is flagged only past half.
+
+Outside a git repository, or when git is unavailable, staleness and orphan detection are skipped and stderr says so — an unmeasurable scope is never reported as a healthy one. Hint files that exist only to be `@include`d are fragments describing no path, and are left out of the inventory entirely.
+
+Exit `0` when the inventory is clean, `2` when the project has no `.hint` files at all, and `1` only with `--exit-code` and at least one finding. Without `--exit-code` it always exits `0` on a populated project, so it is safe to run from a hook.
+
+### Wiring it in
+
+A read-time signal catches what the person editing that path can fix. It does not catch what nobody happened to read. That is the inventory's job, and it wants a scheduled reader:
+
+```yaml
+# .github/workflows/hint.yml — the librarian pass
+- run: npx @openhint/cli status --exit-code
+```
+
+Run it on a schedule rather than per-PR if the repository is large and the backlog is old — a gate that fails on day one gets disabled. `--json` if you want to file the findings instead of failing.
+
+The other placement worth knowing: a hook on **session end**, which is the one mechanism that does not depend on the agent remembering anything. In Claude Code, a `Stop` hook running `hint status` puts the current inventory in front of the agent before it finishes. This is agent-specific, so it is a recipe rather than a feature — HINT itself stays neutral, and `hint status` is a plain command any tool can call.
+
+---
+
+## `hint emit <paths...>` — produce the artifact a spec describes
+
+```bash
+hint emit src/billing/invoice.ts    # write the artifact
+hint emit --check                   # CI: what is committed equals what the spec produces
+hint emit --stdout src/billing      # preview without touching the working tree
+hint emit --target go src/svc       # force an emitter instead of inferring one
+```
+
+Renders each spec through the emit templates of the registered hintbooks. Deterministic and model-free — the same spec and the same templates always produce byte-identical output.
+
+**Only companion `<file>.hint` specs emit.** A folder `_.hint` describes everything beneath it and has no single output, so it never emits; it supplies the constraints an unfilled hole is written against. A folder argument is expanded to its subtree.
+
+Code outside the `hint:begin` … `hint:end` region is preserved, and a hole body that has been filled is never overwritten — a spec that moved underneath one is reported instead.
+
+Exit `0` succeeded, `1` `--check` found a difference, `2` nothing to emit — and it says which of the three reasons applied rather than reporting a clean build over an empty set.
+
+Full reference, including template syntax and how to author an emitter → [`docs/08-emit.md`](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md).
+
+---
+
 ## `hint version` — environment
 
 Prints the CLI version, then every registered hintbook with its version and where it resolved from:
@@ -953,7 +1080,9 @@ It is a presence lint — it catches a whole surface omitted (a stubbed function
 hint lock src/billing/invoice.ts
 ```
 
-Fingerprints the given specs into `hint.lock`. Afterwards a plain `hint` run skips each recorded target while its spec, its inherited context, and the vocabulary it uses all stay unchanged **and** its generated output is untouched.
+Fingerprints the given specs into `hint.lock`. Afterwards a `hint --prompt` run skips each recorded target while its spec, its inherited context, and the vocabulary it uses all stay unchanged **and** its generated output is untouched.
+
+**The gate applies to generation only.** A plain `hint <path>` always returns everything that applies, however fresh the lock — a read is a question about what the repository knows, and answering it with silence because the code happens to be stable would make what an agent learns depend on the state of `hint.lock`.
 
 Each entry's hash folds in the target's own blocks, its inherited context, and the resolved instruction content of every keyword in its chain — so changing what a keyword *renders to* invalidates exactly the files using it. A separate `target` hash records the generated output, so code edited underneath an unchanged spec is detected as drifted rather than skipped. Changes to a keyword's `description`, `synonyms`, or `surface` flag invalidate nothing, because they never affect output.
 
@@ -982,7 +1111,7 @@ See [`docs/07-migration.md`](https://github.com/open-hint-dev/hint/blob/main/doc
 
 # Migrating to 1.1
 
-1.1 repositions HINT from "a spec transpiler that emits an implementation prompt" to **a context compiler: given a path or an intent, return the repository knowledge that applies.** Your `.hint` files do not change. What changes is what `hint` prints by default, what it says when it cannot answer, and how much CLI there is.
+1.1 repositions HINT from "a spec transpiler that emits an implementation prompt" to **spec-as-source without the generator**: the `.hint` files are the source of truth, and `hint` returns the part of that spec which governs the path you are about to touch — rather than a prompt that regenerates it. Your `.hint` files do not change. What changes is what `hint` prints by default, what it says when it cannot answer, and how much CLI there is.
 
 Despite the minor version number, **1.1 contains breaking changes** — the default output of `hint <path>`, several removed commands, a renamed flag, and stricter exit codes. Read this page before upgrading.
 
@@ -1095,7 +1224,39 @@ Re-run `hint apply` to pick it up.
 
 `target` is the path that knowledge governs — pass it straight to `hint <path>`. `weak` marks a result that matched under half your query terms. Weak results are **never** filtered out; when all of them are weak, a note goes to stderr. Existing parsers are unaffected: both fields are additive.
 
-## 8. Library API (`@openhint/transpiler`)
+## 8. `hint.lock` no longer gates a plain read
+
+**Before:** with a lock present, `hint <path>` returned *nothing* for a target whose spec and output were unchanged. That made sense while `hint` existed to regenerate code; it does not while `hint` exists to answer "what does this repository know about this path?" — it withheld knowledge precisely when the code was stable, and made what an agent learned about a path depend on the state of `hint.lock`.
+
+**Now:** the freshness gate applies to `--prompt` only. A plain read always returns everything that applies.
+
+```bash
+hint src/billing/invoice.ts             # always the full applicable knowledge
+hint --prompt src/billing/invoice.ts    # skipped while the spec and its output are unchanged
+hint --prompt src/billing/invoice.ts --force   # regenerate regardless
+```
+
+**Migrate:** if you scripted `hint <path>` expecting empty output to mean "up to date", use `hint diff <path>` — that is the question it actually answers. `--force` on a plain read is now a no-op and can be dropped.
+
+## 9. New: staleness and `hint status`
+
+Additive; nothing to migrate.
+
+`hint <path>` now checks the hint governing each path you name against git, and writes one advisory stderr line when the code beneath it has moved substantially since that hint was last committed. It never changes stdout or the exit code, and stays silent outside git, for a hint that has never been committed, and for one with uncommitted changes.
+
+`hint status` inventories the whole repository: `stale`, `orphan` (target deleted or renamed), `drifted` / `unlocked` (against `hint.lock`), and `pending` (a spec written ahead of its target). `--json` for machines, `--exit-code` to gate CI.
+
+Two thresholds apply, from the hintbooks' existing `surface: true` flag: a scope that declares surfaces restates the shape of the code and is flagged past a fifth of its files; one that only explains it is flagged past half. See [`docs/06-cli.md`](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md#hint-status--what-has-come-loose).
+
+## 10. New: `hint emit`
+
+Additive; nothing to migrate. Nothing changes for a project that installs no emitter.
+
+`hint emit` renders the artifact a spec produces, through `<keyword>.tmpl` templates supplied by an **emit pack** — a hintbook carrying a `target` field. Because hintbook resolution already globs `**/hintbook.json` recursively, registering a vocabulary package also registers every emitter it ships.
+
+`hint emit --check` asserts in CI that what is committed equals what the spec produces. See [`docs/08-emit.md`](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md).
+
+## 11. Library API (`@openhint/transpiler`)
 
 Only relevant if you embed the engine.
 
@@ -1110,9 +1271,264 @@ Only relevant if you embed the engine.
 | `verifyTargets(root, hints, books, mode)` | `verifyTargets(root, hints, books)` |
 | `collectSurfaces(node, books, mode)` / `countSurfaceKeywords(books, mode)` | same without `mode` |
 | `resolveClosurePaths(root, paths)` | takes resolved hint paths (from `resolveRequests(...).hintPaths`) |
-| — | new: `resolveRequests`, `resolvedNothing`, `matchedNothing`, `findNearestFolderHint`, `hintTargetName`, `parseHintFiles`, `countScopes` |
+| — | new: `resolveRequests`, `resolvedNothing`, `matchedNothing`, `findNearestFolderHint`, `hintTargetName`, `parseHintFiles`, `countScopes`, `collectScopeNodes`, `collectIncludedPaths` |
+| — | new (staleness): `readGitSnapshot`, `measureStaleness`, `collectContractScopes`, `inspectProject`, `formatStatus` |
+| — | new (emit): `selectEmitter`, `planEmit`, `renderArtifact`, `mergeArtifact`, `renderTemplate`; `HintbookData` gained `target` / `match` / `comment` / `symbols` |
 
 The pipeline is now explicit — `resolve → parse → select → render` — so a different renderer (structured output, a different framing) can be added without touching resolution.
+
+
+<!-- ============================================================ -->
+<!-- CORE DOCS — Emit (artifacts from specs) -->
+<!-- ============================================================ -->
+
+# Emit: producing artifacts from specs
+
+`hint emit` renders the artifact a spec produces — TypeScript, Go, a contract document, anything a hintbook has templates for. It is deterministic and model-free: the same spec and the same templates always produce byte-identical output, which is what makes `hint emit --check` an assertion rather than an opinion.
+
+This is the part of HINT that makes **Spec-as-Source** literal rather than aspirational. It is also entirely optional — a repository that only records knowledge never installs an emitter and loses nothing.
+
+```bash
+hint emit src/billing/invoice.ts    # write the artifact
+hint emit --check                   # CI: what is committed equals what the spec produces
+hint emit --stdout src/billing      # preview without touching the working tree
+```
+
+---
+
+## The rule that keeps generation precise
+
+**A companion `<file>.hint` is the unit of emission. A folder `_.hint` never emits.**
+
+A companion spec already names exactly one output path — that *is* its target. A folder spec describes everything beneath it and has no single output, so it contributes constraints, not code. This is the same unit `hint lock`, `hint diff`, and `hint verify` already operate on.
+
+| Hint kind | Emits | Role when something below it emits |
+| --- | --- | --- |
+| `_.hint` (root or folder) | **never** | Supplies inherited constraints to holes; may pin the target for its subtree. |
+| `invoice.ts.hint` | yes | The unit. The output path's extension selects the emitter. |
+| `agreement.md.hint` | yes | Identical machinery; the document emitter has no holes at all. |
+| A block with no template in the selected target | never | Flows into holes as constraint text. |
+| A block whose keyword no hintbook defines | never | Passed through as prose, exactly as at render time. |
+
+Three consequences, which together are the whole reason output stays small:
+
+- A root `_.hint` full of `decision` blocks is **not** multiplied into the forty files beneath it. It appears only where a hole needs it — and holes are the only place a model reads anything.
+- `decision`, `rule`, and `bad` have no TypeScript template, so they never produce code. That falls out of template lookup; nothing configures it.
+- `hint emit src/billing/` means "emit every companion spec beneath this folder", never "emit the folder". A folder argument is expanded to its subtree, because reading it any other way would make every folder argument a dead end.
+
+---
+
+## Emit packs
+
+An emit pack is a hintbook that carries `<keyword>.tmpl` templates instead of `<keyword>.md` instructions. It is distinguished by one field — `target` — and resolves through exactly the same machinery, so registering the vocabulary package also registers every emitter it ships.
+
+```text
+hintbook-software-engineer/
+  keywords/                    ← the vocabulary
+    hintbook.json              { "id": "hintbook-se" }
+    entity.md
+    func.md
+  emit/typescript/             ← an emitter
+    hintbook.json              { "id": "emit-se-ts", "target": "typescript", … }
+    entity.tmpl
+    func.tmpl
+  emit/go/
+    hintbook.json              { "id": "emit-se-go", "target": "go", … }
+    func.tmpl
+```
+
+Hintbook resolution globs `**/hintbook.json` recursively, so a project that registers `npm://@openhint/hintbook-software-engineer` picks all of these up with no second list in `hint.yml`. A team wanting a target the vocabulary author never wrote publishes a folder containing only `emit/kotlin/` and registers it alongside.
+
+### The manifest
+
+```json
+{
+    "id": "emit-se-typescript",
+    "target": "typescript",
+    "match": ["*.ts", "*.tsx"],
+    "comment": "// {text}"
+}
+```
+
+| Field | Purpose |
+| --- | --- |
+| `target` | Names the emitter. Its presence is what makes this an emit pack rather than a vocabulary. Overridable per run with `--target`. |
+| `match` | Globs matched against the **output** path, so the file extension selects the emitter and the engine never learns a language. A pattern with no `/` matches the basename. Omit it to make the pack selectable only by an explicit `--target`. |
+| `comment` | How this target writes a comment, as a `{text}` pattern — `// {text}`, `# {text}`, `<!-- {text} -->`. Used for region markers and for `{doc}`. |
+| `symbols` | Reserved: an external command reporting a file's real symbols as JSON, for AST-backed `verify` and `extract`. Not yet consumed. |
+
+An emit pack ships no glossary and defines no vocabulary. It never appears in `hint author` output, never contributes to the `AGENTS.md` glossary, and never shadows an instruction — which matters because hintbook folders resolve in sorted order, and `emit/go` sorts before `keywords`.
+
+---
+
+## Template syntax
+
+Emit templates use the same `{placeholder}` shape as instruction templates, plus what code needs and prose does not.
+
+| Placeholder | Renders |
+| --- | --- |
+| `{name}` `{id}` `{body}` | The block's name, `{#id}`, and markdown body. |
+| `{doc}` | `body` rewrapped as a comment block using the pack's `comment` pattern. |
+| `{ident}` `{type}` | `name` split on its **first colon**. `## field total: Decimal` gives both; `## field total` gives an ident and an empty type. |
+| `{children}` | Every child that has a template in this target, in document order. |
+| `{children:arg}` | Only children whose keyword — or a synonym of it — is `arg`. |
+| `{children:arg sep=", "}` | The same, joined by a separator instead of newlines. |
+| `{child:result}` | The first such child, or nothing. |
+| `{?...}` | An optional group: renders only if every placeholder inside resolves non-empty, otherwise the whole segment vanishes. |
+| `{type\|any}` | A literal fallback for when the placeholder is empty. |
+| `{hole:body\|<stub>}` | A region the emitter cannot fill. See [Holes](#holes). |
+
+A multi-line expansion is re-indented to the column its placeholder sat on, so a hole written one indent in emits a block one indent in.
+
+**Braces that mean themselves are left alone.** A `{` opens a placeholder only when a well-formed expression closes it on the same line, and only when the target defines that name with the right arity. `func f() {`, `type X = { id: string }`, and `` `${x}` `` all pass through untouched.
+
+### A type is always optional
+
+`## arg invoice` is a legitimate spec written by a person. Requiring `## arg invoice: Invoice` would turn authoring back into programming, which is precisely what a `.hint` file exists not to be.
+
+So degradation lives in the **template**, not in a requirement on the author — because how to cope with a missing type is a property of the language, not of the intent:
+
+| Target | Template | `## arg invoice: Invoice` | `## arg invoice` |
+| --- | --- | --- | --- |
+| TypeScript | `{ident}{?: {type}}` | `invoice: Invoice` | `invoice` |
+| Go | `{ident} {type\|any}` | `invoice Invoice` | `invoice any` |
+
+Emit always produces the best artifact the stated intent supports.
+
+### Example
+
+```markdown
+# func validateInvoice
+
+Validates an Invoice before persisting.
+
+## arg invoice: Invoice
+## arg options
+## result: Invoice
+```
+
+```text
+emit/typescript/func.tmpl
+──────────────────────────────────────────────
+{doc}
+export function {name}({children:arg sep=", "}){?: {child:result}} {
+    {hole:body|throw new Error("not implemented");}
+}
+
+emit/typescript/arg.tmpl      {ident}{?: {type}}
+emit/typescript/result.tmpl   {name}
+```
+
+The same machinery on a legal vocabulary needs no holes, no adapter, and no model:
+
+```text
+emit/markdown/clause.tmpl     ### {name}\n\n{body}\n\n{children}
+emit/markdown/obligation.tmpl {ident} shall {body}
+```
+
+---
+
+## Holes
+
+A hole is a region the deterministic emitter provably cannot fill. It is emitted with the constraints that govern it already attached, assembled from the same root-down chain `hint <path>` returns:
+
+```ts
+export function validateInvoice(invoice: Invoice, options): Invoice {
+    // Validates an Invoice before persisting.
+    // Honor:
+    //   rule FailClosed — Security-sensitive operations fail closed.  (root)
+    //   decision Money is stored as integer minor units — …  (src)
+    //   bad SilentDefaults — Never coerce an invalid Invoice valid.  (src)
+    // hint:hole(body) spec=992daa68
+    throw new Error("not implemented");
+    // hint:end
+}
+```
+
+The constraint list is **derived, not declared**: it is every block in scope that produces no code in this target. A block with an emit template becomes the artifact; a block without one exists to constrain it. No keyword list is hardcoded, so a new vocabulary needs no changes.
+
+**A filled hole is never overwritten.** Everything between the marker and `hint:end` belongs to whoever wrote it. The instructions sit *above* the marker precisely so the regenerated header stays outside that span.
+
+`spec=` records a hash of the governing block when the body was written. When the spec later changes, the hashes diverge and `hint emit` says so — the body is still not touched, only flagged:
+
+```
+hint: src/invoice.ts — spec changed since body was implemented; re-check the body against it.
+```
+
+---
+
+## Guarded regions
+
+The orthodox formulation of spec-as-source fails on contact with reality because it forbids hand-editing the output. Guarded regions dissolve the problem: the generator owns the marked span, the human owns everything else, and both survive regeneration.
+
+```ts
+// hint:begin
+export interface Invoice { … }
+// hint:end
+
+export function settle(invoice: Invoice) {   // hand-written — never touched
+    return ledger.settle(invoice);
+}
+```
+
+| Situation | What happens |
+| --- | --- |
+| The output does not exist | Created, wrapped in a region. |
+| The output exists with a region | The region's contents are replaced; everything outside is preserved. |
+| The output exists with **no** region | The file is kept in full and gains a region at the end — adopting a hand-written file never begins by truncating it. |
+| A hole body was filled | Carried over verbatim; reported if its governing spec moved. |
+
+Markers are matched by their token, not by comment syntax, so `//`, `#`, and `<!-- -->` all work.
+
+---
+
+## `--check`
+
+Because the whole operation is a pure function of spec plus existing file, CI can assert that what is committed equals what the spec produces:
+
+```yaml
+- run: npx @openhint/cli emit --check
+```
+
+The comparison is against the **merged** result, not the raw artifact, so a filled hole is never reported as a difference.
+
+| Result | Exit |
+| --- | --- |
+| Every artifact matches its spec | `0` |
+| An artifact differs, or does not exist | `1`, naming each file |
+| No emitter matched, or nothing resolved | `2`, with the reason |
+
+---
+
+## Options
+
+| Option | Effect |
+| --- | --- |
+| `--check` | Do not write. Exit `1` when an artifact differs from what its spec produces. |
+| `--stdout` | Print the artifacts instead of writing them. |
+| `--target <name>` | Force an emitter instead of selecting one from the output path. |
+
+Exit codes follow the usual taxonomy: `0` succeeded, `1` a check failed, `2` nothing resolved. A run that matched no emittable spec says which of the three reasons applied — no emitters registered, no emitter for these output paths, or only folder hints matched — rather than reporting a clean build over an empty set.
+
+---
+
+## Where this sits
+
+Emission is the third rung of the spec-driven ladder, and a repository does not have to pick one rung for all of itself:
+
+| What is on disk | Effective rung | What that buys |
+| --- | --- | --- |
+| Folder `_.hint` only | knowledge | Retrieval and staleness. |
+| Companion spec, no emit template matched | spec-anchored | `verify` and drift against the spec. |
+| Companion spec with templates in the target | **spec-as-source** | `emit --check` proves the artifact matches the spec. |
+
+None of this needs configuring — it falls out of what was written. Strictness can be graded per path only because *scope* is per path.
+
+---
+
+- [CLI Reference](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md) — every command and flag.
+- [Hintbooks](https://github.com/open-hint-dev/hint/blob/main/docs/05-hintbooks.md) — authoring a vocabulary.
+- [Introduction](https://github.com/open-hint-dev/hint/blob/main/docs/01-intro.md) — Spec-as-Source, and why the generator is optional.
 
 
 <!-- ============================================================ -->

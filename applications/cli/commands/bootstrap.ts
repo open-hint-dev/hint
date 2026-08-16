@@ -60,6 +60,12 @@ export async function collectHintbookSections(projectRootPath: string, config: T
 
         for (const hintbookPath of hintbookPaths) {
             const hintbook = await Transpiler.loadHintbook(hintbookPath);
+
+            // Emit packs carry no glossary — they describe artifacts, not the tags an agent reads.
+            if (Transpiler.isEmitPack(hintbook)) {
+                continue;
+            }
+
             const system = hintbook.instructions.find((instruction) => instruction.name === Transpiler.RUNNING_SYSTEM)?.content.trim();
 
             if (system) {

@@ -622,7 +622,10 @@ describe('cli lock / gate / diff / closure', () => {
     });
 
     describe('gate', () => {
-        it('skips a locked file whose spec is unchanged and its target exists', async () => {
+        // The gate exists so regeneration skips work already done. A plain read is a question about what
+        // the repository knows, and answering it with silence because the code happens to be stable is how
+        // a lock file ends up deciding what an agent learns about a path.
+        it('never withholds knowledge on a plain read, however fresh the lock', async () => {
             await withProject(
                 {
                     'src/a.ts.hint': '# entity Foo\n\nfoo body\n',
@@ -631,6 +634,22 @@ describe('cli lock / gate / diff / closure', () => {
                 async (dir) => {
                     await runCli(['lock', 'src/a.ts'], dir);
                     const result = await runCli(['src/a.ts'], dir);
+
+                    expect(result.stdout).toContain('foo body');
+                    expect(result.stderr).not.toContain('up to date');
+                },
+            );
+        });
+
+        it('skips a locked file whose spec is unchanged and its target exists', async () => {
+            await withProject(
+                {
+                    'src/a.ts.hint': '# entity Foo\n\nfoo body\n',
+                    'src/a.ts': 'export const a = 1;\n',
+                },
+                async (dir) => {
+                    await runCli(['lock', 'src/a.ts'], dir);
+                    const result = await runCli(['--prompt', 'src/a.ts'], dir);
 
                     expect(result.stdout).toBe('');
                     expect(result.stderr).toContain('up to date');
@@ -648,7 +667,7 @@ describe('cli lock / gate / diff / closure', () => {
                     await runCli(['lock', 'src/a.ts'], dir);
                     await FsPromises.writeFile(Path.join(dir, 'src/a.ts.hint'), '# entity Foo\n\nfoo body changed\n', 'utf8');
 
-                    const result = await runCli(['src/a.ts'], dir);
+                    const result = await runCli(['--prompt', 'src/a.ts'], dir);
                     expect(result.stdout).toContain('foo body changed');
                 },
             );
@@ -663,7 +682,7 @@ describe('cli lock / gate / diff / closure', () => {
                 async (dir) => {
                     await runCli(['lock', 'src/a.ts'], dir);
 
-                    const result = await runCli(['src/a.ts', '--force'], dir);
+                    const result = await runCli(['--prompt', 'src/a.ts', '--force'], dir);
                     expect(result.stdout).toContain('foo body');
                 },
             );
@@ -679,7 +698,7 @@ describe('cli lock / gate / diff / closure', () => {
                     await runCli(['lock', 'src/a.ts'], dir);
                     await FsPromises.rm(Path.join(dir, 'src/a.ts'));
 
-                    const result = await runCli(['src/a.ts'], dir);
+                    const result = await runCli(['--prompt', 'src/a.ts'], dir);
                     expect(result.stdout).toContain('foo body');
                 },
             );
@@ -696,12 +715,12 @@ describe('cli lock / gate / diff / closure', () => {
                     await runCli(['lock', 'src/a.ts'], dir);
 
                     // Sanity: unchanged -> skipped.
-                    expect((await runCli(['src/a.ts'], dir)).stdout).toBe('');
+                    expect((await runCli(['--prompt', 'src/a.ts'], dir)).stdout).toBe('');
 
                     // Change what `entity` compiles to — the spec, the output, and any version are all untouched.
                     await FsPromises.writeFile(Path.join(dir, 'book/entity.md'), '<data_structure>{name}: {body} — now audited</data_structure>\n', 'utf8');
 
-                    const result = await runCli(['src/a.ts'], dir);
+                    const result = await runCli(['--prompt', 'src/a.ts'], dir);
                     expect(result.stdout).toContain('now audited'); // recompiled under the new vocabulary
                 },
             );
@@ -718,7 +737,7 @@ describe('cli lock / gate / diff / closure', () => {
                     // Edit the generated output only; the spec is untouched.
                     await FsPromises.writeFile(Path.join(dir, 'src/a.ts'), 'export const a = 999;\n', 'utf8');
 
-                    const result = await runCli(['src/a.ts'], dir);
+                    const result = await runCli(['--prompt', 'src/a.ts'], dir);
                     expect(result.stdout).toContain('foo body');
                 },
             );

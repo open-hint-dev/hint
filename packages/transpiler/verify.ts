@@ -4,7 +4,7 @@ import type { HintbookData } from './hintbook.js';
 import type { HintData } from './parser.js';
 import { findInstruction } from './compiler.js';
 import { readFile } from './helper.js';
-import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
+import { RUNNING_FILE, RUNNING_FOLDER, vocabularyBooks } from './hintbook.js';
 import { collectFileNodes } from './lock.js';
 
 // A declared surface that must manifest by name in the generated output — the `keyword name` a spec
@@ -84,7 +84,7 @@ export function collectSurfaces(fileNode: HintData, hintbooks: HintbookData[]): 
 export function countSurfaceKeywords(hintbooks: HintbookData[]): number {
     let count = 0;
 
-    for (const hintbook of hintbooks) {
+    for (const hintbook of vocabularyBooks(hintbooks)) {
         for (const instruction of hintbook.instructions) {
             if (instruction.metadata?.surface) {
                 count += 1;

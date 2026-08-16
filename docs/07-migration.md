@@ -1,6 +1,6 @@
 # Migrating to 1.1
 
-1.1 repositions HINT from "a spec transpiler that emits an implementation prompt" to **a context compiler: given a path or an intent, return the repository knowledge that applies.** Your `.hint` files do not change. What changes is what `hint` prints by default, what it says when it cannot answer, and how much CLI there is.
+1.1 repositions HINT from "a spec transpiler that emits an implementation prompt" to **spec-as-source without the generator**: the `.hint` files are the source of truth, and `hint` returns the part of that spec which governs the path you are about to touch — rather than a prompt that regenerates it. Your `.hint` files do not change. What changes is what `hint` prints by default, what it says when it cannot answer, and how much CLI there is.
 
 Despite the minor version number, **1.1 contains breaking changes** — the default output of `hint <path>`, several removed commands, a renamed flag, and stricter exit codes. Read this page before upgrading.
 
@@ -113,7 +113,39 @@ Re-run `hint apply` to pick it up.
 
 `target` is the path that knowledge governs — pass it straight to `hint <path>`. `weak` marks a result that matched under half your query terms. Weak results are **never** filtered out; when all of them are weak, a note goes to stderr. Existing parsers are unaffected: both fields are additive.
 
-## 8. Library API (`@openhint/transpiler`)
+## 8. `hint.lock` no longer gates a plain read
+
+**Before:** with a lock present, `hint <path>` returned *nothing* for a target whose spec and output were unchanged. That made sense while `hint` existed to regenerate code; it does not while `hint` exists to answer "what does this repository know about this path?" — it withheld knowledge precisely when the code was stable, and made what an agent learned about a path depend on the state of `hint.lock`.
+
+**Now:** the freshness gate applies to `--prompt` only. A plain read always returns everything that applies.
+
+```bash
+hint src/billing/invoice.ts             # always the full applicable knowledge
+hint --prompt src/billing/invoice.ts    # skipped while the spec and its output are unchanged
+hint --prompt src/billing/invoice.ts --force   # regenerate regardless
+```
+
+**Migrate:** if you scripted `hint <path>` expecting empty output to mean "up to date", use `hint diff <path>` — that is the question it actually answers. `--force` on a plain read is now a no-op and can be dropped.
+
+## 9. New: staleness and `hint status`
+
+Additive; nothing to migrate.
+
+`hint <path>` now checks the hint governing each path you name against git, and writes one advisory stderr line when the code beneath it has moved substantially since that hint was last committed. It never changes stdout or the exit code, and stays silent outside git, for a hint that has never been committed, and for one with uncommitted changes.
+
+`hint status` inventories the whole repository: `stale`, `orphan` (target deleted or renamed), `drifted` / `unlocked` (against `hint.lock`), and `pending` (a spec written ahead of its target). `--json` for machines, `--exit-code` to gate CI.
+
+Two thresholds apply, from the hintbooks' existing `surface: true` flag: a scope that declares surfaces restates the shape of the code and is flagged past a fifth of its files; one that only explains it is flagged past half. See [`docs/06-cli.md`](06-cli.md#hint-status--what-has-come-loose).
+
+## 10. New: `hint emit`
+
+Additive; nothing to migrate. Nothing changes for a project that installs no emitter.
+
+`hint emit` renders the artifact a spec produces, through `<keyword>.tmpl` templates supplied by an **emit pack** — a hintbook carrying a `target` field. Because hintbook resolution already globs `**/hintbook.json` recursively, registering a vocabulary package also registers every emitter it ships.
+
+`hint emit --check` asserts in CI that what is committed equals what the spec produces. See [`docs/08-emit.md`](08-emit.md).
+
+## 11. Library API (`@openhint/transpiler`)
 
 Only relevant if you embed the engine.
 
@@ -128,6 +160,8 @@ Only relevant if you embed the engine.
 | `verifyTargets(root, hints, books, mode)` | `verifyTargets(root, hints, books)` |
 | `collectSurfaces(node, books, mode)` / `countSurfaceKeywords(books, mode)` | same without `mode` |
 | `resolveClosurePaths(root, paths)` | takes resolved hint paths (from `resolveRequests(...).hintPaths`) |
-| — | new: `resolveRequests`, `resolvedNothing`, `matchedNothing`, `findNearestFolderHint`, `hintTargetName`, `parseHintFiles`, `countScopes` |
+| — | new: `resolveRequests`, `resolvedNothing`, `matchedNothing`, `findNearestFolderHint`, `hintTargetName`, `parseHintFiles`, `countScopes`, `collectScopeNodes`, `collectIncludedPaths` |
+| — | new (staleness): `readGitSnapshot`, `measureStaleness`, `collectContractScopes`, `inspectProject`, `formatStatus` |
+| — | new (emit): `selectEmitter`, `planEmit`, `renderArtifact`, `mergeArtifact`, `renderTemplate`; `HintbookData` gained `target` / `match` / `comment` / `symbols` |
 
 The pipeline is now explicit — `resolve → parse → select → render` — so a different renderer (structured output, a different framing) can be added without touching resolution.
