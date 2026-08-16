@@ -13,11 +13,14 @@ export type EmitOptions = {
     // Write even when re-emission would leave an implementation with nowhere to go. Not `--force`: the
     // root command already defines that, and a program-level flag never reaches a subcommand.
     dropOrphans: boolean;
+    // Append a generated region to a file that already holds content and has none. Off by default,
+    // because doing it silently produces a second copy of every declaration the spec makes.
+    adopt: boolean;
 };
 
 // What happened to one output. `differs` only occurs under --check; `refused` means writing would
 // have deleted an implementation, which is the one outcome worth failing over.
-type Outcome = 'created' | 'updated' | 'unchanged' | 'differs' | 'refused';
+type Outcome = 'created' | 'updated' | 'unchanged' | 'differs' | 'refused' | 'unmanaged';
 
 type Written = {
     output: string;
@@ -29,7 +32,7 @@ type Written = {
 
 export class EmitCommand implements ICommand {
     private paths: string[] = [];
-    private options: EmitOptions = { stdout: false, check: false, dropOrphans: false };
+    private options: EmitOptions = { stdout: false, check: false, dropOrphans: false, adopt: false };
 
     constructor() {}
 
@@ -115,6 +118,13 @@ export class EmitCommand implements ICommand {
         const merged = Transpiler.mergeArtifact(existing, artifact, unit.emitter.comment);
 
         const orphaned = merged.orphaned.map((hole) => hole.label);
+
+        // A file with content and no region is not HINT's to write into. Appending one puts a second
+        // copy of every declared surface into it, which does not fail loudly — it produces a file that
+        // no longer compiles — and the run would report a cheerful "created" while doing it.
+        if (merged.adopted && !this.options.adopt && !this.options.check) {
+            return { output: unit.output, outcome: 'unmanaged', restored: 0, drifted: [], orphaned: [] };
+        }
 
         // An implementation the new artifact has nowhere to put would simply vanish, and vanished work
         // cannot be recovered. The write is refused and the labels are named; the fix is to restore the
@@ -209,6 +219,7 @@ export class EmitCommand implements ICommand {
                     'updated',
                     'unchanged',
                     'refused',
+                    'unmanaged',
                 ] as const
             )
                 .map((outcome) => ({ outcome, count: written.filter((entry) => entry.outcome === outcome).length }))
@@ -216,6 +227,16 @@ export class EmitCommand implements ICommand {
                 .map((entry) => `${entry.count} ${entry.outcome}`);
 
             process.stderr.write(`hint: ${counts.join(', ')}.\n`);
+        }
+
+        const unmanaged = written.filter((entry) => entry.outcome === 'unmanaged');
+
+        for (const entry of unmanaged) {
+            process.stderr.write(
+                `hint: ${entry.output} — not written: the file already has content and no hint:begin region, so emitting ` +
+                    `would append a second copy of everything the spec declares. Delete the hand-written declarations the ` +
+                    `spec now owns and pass --adopt, or keep the spec at the verify rung and run 'hint verify' instead.\n`,
+            );
         }
 
         const refused = written.filter((entry) => entry.outcome === 'refused');
@@ -229,7 +250,7 @@ export class EmitCommand implements ICommand {
             );
         }
 
-        if (refused.length > 0) {
+        if (refused.length > 0 || unmanaged.length > 0) {
             process.exitCode = EXIT_FAILED;
         }
 
