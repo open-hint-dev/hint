@@ -638,9 +638,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openhint/adapter-typescript@workspace:applications/adapter-typescript":
+"@openhint/adapter-typescript@workspace:packages/adapter-typescript":
   version: 0.0.0-use.local
-  resolution: "@openhint/adapter-typescript@workspace:applications/adapter-typescript"
+  resolution: "@openhint/adapter-typescript@workspace:packages/adapter-typescript"
   dependencies:
     "@openhint/preset-eslint": "workspace:*"
     "@openhint/preset-typescript": "workspace:*"

@@ -313,7 +313,7 @@ describe('status — holes', () => {
         const result = await runCli(['status'], await emitted());
 
         expect(result.stdout).toContain('unfilled');
-        expect(result.stdout).toContain('1 hole(s) still hold their emitted stub: body');
+        expect(result.stdout).toContain('1 hole(s) still hold their emitted stub: func settle:body');
         expect(result.stderr).toContain('1 of 1 hint file(s) need attention');
     });
 
@@ -341,7 +341,7 @@ describe('status — holes', () => {
         const result = await runCli(['status'], root);
 
         expect(result.stdout).toContain('outdated');
-        expect(result.stdout).toContain('written against an older spec: body');
+        expect(result.stdout).toContain('written against an older spec: func settle:body');
     });
 });
 
