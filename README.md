@@ -247,7 +247,7 @@ Grammar → [`docs/03-syntax.md`](docs/03-syntax.md) · authoring your own vocab
 | [`docs/05-hintbooks.md`](docs/05-hintbooks.md) | Using, authoring, and shipping hintbooks |
 | [`docs/06-cli.md`](docs/06-cli.md) | CLI reference — every command, flag, and exit code |
 | [`docs/07-migration.md`](docs/07-migration.md) | Breaking changes in 1.1 and how to migrate |
-| [`docs/08-emit.md`](docs/08-emit.md) | Producing artifacts from specs; authoring an emitter |
+| [`docs/08-emit.md`](docs/08-emit.md) | Producing artifacts from specs; authoring an emitter or a language adapter |
 
 Working examples: [demo-pied-piper](https://github.com/open-hint-dev/demo-pied-piper) (a polyglot monorepo) · [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt) (a law firm's document repository).
 

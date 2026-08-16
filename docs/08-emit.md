@@ -276,6 +276,8 @@ An adapter is an external command that reports a file's symbols as JSON:
 
 `kind` is the adapter's own word for it; nothing in HINT interprets it, so a new language needs no changes here. A member with no `type` is treated exactly like a spec that stated none.
 
+`@openhint/adapter-typescript` is the reference implementation, and `@openhint/hintbook-software-engineer` already declares it. It parses syntactically — no program, no type checker, no `tsconfig` resolution — and reports each type as the annotation the author *wrote*, because that is what a human-written spec can honestly be compared against.
+
 Keeping this external is deliberate. Vendoring a TypeScript, Go, and Python parser into the CLI would multiply its install size and its failure modes, and would put language expertise in the one place that has stayed language-free. Vocabularies are plugins; languages should be too — and an adapter that is missing or broken degrades `verify` to the presence lint rather than to a pass it never established.
 
 ---
