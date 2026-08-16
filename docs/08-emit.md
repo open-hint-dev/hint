@@ -71,7 +71,7 @@ Hintbook resolution globs `**/hintbook.json` recursively, so a project that regi
 | `target` | Names the emitter. Its presence is what makes this an emit pack rather than a vocabulary. Overridable per run with `--target`. |
 | `match` | Globs matched against the **output** path, so the file extension selects the emitter and the engine never learns a language. A pattern with no `/` matches the basename. Omit it to make the pack selectable only by an explicit `--target`. |
 | `comment` | How this target writes a comment, as a `{text}` pattern — `// {text}`, `# {text}`, `<!-- {text} -->`. Used for region markers and for `{doc}`. |
-| `symbols` | Reserved: an external command reporting a file's real symbols as JSON, for AST-backed `verify` and `extract`. Not yet consumed. |
+| `symbols` | An external command reporting a file's real symbols as JSON, consumed by `hint verify`. `{file}` is substituted; the path is passed as one argument, never through a shell. A pack may declare only this and carry no templates, making it a pure language adapter. |
 
 An emit pack ships no glossary and defines no vocabulary. It never appears in `hint author` output, never contributes to the `AGENTS.md` glossary, and never shadows an instruction — which matters because hintbook folders resolve in sorted order, and `emit/go` sorts before `keywords`.
 
@@ -253,6 +253,30 @@ unfilled  src/billing/refund.ts     1 hole(s) still hold their emitted stub: bod
 Both are **derived, not tracked** — a fresh render supplies the stubs, the file on disk supplies what was written — so there is no bookkeeping file that could itself fall out of date.
 
 There is deliberately no separate hole list in `hint --prompt`. The constraints already sit inline at each hole in the artifact, and copying them into the prompt as well would repeat exactly the duplication that scoping exists to prevent. An agent implementing a hole reads the file it is editing.
+
+---
+
+## Language adapters
+
+Emission produces the shape a spec describes. The other direction — does the file actually contain it? — needs to read the code, and that is the one thing the engine deliberately cannot do.
+
+An adapter is an external command that reports a file's symbols as JSON:
+
+```json
+{
+    "symbols": [
+        { "kind": "function", "name": "settle",
+          "params": [{ "name": "invoice", "type": "Invoice" }],
+          "returns": "Receipt" },
+        { "kind": "interface", "name": "Invoice",
+          "fields": [{ "name": "total", "type": "Decimal" }] }
+    ]
+}
+```
+
+`kind` is the adapter's own word for it; nothing in HINT interprets it, so a new language needs no changes here. A member with no `type` is treated exactly like a spec that stated none.
+
+Keeping this external is deliberate. Vendoring a TypeScript, Go, and Python parser into the CLI would multiply its install size and its failure modes, and would put language expertise in the one place that has stayed language-free. Vocabularies are plugins; languages should be too — and an adapter that is missing or broken degrades `verify` to the presence lint rather than to a pass it never established.
 
 ---
 

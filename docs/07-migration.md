@@ -145,7 +145,15 @@ Additive; nothing to migrate. Nothing changes for a project that installs no emi
 
 `hint emit --check` asserts in CI that what is committed equals what the spec produces. See [`docs/08-emit.md`](08-emit.md).
 
-## 11. Library API (`@openhint/transpiler`)
+## 11. `hint verify` checks shape when an adapter is installed
+
+Additive. Without an adapter, `verify` behaves exactly as it did.
+
+An **adapter** is an emit pack that declares a `symbols` command — an external process reporting the file's real symbols as JSON. When one covers a target, `verify` compares the declared parameters, their types, the return type, and a structure's fields instead of only checking that the name appears somewhere in the file.
+
+Only what the spec stated is checked, so no existing spec becomes stricter by installing an adapter. An adapter that is missing or fails degrades to the presence lint, never to a pass.
+
+## 12. Library API (`@openhint/transpiler`)
 
 Only relevant if you embed the engine.
 
@@ -163,5 +171,6 @@ Only relevant if you embed the engine.
 | — | new: `resolveRequests`, `resolvedNothing`, `matchedNothing`, `findNearestFolderHint`, `hintTargetName`, `parseHintFiles`, `countScopes`, `collectScopeNodes`, `collectIncludedPaths` |
 | — | new (staleness): `readGitSnapshot`, `measureStaleness`, `collectContractScopes`, `inspectProject`, `formatStatus` |
 | — | new (emit): `selectEmitter`, `planEmit`, `renderArtifact`, `mergeArtifact`, `renderTemplate`; `HintbookData` gained `target` / `match` / `comment` / `symbols` |
+| — | new (conformance): `readSymbols`, `collectExpectations`, `compareExpectations`, `inspectHoles` |
 
 The pipeline is now explicit — `resolve → parse → select → render` — so a different renderer (structured output, a different framing) can be added without touching resolution.

@@ -43,21 +43,36 @@ export class VerifyCommand implements ICommand {
         await reportResolution(projectRootPath, resolution);
 
         const hints = await Transpiler.parseHintFiles(projectRootPath, resolution.hintPaths);
-        const results = await Transpiler.verifyTargets(projectRootPath, hints, hintbooks);
+        const files = Transpiler.collectFileNodes(hints);
 
         // Verification is a claim about a set of files. An empty set proves nothing, so it must not
         // report that every declared surface is present.
-        if (results.length === 0) {
+        if (files.length === 0) {
             process.stderr.write(`hint: no file spec matched — nothing to verify. Only companion <file>.hint specs declare surfaces.\n`);
             process.exitCode = EXIT_UNRESOLVED;
 
             return;
         }
 
-        const summary = Transpiler.formatVerification(results);
+        const conformed = await this.conform(projectRootPath, hints, hintbooks);
+
+        // Files an adapter covered are checked by shape; the rest fall back to the presence lint, so a
+        // project that has installed no adapter behaves exactly as it did before.
+        const linted = (await Transpiler.verifyTargets(projectRootPath, hints, hintbooks)).filter((result) => !conformed.checked.has(result.name));
+        const summary = [
+            conformed.summary,
+            Transpiler.formatVerification(linted),
+        ]
+            .filter(Boolean)
+            .join('\n');
 
         if (!summary) {
-            process.stderr.write(`hint: verified ${results.length} file(s) — every declared surface is present.\n`);
+            const how =
+                conformed.checked.size > 0
+                    ? `${conformed.checked.size} against the code, ${linted.length} by declared name`
+                    : 'every declared surface is present';
+
+            process.stderr.write(`hint: verified ${files.length} file(s) — ${how}.\n`);
 
             return;
         }
@@ -65,5 +80,36 @@ export class VerifyCommand implements ICommand {
         // Non-zero exit so an agent loop or CI step can gate on structural conformance.
         process.stdout.write(`${summary}\n`);
         process.exitCode = EXIT_FAILED;
+    }
+
+    // Compares each spec against the symbols its language adapter reports. An adapter is declared on
+    // an emit pack, so a target gains real conformance checking by installing one — and a target with
+    // none degrades to the presence lint rather than to a pass it never established.
+    private async conform(
+        projectRootPath: string,
+        hints: Transpiler.HintData[],
+        hintbooks: Transpiler.HintbookData[],
+    ): Promise<{ summary: string; checked: Set<string> }> {
+        const checked = new Set<string>();
+        const sections: string[] = [];
+
+        for (const { name, node } of Transpiler.collectFileNodes(hints)) {
+            const emitter = Transpiler.selectEmitter(hintbooks, name);
+            const symbols = await Transpiler.readSymbols(projectRootPath, emitter?.symbols, name);
+
+            if (symbols === null) {
+                continue;
+            }
+
+            checked.add(name);
+
+            const findings = Transpiler.compareExpectations(Transpiler.collectExpectations(node, hintbooks), symbols);
+
+            if (findings.length > 0) {
+                sections.push(Transpiler.formatFindings(name, findings));
+            }
+        }
+
+        return { summary: sections.join('\n'), checked };
     }
 }

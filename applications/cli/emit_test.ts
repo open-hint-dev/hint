@@ -378,3 +378,64 @@ describe('cli emit — holes', () => {
         expect((await runCli(['emit', '--check', 'src/svc.ts'], root)).exitCode).toBeUndefined();
     });
 });
+
+// An adapter is an external command reporting a file's real symbols as JSON. A fake one is enough to
+// exercise the contract end to end — the point is that the engine learns no language.
+describe('cli verify — conformance via an adapter', () => {
+    async function withAdapter(symbols: unknown): Promise<string> {
+        const root = await makeProject();
+
+        await write(root, 'books/keywords/func.md', '---\nsurface: true\n---\n\n<function_contract>{name}</function_contract>');
+        await write(root, 'books/keywords/arg.md', '<argument>{name}</argument>');
+        await write(root, 'books/keywords/result.md', '<return>{name}</return>');
+        await write(root, 'adapter.mjs', `process.stdout.write(${JSON.stringify(JSON.stringify({ symbols }))});\n`);
+        await write(
+            root,
+            'books/ts/hintbook.json',
+            '{"id":"emit-ts","target":"typescript","match":["*.ts"],"comment":"// {text}","symbols":"node adapter.mjs {file}"}',
+        );
+
+        await write(root, 'src/svc.ts', 'export function settle() {}\n');
+        await write(root, 'src/svc.ts.hint', '# func settle\n\nSettles an invoice.\n\n## arg invoice: Invoice\n\n## result: Receipt\n');
+
+        return root;
+    }
+
+    it('passes when the file matches what the spec declared', async () => {
+        const root = await withAdapter([{ kind: 'function', name: 'settle', params: [{ name: 'invoice', type: 'Invoice' }], returns: 'Receipt' }]);
+
+        const result = await runCli(['verify', 'src/svc.ts'], root);
+
+        expect(result.exitCode).toBeUndefined();
+        expect(result.stderr).toContain('1 against the code');
+    });
+
+    // A presence lint could never catch this: the name is in the file, the shape is wrong.
+    it('fails on a parameter type that contradicts the spec', async () => {
+        const root = await withAdapter([{ kind: 'function', name: 'settle', params: [{ name: 'invoice', type: 'string' }], returns: 'Receipt' }]);
+
+        const result = await runCli(['verify', 'src/svc.ts'], root);
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain("parameter 'invoice' is string, spec says Invoice");
+    });
+
+    it('fails on a return type that contradicts the spec', async () => {
+        const root = await withAdapter([{ kind: 'function', name: 'settle', params: [{ name: 'invoice', type: 'Invoice' }], returns: 'void' }]);
+
+        expect((await runCli(['verify', 'src/svc.ts'], root)).stdout).toContain('returns void, spec says Receipt');
+    });
+
+    // An adapter that cannot answer must degrade to the old presence lint, never to a pass.
+    it('falls back to the presence lint when the adapter fails', async () => {
+        const root = await withAdapter([]);
+
+        await write(root, 'adapter.mjs', 'process.exit(3);\n');
+
+        const result = await runCli(['verify', 'src/svc.ts'], root);
+
+        // `settle` does appear in the file, so the presence lint passes — but it was not checked by shape.
+        expect(result.exitCode).toBeUndefined();
+        expect(result.stderr).not.toContain('against the code');
+    });
+});
