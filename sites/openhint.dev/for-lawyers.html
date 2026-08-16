@@ -429,7 +429,7 @@ notice to the Disclosing Party.</span>
       <div class="scenario__steps">
         <div class="scstep"><span class="scstep__n">01</span><div><h4>Set the matter baseline</h4><p>A folder <code class="inl">_.hint</code> declares the <code class="inl">jurisdiction</code>, the <code class="inl">party</code> names, and the firm's drafting <code class="inl">style</code> — inherited by every document.</p></div></div>
         <div class="scstep"><span class="scstep__n">02</span><div><h4>Declare the positions</h4><p>The non-compete spec nests a <code class="inl">prohibition</code>, its <code class="inl">condition</code> and <code class="inl">exception</code>, a <code class="inl">breach → remedy</code> chain, and the <code class="inl">source</code> on restraint-of-trade limits.</p></div></div>
-        <div class="scstep"><span class="scstep__n">03</span><div><h4>Compile &amp; draft</h4><p><code class="inl">hint contracts/employment.md | claude -p</code> produces a complete first draft with defined terms consistent and no invented figures.</p></div></div>
+        <div class="scstep"><span class="scstep__n">03</span><div><h4>Assemble, then draft</h4><p><code class="inl">hint emit contracts/employment.md</code> assembles the document the spec fully determines — parties, definitions, the clause structure — with no model involved and nothing invented. Language that takes judgment is left as a marked hole with the positions governing it printed above; <code class="inl">hint --prompt contracts/employment.md | claude -p</code> hands those to an assistant. A <code class="inl">redline</code> or a <code class="inl">risk</code> note never reaches the document: the hintbook ships no template for them, so they stay internal.</p></div></div>
         <div class="scstep"><span class="scstep__n">04</span><div><h4>Audit the counterparty's redline</h4><p><code class="inl">hint verify</code> catches a deleted defined term for free; handing an assistant <code class="inl">--prompt</code> output catches the perpetual-survival edit — a flagged violation, not a missed one.</p></div></div>
         <div class="scstep"><span class="scstep__n">05</span><div><h4>Verify &amp; lock</h4><p><code class="inl">hint verify</code> confirms every declared <code class="inl">party</code>, <code class="inl">definition</code>, and <code class="inl">exhibit</code> is actually used in the draft — deterministic, no tokens — then <code class="inl">hint lock</code> records it, so unchanged specs are skipped and edits reconcile only what drifted.</p></div></div>
       </div>
@@ -482,13 +482,16 @@ trade under the governing law.</span></div>
         </div>
       </div>
       <div class="code-wrap">
-        <button class="code__copy" data-copy data-copy-text="hint contracts/nda.md&#10;hint --prompt contracts/nda.md | claude -p&#10;hint verify contracts/nda.md">Copy</button>
+        <button class="code__copy" data-copy data-copy-text="hint contracts/nda.md&#10;hint emit contracts/nda.md&#10;hint --prompt contracts/nda.md | claude -p&#10;hint verify contracts/nda.md">Copy</button>
         <div class="code">
-          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">2 · query, draft, check</span></div>
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">2 · query, assemble, draft, check</span></div>
 <div class="code__body"><span class="t-mut"># what governs this document?</span>
 <span class="t-bd">hint contracts/nda.md</span>
 
-<span class="t-mut"># hand it to an assistant to draft or revise</span>
+<span class="t-mut"># assemble what the spec determines — no model, nothing invented</span>
+<span class="t-bd">hint emit contracts/nda.md</span>
+
+<span class="t-mut"># hand the language that takes judgment to an assistant</span>
 <span class="t-bd">hint --prompt contracts/nda.md | claude -p</span>
 
 <span class="t-mut"># check every declared term landed — no model, no tokens</span>
