@@ -220,7 +220,10 @@ function wrap(artifact: string, comment: string | undefined, specPath: string | 
     return [
         commentBlock(comment, opening),
         artifact,
-        commentBlock(comment, `${MARKER_END} — everything below is yours; put helpers here.`),
+        // Named, not bare, because this boundary is the only thing telling a reader which zone it is
+        // entering. Deliberately not "put helpers here": the same marker closes a TypeScript file and
+        // a contract, and a legal document has no helpers.
+        commentBlock(comment, `${MARKER_END} — everything below is yours; the spec never touches it.`),
     ].join('\n');
 }
 

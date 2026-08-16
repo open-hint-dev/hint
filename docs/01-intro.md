@@ -16,20 +16,21 @@ spec (.hint) → scope + inheritance → retrieval → the governing intent → 
 
 It is **agent-neutral**. Claude Code, Codex, OpenCode, Cline, a CI script, or a custom agent all consume the same output. HINT does not implement, plan, or replace an agent — it works underneath one.
 
-## Spec-as-Source, without the generator
+## Spec-as-Source, without the model in the loop
 
 **Spec-as-Source** is the position that the specification — not the code — is the artifact you maintain and the authority the work answers to. It is the far end of the spec-driven spectrum: `spec-first` writes a spec and discards it, `spec-anchored` keeps it alive in CI, `spec-as-source` makes it *the* source.
 
-The usual formulation attaches a second clause: *and the code is regenerated from the spec.* That clause is what has kept the idea impractical. Generation from a language model is non-deterministic, so every upgrade is a re-roll, every hand edit fights the generator, and drift and hallucination return through the door built for them.
+The usual formulation attaches a second clause: *and the code is regenerated from the spec by a model.* That clause is what has kept the idea impractical. Model output is non-deterministic, so every regeneration is a re-roll, every hand edit fights the generator, and drift and hallucination return through the door built for them.
 
-**HINT drops the generator, not the source of truth.** The `.hint` files hold the intent. Humans and agents write the implementation. The two stay coupled through two mechanisms that involve no model at all:
+**HINT drops the model, not the source of truth.** The `.hint` files hold the intent. Three mechanisms keep the intent and the work coupled, and not one of them calls a model:
 
 - **Retrieval before the work.** `hint <path>` returns the part of the spec that governs that path and nothing else, cheaply enough to run before every edit.
+- **Emission where the spec is derivable.** `hint emit` renders the part of an artifact a spec fully determines — types, schemas, error enums, a contract document — through templates the hintbook supplies. Same spec, same templates, byte-identical output, reviewable in a normal diff. What no template can derive becomes a **hole**, carrying the constraints it must honor; your implementation survives every re-emit, and when the block that owned one is deleted the write is refused rather than losing it. `hint emit --check` gates it in CI.
 - **Drift detection after it.** `hint status`, and an advisory line on every read, say when the implementation has moved away from the spec that governs it — while the correction is still cheap. See [Keeping it current](#keeping-it-current).
 
-Deterministic end to end: no model call, no network, no vendor.
+Both ends are optional. A repository that only records knowledge installs no emit pack and never generates anything; one that emits still writes by hand everything a template cannot derive. Deterministic throughout: no model call, no network, no vendor.
 
-Where a spec describes something machine-derivable, **`hint emit` closes the loop**: it renders the artifact the spec produces — types, schemas, error enums, a contract document — through templates the hintbook supplies, and `hint emit --check` lets CI assert that what is committed still equals what the spec produces. Code outside the generated region and any hand-written implementation are preserved, so regeneration is safe to re-run. See [Emit](08-emit.md). This is optional too: a repository that only records knowledge never installs an emitter.
+See [Emit](08-emit.md) for the emission layer in full.
 
 ## Why it does not have to be about code
 
