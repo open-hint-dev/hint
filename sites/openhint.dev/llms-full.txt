@@ -1409,6 +1409,7 @@ Hintbook resolution globs `**/hintbook.json` recursively, so a project that regi
 | `target` | Names the emitter. Its presence is what makes this an emit pack rather than a vocabulary. Overridable per run with `--target`. |
 | `match` | Globs matched against the **output** path, so the file extension selects the emitter and the engine never learns a language. A pattern with no `/` matches the basename. Omit it to make the pack selectable only by an explicit `--target`. |
 | `comment` | How this target writes a comment, as a `{text}` pattern — `// {text}`, `# {text}`, `<!-- {text} -->`. Used for region markers and for `{doc}`. |
+| `builtins` | Identifiers this language provides without an import. Everything a spec names that is neither one of these nor declared in the file itself is listed for importing. |
 | `symbols` | An external command reporting a file's real symbols as JSON, consumed by `hint verify`. `{file}` is substituted; the path is passed as one argument, never through a shell. A pack may declare only this and carry no templates, making it a pure language adapter. |
 
 An emit pack ships no glossary and defines no vocabulary. It never appears in `hint author` output, never contributes to the `AGENTS.md` glossary, and never shadows an instruction — which matters because hintbook folders resolve in sorted order, and `emit/go` sorts before `keywords`.
@@ -1431,6 +1432,8 @@ Emit templates use the same `{placeholder}` shape as instruction templates, plus
 | `{?...}` | An optional group: renders only if every placeholder inside resolves non-empty, otherwise the whole segment vanishes. |
 | `{type\|any}` | A literal fallback for when the placeholder is empty. |
 | `{hole:body\|<stub>}` | A region the emitter cannot fill. See [Holes](#holes). |
+
+A pack may also ship `__imports__.tmpl`, rendered once per artifact rather than per block, whose only placeholder is `{names}`. See [Imports](#imports).
 
 A multi-line expansion is re-indented to the column its placeholder sat on, so a hole written one indent in emits a block one indent in.
 
@@ -1544,7 +1547,30 @@ export function settle(invoice: Invoice) {   // below the region — yours
 
 The opening marker states the contract in the file, at the exact place somebody is tempted to break it. That is the only defence available for this one: a helper written between the markers is replaced on the next emit and — unlike a filled hole with nowhere to go — cannot be told apart from a declaration the spec stopped making, so it cannot be detected and refused.
 
-**Where your own code goes.** Imports above the region, helpers below it, implementations inside a hole. All three survive re-emission; nothing else between the markers does.
+**Where your own code goes.** Imports above the region, helpers below it, implementations inside a hole. All three survive re-emission; nothing else between the markers does. The markers name all three zones, so the split is a structure rather than something you have to remember.
+
+### Imports
+
+The emitter knows the type names a spec used. It can never know which module of *this* project provides them, so it says what it knows and leaves the resolution alone:
+
+```ts
+// Needs importing above this region — this project decides from where:
+//   Decimal
+//   Receipt
+```
+
+The list is every identifier the spec refers to that the file does not declare itself and the language does not provide. `builtins` in the pack manifest is what the language provides; a top-level block with a template is what the file declares. Rendered through the pack's optional `__imports__` template — no template, no comment, like every other keyword.
+
+```json
+"builtins": ["string", "number", "boolean", "void", "Promise", "…"]
+```
+
+```text
+emit/typescript/__imports__.tmpl
+──────────────────────────────────────────────
+// Needs importing above this region — this project decides from where:
+//   {names sep="\n//   "}
+```
 
 | Situation | What happens |
 | --- | --- |

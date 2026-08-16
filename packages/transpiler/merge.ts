@@ -201,10 +201,13 @@ function wrap(artifact: string, comment: string | undefined, specPath: string | 
         ? `${MARKER_BEGIN} — generated from ${specPath}. Edits between the markers are replaced; write inside a hole, or outside hint:end.`
         : MARKER_BEGIN;
 
+    // Naming the zone below costs one line and turns an accident into a structure: a file emitted this
+    // way has an imports zone above the region, a generated zone inside it, and a zone underneath that
+    // belongs to whoever is working. Only the last of the three was previously implied rather than said.
     return [
         commentBlock(comment, opening),
         artifact,
-        commentBlock(comment, MARKER_END),
+        commentBlock(comment, `${MARKER_END} — everything below is yours; put helpers here.`),
     ].join('\n');
 }
 
