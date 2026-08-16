@@ -211,7 +211,7 @@ describe('cli emit — writing', () => {
                 'export interface Invoice {',
                 '    id: string;',
                 '}',
-                '// hint:end — everything below is yours; put helpers here.',
+                '// hint:end — everything below is yours; the spec never touches it.',
                 '',
             ].join('\n'),
         );

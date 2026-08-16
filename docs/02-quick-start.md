@@ -230,7 +230,7 @@ export function validateInvoice(invoice: Invoice): Invoice {
     throw new Error("Not implemented.");
     // hint:end of hole.
 }
-// hint:end — everything below is yours; put helpers here.
+// hint:end — everything below is yours; the spec never touches it.
 ```
 
 The file has three zones and both boundaries say which is which. Above the region: your imports. Inside it: what the spec owns, replaced on every run — except the **holes**, which are the parts a template provably cannot fill. Write the implementation inside the hole and it survives every re-emission, with the constraints that govern it printed right above it. Below `hint:end`: helpers, and anything else that is yours.

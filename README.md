@@ -33,27 +33,19 @@ Works underneath Claude Code, Codex, OpenCode, Cline, or anything that can run a
 
 # For humans
 
-## Spec-as-Source, without the generator
+## Spec-as-Source, without the model in the loop
 
 **Spec-as-Source** is the position that the specification — not the code — is the artifact you maintain and the authority the work answers to. It is the far end of the spec-driven spectrum: `spec-first` writes a spec and throws it away, `spec-anchored` keeps it alive in CI, `spec-as-source` makes it *the* source.
 
-The industry usually attaches a second clause to it: *and the code is regenerated from the spec.* That clause is what has kept the idea impractical. Generation from a language model is non-deterministic, so every upgrade is a re-roll, every hand edit is a fight with the generator, and drift and hallucination come back in through the door you built for them.
+The usual formulation attaches a second clause: *and the code is regenerated from the spec by a model.* That clause is what has kept the idea impractical. Model output is non-deterministic, so every regeneration is a re-roll, every hand edit fights the generator, and drift and hallucination return through the door built for them.
 
-**HINT drops the generator, not the source of truth.** The `.hint` files hold the intent. Humans and agents write the implementation. HINT keeps the two coupled by two mechanisms that need no model at all:
+**HINT drops the model, not the source of truth.** The `.hint` files hold the intent. Three mechanisms keep the intent and the work coupled, and not one of them calls a model:
 
-- **Retrieval before the work** — `hint <path>` returns the part of the spec that governs that path, inherited from the repository root down, and nothing else. Cheap enough to run before every edit.
-- **Drift detection after it** — `hint status` and an advisory line on every read say when the implementation has moved away from the spec that governs it, so the spec is corrected while the correction is still cheap.
+- **Retrieval before the work.** `hint <path>` returns the part of the spec that governs that path and nothing else, cheaply enough to run before every edit.
+- **Emission where the spec is derivable.** `hint emit` renders the part of an artifact a spec fully determines — types, schemas, error enums, a contract document — through templates the hintbook supplies. Same spec, same templates, byte-identical output, reviewable in a normal diff. What no template can derive becomes a **hole**, carrying the constraints it must honor; your implementation survives every re-emit, and when the block that owned one is deleted the write is refused rather than losing it. `hint emit --check` gates it in CI.
+- **Drift detection after it.** `hint status`, and an advisory line on every read, say when the implementation has moved away from the spec that governs it — while the correction is still cheap.
 
-Spec-as-source enforced by retrieval and drift, instead of by regeneration. No model call, no network, no lock-in, deterministic end to end.
-
-And where a spec describes something machine-derivable, **`hint emit` closes the loop** — deterministically, still without a model:
-
-```bash
-hint emit src/billing/invoice.ts    # write the artifact this spec produces
-hint emit --check                   # CI: what is committed equals what the spec produces
-```
-
-Templates come from the hintbook, so a keyword renders one way in TypeScript and another in Go — or into a clause of a contract. What the emitter cannot derive becomes a **hole**, carrying the inherited constraints it must be written against; a filled hole is never overwritten, and code outside the generated region is never touched, so re-running is safe. A repository that only records knowledge never installs an emitter and loses nothing. → [`docs/08-emit.md`](docs/08-emit.md)
+Both ends are optional. A repository that only records knowledge installs no emit pack and never generates anything; one that emits still writes by hand everything a template cannot derive. Deterministic throughout: no model call, no network, no vendor.
 
 ## The problem
 
