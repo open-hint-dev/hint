@@ -5,7 +5,7 @@ import * as Path from 'node:path';
 import type { HintbookData } from './hintbook.js';
 import { findInstruction } from './compiler.js';
 import { loadConfig } from './config.js';
-import { availableTargets, canonicalKeyword, findEmitTemplate, matchesGlob, planEmit, renderArtifact, selectEmitter } from './emit.js';
+import { availableTargets, canonicalKeyword, collectImports, findEmitTemplate, matchesGlob, planEmit, renderArtifact, selectEmitter } from './emit.js';
 import { parseHints } from './parser.js';
 import { emitPacks, isEmitPack, loadHintbook, loadHintbooks, vocabularyBooks } from './hintbook.js';
 import { countSurfaceKeywords } from './verify.js';
@@ -430,5 +430,56 @@ describe('renderArtifact', () => {
         const second = await planFor(root, ['src/invoice.ts']);
 
         expect(renderArtifact(first.plan.units[0]!, first.hintbooks)).toBe(renderArtifact(second.plan.units[0]!, second.hintbooks));
+    });
+});
+
+// The most an emitter can honestly say about imports: it knows the type names a spec used, and can
+// never know which module of this project provides them.
+describe('collectImports', () => {
+    async function importsFor(spec: string): Promise<string[]> {
+        const root = await makeProject();
+
+        await write(
+            root,
+            'books/ts/hintbook.json',
+            JSON.stringify({
+                id: 'emit-ts',
+                target: 'typescript',
+                match: ['*.ts'],
+                comment: '// {text}',
+                builtins: ['string', 'number', 'void', 'Promise'],
+            }),
+        );
+        await write(root, 'src/a.ts.hint', spec);
+
+        const { hintbooks, plan } = await planFor(root, ['src/a.ts']);
+
+        return collectImports(plan.units[0]!, hintbooks);
+    }
+
+    it('lists a type the spec names and the file does not declare', async () => {
+        expect(await importsFor('# func run\n\nbody\n\n## arg entry: Entry\n')).toEqual(['Entry']);
+    });
+
+    it('omits what the language provides', async () => {
+        expect(await importsFor('# func run\n\nbody\n\n## arg id: string\n\n## arg count: number\n')).toEqual([]);
+    });
+
+    it('omits what this file declares itself', async () => {
+        expect(await importsFor('# entity Entry\n\nbody\n\n# func run\n\nbody\n\n## arg entry: Entry\n')).toEqual([]);
+    });
+
+    // A `result` block names its type where other blocks name an identifier. Treating that as a
+    // declaration hid exactly the return types an implementer has to import.
+    it('lists a return type', async () => {
+        expect(await importsFor('# func run\n\nbody\n\n## result: Receipt\n')).toEqual(['Receipt']);
+    });
+
+    it('breaks a compound type into the names it mentions', async () => {
+        expect(await importsFor('# func run\n\nbody\n\n## arg x: Promise<Receipt>[]\n')).toEqual(['Receipt']);
+    });
+
+    it('does not mistake a parameter name for a type', async () => {
+        expect(await importsFor('# func run\n\nbody\n\n## arg options\n')).toEqual([]);
     });
 });

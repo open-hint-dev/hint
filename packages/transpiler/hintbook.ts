@@ -20,6 +20,8 @@ export const RUNNING_FILE = '__file__';
 export const RUNNING_FOLDER = '__folder__';
 export const RUNNING_FOOTER = '__footer__';
 export const RUNNING_HEADER = '__header__';
+// Emit packs only: rendered once per artifact, listing what the spec refers to and does not declare.
+export const RUNNING_IMPORTS = '__imports__';
 export const RUNNING_SYSTEM = '__system__';
 
 export const PLACEHOLDER_ID = 'id';
@@ -63,6 +65,10 @@ export type HintbookData = {
     // rather than inferred, because the engine knows no keywords and a template cannot be read
     // backwards from its output.
     extract?: Record<string, string>;
+    // Identifiers this language provides without an import — `string`, `error`, `any`. Everything a
+    // spec names that is neither one of these nor declared in the file itself needs importing, and
+    // saying which is the most the emitter can honestly do: it knows the type names, never the paths.
+    builtins?: string[];
     instructions: InstructionData[];
 };
 
@@ -149,6 +155,7 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
         data.comment = typeof manifest.comment === 'string' && manifest.comment.trim() ? manifest.comment.trim() : undefined;
         data.symbols = typeof manifest.symbols === 'string' && manifest.symbols.trim() ? manifest.symbols.trim() : undefined;
         data.extract = parseExtractMap(manifest.extract);
+        data.builtins = metadataStrings(manifest.builtins);
     }
 
     const extension = data.target ? TEMPLATE_EXTENSION : INSTRUCTION_EXTENSION;

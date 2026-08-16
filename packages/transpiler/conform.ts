@@ -28,7 +28,7 @@ const FIELD_KEYWORDS = [
     'column',
     'property',
 ];
-const RESULT_KEYWORDS = [
+export const RESULT_KEYWORDS = [
     'result',
     'return',
     'returns',

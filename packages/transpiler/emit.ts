@@ -4,8 +4,9 @@ import type { HintbookData, InstructionData } from './hintbook.js';
 import type { HintData } from './parser.js';
 import type { Placeholder, Resolved } from './template.js';
 import { findInstruction } from './compiler.js';
+import { RESULT_KEYWORDS } from './conform.js';
 import { toGitPath } from './git.js';
-import { emitPacks, RUNNING_FILE, RUNNING_FOLDER, vocabularyBooks } from './hintbook.js';
+import { emitPacks, RUNNING_FILE, RUNNING_FOLDER, RUNNING_IMPORTS, vocabularyBooks } from './hintbook.js';
 import { hashHint } from './lock.js';
 import { MARKER_END, MARKER_HOLE } from './merge.js';
 import { commentBlock, renderTemplate, resolvedValue } from './template.js';
@@ -422,6 +423,55 @@ function renderBlock(hint: HintData, key: string, context: RenderContext): strin
     return content.trim();
 }
 
+// A type reference reduced to the identifiers it mentions: `Promise<Receipt>[]` yields `Promise` and
+// `Receipt`, `A | B` yields both. Crude on purpose — the result becomes a comment, so listing one
+// name too many costs a word and listing one too few costs nothing worse than today.
+function identifiers(type: string): string[] {
+    return type.match(/[A-Za-z_$][A-Za-z0-9_$]*/g) ?? [];
+}
+
+// The names this file's spec refers to but does not declare, and which the language does not provide.
+// This is the whole of what an emitter can honestly say about imports: it knows the type names a spec
+// used, and it can never know which module of this project provides them.
+export function collectImports(unit: EmitUnit, hintbooks: HintbookData[]): string[] {
+    const builtins = new Set(unit.emitter.builtins ?? []);
+    const declared = new Set<string>();
+    const referenced = new Set<string>();
+
+    const walk = (nodes: HintData[], top: boolean): void => {
+        for (const node of nodes) {
+            if (isScope(node)) {
+                continue;
+            }
+
+            const { ident, type } = splitName(node.name);
+            const canonical = canonicalKeyword(hintbooks, node.keyword) ?? node.keyword;
+
+            // A result names its type where other blocks name an identifier, which is the same shape
+            // conformance reads — so the two cannot disagree about what a spec declared.
+            const contributes = RESULT_KEYWORDS.includes(canonical.toLowerCase()) ? type || ident : type;
+
+            for (const name of identifiers(contributes)) {
+                referenced.add(name);
+            }
+
+            // A top-level block with a template becomes a declaration in the artifact; a nested one
+            // describes part of that declaration. Structural rather than flagged, so it holds for any
+            // vocabulary — and it is what keeps a `result` block, which *references* a type, from being
+            // read as declaring it and hiding exactly the return types an implementer has to import.
+            if (top && ident && findEmitTemplate(unit.emitter, hintbooks, node.keyword)) {
+                declared.add(ident);
+            }
+
+            walk(node.children, false);
+        }
+    };
+
+    walk(unit.node.children, true);
+
+    return [...referenced].filter((name) => !builtins.has(name) && !declared.has(name)).sort();
+}
+
 // The artifact a single spec produces. Deterministic: the same spec and the same emitter always give
 // byte-identical output, which is what makes `--check` an assertion rather than an opinion.
 export function renderArtifact(unit: EmitUnit, hintbooks: HintbookData[]): string {
@@ -432,5 +482,37 @@ export function renderArtifact(unit: EmitUnit, hintbooks: HintbookData[]): strin
         .map((child) => renderBlock(child, blockKey(child, ''), context))
         .filter(Boolean);
 
-    return blocks.join('\n\n');
+    const imports = renderImports(unit, hintbooks);
+
+    return [
+        imports,
+        ...blocks,
+    ]
+        .filter(Boolean)
+        .join('\n\n');
+}
+
+// Rendered once per artifact, through the pack's optional `__imports__` template. Absent template,
+// no output — the same rule every other keyword follows, so a pack that would rather say nothing
+// about imports simply ships no template for them.
+function renderImports(unit: EmitUnit, hintbooks: HintbookData[]): string {
+    const template = unit.emitter.instructions.find((instruction) => instruction.name === RUNNING_IMPORTS);
+
+    if (!template) {
+        return '';
+    }
+
+    const names = collectImports(unit, hintbooks);
+
+    if (names.length === 0) {
+        return '';
+    }
+
+    return renderTemplate(template.content, (placeholder) => {
+        if (placeholder.kind !== 'names' || placeholder.argument !== null) {
+            return null;
+        }
+
+        return resolvedValue(names.join(placeholder.separator ?? ', '), placeholder);
+    }).trim();
 }
