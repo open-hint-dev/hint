@@ -202,3 +202,42 @@ export function mergeArtifact(existing: string | null, artifact: string, comment
 
     return { content: merged.join('\n'), restored, drifted, created: false };
 }
+
+export type HoleState = {
+    label: string;
+    // The body on disk differs from the stub a fresh emission produces — somebody implemented it.
+    filled: boolean;
+    // A filled body was written against a spec that has since changed. Only meaningful when filled:
+    // an unfilled hole simply gets the new spec on the next emission.
+    outdated: boolean;
+};
+
+// Compares the holes on disk against the ones a fresh emission would produce. This is how "what does
+// the spec still ask for that nobody has written?" is answered without a second bookkeeping file:
+// both sides are derivable, so nothing can fall out of sync with reality.
+export function inspectHoles(existing: string, artifact: string): HoleState[] {
+    const fresh = extractHoles(artifact);
+    const current = extractHoles(existing);
+    const states: HoleState[] = [];
+
+    for (const [
+        label,
+        stub,
+    ] of fresh) {
+        const onDisk = current.get(label);
+
+        if (!onDisk) {
+            continue;
+        }
+
+        const filled = onDisk.body.trim() !== stub.body.trim();
+
+        states.push({
+            label,
+            filled,
+            outdated: filled && Boolean(onDisk.spec && stub.spec && onDisk.spec !== stub.spec),
+        });
+    }
+
+    return states;
+}

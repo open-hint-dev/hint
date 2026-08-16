@@ -3,10 +3,13 @@ import * as Path from 'node:path';
 import type { GitSnapshot } from './git.js';
 import type { HintbookData } from './hintbook.js';
 import type { FileDrift } from './lock.js';
+import type { HoleState } from './merge.js';
 import type { ScopeStaleness } from './staleness.js';
+import { planEmit, renderArtifact } from './emit.js';
 import { isTrackedInHistory, readGitSnapshot, toGitPath } from './git.js';
-import { isPathExists } from './helper.js';
+import { isPathExists, readFile } from './helper.js';
 import { collectFileNodes, computeDrift, hashTargetFiles, loadLock } from './lock.js';
+import { inspectHoles } from './merge.js';
 import { collectIncludedPaths, listHintFiles, parseHintFiles } from './parser.js';
 import { hintTargetName, isFolderHintPath } from './resolve.js';
 import { collectContractScopes, measureStaleness } from './staleness.js';
@@ -14,18 +17,24 @@ import { collectContractScopes, measureStaleness } from './staleness.js';
 // What can be wrong with a piece of recorded knowledge, in the order a reader should care about it:
 //
 //   orphan   — the target was removed from the repository; the knowledge describes nothing
+//   outdated — a hole was implemented against a spec that has since changed
 //   drifted  — the target was locked and no longer matches what was locked
 //   stale    — the target has moved substantially since the knowledge was last written
+//   unfilled — the spec declares holes nobody has implemented yet
 //   unlocked — a companion spec in a locking project that was never locked
 //   pending  — the target does not exist yet and never did; a spec written ahead of its code
 //
 // `pending` is informational, not a defect: writing the spec first is explicitly supported.
-export type StatusKind = 'orphan' | 'drifted' | 'stale' | 'unlocked' | 'pending';
+// `unfilled` is work outstanding rather than something come loose, but it is counted, because a
+// repository whose specs describe work nobody has done is exactly what an inventory should surface.
+export type StatusKind = 'orphan' | 'outdated' | 'drifted' | 'stale' | 'unfilled' | 'unlocked' | 'pending';
 
 const KIND_ORDER: StatusKind[] = [
     'orphan',
+    'outdated',
     'drifted',
     'stale',
+    'unfilled',
     'unlocked',
     'pending',
 ];
@@ -119,6 +128,19 @@ export async function inspectProject(projectRootPath: string, hintbooks: Hintboo
     const hints = await parseHintFiles(projectRootPath, hintPaths);
     const contracts = collectContractScopes(hints, hintbooks);
 
+    // Holes are work the spec asked for. Both sides are derivable — a fresh render supplies the stubs,
+    // the file on disk supplies what was actually written — so nothing here needs a bookkeeping file
+    // that could itself fall out of date.
+    const holes = new Map<string, HoleState[]>();
+
+    for (const unit of planEmit(hints, hintbooks).units) {
+        const existing = await readFile(Path.join(projectRootPath, unit.output));
+
+        if (existing !== null) {
+            holes.set(unit.output, inspectHoles(existing, renderArtifact(unit, hintbooks)));
+        }
+    }
+
     const drifts = new Map<string, FileDrift>();
 
     if (lock) {
@@ -148,6 +170,23 @@ export async function inspectProject(projectRootPath: string, hintbooks: Hintboo
             continue;
         }
 
+        // A hole implemented against a spec that has since changed is the most precise finding
+        // available — it names a specific body and a specific version — so it outranks everything else.
+        const state = holes.get(target) ?? [];
+        const outdated = state.filter((hole) => hole.outdated);
+        const unfilled = state.filter((hole) => !hole.filled);
+
+        if (outdated.length > 0) {
+            report.entries.push({
+                kind: 'outdated',
+                hint: hintPath,
+                target,
+                detail: `${outdated.length} implemented hole(s) written against an older spec: ${outdated.map((hole) => hole.label).join(', ')}`,
+            });
+
+            continue;
+        }
+
         // Drift is measured, not inferred: when a lock says a target moved, that is more precise than
         // any heuristic and takes precedence over one.
         const drift = isFolderHintPath(absoluteHintPath) ? undefined : drifts.get(target);
@@ -168,6 +207,17 @@ export async function inspectProject(projectRootPath: string, hintbooks: Hintboo
             target,
             contract: contracts.get(target) ?? false,
         });
+
+        if (unfilled.length > 0) {
+            report.entries.push({
+                kind: 'unfilled',
+                hint: hintPath,
+                target,
+                detail: `${unfilled.length} hole(s) still hold their emitted stub: ${unfilled.map((hole) => hole.label).join(', ')}`,
+            });
+
+            continue;
+        }
 
         if (staleness?.stale) {
             const moved = staleness.total === 1 ? 'the target changed' : `${staleness.changed} of ${staleness.total} files under the target changed`;

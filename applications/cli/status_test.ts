@@ -85,6 +85,8 @@ async function makeProject(initGit = true): Promise<string> {
     await write(root, 'books/keywords/decision.md', '<decision name="{name}">\n\n{body}\n\n</decision>');
     // The only keyword flagged `surface: true`, so it is the only one that makes a scope a contract.
     await write(root, 'books/keywords/func.md', '---\nsurface: true\n---\n\n<function name="{name}">\n\n{body}\n\n</function>');
+    await write(root, 'books/ts/hintbook.json', '{"id":"emit-ts","target":"typescript","match":["*.ts"],"comment":"// {text}"}');
+    await write(root, 'books/ts/func.tmpl', 'export function {name}() {\n    {hole:body|throw new Error("todo");}\n}');
 
     if (initGit) {
         await git(root, 'init', '-q');
@@ -291,6 +293,55 @@ describe('status', () => {
 
         expect(result.stderr).toContain('not a git repository');
         expect(result.stdout).toBe('');
+    });
+});
+
+// The inventory answers "what does the spec still ask for that nobody has written?" without a
+// bookkeeping file: a fresh render supplies the stubs, the file on disk supplies what was written.
+describe('status — holes', () => {
+    async function emitted(): Promise<string> {
+        const root = await makeProject();
+
+        await write(root, 'src/svc.ts.hint', '# func settle\n\nSettles an invoice.\n');
+        await runCli(['emit', 'src/svc.ts'], root);
+        await commit(root, 'init');
+
+        return root;
+    }
+
+    it('reports a hole that still holds its emitted stub', async () => {
+        const result = await runCli(['status'], await emitted());
+
+        expect(result.stdout).toContain('unfilled');
+        expect(result.stdout).toContain('1 hole(s) still hold their emitted stub: body');
+        expect(result.stderr).toContain('1 of 1 hint file(s) need attention');
+    });
+
+    it('says nothing about a hole once it is implemented', async () => {
+        const root = await emitted();
+        const outputPath = Path.join(root, 'src/svc.ts');
+        const filled = (await FsPromises.readFile(outputPath, 'utf8')).replace('throw new Error("todo");', 'return ledger.settle(invoice);');
+
+        await FsPromises.writeFile(outputPath, filled, 'utf8');
+        await commit(root, 'implement');
+
+        expect((await runCli(['status'], root)).stdout).not.toContain('unfilled');
+    });
+
+    // The most precise finding available — it names a specific body and a specific spec version.
+    it('reports a body written against a spec that has since changed', async () => {
+        const root = await emitted();
+        const outputPath = Path.join(root, 'src/svc.ts');
+        const filled = (await FsPromises.readFile(outputPath, 'utf8')).replace('throw new Error("todo");', 'return ledger.settle(invoice);');
+
+        await FsPromises.writeFile(outputPath, filled, 'utf8');
+        await write(root, 'src/svc.ts.hint', '# func settle\n\nSettles an invoice, and now also emits a receipt.\n');
+        await commit(root, 'move the spec');
+
+        const result = await runCli(['status'], root);
+
+        expect(result.stdout).toContain('outdated');
+        expect(result.stdout).toContain('written against an older spec: body');
     });
 });
 

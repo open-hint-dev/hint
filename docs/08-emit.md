@@ -241,6 +241,21 @@ Exit codes follow the usual taxonomy: `0` succeeded, `1` a check failed, `2` not
 
 ---
 
+## Knowing what is left
+
+`hint emit` reports hole state for the paths it was given. [`hint status`](06-cli.md#hint-status--what-has-come-loose) does it repository-wide, as part of the same inventory that reports stale and orphaned knowledge:
+
+```
+outdated  src/billing/settle.ts     1 implemented hole(s) written against an older spec: body
+unfilled  src/billing/refund.ts     1 hole(s) still hold their emitted stub: body
+```
+
+Both are **derived, not tracked** — a fresh render supplies the stubs, the file on disk supplies what was written — so there is no bookkeeping file that could itself fall out of date.
+
+There is deliberately no separate hole list in `hint --prompt`. The constraints already sit inline at each hole in the artifact, and copying them into the prompt as well would repeat exactly the duplication that scoping exists to prevent. An agent implementing a hole reads the file it is editing.
+
+---
+
 ## Where this sits
 
 Emission is the third rung of the spec-driven ladder, and a repository does not have to pick one rung for all of itself:
