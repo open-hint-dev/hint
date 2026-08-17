@@ -101,10 +101,17 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; line-height
   text-transform: uppercase;
   color: var(--accent);
   display: inline-flex;
-  align-items: center;
+  /* Not `center`: an eyebrow that wraps to two lines would centre its rule across both of them and
+     leave it floating between the lines. Pinned to the first line's optical middle instead, so the
+     rule sits where a reader expects it however the text breaks. */
+  align-items: flex-start;
+  /* Stated rather than inherited, because the rule below is offset by half of it. */
+  line-height: 1.6;
   gap: 10px;
 }
-.eyebrow::before { content: ""; width: 22px; height: 1px; background: var(--accent); opacity: 0.6; }
+/* Half a line down: the same place `align-items: center` put it on a single line, and still the
+   first line's middle when the text wraps. */
+.eyebrow::before { content: ""; width: 22px; height: 1px; background: var(--accent); opacity: 0.6; flex: none; margin-top: 0.8em; }
 .muted { color: var(--ink-3); }
 .mono { font-family: var(--font-mono); }
 strong { font-weight: 600; color: var(--ink); }

@@ -64,7 +64,7 @@
 .demo .code__body { font-size: 0.76rem; line-height: 1.65; }
 
 /* agents strip */
-.agents { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; padding-block: 22px; }
+.agents { display: flex; align-items: center; justify-content: space-between; gap: 12px 28px; flex-wrap: wrap; padding-block: 22px; }
 .agents span { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3); letter-spacing: 0.04em; }
 .agents b { color: var(--ink-2); font-weight: 600; }
 
@@ -246,7 +246,7 @@
 <header class="hero">
   <div class="wrap hero__grid">
     <div class="hero__text">
-      <div class="eyebrow hero__kicker">Spec-as-Source · Scoped · Inherited · Agent-neutral · Any profession</div>
+      <div class="eyebrow hero__kicker">Spec-as-Source&nbsp;· Scoped&nbsp;· Agent-neutral&nbsp;· Any profession</div>
       <h1 class="display">The spec is<br />the <span class="em">source</span>.</h1>
       <p class="lede">Your intent lives in Markdown files next to what they govern, and that is the artifact you maintain. HINT returns the part of the spec that applies to the path at hand, tells you when the work has drifted away from it, and — where the spec is machine-derivable — writes the artifact itself. No model call, no network, no vendor.</p>
       <div class="hero__cta">
@@ -394,7 +394,7 @@
 <div class="wrap">
   <div class="agents">
     <span>The spec is maintained. <b>The implementation answers to it.</b></span>
-    <span style="margin-left:auto;">No model in the loop — <b>retrieval before, drift detection after, deterministic emission between</b></span>
+    <span>No model in the loop — <b>retrieval before, emission between, drift detection after</b></span>
   </div>
 </div>
 <div class="divider"></div>
