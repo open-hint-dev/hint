@@ -124,6 +124,11 @@ describe('the python adapter', async () => {
 describe('the go adapter', async () => {
     const available = await installed('go', ['version']);
 
+    // The first `go run` on a machine with a cold build cache compiles the helper and the standard
+    // library packages it imports, which is seconds rather than milliseconds — comfortably past
+    // vitest's default. Every run after it is milliseconds, which is the point of the cache.
+    const COLD_BUILD_MS = 180_000;
+
     it.skipIf(!available)('reports structs and funcs with the types as written', async () => {
         const { root, file } = await project(
             'billing.go',
@@ -150,7 +155,7 @@ describe('the go adapter', async () => {
                 fields: undefined,
             },
         ]);
-    });
+    }, COLD_BUILD_MS);
 
     it.skipIf(!available)('reports a file that does not compile as a failure', async () => {
         const { root, file } = await project('broken.go', 'package x\n\nfunc (\n');
@@ -158,7 +163,7 @@ describe('the go adapter', async () => {
 
         expect(reading.symbols).toBeNull();
         expect(reading.failure).toBeTruthy();
-    });
+    }, COLD_BUILD_MS);
 
     // The helper is materialized into a cache keyed by its own hash, so the second call reuses it.
     // Both calls must give the same answer, which is what makes it safe to cache at all.
@@ -166,7 +171,7 @@ describe('the go adapter', async () => {
         const { root, file } = await project('again.go', 'package x\n\nfunc F(a string) error { return nil }\n');
 
         expect(await goSymbols(root, file)).toEqual(await goSymbols(root, file));
-    });
+    }, COLD_BUILD_MS);
 });
 
 describe('a toolchain that is not there', () => {
