@@ -56,6 +56,8 @@
   padding: 5px 12px; border: 1px solid var(--accent-line); border-radius: 100px; background: var(--accent-soft); white-space: nowrap;
 }
 .demo__connector .chip svg { width: 13px; height: 13px; }
+.demo__note { margin-top: 12px; font-size: 0.82rem; color: var(--ink-3); line-height: 1.55; }
+.demo__note .t-kw { font-family: var(--font-mono); font-size: 0.94em; }
 [data-prof-panel][hidden] { display: none; }
 .swap-in { animation: swapIn .42s cubic-bezier(.2,.7,.2,1); }
 @keyframes swapIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -165,7 +167,16 @@
 .cta-final__btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
 /* quickstart */
-.qs { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.qs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+/* The three zones of a generated file, in the order they appear in it. The middle one is the
+   spec's, and is marked so the eye finds the boundary the page is explaining. */
+.zones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); }
+.zone { padding: 26px 24px; border-right: 1px solid var(--line); }
+.zone:last-child { border-right: none; }
+.zone--owned { background: var(--accent-soft); }
+.zone__k { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+.zone h3 { font-size: 1.04rem; margin-bottom: 10px; }
+.zone p { color: var(--ink-2); font-size: 0.9rem; line-height: 1.6; }
 .qsstep { display: flex; flex-direction: column; gap: 14px; }
 .qsstep__h { display: flex; align-items: baseline; gap: 12px; }
 .qsstep__n { font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent); }
@@ -178,9 +189,9 @@
 @media (max-width: 960px) {
   .hero__grid { grid-template-columns: 1fr; gap: 40px; }
   .hero .lede { max-width: none; }
-  .grid-3, .steps { grid-template-columns: 1fr; }
-  .step { border-right: none; border-bottom: 1px solid var(--line); }
-  .step:last-child { border-bottom: none; }
+  .grid-3, .steps, .zones { grid-template-columns: 1fr; }
+  .step, .zone { border-right: none; border-bottom: 1px solid var(--line); }
+  .step:last-child, .zone:last-child { border-bottom: none; }
   .profgrid { grid-template-columns: 1fr 1fr; }
   .soongrid { grid-template-columns: 1fr 1fr; }
   .intentlayer { grid-template-columns: 1fr; }
@@ -203,7 +214,8 @@
     </a>
     <div class="nav__links">
       <a class="nav__link" href="index.html#how">How it works</a>
-      <a class="nav__link" href="index.html#professions">Professions</a>
+      <a class="nav__link" href="index.html#emit">Emit</a>
+      <a class="nav__link" href="index.html#verify">Verify</a>
       <a class="nav__link" href="for-software-engineers.html">For Engineers</a>
       <a class="nav__link" href="for-lawyers.html">For Lawyers</a>
       <a class="nav__link" href="index.html#quickstart">Quick start</a>
@@ -222,7 +234,8 @@
 </nav>
 <div class="mobile-menu">
   <a href="index.html#how">How it works</a>
-  <a href="index.html#professions">Professions</a>
+  <a href="index.html#emit">Emit</a>
+  <a href="index.html#verify">Verify</a>
   <a href="for-software-engineers.html">For Engineers</a>
   <a href="for-lawyers.html">For Lawyers</a>
   <a href="index.html#quickstart">Quick start</a>
@@ -264,18 +277,22 @@
           <div class="code demo__src">
             <div class="code__bar">
               <span class="code__dots"><i></i><i></i><i></i></span>
-              <span class="code__file"><b>src/api/_.hint</b></span>
+              <span class="code__file"><b>api/invoice.ts.hint</b></span>
               <span class="code__tag">Markdown</span>
             </div>
 <div class="code__body"><span class="t-h"># </span><span class="t-kw">entity</span> <span class="t-nm">Invoice</span> <span class="t-id">{#invoice}</span>
 
 <span class="t-bd">Persisted invoice record.</span>
 
-<span class="t-h">## </span><span class="t-kw">field</span> <span class="t-nm">total</span>
+<span class="t-h">## </span><span class="t-kw">field</span> <span class="t-nm">total: Decimal</span>
 
 <span class="t-bd">Decimal string, 2 places. Never float.</span>
 
 <span class="t-h"># </span><span class="t-kw">func</span> <span class="t-nm">validateInvoice</span>
+
+<span class="t-h">## </span><span class="t-kw">arg</span> <span class="t-nm">invoice: Invoice</span>
+
+<span class="t-h">## </span><span class="t-kw">result</span><span class="t-nm">: Invoice</span>
 
 <span class="t-h">## </span><span class="t-kw">bad</span> <span class="t-nm">SilentDefaults</span>
 
@@ -284,29 +301,35 @@
         </div>
         <div class="demo__connector">
           <span class="ln"></span>
-          <span class="chip"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>hint src/api/invoice.ts</span>
+          <span class="chip"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>hint emit api/invoice.ts</span>
           <span class="ln"></span>
         </div>
         <div class="code-wrap">
           <div class="code">
             <div class="code__bar">
               <span class="code__dots"><i></i><i></i><i></i></span>
-              <span class="code__file">what applies here → <b>agent</b></span>
+              <span class="code__file"><b>api/invoice.ts</b> — written by the spec</span>
               <span class="code__tag">deterministic</span>
             </div>
-<div class="code__body"><span class="t-mut">&lt;</span><span class="t-tag">file_context</span> <span class="t-at">path</span>=<span class="t-str">"src/api/invoice.ts"</span><span class="t-mut">&gt;</span>
-  <span class="t-mut">&lt;</span><span class="t-tag">data_structure</span> <span class="t-at">name</span>=<span class="t-str">"Invoice"</span> <span class="t-at">id</span>=<span class="t-str">"invoice"</span><span class="t-mut">&gt;</span>
-    <span class="t-bd">Persisted invoice record.</span>
-    <span class="t-mut">&lt;</span><span class="t-tag">field</span> <span class="t-at">name</span>=<span class="t-str">"total"</span><span class="t-mut">&gt;</span>
-      <span class="t-bd">Decimal string, 2 places. Never float.</span>
-    <span class="t-mut">&lt;/</span><span class="t-tag">field</span><span class="t-mut">&gt;</span>
-  <span class="t-mut">&lt;/</span><span class="t-tag">data_structure</span><span class="t-mut">&gt;</span>
-  <span class="t-mut">&lt;</span><span class="t-tag">function_contract</span> <span class="t-at">name</span>=<span class="t-str">"validateInvoice"</span><span class="t-mut">&gt;</span>
-    <span class="t-mut">&lt;</span><span class="t-tag">prohibited_anti_patterns</span> <span class="t-at">name</span>=<span class="t-str">"SilentDefaults"</span><span class="t-mut">&gt;</span>
-      <span class="t-bd">Never coerce an invalid Invoice valid.</span>
-    <span class="t-mut">&lt;/</span><span class="t-tag">prohibited_anti_patterns</span><span class="t-mut">&gt;</span>
-  <span class="t-mut">&lt;/</span><span class="t-tag">function_contract</span><span class="t-mut">&gt;</span>
-<span class="t-mut">&lt;/</span><span class="t-tag">file_context</span><span class="t-mut">&gt;</span></div>
+<div class="code__body"><span class="t-mut">// hint:begin — generated from api/invoice.ts.hint</span>
+<span class="t-mut">// Needs importing above this region:</span>
+<span class="t-mut">//   Decimal</span>
+
+<span class="t-mut">// Persisted invoice record.</span>
+<span class="t-kw2">export interface</span> <span class="t-nm">Invoice</span> {
+    <span class="t-mut">// Decimal string, 2 places. Never float.</span>
+    total: <span class="t-nm">Decimal</span>;
+}
+
+<span class="t-kw2">export function</span> <span class="t-nm">validateInvoice</span>(invoice: <span class="t-nm">Invoice</span>): <span class="t-nm">Invoice</span> {
+    <span class="t-mut">// Honor:</span>
+    <span class="t-mut">//   bad SilentDefaults:</span>
+    <span class="t-mut">//     Never coerce an invalid Invoice valid.</span>
+    <span class="t-hole">// hint:hole(func validateInvoice:body) — your code; kept across re-emits.</span>
+    <span class="t-bd">throw new Error("Not implemented.");</span>
+    <span class="t-hole">// hint:end of hole.</span>
+}
+<span class="t-mut">// hint:end — everything below is yours; the spec never touches it.</span></div>
           </div>
         </div>
       </div>
@@ -337,31 +360,30 @@
         </div>
         <div class="demo__connector">
           <span class="ln"></span>
-          <span class="chip"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>hint contracts/nda.md</span>
+          <span class="chip"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>hint emit contracts/nda.md</span>
           <span class="ln"></span>
         </div>
         <div class="code-wrap">
           <div class="code">
             <div class="code__bar">
               <span class="code__dots"><i></i><i></i><i></i></span>
-              <span class="code__file">what applies here → <b>agent</b></span>
+              <span class="code__file"><b>contracts/nda.md</b> — assembled by the spec</span>
               <span class="code__tag">deterministic</span>
             </div>
-<div class="code__body"><span class="t-mut">&lt;</span><span class="t-tag">matter_context</span> <span class="t-at">path</span>=<span class="t-str">"contracts"</span><span class="t-mut">&gt;</span>
-  <span class="t-mut">&lt;</span><span class="t-tag">party</span> <span class="t-at">name</span>=<span class="t-str">"Receiving"</span> <span class="t-at">id</span>=<span class="t-str">"receiving"</span><span class="t-mut">&gt;</span>
-    <span class="t-bd">Hooli, Inc., a Delaware corporation.</span>
-  <span class="t-mut">&lt;/</span><span class="t-tag">party</span><span class="t-mut">&gt;</span>
-  <span class="t-mut">&lt;</span><span class="t-tag">clause</span> <span class="t-at">name</span>=<span class="t-str">"Confidentiality"</span><span class="t-mut">&gt;</span>
-    <span class="t-mut">&lt;</span><span class="t-tag">binding_obligation</span> <span class="t-at">name</span>=<span class="t-str">"Protect"</span><span class="t-mut">&gt;</span>
-      <span class="t-bd">Protect all Confidential Information.</span>
-    <span class="t-mut">&lt;/</span><span class="t-tag">binding_obligation</span><span class="t-mut">&gt;</span>
-    <span class="t-mut">&lt;</span><span class="t-tag">non_negotiable_position</span> <span class="t-at">name</span>=<span class="t-str">"Survival"</span><span class="t-mut">&gt;</span>
-      <span class="t-bd">Terminates 5 yrs out — never perpetual.</span>
-    <span class="t-mut">&lt;/</span><span class="t-tag">non_negotiable_position</span><span class="t-mut">&gt;</span>
-  <span class="t-mut">&lt;/</span><span class="t-tag">clause</span><span class="t-mut">&gt;</span>
-<span class="t-mut">&lt;/</span><span class="t-tag">matter_context</span><span class="t-mut">&gt;</span></div>
+<div class="code__body"><span class="t-mut">&lt;!-- hint:begin — generated from contracts/nda.md.hint --&gt;</span>
+<span class="t-nm">**Receiving**</span> <span class="t-bd">— Hooli, Inc., a Delaware corporation.</span>
+
+<span class="t-nm">**“Confidential Information”**</span> <span class="t-bd">means any information marked</span>
+<span class="t-bd">confidential or reasonably understood to be.</span>
+
+<span class="t-h">## </span><span class="t-nm">Confidentiality</span>
+
+<span class="t-nm">**Protect.**</span> <span class="t-bd">Protect all Confidential Information with</span>
+<span class="t-bd">reasonable care.</span>
+<span class="t-mut">&lt;!-- hint:end — everything below is yours --&gt;</span></div>
           </div>
         </div>
+        <p class="demo__note"><span class="t-kw">redline Survival</span> never reached the document — the hintbook ships no template for it, so an internal position stays internal.</p>
       </div>
     </div>
   </div>
@@ -382,7 +404,7 @@
   <div class="wrap">
     <div class="reveal" style="max-width:68ch; margin-bottom:44px;">
       <div class="eyebrow" style="margin-bottom:22px;">The paradigm</div>
-      <h2 class="h2">Spec-as-Source, without the non-deterministic generator.</h2>
+      <h2 class="h2">Spec-as-Source, without the model in the loop.</h2>
       <p class="lede" style="margin-top:18px;"><b>Spec-as-Source</b> is the position that the specification — not the code — is the artifact you maintain and the authority the work answers to. The usual formulation attaches a second clause: <em>and the code is regenerated from the spec by a model.</em> That clause is what has kept the idea impractical. Model output is non-deterministic, so every regeneration is a re-roll, every hand edit fights the generator, and drift comes back through the door built for it.</p>
       <p class="lede" style="margin-top:18px;">HINT drops the model, not the source of truth. The <code class="inl">.hint</code> files hold the intent. Where a spec describes something machine-derivable, a template renders it — byte-identical every run, reviewable in a normal diff. Where it does not, humans and agents do the work. Three mechanisms keep the two coupled, and not one of them calls a model.</p>
     </div>
@@ -481,34 +503,110 @@
   <div class="wrap">
     <div class="reveal" style="margin-bottom:44px;">
       <div class="eyebrow" style="margin-bottom:22px;">How it works</div>
-      <h2 class="h2">Record it once. Ask about a path. Get what applies.</h2>
+      <h2 class="h2">Three rungs. Climb only as far as a file earns.</h2>
+      <p class="lede" style="margin-top:16px; max-width:66ch;">A repository does not have to pick one rung for all of itself. Most files stay on the first; a handful of contracts earn the second; the mechanical part of a few earns the third. Each rung is the one below it plus one more guarantee.</p>
     </div>
     <div class="steps reveal">
       <div class="step">
         <div class="step__n">01 / RECORD</div>
-        <h3>Write it in Markdown</h3>
-        <p>Every heading is a typed block — <code class="inl">decision</code>, <code class="inl">invariant</code>, <code class="inl">bad</code>, <code class="inl">clause</code>. Keyword, name, body. Depth nests it into a tree.</p>
+        <h3>The spec is written down</h3>
+        <p>Every heading is a typed block — <code class="inl">decision</code>, <code class="inl">invariant</code>, <code class="inl">bad</code>, <code class="inl">clause</code>. <code class="inl">hint &lt;path&gt;</code> returns the part that governs that path, inherited root-first, and nothing else.</p>
+        <code class="inl">hint src/billing/invoice.ts</code>
       </div>
       <div class="step">
-        <div class="step__n">02 / SCOPE</div>
-        <h3>Run <code class="inl" style="font-size:0.92em">hint</code></h3>
-        <p>It walks <em>resolve → parse → render</em>: the path's own knowledge plus every folder above it, rendered through your hintbook's templates. Nothing else.</p>
+        <div class="step__n">02 / CHECK</div>
+        <h3>The code answers to it</h3>
+        <p>A spec that declares surfaces is compared against what the file actually contains — parameters, their types, the return. Deterministic and token-free, so it belongs in CI rather than in a review comment.</p>
+        <code class="inl">hint verify src/billing/invoice.ts</code>
       </div>
       <div class="step">
-        <div class="step__n">03 / USE</div>
-        <h3>Any agent consumes it</h3>
-        <p>Knowledge only — no persona, no reporting format. Add <code class="inl">--prompt</code> when you are handing work to a fresh agent that has nothing else.</p>
+        <div class="step__n">03 / GENERATE</div>
+        <h3>The spec writes it</h3>
+        <p>For the part a template fully determines, the duplication disappears: the file is produced from the spec, and what cannot be derived is left as a hole for you or your agent to fill.</p>
+        <code class="inl">hint emit src/billing/invoice.ts</code>
       </div>
     </div>
     <div class="reveal" style="margin-top:18px; font-family:var(--font-mono); font-size:0.84rem; color:var(--ink-3); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <code class="inl">hint src/api/invoice.ts</code>
-      <span>— or <code class="inl">hint search "how do we sign tokens"</code> when you know the task, not the path.</span>
+      <span>Know the task but not the path? <code class="inl">hint search "how do we sign tokens"</code> ranks every spec offline.</span>
+    </div>
+    <div class="reveal" style="margin-top:14px; font-family:var(--font-mono); font-size:0.84rem; color:var(--ink-3);">
+      <span>Already have the code? <code class="inl">hint extract src/billing</code> drafts the specs from it — the on-ramp for a repository that did not start this way.</span>
     </div>
     <div class="callout reveal">
       <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v12H8.5L4 19.5V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
       <div>
         <h4>Or never run it by hand at all.</h4>
         <p><code class="inl">hint apply</code> writes a short block into your <code class="inl">AGENTS.md</code> and <code class="inl">CLAUDE.md</code> teaching an agent how to query HINT — and how to record what it learns. After that, just keep working in normal dialogue; the agent calls <code class="inl">hint</code> itself. The block stays small: the knowledge stays in <code class="inl">.hint</code>, never duplicated into tool-specific files.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EMIT -->
+<section class="section divider" id="emit">
+  <div class="wrap">
+    <div class="reveal" style="max-width:68ch; margin-bottom:40px;">
+      <div class="eyebrow" style="margin-bottom:22px;">Emission</div>
+      <h2 class="h2">What the spec determines, the spec writes.</h2>
+      <p class="lede" style="margin-top:18px;">Half of what a spec says is mechanical — the types, the fields, the signatures, the clause structure. Keeping a second hand-written copy of it is the duplication that makes specs rot. <code class="inl">hint emit</code> renders that half through the hintbook's templates, and leaves the other half — the part that takes judgment — as a marked <b>hole</b>.</p>
+    </div>
+    <div class="zones reveal">
+      <div class="zone">
+        <div class="zone__k">Above the region</div>
+        <h3>Your imports</h3>
+        <p>The emitter knows the type names the spec used, and can never know which module of <em>your</em> project provides them. So it lists what is still outstanding, and the list disappears when nothing is.</p>
+      </div>
+      <div class="zone zone--owned">
+        <div class="zone__k">Inside the region</div>
+        <h3>The spec's, rewritten each run</h3>
+        <p>Declarations the spec fully determines. Byte-identical every time, so <code class="inl">hint emit --check</code> is an assertion in CI rather than an opinion.</p>
+      </div>
+      <div class="zone">
+        <div class="zone__k">Below <code class="inl">hint:end</code></div>
+        <h3>Yours, untouched</h3>
+        <p>Helpers, and anything the spec does not own. Both boundaries say which zone they open and close, so the split is a structure rather than something to remember.</p>
+      </div>
+    </div>
+    <div class="grid-2 reveal" style="margin-top:22px;">
+      <div class="card feat">
+        <h3 class="h3">A hole is where the work goes</h3>
+        <p>What no template can derive becomes a hole, with the constraints that govern it printed directly above — the <code class="inl">bad</code>, the <code class="inl">flow</code>, the <code class="inl">invariant</code> it must honor. Fill it once and it survives every re-emission. Change the spec and the declarations move while your body stays.</p>
+      </div>
+      <div class="card feat">
+        <h3 class="h3">It refuses rather than loses</h3>
+        <p>If the spec block that owned an implementation is deleted or renamed, the write is <b>refused</b> and the labels are named — because a body with nowhere to go cannot be recovered afterwards. The same applies to a file somebody already wrote by hand: HINT will not append a region to it without being asked.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VERIFY -->
+<section class="section divider" id="verify">
+  <div class="wrap">
+    <div class="reveal" style="max-width:68ch; margin-bottom:36px;">
+      <div class="eyebrow" style="margin-bottom:22px;">Conformance</div>
+      <h2 class="h2">And what it cannot write, it can still check.</h2>
+      <p class="lede" style="margin-top:18px;">A spec that declares surfaces — a <code class="inl">func</code>, an <code class="inl">entity</code>, a <code class="inl">field</code> — can be checked against the code mechanically. <code class="inl">hint verify</code> compares <b>shape</b>: the declared parameters, their types, the return type, the fields of a structure. No model, no tokens, exits non-zero so CI can gate on it.</p>
+    </div>
+    <div class="reveal" style="overflow-x:auto; margin-bottom:20px;">
+      <table class="cmp">
+        <thead><tr><th>Nine languages, nothing to install</th><th>Read through</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inl">typescript</code> <code class="inl">javascript</code></td><td>your project's own <code class="inl">typescript</code></td></tr>
+          <tr><td><code class="inl">python</code></td><td>Python's <code class="inl">ast</code>, from the standard library</td></tr>
+          <tr><td><code class="inl">go</code></td><td>Go's <code class="inl">go/ast</code>, from the standard library</td></tr>
+          <tr><td><code class="inl">ruby</code></td><td>Ruby's <code class="inl">Ripper</code>, from the standard library</td></tr>
+          <tr><td><code class="inl">json</code> <code class="inl">yaml</code> <code class="inl">toml</code></td><td>Node's parser, the engine's own, Python's <code class="inl">tomllib</code></td></tr>
+          <tr><td><code class="inl">sql</code></td><td>SQLite's parser, via Python's <code class="inl">sqlite3</code></td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:16px; color:var(--ink-2); max-width:72ch;"><strong>Every one parses with the language's own parser</strong> — none of them is a parser we wrote. That is the entry requirement, not a coincidence: a hand-written parser that is subtly wrong produces confident, wrong findings, and this is a check you are meant to gate a merge on. A language whose parser cannot be reached without an install stays an external command instead.</p>
+    </div>
+    <div class="callout reveal">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3l8 4v6c0 4.4-3.4 7.3-8 8-4.6-.7-8-3.6-8-8V7l8-4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div>
+        <h4>It never reports a check it did not run.</h4>
+        <p>Having no adapter is a supported setup and passes in silence. An adapter that <em>was</em> configured and could not answer — a missing toolchain, a version that moved, a file that will not parse — is named on stderr with its own reason, and the summary says it fell back to the weaker check. The alternative is a project that believes it has conformance checking while nothing is being checked.</p>
       </div>
     </div>
   </div>
@@ -654,7 +752,7 @@
   <div class="wrap">
     <div class="reveal" style="margin-bottom:42px;">
       <div class="eyebrow" style="margin-bottom:22px;">Quick start</div>
-      <h2 class="h2">From zero to scoped context in five minutes.</h2>
+      <h2 class="h2">From zero to a spec that governs your repo, in five minutes.</h2>
     </div>
     <div class="qs">
       <div class="qsstep reveal">

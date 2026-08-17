@@ -221,6 +221,10 @@ strong { font-weight: 600; color: var(--ink); }
 .t-str { color: var(--tok-str); }     /* string-ish / values */
 .t-cm  { color: var(--tok-mut); font-style: italic; }
 .t-bd  { color: var(--tok-body); }
+.t-kw2 { color: var(--tok-tag); font-weight: 600; }  /* a language keyword in emitted code */
+/* A hole marker. Deliberately the loudest token in an emitted artifact: it is the one place a
+   reader is allowed to write, and the whole generated-file idea fails if it does not stand out. */
+.t-hole { color: var(--tok-id); font-weight: 600; }
 
 /* light inline code */
 code.inl {
