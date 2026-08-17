@@ -72,7 +72,7 @@ Hintbook resolution globs `**/hintbook.json` recursively, so a project that regi
 | `match` | Globs matched against the **output** path, so the file extension selects the emitter and the engine never learns a language. A pattern with no `/` matches the basename. Omit it to make the pack selectable only by an explicit `--target`. |
 | `comment` | How this target writes a comment, as a `{text}` pattern — `// {text}`, `# {text}`, `<!-- {text} -->`. Used for region markers and for `{doc}`. |
 | `builtins` | Identifiers this language provides without an import. Everything a spec names that is neither one of these nor declared in the file itself is listed for importing. |
-| `symbols` | An external command reporting a file's real symbols as JSON, consumed by `hint verify`. `{file}` is substituted; the path is passed as one argument, never through a shell. A pack may declare only this and carry no templates, making it a pure language adapter. |
+| `symbols` | Where `hint verify` gets the file's real symbols. Either `hint:<name>` for a [built-in adapter](#built-in-adapters), or an external command that prints them as JSON — `{file}` is substituted, and the path is passed as one argument, never through a shell. A pack may declare only this and carry no templates, making it a pure language adapter. |
 
 An emit pack ships no glossary and defines no vocabulary. It never appears in `hint author` output, never contributes to the `AGENTS.md` glossary, and never shadows an instruction — which matters because hintbook folders resolve in sorted order, and `emit/go` sorts before `keywords`.
 
@@ -351,7 +351,7 @@ There is deliberately no separate hole list in `hint --prompt`. The constraints 
 
 Emission produces the shape a spec describes. The other direction — does the file actually contain it? — needs to read the code, and that is the one thing the engine deliberately cannot do.
 
-An adapter is an external command that reports a file's symbols as JSON:
+An adapter reports a file's symbols as JSON:
 
 ```json
 {
@@ -367,11 +367,46 @@ An adapter is an external command that reports a file's symbols as JSON:
 
 `kind` is the adapter's own word for it; nothing in HINT interprets it, so a new language needs no changes here. A member with no `type` is treated exactly like a spec that stated none.
 
-`@openhint/adapter-typescript` is the reference implementation, and `@openhint/hintbook-software-engineer` already declares it. It parses syntactically — no program, no type checker, no `tsconfig` resolution — and reports each type as the annotation the author *wrote*, because that is what a human-written spec can honestly be compared against.
+### Built-in adapters
 
-Keeping this external is deliberate. Vendoring a TypeScript, Go, and Python parser into the CLI would multiply its install size and its failure modes, and would put language expertise in the one place that has stayed language-free. Vocabularies are plugins; languages should be too — and an adapter that is missing or broken degrades `verify` to the presence lint rather than to a pass it never established.
+Nine languages and formats work with nothing to install, addressed as `hint:<name>` in a pack's `symbols`:
 
-Missing and broken are not the same, and `verify` keeps them apart. No adapter is a supported configuration and says nothing. An adapter that *was* configured and could not be run — a command that does not resolve, a crash, a timeout, output that will not parse — is [named on stderr with its own reason](06-cli.md#hint-verify-paths--structurally-check-generated-output), because the alternative is a project that believes it has shape checking while a failing command quietly checks nothing.
+| `symbols` | Reads | Through |
+| --- | --- | --- |
+| `hint:typescript` | `.ts` `.tsx` | the project's own `typescript` |
+| `hint:javascript` | `.js` `.jsx` `.mjs` `.cjs` | the same parser, told which dialect |
+| `hint:python` | `.py` | Python's `ast`, from the standard library |
+| `hint:go` | `.go` | Go's `go/ast`, from the standard library |
+| `hint:ruby` | `.rb` | Ruby's `Ripper`, from the standard library |
+| `hint:json` | `.json` | Node's own parser |
+| `hint:yaml` | `.yml` `.yaml` | the parser the engine already carries |
+| `hint:toml` | `.toml` | Python's `tomllib` (3.11+) |
+| `hint:sql` | `.sql` | SQLite's parser, via Python's `sqlite3` |
+
+**Every one of them parses with the language's own parser.** That is the entry requirement, not a coincidence: a hand-written parser that is subtly wrong produces confident, wrong conformance findings, and this layer exists to be trustworthy enough to gate CI on. A language whose parser cannot be reached without an install does not get a built-in — it gets an external command.
+
+Two of them carry a caveat worth stating plainly:
+
+- **`hint:sql` reads SQLite-dialect DDL.** No single SQL grammar exists, and SQLite's is the one reachable from a standard library. A Postgres-only construct makes SQLite refuse the statement, and the adapter reports the refusal rather than a table with fewer columns than the file declares. Only `CREATE` statements are executed — this is a reader, and it should not run somebody's `INSERT` even against a database it throws away.
+- **`hint:typescript` needs TypeScript 5.x or 6.x.** It parses with *the project's own copy*, which costs no install and matches the version the project actually compiles with. TypeScript 7 — the native port — no longer exports the classic syntactic API from the package root, and the adapter says so by version rather than failing obscurely.
+
+For structured data, a top-level key is a symbol, the type of its value is the `kind`, and a mapping's own keys are its fields — so a spec can declare that a config file has a `database` section with a `host`, and have it checked.
+
+### External adapters
+
+Anything that is not `hint:<name>` is a command, and always has been:
+
+```json
+{ "target": "rust", "match": ["*.rs"], "symbols": "my-rust-adapter {file}" }
+```
+
+`{file}` is substituted; the path is passed as one argument, never through a shell. An external adapter can be written in the language it reads, lives outside this repository, and can override a built-in when a project wants something different. Languages with no built-in — Rust, Java, C#, Kotlin — go here, because none of them exposes a parser reachable without an install.
+
+A pack may declare only `symbols` and carry no templates, making it a pure language adapter. That is how the built-ins above are registered.
+
+### When an adapter cannot answer
+
+Missing and broken are not the same, and `verify` keeps them apart. No adapter is a supported configuration and says nothing. An adapter that *was* configured and could not be run — a command that does not resolve, a crash, a timeout, a toolchain absent, output that will not parse — is [named on stderr with its own reason](06-cli.md#hint-verify-paths--structurally-check-generated-output), because the alternative is a project that believes it has shape checking while a failing adapter quietly checks nothing. In every case `verify` falls back to the presence lint, never to a pass it never established.
 
 ---
 

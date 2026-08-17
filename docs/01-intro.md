@@ -140,7 +140,6 @@ The authoring guidance follows from the same observation. Knowledge that *explai
 | [`@openhint/transpiler`](../packages/transpiler/README.md) | The library behind the CLI: resolve → parse → render, plus hintbook loading and the contract layer. |
 | [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) | The software-engineering vocabulary. |
 | [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) | The legal vocabulary — drafting and revising documents. |
-| [`@openhint/adapter-typescript`](../packages/adapter-typescript/README.md) | The TypeScript language adapter, so `hint verify` checks shape rather than presence. |
 
 ## Where to go next
 
