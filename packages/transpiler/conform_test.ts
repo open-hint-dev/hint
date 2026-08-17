@@ -210,10 +210,10 @@ describe('parseSymbols', () => {
 describe('adapterCommand', () => {
     // Not a shell: the path reaches the adapter as one argument whatever it contains.
     it('substitutes the file into argv without splitting it', () => {
-        expect(adapterCommand('npx --yes @openhint/adapter-typescript {file}', 'src/my file.ts')).toEqual([
+        expect(adapterCommand('npx --yes some-adapter {file}', 'src/my file.ts')).toEqual([
             'npx',
             '--yes',
-            '@openhint/adapter-typescript',
+            'some-adapter',
             'src/my file.ts',
         ]);
     });

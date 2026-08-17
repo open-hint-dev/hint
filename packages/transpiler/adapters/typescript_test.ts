@@ -1,7 +1,11 @@
-import { collectSymbols } from './symbols.js';
+import * as Ts from 'typescript';
 
+import { collectSymbols, loadTypeScript, loadTypeScriptModule } from './typescript.js';
+
+// The adapter is handed the TypeScript module rather than importing it, because at run time it comes
+// from the project being checked. Here the workspace's own copy stands in for that.
 function symbols(source: string) {
-    return collectSymbols('src/a.ts', source);
+    return collectSymbols(Ts, 'src/a.ts', source);
 }
 
 describe('collectSymbols', () => {
@@ -82,5 +86,47 @@ describe('collectSymbols', () => {
 
     it('returns nothing for a file that declares nothing', () => {
         expect(symbols('import "./side-effect.js";')).toEqual([]);
+    });
+});
+
+describe('loadTypeScript', () => {
+    // Not merely non-null: `typescript` is CommonJS, and the module namespace an `import()` produces
+    // carries some members directly and the rest only under `default`. A test that stopped at
+    // non-null passed while every parse failed on an undefined enum.
+    it('resolves a module that can actually parse', async () => {
+        const loaded = await loadTypeScript(process.cwd());
+
+        expect(loaded).not.toBeNull();
+        expect(typeof loaded!.createSourceFile).toBe('function');
+        expect(loaded!.ScriptTarget?.Latest).toBeDefined();
+        expect(loaded!.ScriptKind?.TSX).toBeDefined();
+        expect(collectSymbols(loaded!, 'a.ts', 'export function f(a: string): void {}')).toEqual([
+            { kind: 'function', name: 'f', params: [{ name: 'a', type: 'string' }], returns: 'void' },
+        ]);
+    });
+
+    // The failure that must never be silent: a project with no TypeScript gets no symbol table, and
+    // `verify` reports the weaker check it actually ran instead of a pass it never established.
+    it('returns null rather than throwing when the project has none', async () => {
+        expect(await loadTypeScript('/nonexistent-project-root')).toBeNull();
+    });
+});
+
+// TypeScript 7 — the native port — no longer exports the classic syntactic API from the package root.
+// Resolving the project's own copy is what makes that reachable, so it has to be reported as a
+// version problem rather than as a missing install or as a crash halfway through a walk.
+describe('a typescript this adapter cannot drive', () => {
+    it('separates "not installed" from "installed but wrong API"', async () => {
+        const absent = await loadTypeScriptModule('/nonexistent-project-root');
+
+        expect(absent.ts).toBeNull();
+        expect(absent.incompatible).toBeUndefined();
+    });
+
+    it('finds a usable API in this workspace', async () => {
+        const found = await loadTypeScriptModule(process.cwd());
+
+        expect(found.incompatible).toBeUndefined();
+        expect(found.ts).not.toBeNull();
     });
 });
