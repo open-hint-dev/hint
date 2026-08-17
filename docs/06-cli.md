@@ -359,7 +359,7 @@ It is an observation, not a failure: the exit code still reflects the specs, bec
 
 Compose it: `hint verify <path> && hint lock <path>`.
 
-An adapter is an ordinary emit pack that declares `symbols` — it may carry no templates at all, in which case it is a pure language adapter. See [`docs/08-emit.md`](08-emit.md#emit-packs).
+An adapter is an ordinary emit pack that declares `symbols`. Nine of them are built in and need nothing installed — TypeScript, JavaScript, Python, Go, Ruby, JSON, YAML, TOML and SQL — each parsing with that language's own parser. Anything else is an external command. See [`docs/08-emit.md`](08-emit.md#language-adapters).
 
 ## `hint lock <paths...>` — record a contract snapshot
 
