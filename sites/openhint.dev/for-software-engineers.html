@@ -114,7 +114,8 @@
     </a>
     <div class="nav__links">
       <a class="nav__link" href="index.html#how">How it works</a>
-      <a class="nav__link" href="index.html#professions">Professions</a>
+      <a class="nav__link" href="index.html#emit">Emit</a>
+      <a class="nav__link" href="index.html#verify">Verify</a>
       <a class="nav__link nav__link--active" href="for-software-engineers.html">For Engineers</a>
       <a class="nav__link" href="for-lawyers.html">For Lawyers</a>
       <a class="nav__link" href="index.html#quickstart">Quick start</a>
@@ -133,7 +134,8 @@
 </nav>
 <div class="mobile-menu">
   <a href="index.html#how">How it works</a>
-  <a href="index.html#professions">Professions</a>
+  <a href="index.html#emit">Emit</a>
+  <a href="index.html#verify">Verify</a>
   <a href="for-software-engineers.html">For Engineers</a>
   <a href="for-lawyers.html">For Lawyers</a>
   <a href="index.html#quickstart">Quick start</a>
@@ -469,18 +471,22 @@ before adding anything new.</span></div>
         </div>
       </div>
       <div class="code-wrap">
-        <button class="code__copy" data-copy data-copy-text="hint src/billing/invoice.ts&#10;hint --prompt src/billing/invoice.ts | claude -p&#10;hint --strict 'src/**/*.hint' > /dev/null">Copy</button>
+        <button class="code__copy" data-copy data-copy-text="hint src/billing/invoice.ts&#10;hint emit src/billing/invoice.ts&#10;hint --prompt src/billing/invoice.ts | claude -p&#10;hint verify 'src/**/*.hint'&#10;hint emit --check">Copy</button>
         <div class="code">
           <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">2 · query &amp; ship</span></div>
 <div class="code__body"><span class="t-mut"># what governs this file?</span>
 <span class="t-bd">hint src/billing/invoice.ts</span>
 
+<span class="t-mut"># let the spec write what it fully determines</span>
+<span class="t-bd">hint emit src/billing/invoice.ts</span>
+
 <span class="t-mut"># hand it to a fresh agent</span>
 <span class="t-bd">hint --prompt src/billing/invoice.ts \
   | claude -p</span>
 
-<span class="t-mut"># CI gate: every named spec must resolve</span>
-<span class="t-bd">hint --strict 'src/**/*.hint' &gt; /dev/null</span></div>
+<span class="t-mut"># CI gate: shape, and artifacts still equal their specs</span>
+<span class="t-bd">hint verify 'src/**/*.hint'</span>
+<span class="t-bd">hint emit --check</span></div>
         </div>
       </div>
     </div>
