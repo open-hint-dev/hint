@@ -50,7 +50,9 @@ jobs:
             # llms-full.txt is docs/ concatenated. Nothing else would notice it drifting, and it is
             # the copy an LLM reads — so it is the copy most likely to be wrong for longest.
             - name: Check the generated documentation bundle
-              run: node sites/openhint.dev/build-llms.mjs --check
+              run: |
+                  node sites/openhint.dev/build-llms.mjs --check
+                  node sites/openhint.dev/check-site.mjs
 
             - name: Test
               run: make test

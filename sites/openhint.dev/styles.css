@@ -217,6 +217,22 @@ strong { font-weight: 600; color: var(--ink); }
 .code__copy:hover { color: var(--on-surface); border-color: rgba(255,255,255,0.3); }
 .code-wrap { position: relative; }
 
+/* A single handoff from the human to whichever coding agent is already in the repository. */
+.agent-handoff {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 0.9fr); gap: 28px; align-items: center;
+  margin-bottom: 30px; padding: 24px;
+  border: 1px solid var(--accent-line); background: var(--accent-soft); border-radius: 12px;
+}
+.agent-handoff h3 { margin: 0 0 8px; font-size: 1.12rem; }
+.agent-handoff p { margin: 0; color: var(--ink-2); font-size: 0.94rem; }
+.band .agent-handoff { background: rgba(255,255,255,0.045); border-color: rgba(255,255,255,0.13); }
+.band .agent-handoff h3 { color: var(--on-surface); }
+.band .agent-handoff p { color: var(--on-surface-mut); }
+
+@media (max-width: 760px) {
+  .agent-handoff { grid-template-columns: 1fr; gap: 18px; padding: 20px; }
+}
+
 /* syntax tokens */
 .t-h   { color: var(--tok-mut); }     /* markdown # */
 .t-kw  { color: var(--accent-bright); font-weight: 600; }  /* hint keyword */
