@@ -684,6 +684,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@openhint/cli@workspace:applications/cli"
   dependencies:
+    "@modelcontextprotocol/sdk": "npm:*"
     "@openhint/preset-eslint": "workspace:*"
     "@openhint/preset-typescript": "workspace:*"
     "@openhint/transpiler": "workspace:*"
@@ -691,6 +692,7 @@ __metadata:
     eslint: "npm:*"
     typescript: "npm:*"
     vite: "npm:*"
+    zod: "npm:*"
   bin:
     hint: ./index.js
   languageName: unknown
@@ -702,24 +704,6 @@ __metadata:
   checksum: 10c0/9f3f3430872fa0271f911383af3fd1720c17518c7d2e751577e6b9608688d52851773d77f584e8e22952a685190479f0398858616ef152a06abbbd84504b5e1a
   languageName: node
   linkType: hard
-
-"@openhint/mcp@workspace:applications/mcp":
-  version: 0.0.0-use.local
-  resolution: "@openhint/mcp@workspace:applications/mcp"
-  dependencies:
-    "@modelcontextprotocol/sdk": "npm:*"
-    "@openhint/preset-eslint": "workspace:*"
-    "@openhint/preset-typescript": "workspace:*"
-    "@openhint/transpiler": "workspace:*"
-    eslint: "npm:*"
-    typescript: "npm:*"
-    vite: "npm:*"
-    vitest: "npm:*"
-    zod: "npm:*"
-  bin:
-    hint-mcp: index.js
-  languageName: unknown
-  linkType: soft
 
 "@openhint/preset-eslint@workspace:*, @openhint/preset-eslint@workspace:presets/eslint":
   version: 0.0.0-use.local

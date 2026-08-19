@@ -16,7 +16,7 @@ CI-facing `verify`, `diff`, and `emit --check` now offer stable JSON output, whi
 
 The `@openhint/transpiler` package root now has an explicit curated export list. Code that imported incidental constants, tree internals, or interpolation helpers must move that logic behind the documented pipeline and contract APIs. The package name remains unchanged for 1.x: renaming “transpiler” to “engine” was considered, but is deferred to a future major release to avoid a second migration.
 
-New optional integrations do not change existing projects: `@openhint/mcp` exposes read-only context, search, status, and authoring tools; the VS Code extension under `editors/vscode` adds `.hint` highlighting, installed-vocabulary completion, hover, context lookup, and near-miss diagnostics.
+New optional integrations do not change existing projects: `hint mcp` exposes read-only context, search, status, and authoring tools without another package; the VS Code extension under `editors/vscode` adds `.hint` highlighting, installed-vocabulary completion, hover, context lookup, and near-miss diagnostics.
 
 ## What shipped in 1.2
 

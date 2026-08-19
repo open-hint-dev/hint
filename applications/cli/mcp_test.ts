@@ -5,14 +5,15 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import * as Transpiler from '@openhint/transpiler';
 
+import { createMcpServer } from './mcp.js';
+
 const here = Path.dirname(fileURLToPath(import.meta.url));
 
-it('serves context, search, status, and authoring data over MCP', async () => {
+it('serves CLI context, search, status, and authoring data over MCP', async () => {
     const previousCwd = process.cwd();
-    process.env.HINT_MCP_NO_START = '1';
     process.chdir(Path.resolve(here, '../../testdata/project'));
 
-    const { server } = await import('./index.js');
+    const server = createMcpServer('test');
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     const client = new Client({ name: 'test', version: '1.0.0' });
 
@@ -44,6 +45,5 @@ it('serves context, search, status, and authoring data over MCP', async () => {
         await client.close();
         await server.close();
         process.chdir(previousCwd);
-        delete process.env.HINT_MCP_NO_START;
     }
 });

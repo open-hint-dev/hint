@@ -32,7 +32,6 @@ publish:
 	@$(MAKE) release
 	@yarn workspace @openhint/transpiler publish
 	@yarn workspace @openhint/cli publish
-	@yarn workspace @openhint/mcp publish
 
 refresh:
 	@yarn refresh
