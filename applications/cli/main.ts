@@ -13,11 +13,13 @@ import { DiffCommand } from './commands/diff.js';
 import { EmitCommand } from './commands/emit.js';
 import { ExtractCommand } from './commands/extract.js';
 import { LockCommand } from './commands/lock.js';
+import { LintCommand } from './commands/lint.js';
 import { RemoveCommand } from './commands/remove.js';
 import { SearchCommand } from './commands/search.js';
 import { StatusCommand } from './commands/status.js';
 import { VerifyCommand } from './commands/verify.js';
 import { findCliVersion, VersionCommand } from './commands/version.js';
+import { UnresolvedError } from './commands/report.js';
 
 type ContextOptions = {
     strict: boolean;
@@ -53,6 +55,8 @@ Exit codes: 0 succeeded · 1 a check failed · 2 nothing matched the given paths
 
 export async function main(): Promise<void> {
     const program = new Command();
+
+    program.exitOverride();
 
     program
         .name('hint')
@@ -92,7 +96,15 @@ export async function main(): Promise<void> {
         .argument('<query...>', 'search terms, e.g. service account authentication')
         .option('--limit <n>', 'maximum number of results (use a negative value for no limit)', '20')
         .action(async (query: string[], options: { limit: string }) => {
-            await SearchCommand.new(query.join(' '), Number.parseInt(options.limit, 10)).execute();
+            const limit = Number(options.limit);
+
+            if (!Number.isInteger(limit)) {
+                process.stderr.write(`hint: invalid --limit '${options.limit}' — expected an integer.\n`);
+                process.exitCode = 2;
+                return;
+            }
+
+            await SearchCommand.new(query.join(' '), limit).execute();
         });
 
     program
@@ -102,8 +114,9 @@ export async function main(): Promise<void> {
                 'hintbooks, the file kinds, and the syntax. Read it before creating or editing a spec.',
         )
         .argument('[paths...]', 'target files or folders the .hint specs will describe')
-        .action(async (paths: string[]) => {
-            await AuthorCommand.new(paths).execute();
+        .option('--json', 'print the installed keyword vocabulary as JSON', false)
+        .action(async (paths: string[], options: { json: boolean }) => {
+            await AuthorCommand.new(paths, options.json).execute();
         });
 
     program
@@ -119,8 +132,9 @@ export async function main(): Promise<void> {
             `Write the HINT instruction block from ${Transpiler.CONFIG_FILE_YML} into AGENTS.md and CLAUDE.md — ` +
                 'a deterministic find-and-replace on the <hint> tags. Run it after adding or removing a hintbook.',
         )
-        .action(async () => {
-            await ApplyCommand.new().execute();
+        .option('--check', 'do not write; exit 1 when the generated instruction block is missing or differs', false)
+        .action(async (options: { check: boolean }) => {
+            await ApplyCommand.new(options.check).execute();
         });
 
     program
@@ -174,17 +188,25 @@ export async function main(): Promise<void> {
                 'hole body are preserved. Only companion <file>.hint specs emit; a folder hint describes ' +
                 'everything beneath it and has no single output.',
         )
-        .argument('<paths...>', 'paths to companion specs or the files they describe (globs supported)')
+        .argument('[paths...]', 'paths to companion specs or the files they describe (globs supported; --check defaults to the whole project)')
         .option('--check', 'do not write; exit 1 when an artifact differs from what its spec produces', false)
+        .option('--json', 'with --check, print stable JSON findings', false)
         .option('--stdout', 'print the artifacts instead of writing them', false)
         .option('--target <name>', 'force an emitter instead of selecting one from the output path')
         .option('--drop-orphans', 'write even when an implemented hole has nowhere left to go, discarding it', false)
         .option('--adopt', 'append a generated region to a file that already has content and none', false)
-        .action(async (paths: string[], options: { target?: string; check: boolean; stdout: boolean; dropOrphans: boolean; adopt: boolean }) => {
+        .action(async (paths: string[], options: { target?: string; check: boolean; json: boolean; stdout: boolean; dropOrphans: boolean; adopt: boolean }) => {
+            if (paths.length === 0 && !options.check) {
+                process.stderr.write(`hint: emit requires paths unless --check is used.\n`);
+                process.exitCode = 2;
+                return;
+            }
+
             await EmitCommand.new(paths, {
                 target: options.target,
                 stdout: options.stdout,
                 check: options.check,
+                json: options.json,
                 dropOrphans: options.dropOrphans,
                 adopt: options.adopt,
             }).execute();
@@ -204,8 +226,19 @@ export async function main(): Promise<void> {
                 'and token-free. Exits 1 on failure, 2 when no file spec matched — so agents and CI can gate on it.',
         )
         .argument('<paths...>', 'paths to companion specs or the files they describe (globs supported)')
-        .action(async (paths: string[]) => {
-            await VerifyCommand.new(paths).execute();
+        .option('--json', 'print stable JSON findings', false)
+        .action(async (paths: string[], options: { json: boolean }) => {
+            await VerifyCommand.new(paths, options.json).execute();
+        });
+
+    program
+        .command('lint')
+        .description('Check .hint files for near-miss keywords, broken includes, duplicate ids, and empty specs.')
+        .argument('<paths...>', 'hint files, target files, or folders to inspect')
+        .option('--json', 'print stable JSON findings', false)
+        .option('--strict-vocab', 'treat every unknown keyword as a finding', false)
+        .action(async (paths: string[], options: { json: boolean; strictVocab: boolean }) => {
+            await LintCommand.new(paths, options).execute();
         });
 
     program
@@ -223,8 +256,9 @@ export async function main(): Promise<void> {
         .command('diff')
         .description('Contracts: show which spec blocks have drifted from hint.lock since the code was generated.')
         .argument('<paths...>', 'paths to companion specs or the files they describe (globs supported)')
-        .action(async (paths: string[]) => {
-            await DiffCommand.new(paths).execute();
+        .option('--json', 'print stable JSON findings', false)
+        .action(async (paths: string[], options: { json: boolean }) => {
+            await DiffCommand.new(paths, options.json).execute();
         });
 
     program.addHelpText('beforeAll', `${EXAMPLES}\n`);
@@ -232,7 +266,12 @@ export async function main(): Promise<void> {
     try {
         await program.parseAsync();
     } catch (error: unknown) {
-        process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-        process.exitCode = 1;
+        const commander = error as { code?: string; exitCode?: number; message?: string };
+
+        if (commander.exitCode === 0) return;
+
+        const message = error instanceof Error ? error.message : String(error);
+        process.stderr.write(`hint: ${message}\n`);
+        process.exitCode = error instanceof UnresolvedError ? 2 : 1;
     }
 }

@@ -1,20 +1,17 @@
 import * as Path from 'node:path';
 
 import type { HintData } from './parser.js';
-import { isPathExists } from './helper.js';
-import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
+import { isInsideProject, isPathExists } from './helper.js';
+import { RUNNING_FILE } from './hintbook.js';
 import { parseHintFiles } from './parser.js';
 import { HINT_EXT } from './resolve.js';
+import { isScopeNode as isSubHint } from './tree.js';
 
 // Cheap guard before touching the filesystem: a real cross-file reference names a path, which contains
 // a separator or a dot (extension). Keyword names like `executeLogin` or `Credentials` never do, so they
 // are skipped without a stat — the filesystem check below is what ultimately decides a reference.
 function looksLikePath(name: string): boolean {
     return name.includes('/') || name.includes('.');
-}
-
-function isSubHint(hint: HintData): boolean {
-    return hint.keyword === RUNNING_FILE || hint.keyword === RUNNING_FOLDER;
 }
 
 // Resolves a block name to the companion hint of the file it references, or null when it names no real
@@ -27,7 +24,7 @@ async function resolveReferenceHintPath(projectRootPath: string, baseDir: string
     ];
 
     for (const candidate of candidates) {
-        if (!candidate.startsWith(projectRootPath)) {
+        if (!isInsideProject(projectRootPath, candidate)) {
             continue;
         }
 

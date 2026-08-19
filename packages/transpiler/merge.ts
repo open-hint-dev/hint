@@ -9,8 +9,8 @@
 //   2. A hole body that has been filled is never overwritten. Otherwise the first re-emit after a
 //      model run destroys the work, and nobody re-runs it.
 //
-// Markers live inside comments and are matched by their token alone, so the same parser serves every
-// target's comment form — `// hint:begin`, `# hint:begin`, `<!-- hint:begin -->`.
+// Markers live on dedicated comment lines. Tokens inside source strings, logs, or documentation are
+// ordinary user content and can never terminate a generated region or a hole.
 
 import { commentBlock } from './template.js';
 
@@ -18,9 +18,29 @@ export const MARKER_BEGIN = 'hint:begin';
 export const MARKER_END = 'hint:end';
 export const MARKER_HOLE = 'hint:hole';
 
-const BEGIN = /(?:^|\W)hint:begin(?:\W|$)/;
-const END = /(?:^|\W)hint:end(?:\W|$)/;
-const HOLE = /(?:^|\W)hint:hole\(([^)]*)\)(?:\s+spec=([0-9a-f]+))?/;
+const BEGIN = /^hint:begin(?:\s|$)/;
+const END = /^hint:end(?:\s|$)/;
+const HOLE = /^hint:hole\((.*)\)(?:\s+spec=([0-9a-f]+))?(?:\s|$)/;
+
+function commentPayload(line: string): string | null {
+    const trimmed = line.trim();
+    const html = /^<!--\s*(.*?)\s*-->$/.exec(trimmed);
+
+    if (html) return html[1] ?? '';
+
+    const commented = /^(?:\/\/|#|--|;)\s*(.*)$/.exec(trimmed);
+
+    if (commented) return commented[1] ?? '';
+
+    // Emit packs may deliberately omit a comment form (plain-text targets).
+    return trimmed.startsWith('hint:') ? trimmed : null;
+}
+
+function markerMatch(pattern: RegExp, line: string): RegExpExecArray | null {
+    const payload = commentPayload(line);
+
+    return payload === null ? null : pattern.exec(payload);
+}
 
 export type Hole = {
     label: string;
@@ -39,7 +59,7 @@ export type Region = {
 };
 
 function lines(content: string): string[] {
-    return content.split('\n');
+    return content.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
 }
 
 export function findRegion(content: string): Region | null {
@@ -52,19 +72,19 @@ export function findRegion(content: string): Region | null {
         const line = source[index]!;
 
         if (begin === -1) {
-            if (BEGIN.test(line)) {
+            if (markerMatch(BEGIN, line)) {
                 begin = index;
             }
 
             continue;
         }
 
-        if (HOLE.test(line)) {
+        if (markerMatch(HOLE, line)) {
             inHole = true;
             continue;
         }
 
-        if (END.test(line)) {
+        if (markerMatch(END, line)) {
             if (inHole) {
                 inHole = false;
                 continue;
@@ -101,14 +121,14 @@ export function extractHoles(content: string): Map<string, Hole> {
 
     for (let index = 0; index < source.length; index++) {
         const line = source[index]!;
-        const match = HOLE.exec(line);
+        const match = markerMatch(HOLE, line);
 
         if (match) {
             open = { label: match[1] ?? '', spec: match[2] ?? '', from: index + 1 };
             continue;
         }
 
-        if (open && END.test(line)) {
+        if (open && markerMatch(END, line)) {
             holes.set(open.label, { label: open.label, spec: open.spec, body: source.slice(open.from, index).join('\n') });
             open = null;
         }
@@ -145,7 +165,7 @@ function restoreHoles(
 
     for (const line of source) {
         if (skipping !== null) {
-            if (END.test(line)) {
+            if (markerMatch(END, line)) {
                 output.push(line);
                 skipping = null;
             }
@@ -155,7 +175,7 @@ function restoreHoles(
 
         output.push(line);
 
-        const match = HOLE.exec(line);
+        const match = markerMatch(HOLE, line);
 
         if (!match) {
             continue;
@@ -230,9 +250,13 @@ function wrap(artifact: string, comment: string | undefined, specPath: string | 
 // `existing` is null when the output does not exist yet. An existing file with no region keeps all of
 // its content and gains one at the end — adopting a hand-written file must never begin by truncating it.
 export function mergeArtifact(existing: string | null, artifact: string, comment?: string, specPath?: string): MergeResult {
-    const preserved = existing === null ? new Map<string, Hole>() : extractHoles(existing);
-    const stubs = extractHoles(artifact);
-    const { content: restoredArtifact, restored, drifted, consumed } = restoreHoles(artifact, preserved);
+    const eol = existing !== null && (existing.match(/\r\n/g)?.length ?? 0) > (existing.match(/(?<!\r)\n/g)?.length ?? 0) ? '\r\n' : '\n';
+    const normalizedExisting = existing === null ? null : lines(existing).join('\n');
+    const normalizedArtifact = lines(artifact).join('\n');
+    const finish = (result: MergeResult): MergeResult => ({ ...result, content: eol === '\n' ? result.content : result.content.replaceAll('\n', eol) });
+    const preserved = normalizedExisting === null ? new Map<string, Hole>() : extractHoles(normalizedExisting);
+    const stubs = extractHoles(normalizedArtifact);
+    const { content: restoredArtifact, restored, drifted, consumed } = restoreHoles(normalizedArtifact, preserved);
     const region = wrap(restoredArtifact, comment, specPath);
 
     // A body only counts as orphaned if somebody wrote it: an untouched stub carries nothing to lose.
@@ -240,26 +264,38 @@ export function mergeArtifact(existing: string | null, artifact: string, comment
         (hole) => !consumed.has(hole.label) && hole.body.trim() !== '' && hole.body.trim() !== stubs.get(hole.label)?.body.trim(),
     );
 
-    if (existing === null) {
-        return { content: `${region}\n`, restored, drifted, created: true, adopted: false, orphaned };
+    if (normalizedExisting === null) {
+        return finish({ content: `${region}\n`, restored, drifted, created: true, adopted: false, orphaned });
     }
 
-    const found = findRegion(existing);
+    const found = findRegion(normalizedExisting);
 
     if (!found) {
-        const separator = existing.endsWith('\n\n') ? '' : existing.endsWith('\n') ? '\n' : '\n\n';
+        const separator = normalizedExisting.endsWith('\n\n') ? '' : normalizedExisting.endsWith('\n') ? '\n' : '\n\n';
 
-        return { content: `${existing}${separator}${region}\n`, restored, drifted, created: false, adopted: existing.trim() !== '', orphaned };
+        return finish({
+            content: `${normalizedExisting}${separator}${region}\n`,
+            restored,
+            drifted,
+            created: false,
+            adopted: normalizedExisting.trim() !== '',
+            orphaned,
+        });
     }
 
-    const source = lines(existing);
+    const source = lines(normalizedExisting);
+    const secondBegin = source.findIndex((line, index) => index > found.end && markerMatch(BEGIN, line) !== null);
+
+    if (secondBegin !== -1) {
+        throw new Error(`Refusing to merge a file with multiple generated regions (lines ${found.begin + 1} and ${secondBegin + 1})`);
+    }
     const merged = [
         ...source.slice(0, found.begin),
         ...lines(region),
         ...source.slice(found.end + 1),
     ];
 
-    return { content: merged.join('\n'), restored, drifted, created: false, adopted: false, orphaned };
+    return finish({ content: merged.join('\n'), restored, drifted, created: false, adopted: false, orphaned });
 }
 
 export type HoleState = {

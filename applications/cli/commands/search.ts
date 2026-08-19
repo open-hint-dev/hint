@@ -30,6 +30,8 @@ export class SearchCommand implements ICommand {
         // scores are corpus-relative. Say so on stderr — the results still print, unfiltered.
         if (results.length > 0 && results.every((result) => result.weak)) {
             process.stderr.write(`hint: no strong match for '${this.query}' — every result matched under half the query terms.\n`);
+        } else if (results.length === 0) {
+            process.stderr.write(`hint: no hint covers this query.\n`);
         }
 
         process.stdout.write(`${JSON.stringify({ query: this.query, count: results.length, results }, null, 2)}\n`);

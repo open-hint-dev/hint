@@ -1,0 +1,21 @@
+The engine resolves paths, parses Markdown knowledge, renders context, and powers deterministic contract, emit, search, lint, and status operations.
+
+# decision Pipeline
+
+Keep the main data flow explicit: resolve requests, parse their inherited tree, then render or inspect it. Resolution verdicts must survive into callers instead of being inferred from empty output.
+
+# invariant VocabularyNeutrality
+
+The engine knows no domain keywords. Meanings, surfaces, synonyms, emit templates, and adapter declarations come from registered hintbooks.
+
+# bad AdapterBypass
+
+Do not call language tooling outside the JSON symbol-adapter contract. Built-in and external adapters must report through the same failure vocabulary and degrade visibly.
+
+# rule LockFingerprint
+
+A lock entry fingerprints the file spec, inherited context, vocabulary meanings, block-level content, and—when present—the generated target. Missing or newer lock granularity must be reported, never guessed.
+
+# bad UnsafeMerge
+
+`merge.ts` is the module that can destroy user work. Marker recognition must be structural; filled holes survive byte-for-byte, orphaned bodies refuse the write, and unmanaged files require explicit adoption.

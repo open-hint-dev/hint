@@ -1,6 +1,6 @@
 # HINT Syntax Specification
 
-HINT files are 100% valid Markdown. They can be read by any standard editor, giving you native syntax highlighting, markdown preview, and code folding out of the box.
+HINT files are 100% valid Markdown. The `openhint` VS Code extension adds keyword/id/include scopes while retaining Markdown preview and editing behavior. Without it, use `"files.associations": {"*.hint": "markdown"}`; the reusable TextMate grammar lives under `editors/` for other editors.
 
 The grammar below is everything the transpiler itself defines. Deliberately, **keywords are not part of it** — what `entity` or `flow` means is supplied by the hintbook(s) registered in `hint.yml` (see [Hintbooks](05-hintbooks.md)). The core only understands files, headings, bodies, ids, and includes.
 
@@ -22,7 +22,7 @@ books:
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `name`, `description` | Project identity, available to tooling.                                                                                                                            |
 | `books`               | Hintbooks providing the keyword vocabulary. `file://` paths resolve relative to the project root; `npm://` names resolve through local then global `node_modules`. |
-| `ignore`              | Reserved for path exclusion patterns.                                                                                                                              |
+| `ignore`              | Glob patterns excluded from project-wide inventory, status, search, and lint walks.                                                                                 |
 
 Two kinds of specification files live in the tree:
 
@@ -35,7 +35,7 @@ When compiling, every requested hint is wrapped in its full folder chain down fr
 
 ## Path resolution
 
-Arguments passed to `hint` are resolved against the project root:
+Arguments passed to `hint` are resolved against the current working directory, then kept as portable project-relative keys internally:
 
 | You pass            | Compiles                               |
 | ------------------- | -------------------------------------- |

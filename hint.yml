@@ -1,0 +1,9 @@
+name: hint
+description: Spec-as-Source engine, CLI, presets, documentation, and integrations
+books:
+    - npm://@openhint/hintbook-software-engineer
+ignore:
+    - release/**
+    - coverage/**
+    - testdata/**
+    - sites/openhint.dev/assets/**

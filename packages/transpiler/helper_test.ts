@@ -1,4 +1,6 @@
-import { interpolate, isGlobPattern } from './helper.js';
+import * as Path from 'node:path';
+
+import { interpolate, isGlobPattern, isInsideProject, toPortablePath } from './helper.js';
 
 describe('helper', () => {
     describe('interpolate', () => {
@@ -26,5 +28,11 @@ describe('helper', () => {
         it('rejects plain paths', () => {
             expect(isGlobPattern('src/payment.ts.hint')).toBe(false);
         });
+    });
+
+    it('rejects sibling-prefix escapes and normalizes Windows keys', () => {
+        expect(isInsideProject('/tmp/repo', '/tmp/repo-extra/a.ts')).toBe(false);
+        expect(isInsideProject('/tmp/repo', '/tmp/repo/src/a.ts')).toBe(true);
+        expect(toPortablePath(Path.win32.join('src', 'auth', 'token.ts'))).toBe('src/auth/token.ts');
     });
 });

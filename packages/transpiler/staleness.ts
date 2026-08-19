@@ -1,7 +1,7 @@
-import type { GitSnapshot } from './git.js';
+import type { GitHistoryIndex, GitSnapshot } from './git.js';
 import type { HintbookData } from './hintbook.js';
 import type { HintData } from './parser.js';
-import { changedFilesSince, isUnderScope, lastCommitOf } from './git.js';
+import { changedFilesFromHistory, changedFilesSince, isUnderScope, lastCommitOf } from './git.js';
 import { collectScopeNodes } from './parser.js';
 import { collectSurfaces } from './verify.js';
 
@@ -50,14 +50,19 @@ function threshold(contract: boolean): number {
 // whenever there is nothing honest to say: no git, a hint that has never been committed, a hint the
 // author is editing right now, or a scope with no tracked files to measure against. Silence is the
 // correct answer in all of those — an unmeasurable scope must not be reported as a fresh one.
-export async function measureStaleness(projectRootPath: string, snapshot: GitSnapshot, scope: ScopeInput): Promise<ScopeStaleness | null> {
+export async function measureStaleness(
+    projectRootPath: string,
+    snapshot: GitSnapshot,
+    scope: ScopeInput,
+    history?: GitHistoryIndex,
+): Promise<ScopeStaleness | null> {
     // Uncommitted work on the hint file itself means it is being maintained as we speak. Measuring it
     // against its last commit would nag the author mid-edit.
     if (snapshot.dirty.has(scope.hintPath)) {
         return null;
     }
 
-    const commit = await lastCommitOf(projectRootPath, scope.hintPath);
+    const commit = history ? (history.lastCommitByPath.get(scope.hintPath) ?? null) : await lastCommitOf(projectRootPath, scope.hintPath);
 
     if (commit === null) {
         return null;
@@ -69,7 +74,7 @@ export async function measureStaleness(projectRootPath: string, snapshot: GitSna
         return null;
     }
 
-    const changed = await changedFilesSince(projectRootPath, commit, scope.target);
+    const changed = history ? changedFilesFromHistory(history, commit, scope.target) : await changedFilesSince(projectRootPath, commit, scope.target);
 
     if (changed === null) {
         return null;

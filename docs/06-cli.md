@@ -304,7 +304,7 @@ Full reference, including template syntax and how to author an emitter → [`doc
 Prints the CLI version, then every registered hintbook with its version and where it resolved from:
 
 ```
-@openhint/cli 1.1.0
+@openhint/cli 1.3.0
 npm://@openhint/hintbook-software-engineer 1.0.6 — /usr/local/lib/node_modules/@openhint/…/keywords
 file://hintbooks/team-conventions (version unknown) — hintbooks/team-conventions
 npm://@openhint/hintbook-chef (not installed)

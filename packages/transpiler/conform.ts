@@ -14,7 +14,8 @@ import type { HintData } from './parser.js';
 import type { CodeSymbol, SymbolMember } from './symbols.js';
 import { findInstruction } from './compiler.js';
 import { canonicalKeyword, splitName } from './emit.js';
-import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
+import { RESULT_KEYWORDS } from './result-keywords.js';
+import { isScopeNode as isScope } from './tree.js';
 
 // The keywords whose blocks describe a member of the surface they are nested under. Resolved through
 // the vocabulary's own synonyms, so `# argument` reaches the same expectation as `# arg`.
@@ -28,12 +29,6 @@ const FIELD_KEYWORDS = [
     'column',
     'property',
 ];
-export const RESULT_KEYWORDS = [
-    'result',
-    'return',
-    'returns',
-];
-
 // What a spec declared about one surface, reduced to the parts a symbol table can be compared with.
 // Everything here is optional because everything in the spec is: an empty `params` means the author
 // declared no parameters, not that the function must take none.
@@ -52,10 +47,6 @@ export type Finding = {
     surface: string;
     detail: string;
 };
-
-function isScope(hint: HintData): boolean {
-    return hint.keyword === RUNNING_FILE || hint.keyword === RUNNING_FOLDER;
-}
 
 function matches(hintbooks: HintbookData[], keyword: string, wanted: string[]): boolean {
     const canonical = canonicalKeyword(hintbooks, keyword) ?? keyword;

@@ -41,3 +41,4 @@ release:
 
 test:
 	@yarn test
+	@yarn vite-node applications/cli/index.ts status --exit-code

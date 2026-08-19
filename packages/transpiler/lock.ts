@@ -5,9 +5,11 @@ import * as YAML from 'yaml';
 
 import type { HintbookData } from './hintbook.js';
 import type { HintData } from './parser.js';
+import { blockAddressSegment } from './address.js';
 import { findInstruction } from './compiler.js';
-import { readFile, writeFile } from './helper.js';
+import { readFile, toPortablePath, writeFile } from './helper.js';
 import { RUNNING_FILE, RUNNING_FOLDER, RUNNING_FOOTER, RUNNING_HEADER } from './hintbook.js';
+import { isScopeNode as isSubHint } from './tree.js';
 
 export const LOCK_FILE = 'hint.lock';
 // Bumped to 2 when the file hash began folding in the vocabulary each file uses (see effectiveFileHashes),
@@ -46,10 +48,6 @@ export type FileHash = {
 
 // True for the wrapper nodes that stand in for a nested file or folder, as opposed to the ordinary
 // heading blocks a `_.hint`/companion declares. Used to split a node's own content from its context layers.
-function isSubHint(hint: HintData): boolean {
-    return hint.keyword === RUNNING_FILE || hint.keyword === RUNNING_FOLDER;
-}
-
 // Merkle hash of a block subtree: keyword, id, name, body, and the ordered hashes of its children.
 // Stable under trivial markdown reformatting because `body` is already normalized by the parser's
 // remark round-trip. Two blocks hash equal iff their parsed subtrees are structurally identical.
@@ -216,10 +214,6 @@ function blockContentHash(hint: HintData): string {
     return Crypto.createHash('sha256').update(`${hint.level}\0${hint.keyword}\0${hint.id}\0${hint.name}\0${hint.body}`).digest('hex');
 }
 
-function blockKeySegment(hint: HintData): string {
-    return hint.name ? `${hint.keyword} ${hint.name}` : hint.keyword;
-}
-
 // Flat map of block-path -> own-content hash for a file node's declared blocks (its heading children,
 // excluding nested file/folder wrappers). Keys are the `keyword name` chain from the file root, e.g.
 // `func executeLogin > flow`; colliding keys get a numeric suffix so every block stays addressable.
@@ -238,7 +232,8 @@ export function hashFileBlocks(fileNode: HintData): BlockHashes {
                 continue;
             }
 
-            const base = prefix ? `${prefix} > ${blockKeySegment(node)}` : blockKeySegment(node);
+            const segment = blockAddressSegment(node);
+            const base = prefix ? `${prefix} > ${segment}` : segment;
 
             let key = base;
             let suffix = 2;
@@ -303,7 +298,7 @@ export function diffFileBlocks(previous: BlockHashes, current: BlockHashes): Blo
     };
 }
 
-export type FileDriftStatus = 'fresh' | 'new' | 'inherited' | 'blocks' | 'drifted-output';
+export type FileDriftStatus = 'fresh' | 'new' | 'unknown' | 'inherited' | 'blocks' | 'drifted-output';
 
 export type FileDrift = {
     name: string;
@@ -345,7 +340,11 @@ export function computeDrift(hints: HintData[], lock: LockData, hintbooks: Hintb
             return { name, status: 'fresh' };
         }
 
-        const diff = diffFileBlocks(entry.blocks ?? {}, hashFileBlocks(node));
+        if (entry.blocks === undefined) {
+            return { name, status: 'unknown' };
+        }
+
+        const diff = diffFileBlocks(entry.blocks, hashFileBlocks(node));
         const hasBlockChanges = diff.changed.length > 0 || diff.added.length > 0 || diff.removed.length > 0;
 
         return hasBlockChanges ? { name, status: 'blocks', diff } : { name, status: 'inherited' };
@@ -369,6 +368,11 @@ export function formatDrift(drift: FileDrift[]): string {
 
         if (file.status === 'inherited') {
             lines.push(`- ${file.name}: inherited context or vocabulary changed — re-verify the whole file against the spec.`);
+            continue;
+        }
+
+        if (file.status === 'unknown') {
+            lines.push(`- ${file.name}: lock has no block detail — run \`hint lock ${file.name}\` to refresh it.`);
             continue;
         }
 
@@ -506,10 +510,15 @@ export async function loadLock(projectRootPath: string): Promise<LockData | null
             return null;
         }
 
-        return {
-            version: data.version ?? LOCK_VERSION,
-            files: data.files ?? {},
-        };
+        const version = data.version ?? LOCK_VERSION;
+
+        if (version > LOCK_VERSION) {
+            throw new Error(`'${lockPath}' was written by a newer hint; upgrade or delete hint.lock`);
+        }
+
+        const files = Object.fromEntries(Object.entries(data.files ?? {}).map(([key, value]) => [toPortablePath(key), value]));
+
+        return { version, files };
     } catch (err: unknown) {
         throw new Error(`Failed to read '${lockPath}': ${(err as Error).message}`);
     }

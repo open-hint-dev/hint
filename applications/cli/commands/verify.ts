@@ -1,6 +1,7 @@
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
+import { expandFolderPaths } from './paths.js';
 import { EXIT_FAILED, EXIT_UNRESOLVED, reportResolution } from './report.js';
 
 // An adapter this project declared that could not be run. Distinct from having no adapter at all,
@@ -13,13 +14,15 @@ type AdapterFailure = {
 
 export class VerifyCommand implements ICommand {
     private paths: string[] = [];
+    private json = false;
 
     constructor() {}
 
-    static new(paths: string[]): VerifyCommand {
+    static new(paths: string[], json = false): VerifyCommand {
         const command = new VerifyCommand();
 
         command.paths = paths;
+        command.json = json;
 
         return command;
     }
@@ -46,7 +49,7 @@ export class VerifyCommand implements ICommand {
             return;
         }
 
-        const resolution = await Transpiler.resolveRequests(projectRootPath, this.paths);
+        const resolution = await Transpiler.resolveRequests(projectRootPath, await expandFolderPaths(this.paths), process.cwd());
 
         await reportResolution(projectRootPath, resolution);
 
@@ -86,6 +89,21 @@ export class VerifyCommand implements ICommand {
         ]
             .filter(Boolean)
             .join('\n');
+        const findings = [
+            ...conformed.findings,
+            ...linted.flatMap((result) =>
+                result.status === 'missing-output'
+                    ? [{ file: result.name, kind: 'missing-output', detail: 'target file does not exist' }]
+                    : result.missing.map((surface) => ({
+                          file: result.name,
+                          kind: 'missing-surface',
+                          surface: surface.name,
+                          detail: `${surface.keyword} ${surface.name}`,
+                      })),
+            ),
+        ];
+
+        if (this.json) process.stdout.write(`${JSON.stringify({ checked: files.length, findings }, null, 2)}\n`);
 
         if (!summary) {
             // Never "every declared surface is present" when nothing was checked against the code: the
@@ -101,7 +119,7 @@ export class VerifyCommand implements ICommand {
         }
 
         // Non-zero exit so an agent loop or CI step can gate on structural conformance.
-        process.stdout.write(`${summary}\n`);
+        if (!this.json) process.stdout.write(`${summary}\n`);
         process.exitCode = EXIT_FAILED;
     }
 
@@ -112,10 +130,11 @@ export class VerifyCommand implements ICommand {
         projectRootPath: string,
         hints: Transpiler.HintData[],
         hintbooks: Transpiler.HintbookData[],
-    ): Promise<{ summary: string; checked: Set<string>; failures: AdapterFailure[] }> {
+    ): Promise<{ summary: string; checked: Set<string>; failures: AdapterFailure[]; findings: ({ file: string } & Transpiler.Finding)[] }> {
         const checked = new Set<string>();
         const failures: AdapterFailure[] = [];
         const sections: string[] = [];
+        const allFindings: ({ file: string } & Transpiler.Finding)[] = [];
 
         for (const { name, node } of Transpiler.collectFileNodes(hints)) {
             const emitter = Transpiler.selectEmitter(hintbooks, name);
@@ -135,9 +154,10 @@ export class VerifyCommand implements ICommand {
 
             if (findings.length > 0) {
                 sections.push(Transpiler.formatFindings(name, findings));
+                allFindings.push(...findings.map((finding) => ({ file: name, ...finding })));
             }
         }
 
-        return { summary: sections.join('\n'), checked, failures };
+        return { summary: sections.join('\n'), checked, failures, findings: allFindings };
     }
 }

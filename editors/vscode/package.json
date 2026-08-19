@@ -1,0 +1,38 @@
+{
+  "name": "openhint",
+  "displayName": "HINT",
+  "description": "First-class editing support for Markdown-native HINT specs",
+  "version": "0.1.0",
+  "publisher": "openhint",
+  "engines": { "vscode": "^1.96.0" },
+  "categories": ["Programming Languages"],
+  "activationEvents": ["onLanguage:hint", "onCommand:hint.showContext"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [{
+      "id": "hint",
+      "aliases": ["HINT", "hint"],
+      "extensions": [".hint"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "hint",
+      "scopeName": "source.hint",
+      "path": "./syntaxes/hint.tmLanguage.json",
+      "embeddedLanguages": { "text.html.markdown": "markdown" }
+    }],
+    "commands": [{ "command": "hint.showContext", "title": "HINT: Show Governing Context" }],
+    "configuration": {
+      "title": "HINT",
+      "properties": {
+        "hint.diagnostics.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run hint lint after saving a .hint file and show vocabulary near-misses."
+        }
+      }
+    }
+  },
+  "scripts": { "build": "tsc -p .", "test": "tsc -p . --noEmit" },
+  "devDependencies": { "@types/node": "^24.0.0", "@types/vscode": "^1.96.0", "typescript": "^5.8.0" }
+}

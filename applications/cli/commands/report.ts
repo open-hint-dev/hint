@@ -11,6 +11,8 @@ export const EXIT_OK = 0;
 export const EXIT_FAILED = 1;
 export const EXIT_UNRESOLVED = 2;
 
+export class UnresolvedError extends Error {}
+
 // Where a path with no spec of its own gets its knowledge from, phrased for the caller.
 async function inheritedFrom(projectRootPath: string, target: string | null): Promise<string> {
     const ancestor = target === null ? null : await Transpiler.findNearestFolderHint(projectRootPath, target);

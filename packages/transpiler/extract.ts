@@ -30,6 +30,8 @@ export function extractMap(emitter: HintbookData | null): ExtractMap | null {
         return null;
     }
 
+    // A member-only map cannot create a top-level surface, so extraction has
+    // nothing it can safely draft even though the configuration is non-empty.
     return Object.keys(map).some((key) => !MEMBER_ROLES.includes(key)) ? map : null;
 }
 

@@ -4,8 +4,9 @@ import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
 import { AGENT_FILE_NAMES, buildHintBlock, collectHintbookSections, HINT_TAG } from './bootstrap.js';
+import { EXIT_FAILED } from './report.js';
 
-const HINT_BLOCK_PATTERN = new RegExp(`<${HINT_TAG}>[\\s\\S]*?<\\/${HINT_TAG}>`);
+const HINT_BLOCK_PATTERN = new RegExp(`<${HINT_TAG}>[\\s\\S]*?<\\/${HINT_TAG}>`, 'g');
 
 type Target = {
     path: string;
@@ -14,8 +15,12 @@ type Target = {
 };
 
 export class ApplyCommand implements ICommand {
-    static new(): ApplyCommand {
-        return new ApplyCommand();
+    private check = false;
+
+    static new(check = false): ApplyCommand {
+        const command = new ApplyCommand();
+        command.check = check;
+        return command;
     }
 
     async execute(): Promise<void> {
@@ -28,7 +33,27 @@ export class ApplyCommand implements ICommand {
 
         const block = buildHintBlock(await collectHintbookSections(projectRootPath, config));
 
-        for (const target of await resolveTargets(projectRootPath)) {
+        const targets = await resolveTargets(projectRootPath);
+
+        if (this.check) {
+            const differing: string[] = [];
+
+            for (const target of targets) {
+                const current = (await Transpiler.readFile(target.path)) ?? '';
+                const expected = desiredContent(current, target.strip ? null : block);
+                if (current !== expected) differing.push(target.name);
+            }
+
+            if (differing.length === 0) {
+                process.stderr.write(`hint: HINT instruction blocks are up to date.\n`);
+            } else {
+                process.stderr.write(`hint: HINT instruction block differs in ${differing.join(', ')} — run 'hint apply'.\n`);
+                process.exitCode = EXIT_FAILED;
+            }
+            return;
+        }
+
+        for (const target of targets) {
             const message = target.strip ? await stripHintBlock(target) : await writeHintBlock(target, block);
 
             if (message) {
@@ -36,6 +61,28 @@ export class ApplyCommand implements ICommand {
             }
         }
     }
+}
+
+function desiredContent(content: string, block: string | null): string {
+    HINT_BLOCK_PATTERN.lastIndex = 0;
+    if (block !== null) {
+        let inserted = false;
+        const replaced = content.replace(HINT_BLOCK_PATTERN, () => {
+            if (inserted) return '';
+            inserted = true;
+            return block;
+        });
+
+        if (inserted) return replaced.replace(/\n{3,}/g, '\n\n');
+        return content === '' ? `${block}\n` : `${content.replace(/\s+$/, '')}\n\n${block}\n`;
+    }
+
+    const stripped = content
+        .replace(HINT_BLOCK_PATTERN, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/^\n+/, '')
+        .replace(/\s+$/, '');
+    return stripped === '' ? '' : `${stripped}\n`;
 }
 
 // AGENTS.md and CLAUDE.md each get the block — unless CLAUDE.md only `@AGENTS.md`-includes it, in which
@@ -72,7 +119,8 @@ async function writeHintBlock(target: Target, block: string): Promise<string> {
     }
 
     if (HINT_BLOCK_PATTERN.test(content)) {
-        const updated = content.replace(HINT_BLOCK_PATTERN, block);
+        HINT_BLOCK_PATTERN.lastIndex = 0;
+        const updated = desiredContent(content, block);
 
         if (updated === content) {
             return `${target.name} already up to date`;
@@ -92,16 +140,13 @@ async function stripHintBlock(target: Target): Promise<string | null> {
     const content = await Transpiler.readFile(target.path);
 
     if (content === null || !HINT_BLOCK_PATTERN.test(content)) {
+        HINT_BLOCK_PATTERN.lastIndex = 0;
         return null;
     }
 
-    const stripped = content
-        .replace(HINT_BLOCK_PATTERN, '')
-        .replace(/\n{3,}/g, '\n\n')
-        .replace(/^\n+/, '')
-        .replace(/\s+$/, '');
+    HINT_BLOCK_PATTERN.lastIndex = 0;
 
-    await Transpiler.writeFile(target.path, stripped === '' ? '' : `${stripped}\n`);
+    await Transpiler.writeFile(target.path, desiredContent(content, null));
 
     return `Removed the duplicate HINT block from ${target.name}`;
 }

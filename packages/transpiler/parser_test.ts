@@ -250,6 +250,12 @@ describe('parser', () => {
             it('throws on a circular include', async () => {
                 await expect(parseHints(projectRootPath, ['includes/cyclic.ts.hint'])).rejects.toThrow(/@include cycle detected/);
             });
+
+            it('does not expand include examples inside fenced code', async () => {
+                const file = await fileHint('includes/fenced.ts.hint');
+                expect(file.body).toContain('@include this-file-does-not-exist.md');
+                expect(file.children[0]).toMatchObject({ keyword: 'entity', name: 'Fenced' });
+            });
         });
 
         it('parses synthesized folder hints with empty bodies', async () => {

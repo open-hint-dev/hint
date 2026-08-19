@@ -1,0 +1,25 @@
+HINT is a Spec-as-Source tool: durable intent lives in Markdown-native `.hint` files, and the engine returns only the knowledge governing a path or query.
+
+# app HINT
+
+The monorepo separates the vocabulary-neutral engine in `packages/transpiler`, the user-facing CLI in `applications/cli`, shared build presets in `presets`, and generated publish artifacts in `release`.
+
+# invariant DeterministicCore
+
+Compile, emit, search, and status derive their answers entirely from repository content. Do not introduce wall-clock input, randomness, or network access into those paths.
+
+# rule ExitTaxonomy
+
+Exit 0 means an operation ran successfully, 1 means a check ran and found a failure, and 2 means nothing was resolved. No command may report success over an empty subject set.
+
+# rule OutputChannels
+
+stdout is the requested knowledge or machine-readable result. stderr is the verdict and advisory channel; put the decisive line first because agent runners truncate output.
+
+# rule Commits
+
+Commit messages carry no attribution or co-author trailers.
+
+# decision MonorepoBoundaries
+
+Keep reusable behavior in the engine and orchestration/reporting in the CLI. Presets define build mechanics; `release/` is generated and must never be edited by hand.

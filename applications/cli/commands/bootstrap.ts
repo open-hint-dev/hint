@@ -2,6 +2,8 @@ import * as Path from 'node:path';
 
 import * as Transpiler from '@openhint/transpiler';
 
+import { UnresolvedError } from './report.js';
+
 // The agent instruction files HINT bootstraps. HINT stays agent-neutral: `.hint` files are the source
 // of truth, and these files carry only the short block that tells an agent how to query HINT. Any other
 // agent that reads a project convention file can be pointed at HINT the same way.
@@ -54,8 +56,7 @@ export async function collectHintbookSections(projectRootPath: string, config: T
         const hintbookPaths = await Transpiler.resolveHintbookPaths(projectRootPath, book);
 
         if (hintbookPaths.length === 0) {
-            process.stderr.write(`Skipping hintbook '${book}': not found\n`);
-            continue;
+            throw new UnresolvedError(`Hintbook '${book}' not found — run 'hint add ${book.replace(/^(npm|file):\/\//, '')}' to install it.`);
         }
 
         for (const hintbookPath of hintbookPaths) {

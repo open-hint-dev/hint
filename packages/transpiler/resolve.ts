@@ -1,7 +1,7 @@
 import * as FsPromises from 'node:fs/promises';
 import Path from 'node:path';
 
-import { isGlobPattern, isPathExists, isPathFolder } from './helper.js';
+import { HINTBOOKS_FOLDER, isGlobPattern, isInsideProject, isPathExists, isPathFolder, toPortablePath } from './helper.js';
 
 export const HINT_EXT = '.hint';
 export const FOLDER_HINT = `_${HINT_EXT}`;
@@ -62,7 +62,7 @@ export function hintTargetName(projectRootPath: string, hintPath: string): strin
     const targetPath = isFolderHint ? Path.dirname(hintPath) : hintPath.slice(0, -HINT_EXT.length);
     const relativeTargetPath = Path.relative(projectRootPath, targetPath);
 
-    return stripHintFolderTails(relativeTargetPath, isFolderHint) || '.';
+    return toPortablePath(stripHintFolderTails(relativeTargetPath, isFolderHint)) || '.';
 }
 
 // The hint file that would describe `path`: a folder's `_.hint`, a `.hint` file given directly, or a
@@ -83,7 +83,10 @@ export async function normalizeHintPath(path: string): Promise<string> {
 async function expandGlob(currentPath: string, pattern: string): Promise<string[]> {
     const matches: string[] = [];
 
-    for await (const match of FsPromises.glob(pattern, { cwd: currentPath })) {
+    for await (const match of FsPromises.glob(pattern, {
+        cwd: currentPath,
+        exclude: ['node_modules/**', '.git/**', 'release/**', 'coverage/**', `${HINTBOOKS_FOLDER}/**`],
+    })) {
         matches.push(match);
     }
 
@@ -92,27 +95,27 @@ async function expandGlob(currentPath: string, pattern: string): Promise<string[
 
 // Resolves one concrete (non-glob) path to its hint file, or null when the path escapes the project
 // root — a request the tool cannot answer and must not silently drop.
-async function resolveConcretePath(projectRootPath: string, path: string): Promise<string | null> {
-    const resolvedPath = Path.resolve(projectRootPath, path);
+async function resolveConcretePath(projectRootPath: string, currentPath: string, path: string): Promise<string | null> {
+    const resolvedPath = Path.resolve(currentPath, path);
 
-    if (!resolvedPath.startsWith(projectRootPath)) {
+    if (!isInsideProject(projectRootPath, resolvedPath)) {
         return null;
     }
 
     return normalizeHintPath(resolvedPath);
 }
 
-export async function normalizeHintPaths(currentPath: string, paths: string[]): Promise<string[]> {
+export async function normalizeHintPaths(currentPath: string, paths: string[], projectRootPath: string = currentPath): Promise<string[]> {
     const normalizedPaths: string[] = [];
 
     for (const path of paths) {
         if (isGlobPattern(path)) {
-            normalizedPaths.push(...(await normalizeHintPaths(currentPath, await expandGlob(currentPath, path))));
+            normalizedPaths.push(...(await normalizeHintPaths(currentPath, await expandGlob(currentPath, path), projectRootPath)));
 
             continue;
         }
 
-        const hintPath = await resolveConcretePath(currentPath, path);
+        const hintPath = await resolveConcretePath(projectRootPath, currentPath, path);
 
         if (hintPath) {
             normalizedPaths.push(hintPath);
@@ -122,9 +125,9 @@ export async function normalizeHintPaths(currentPath: string, paths: string[]): 
     return normalizedPaths;
 }
 
-async function resolveRequest(projectRootPath: string, request: string): Promise<PathRequest> {
+async function resolveRequest(projectRootPath: string, currentPath: string, request: string): Promise<{ request: PathRequest; hintPaths: string[] }> {
     if (isGlobPattern(request)) {
-        const matches = await normalizeHintPaths(projectRootPath, await expandGlob(projectRootPath, request));
+        const matches = await normalizeHintPaths(currentPath, await expandGlob(currentPath, request), projectRootPath);
         const existing: string[] = [];
 
         for (const hintPath of matches) {
@@ -134,52 +137,50 @@ async function resolveRequest(projectRootPath: string, request: string): Promise
         }
 
         return {
-            request,
-            status: existing.length > 0 ? 'spec' : 'missing',
-            hintPath: null,
-            target: null,
-            matched: existing.length,
+            request: { request, status: existing.length > 0 ? 'spec' : 'missing', hintPath: null, target: null, matched: existing.length },
+            hintPaths: existing,
         };
     }
 
-    const hintPath = await resolveConcretePath(projectRootPath, request);
+    const hintPath = await resolveConcretePath(projectRootPath, currentPath, request);
 
     if (!hintPath) {
-        return { request, status: 'missing', hintPath: null, target: null, matched: 0 };
+        return { request: { request, status: 'missing', hintPath: null, target: null, matched: 0 }, hintPaths: [] };
     }
 
     const target = hintTargetName(projectRootPath, hintPath);
 
     if (await isPathExists(hintPath)) {
-        return { request, status: 'spec', hintPath, target, matched: 1 };
+        return { request: { request, status: 'spec', hintPath, target, matched: 1 }, hintPaths: [hintPath] };
     }
 
     // No spec of its own. Whether the path itself exists is what separates "nothing declared here, so
     // you get the inherited context" from "you asked for something that is not in this repository".
-    const targetExists = await isPathExists(Path.resolve(projectRootPath, request));
+    const targetExists = await isPathExists(Path.resolve(currentPath, request));
 
     return {
-        request,
-        status: targetExists ? 'inherited' : 'missing',
-        hintPath: null,
-        target,
-        matched: 0,
+        request: { request, status: targetExists ? 'inherited' : 'missing', hintPath: null, target, matched: 0 },
+        hintPaths: [hintPath],
     };
 }
 
 // Resolves every requested path, reporting what each one actually matched. This is the stage that
 // makes "matched nothing" distinguishable from "matched and is fine" — every caller of it can then
 // say so instead of emitting a success string over an empty set.
-export async function resolveRequests(projectRootPath: string, paths: string[]): Promise<Resolution> {
+export async function resolveRequests(projectRootPath: string, paths: string[], currentPath: string = projectRootPath): Promise<Resolution> {
     const requests: PathRequest[] = [];
+    const hintPaths: string[] = [];
 
     for (const path of paths) {
-        requests.push(await resolveRequest(projectRootPath, path));
+        const resolved = await resolveRequest(projectRootPath, currentPath, path);
+
+        requests.push(resolved.request);
+        hintPaths.push(...resolved.hintPaths);
     }
 
     return {
         requests,
-        hintPaths: await normalizeHintPaths(projectRootPath, paths),
+        hintPaths: [...new Set(hintPaths)],
     };
 }
 
@@ -204,7 +205,7 @@ export function matchedNothing(resolution: Resolution): boolean {
 export async function findNearestFolderHint(projectRootPath: string, target: string): Promise<string | null> {
     let current = Path.dirname(Path.resolve(projectRootPath, target));
 
-    while (current.startsWith(projectRootPath)) {
+    while (isInsideProject(projectRootPath, current)) {
         const candidate = Path.join(current, FOLDER_HINT);
 
         if (await isPathExists(candidate)) {

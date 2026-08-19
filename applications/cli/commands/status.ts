@@ -36,6 +36,10 @@ export class StatusCommand implements ICommand {
         // "Nothing to report" over zero hint files is the hollow success this whole exit taxonomy
         // exists to prevent — it is indistinguishable from a healthy repository, and reads as one.
         if (report.scanned === 0) {
+            if (this.options.json) {
+                process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+            }
+
             process.stderr.write(`hint: no .hint files in this project — nothing to inventory. Run 'hint author' to see how to record knowledge.\n`);
             process.exitCode = EXIT_UNRESOLVED;
 

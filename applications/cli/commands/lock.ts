@@ -1,6 +1,9 @@
+import * as Path from 'node:path';
+
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
+import { expandFolderPaths } from './paths.js';
 import { EXIT_UNRESOLVED } from './report.js';
 
 export class LockCommand implements ICommand {
@@ -26,7 +29,7 @@ export class LockCommand implements ICommand {
         const config = await Transpiler.loadConfig(projectRootPath);
         const hintbooks = await Transpiler.loadHintbooks(projectRootPath, config?.books ?? []);
 
-        const resolution = await Transpiler.resolveRequests(projectRootPath, this.paths);
+        const resolution = await Transpiler.resolveRequests(projectRootPath, await expandFolderPaths(this.paths), process.cwd());
         const hints = await Transpiler.parseHintFiles(projectRootPath, resolution.hintPaths);
 
         const effective = new Map(
@@ -42,6 +45,15 @@ export class LockCommand implements ICommand {
         // Carry over prior entries unconditionally: each entry's hash folds in the vocabulary it used, so
         // a keyword-semantics change already invalidates the affected entries on the next gated run.
         const files = existing ? { ...existing.files } : {};
+        const currentTargets = new Set(
+            (await Transpiler.listHintFiles(projectRootPath))
+                .filter((hintPath) => !Transpiler.isFolderHintPath(hintPath))
+                .map((hintPath) => Transpiler.hintTargetName(projectRootPath, Path.join(projectRootPath, hintPath))),
+        );
+
+        for (const name of Object.keys(files)) {
+            if (!currentTargets.has(name)) delete files[name];
+        }
 
         for (const { name, node } of fileNodes) {
             // Record the generated output's content hash so a later run can tell the code was edited
@@ -49,7 +61,9 @@ export class LockCommand implements ICommand {
             // before its output is produced) — freshness then falls back to output-existence.
             const target = await Transpiler.hashTargetFile(projectRootPath, name);
 
-            const entry: Transpiler.LockEntry = { hash: effective.get(name)! };
+            const hash = effective.get(name);
+            if (hash === undefined) continue;
+            const entry: Transpiler.LockEntry = { hash };
 
             if (target !== null) {
                 entry.target = target;
