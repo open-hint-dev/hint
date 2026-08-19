@@ -15,7 +15,13 @@ function textResult(text: string, structuredContent: Record<string, unknown>) {
 }
 
 export function createMcpServer(version = '0.0.0'): McpServer {
-    const server = new McpServer({ name: 'openhint', version });
+    const server = new McpServer(
+        { name: 'openhint', version },
+        {
+            instructions:
+                'Before modifying repository paths, call hint_context with the paths you will touch. Inherited is success and is the governing answer. When you know only the intent, call hint_search, then hint_context for useful targets. Call hint_author before writing or editing .hint files. Use hint_status to inspect repository-wide drift. These tools are read-only; edit files normally after loading the applicable knowledge.',
+        },
+    );
 
     server.registerTool(
         'hint_context',

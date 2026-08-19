@@ -156,6 +156,14 @@ HINT does not replace those files. `hint apply` writes a short block into them t
 
 ## Install
 
+The easiest setup is to hand the repository to the agent that will use it. Tell Claude Code, Codex, Cursor, or another coding agent:
+
+> Run `npx -y @openhint/cli bootstrap` from the repository root and follow exactly what it prints.
+
+`bootstrap` only prints a self-contained setup prompt. The agent initializes HINT, merges the right project-level MCP configuration for its own client, verifies the result, and reports the files it changed. It does not require a separate MCP package.
+
+For manual setup:
+
 ```bash
 npm install -g @openhint/cli
 hint config                                    # create hint.yml at the project root

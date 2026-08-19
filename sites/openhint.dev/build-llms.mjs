@@ -28,6 +28,7 @@ const SECTIONS = [
     { file: '04-how-it-works.md', title: 'How It Works (the pipeline)' },
     { file: '05-hintbooks.md', title: 'Hintbooks (Authoring & Distribution)' },
     { file: '06-cli.md', title: 'CLI Reference' },
+    { file: 'integrations.md', title: 'Integrations' },
     { file: '07-migration.md', title: 'Migrating to 1.1' },
     { file: '08-emit.md', title: 'Emit (artifacts from specs)' },
 ];
@@ -47,7 +48,7 @@ function banner(label) {
 // Anchors survive the rewrite; links that already point somewhere absolute are left alone.
 function absolute(markdown) {
     return markdown
-        .replace(/\]\((\d{2}-[a-z-]+\.md)(#[^)]*)?\)/g, (_, file, anchor) => `](${BASE}${file}${anchor ?? ''})`)
+        .replace(/\]\(([a-z0-9-]+\.md)(#[^)]*)?\)/g, (_, file, anchor) => `](${BASE}${file}${anchor ?? ''})`)
         .replace(/\]\(\.\.\/([^)]+)\)/g, (_, path) => `](${REPO}${path})`);
 }
 

@@ -34,6 +34,12 @@ npm install -g @openhint/cli     # or: npx @openhint/cli <paths...>
 
 ### Set up a project
 
+The shortest path is to tell Claude Code, Codex, Cursor, or another coding agent:
+
+> Run `npx -y @openhint/cli bootstrap` from the repository root and follow exactly what it prints.
+
+`bootstrap` only prints the setup prompt; the agent safely merges the configuration and verifies it. For manual setup:
+
 ```bash
 hint config                                    # create hint.yml at the project root
 hint add @openhint/hintbook-software-engineer  # a keyword vocabulary
@@ -131,6 +137,10 @@ MCP clients start the already-installed CLI with `hint mcp`; there is no separat
 ---
 
 ## Command reference
+
+### `hint bootstrap` — configure HINT through your agent
+
+Prints a self-contained, read-only setup prompt with project-level MCP recipes for Claude Code, Codex, Cursor, VS Code / GitHub Copilot, and generic stdio clients. It tells the receiving agent to initialize HINT, merge only its own client configuration without replacing unrelated servers, and verify the result.
 
 ### `hint <paths...>` — what applies here
 

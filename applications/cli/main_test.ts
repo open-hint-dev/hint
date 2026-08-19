@@ -210,6 +210,27 @@ describe('cli', () => {
         });
     });
 
+    describe('bootstrap', () => {
+        it('prints a self-contained, non-mutating setup prompt for popular agents', async () => {
+            const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-bootstrap-test-'));
+
+            try {
+                const result = await runCli(['bootstrap'], temporaryPath);
+
+                expect(result.exitCode).toBeUndefined();
+                expect(result.stderr).toBe('');
+                expect(result.stdout).toContain('npx -y @openhint/cli config');
+                expect(result.stdout).toContain('claude mcp add --scope project hint');
+                expect(result.stdout).toContain('[mcp_servers.hint]');
+                expect(result.stdout).toContain('.cursor/mcp.json');
+                expect(result.stdout).toContain('.vscode/mcp.json');
+                expect(await FsPromises.readdir(temporaryPath)).toEqual([]);
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
+    });
+
     describe('apply', () => {
         async function makeProject(): Promise<string> {
             const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-cli-test-'));

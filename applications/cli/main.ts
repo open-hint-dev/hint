@@ -7,6 +7,7 @@ import type { StatusOptions } from './commands/status.js';
 import { AddCommand } from './commands/add.js';
 import { ApplyCommand } from './commands/apply.js';
 import { AuthorCommand } from './commands/author.js';
+import { BootstrapCommand } from './commands/bootstrap.js';
 import { CompileCommand } from './commands/compile.js';
 import { ConfigCommand } from './commands/config.js';
 import { DiffCommand } from './commands/diff.js';
@@ -45,6 +46,7 @@ const EXAMPLES = `Examples:
   hint emit src/billing/invoice.ts     write the artifact this spec produces
   hint emit --check                    CI: every artifact still matches its spec
   hint mcp                             MCP: serve the same read-only engine over stdio
+  hint bootstrap                       print a setup prompt for Claude Code, Codex, Cursor, or Copilot
   hint apply                           install HINT instructions into AGENTS.md / CLAUDE.md
   hint version                         CLI version and installed hintbooks
 
@@ -120,6 +122,13 @@ export async function main(): Promise<void> {
         .option('--json', 'print the installed keyword vocabulary as JSON', false)
         .action(async (paths: string[], options: { json: boolean }) => {
             await AuthorCommand.new(paths, options.json).execute();
+        });
+
+    program
+        .command('bootstrap')
+        .description('Print a self-contained prompt that tells a coding agent how to initialize HINT and configure its MCP client.')
+        .action(async () => {
+            await BootstrapCommand.new().execute();
         });
 
     program
