@@ -1,0 +1,9 @@
+Example of a directive in documentation:
+
+```text
+@include this-file-does-not-exist.md
+```
+
+# entity Fenced {#fenced}
+
+Still parses normally.

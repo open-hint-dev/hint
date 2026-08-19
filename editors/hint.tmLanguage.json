@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "HINT",
+  "scopeName": "source.hint",
+  "patterns": [
+    { "include": "#fenced" },
+    { "include": "#include" },
+    { "include": "#heading" },
+    { "include": "text.html.markdown" }
+  ],
+  "repository": {
+    "fenced": {
+      "begin": "^\\s*(```+|~~~+)",
+      "end": "^\\s*\\1\\s*$",
+      "name": "markup.fenced_code.block.markdown"
+    },
+    "include": {
+      "match": "^\\s*(@include)\\s+(.+?)\\s*$",
+      "captures": {
+        "1": { "name": "keyword.control.include.hint" },
+        "2": { "name": "string.unquoted.path.hint" }
+      }
+    },
+    "heading": {
+      "match": "^(#{1,6})\\s+(goal|done|scope|app|lang|build|dep|module|lib|namespace|res|read|data|entity|field|table|column|row|func|arg|result|flow|action|error|rule|decision|invariant|good|bad|test|example|ui|form|block|image|notes)(?=\\s|$)(?:.*?)(\\{#[A-Za-z0-9_.:-]+\\})?\\s*$",
+      "captures": {
+        "1": { "name": "punctuation.definition.heading.markdown" },
+        "2": { "name": "keyword.control.hint" },
+        "3": { "name": "constant.other.reference.hint" }
+      }
+    }
+  }
+}

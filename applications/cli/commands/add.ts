@@ -34,38 +34,68 @@ export class AddCommand implements ICommand {
         const books = config.books ?? [];
 
         for (const book of this.books) {
+            if (/^https?:\/\//.test(book) && !isGitUrl(book)) {
+                process.stderr.write(
+                    `hint: unsupported source '${book}' — use an npm package (or npm://), a file:// path, or a git URL (.git, GitHub, GitLab, or Bitbucket).\n`,
+                );
+                process.exitCode = 2;
+                return;
+            }
+
             const entry = await installBook(projectRootPath, book, this.local);
 
             if (!books.includes(entry)) {
                 books.push(entry);
             }
 
+            // Persist each success before announcing it. If a later install fails, retrying starts
+            // from an honest config rather than from an unregistered package already on disk.
+            config.books = books;
+            await Transpiler.saveConfig(projectRootPath, config);
             process.stdout.write(`Installed ${entry}\n`);
         }
-
-        config.books = books;
-        await Transpiler.saveConfig(projectRootPath, config);
 
         process.stdout.write(`Run 'hint apply' to refresh AGENTS.md and CLAUDE.md.\n`);
     }
 }
 
 function isGitUrl(book: string): boolean {
-    return /^(git@|ssh:\/\/|git:\/\/|https?:\/\/)/.test(book);
+    if (/^(git@|ssh:\/\/|git:\/\/)/.test(book)) return true;
+    if (!/^https?:\/\//.test(book)) return false;
+
+    try {
+        const url = new URL(book);
+        return (
+            book.endsWith('.git') ||
+            [
+                'github.com',
+                'gitlab.com',
+                'bitbucket.org',
+            ].includes(url.hostname.toLowerCase())
+        );
+    } catch {
+        return false;
+    }
 }
 
 function gitRepoName(url: string): string {
-    return url
-        .split(/[/:]/)
-        .filter(Boolean)
-        .at(-1)!
+    const path = url
+        .replace(/^[a-z]+:\/\//i, '')
+        .replace(/^git@/, '')
+        .replace(/:/g, '/')
         .replace(/\.git$/, '');
+    const parts = path.split('/').filter(Boolean);
+    const repo = parts.at(-1) ?? 'hintbook';
+    const owner = parts.at(-2) ?? 'repo';
+
+    return `${owner}__${repo}`.replace(/[^a-zA-Z0-9._-]+/g, '-');
 }
 
 function run(command: string, args: string[], cwd: string): Promise<void> {
     return new Promise((resolve, reject) => {
         const child = spawn(command, args, {
             cwd,
+            env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' },
             stdio: [
                 'ignore',
                 process.stderr,
@@ -85,6 +115,10 @@ function run(command: string, args: string[], cwd: string): Promise<void> {
 }
 
 async function installBook(projectRootPath: string, book: string, local: boolean): Promise<string> {
+    if (isGitUrl(book)) {
+        return installGitBook(projectRootPath, book);
+    }
+
     const entry = await fetchBook(projectRootPath, book, local);
 
     if ((await Transpiler.resolveHintbookPaths(projectRootPath, entry)).length === 0) {
@@ -94,28 +128,52 @@ async function installBook(projectRootPath: string, book: string, local: boolean
     return entry;
 }
 
+let cloneSequence = 0;
+
+async function installGitBook(projectRootPath: string, book: string): Promise<string> {
+    const store = Path.join(projectRootPath, HINTBOOKS_FOLDER);
+    const folder = gitRepoName(book);
+    const finalPath = Path.join(store, folder);
+    const entry = `${Transpiler.URL_FILE_PREFIX}${Path.join(HINTBOOKS_FOLDER, folder)}`;
+
+    if (await Transpiler.isPathExists(finalPath)) {
+        if ((await Transpiler.resolveHintbookPaths(projectRootPath, entry)).length === 0) {
+            throw new Error(`No hintbook found in existing clone '${finalPath}'`);
+        }
+        return entry;
+    }
+
+    await FsPromises.mkdir(store, { recursive: true });
+    const temporaryFolder = `.${folder}.${process.pid}.${cloneSequence++}.clone`;
+    const temporaryPath = Path.join(store, temporaryFolder);
+    const temporaryEntry = `${Transpiler.URL_FILE_PREFIX}${Path.join(HINTBOOKS_FOLDER, temporaryFolder)}`;
+
+    try {
+        await run(
+            'git',
+            [
+                'clone',
+                book,
+                Path.join(HINTBOOKS_FOLDER, temporaryFolder),
+            ],
+            projectRootPath,
+        );
+
+        if ((await Transpiler.resolveHintbookPaths(projectRootPath, temporaryEntry)).length === 0) {
+            throw new Error(`No hintbook found in '${book}'`);
+        }
+
+        await FsPromises.rename(temporaryPath, finalPath);
+        return entry;
+    } catch (error: unknown) {
+        await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+        throw error;
+    }
+}
+
 async function fetchBook(projectRootPath: string, book: string, local: boolean): Promise<string> {
     if (book.startsWith(Transpiler.URL_FILE_PREFIX)) {
         return book;
-    }
-
-    if (isGitUrl(book)) {
-        const bookFolder = Path.join(HINTBOOKS_FOLDER, gitRepoName(book));
-
-        if (!(await Transpiler.isPathExists(Path.join(projectRootPath, bookFolder)))) {
-            await FsPromises.mkdir(Path.join(projectRootPath, HINTBOOKS_FOLDER), { recursive: true });
-            await run(
-                'git',
-                [
-                    'clone',
-                    book,
-                    bookFolder,
-                ],
-                projectRootPath,
-            );
-        }
-
-        return `${Transpiler.URL_FILE_PREFIX}${bookFolder}`;
     }
 
     const packageName = book.startsWith(Transpiler.URL_NPM_PREFIX) ? book.slice(Transpiler.URL_NPM_PREFIX.length) : book;

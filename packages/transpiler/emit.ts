@@ -3,13 +3,15 @@ import * as Path from 'node:path';
 import type { HintbookData, InstructionData } from './hintbook.js';
 import type { HintData } from './parser.js';
 import type { Placeholder, Resolved } from './template.js';
+import { blockAddressSegment } from './address.js';
 import { findInstruction } from './compiler.js';
-import { RESULT_KEYWORDS } from './conform.js';
+import { RESULT_KEYWORDS } from './result-keywords.js';
 import { toGitPath } from './git.js';
 import { emitPacks, RUNNING_FILE, RUNNING_FOLDER, RUNNING_IMPORTS, vocabularyBooks } from './hintbook.js';
 import { hashHint } from './lock.js';
 import { MARKER_END, MARKER_HOLE } from './merge.js';
 import { commentBlock, renderTemplate, resolvedValue } from './template.js';
+import { isScopeNode as isScope } from './tree.js';
 
 // Translates a `match` glob into a matcher. `*` stops at a separator, `**` crosses them, `?` is one
 // non-separator character; everything else is literal. A pattern with no separator is tested against
@@ -22,8 +24,13 @@ function globToRegExp(pattern: string): RegExp {
 
         if (char === '*') {
             if (pattern[index + 1] === '*') {
-                source += '.*';
-                index += 1;
+                if (pattern[index + 2] === '/') {
+                    source += '(?:.*/)?';
+                    index += 2;
+                } else {
+                    source += '.*';
+                    index += 1;
+                }
             } else {
                 source += '[^/]*';
             }
@@ -169,10 +176,6 @@ export function planEmit(hints: HintData[], hintbooks: HintbookData[], target?: 
 // ---------------------------------------------------------------------------------------------
 // Layer 5 — render
 // ---------------------------------------------------------------------------------------------
-
-function isScope(hint: HintData): boolean {
-    return hint.keyword === RUNNING_FILE || hint.keyword === RUNNING_FOLDER;
-}
 
 // A block's declared name, split on its first colon into an identifier and a type. The type half is
 // always optional: `## arg invoice` is a spec a person wrote, and demanding `## arg invoice: Invoice`
@@ -330,7 +333,7 @@ function blockKey(hint: HintData, parentKey: string): string {
         return `#${hint.id}`;
     }
 
-    const segment = hint.name ? `${hint.keyword} ${hint.name}` : hint.keyword;
+    const segment = blockAddressSegment(hint, true);
 
     return parentKey ? `${parentKey} > ${segment}` : segment;
 }

@@ -1,0 +1,30 @@
+{
+    "name": "@openhint/mcp",
+    "version": "0.0.0",
+    "description": "Read-only MCP server for HINT Spec-as-Source projects",
+    "private": true,
+    "type": "module",
+    "bin": {
+        "hint-mcp": "index.js"
+    },
+    "scripts": {
+        "fix": "make fix-js",
+        "lint": "make lint-js",
+        "publish": "make publish-js",
+        "release": "make release-js",
+        "test": "make test-js"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "*",
+        "@openhint/transpiler": "workspace:*",
+        "zod": "*"
+    },
+    "devDependencies": {
+        "@openhint/preset-eslint": "workspace:*",
+        "@openhint/preset-typescript": "workspace:*",
+        "eslint": "*",
+        "typescript": "*",
+        "vite": "*",
+        "vitest": "*"
+    }
+}

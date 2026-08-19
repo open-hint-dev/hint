@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 import type { HintbookData } from './hintbook.js';
 import type { HintData } from './parser.js';
 import type { StatusReport } from './status.js';
-import { isUnderScope, readGitSnapshot, toGitPath } from './git.js';
+import { isUnderScope, parsePorcelain, readGitSnapshot, toGitPath } from './git.js';
 import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 import { collectScopeNodes } from './parser.js';
 import { collectContractScopes, formatStaleness, measureStaleness } from './staleness.js';
@@ -20,6 +20,10 @@ afterAll(async () => {
     for (const root of nested) {
         await FsPromises.rm(root, { recursive: true, force: true });
     }
+});
+
+it('keeps both sides of a NUL-delimited rename without mangling the source', () => {
+    expect([...parsePorcelain('R  new/path.ts\0old/path.ts\0 M normal.ts\0', '')]).toEqual(['new/path.ts', 'old/path.ts', 'normal.ts']);
 });
 
 function block(keyword: string, name: string, children: HintData[] = []): HintData {

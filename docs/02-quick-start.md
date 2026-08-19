@@ -22,7 +22,7 @@ From your repository root:
 hint config
 ```
 
-**Creates `hint.yml`** (if missing) — it asks for a project name and description, and offers to register the default hintbook. `hint.yml` marks the project root; every path in a compilation is resolved against it.
+**Creates `hint.yml`** (if missing) — it asks for a project name and description, and offers to register the default hintbook. `hint.yml` marks the project root; command-line paths resolve from the current working directory, like git and grep.
 
 Then install the bootstrap — a short block in `AGENTS.md` / `CLAUDE.md` telling your agent how to query HINT, plus each hintbook's tag glossary. `hint apply` writes it directly:
 
@@ -45,11 +45,20 @@ If you skipped the default during `hint config`, or want additional vocabularies
 
 ```bash
 hint add @openhint/hintbook-software-engineer        # npm package
+hint add --local @openhint/hintbook-software-engineer # recommended for a shared team repository
 hint add https://github.com/acme/hintbooks-platform  # git: your org's shared platform standards
 hint add file://hintbooks/team-conventions           # in-repo: your team's own vocabulary
 ```
 
 Each installed book is fetched, validated (it must contain a `hintbook.json`), and registered in the `books` array of `hint.yml`. Run `hint apply` afterwards to refresh `AGENTS.md` / `CLAUDE.md` with the new vocabulary. See the [CLI Reference](06-cli.md) for details.
+
+Global npm installs are machine-local: every teammate and CI runner must repeat `hint add`. Prefer `--local` for a team repository so a fresh clone can install and resolve the same vocabulary.
+
+Install the `openhint` VS Code extension for HINT keyword highlighting, completion, hover help, and “Show Governing Context”. Without the extension, associate `.hint` with Markdown:
+
+```json
+{ "files.associations": { "*.hint": "markdown" } }
+```
 
 ## 4. Record what the whole repository knows
 
@@ -225,8 +234,8 @@ export interface Invoice {
 // Validates an Invoice before persisting.
 export function validateInvoice(invoice: Invoice): Invoice {
     // Honor:
-    //   decision Money is stored as integer minor units
-    // hint:hole(#validate:body) spec=44cc996a — your code; kept across re-emits.
+    //   plus the knowledge inherited from ., src/billing — run `hint src/billing/invoice.ts`
+    // hint:hole(func validateInvoice:body) spec=44cc996a — your code; kept across re-emits.
     throw new Error("Not implemented.");
     // hint:end of hole.
 }

@@ -379,6 +379,35 @@ describe('cli', () => {
                 await FsPromises.rm(temporaryPath, { recursive: true, force: true });
             }
         });
+
+        it('persists each successful registration before a later book fails', async () => {
+            const temporaryPath = await makeProject();
+
+            try {
+                const result = await runCli(['add', 'file://book', 'file://missing'], temporaryPath);
+
+                expect(result.exitCode).toBe(1);
+                expect(result.stdout).toContain('Installed file://book');
+                expect(await FsPromises.readFile(Path.join(temporaryPath, 'hint.yml'), 'utf8')).toContain('file://book');
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
+
+        it('rejects a plain HTTPS download without attempting an interactive install', async () => {
+            const temporaryPath = await makeProject();
+
+            try {
+                const result = await runCli(['add', 'https://example.test/book.zip'], temporaryPath);
+
+                expect(result.exitCode).toBe(2);
+                expect(result.stderr).toContain('unsupported source');
+                expect(result.stderr).toContain('npm package');
+                expect(await FsPromises.readFile(Path.join(temporaryPath, 'hint.yml'), 'utf8')).not.toContain('example.test');
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
     });
 
     describe('author', () => {

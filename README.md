@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-1.1-black">
+  <img alt="version" src="https://img.shields.io/badge/version-1.3-black">
   <img alt="paradigm" src="https://img.shields.io/badge/paradigm-Spec%E2%80%91as%E2%80%91Source-6e40c9">
   <img alt="format" src="https://img.shields.io/badge/format-Markdown%E2%80%91native-blue">
   <img alt="agents" src="https://img.shields.io/badge/agents-neutral-0aa">
@@ -96,8 +96,14 @@ When you know the task but not the path:
 
 ```console
 $ hint search "service account authentication"
-{ "hint": "packages/gateway/auth/_.hint", "target": "packages/gateway/auth", "score": 6.12, "weak": false }
-{ "hint": "packages/identity/_.hint",     "target": "packages/identity",     "score": 1.84, "weak": true  }
+{
+  "query": "service account authentication",
+  "count": 2,
+  "results": [
+    { "hint": "packages/gateway/auth/_.hint", "target": "packages/gateway/auth", "score": 6.12, "weak": false },
+    { "hint": "packages/identity/_.hint", "target": "packages/identity", "score": 1.84, "weak": true }
+  ]
+}
 ```
 
 Offline, deterministic, no model call, nothing read into context. `weak` flags a hit that matched under half your query terms — advisory, never hidden.
@@ -230,6 +236,8 @@ Grammar → [`docs/03-syntax.md`](docs/03-syntax.md) · authoring your own vocab
 
 ## Docs
 
+MCP, editor, hook, and CI setup is collected in [Integrations](docs/integrations.md).
+
 | Doc | Contents |
 | --- | --- |
 | [`docs/01-intro.md`](docs/01-intro.md) | What HINT is, the extensible architecture |
@@ -238,7 +246,7 @@ Grammar → [`docs/03-syntax.md`](docs/03-syntax.md) · authoring your own vocab
 | [`docs/04-how-it-works.md`](docs/04-how-it-works.md) | The resolve → parse → render pipeline |
 | [`docs/05-hintbooks.md`](docs/05-hintbooks.md) | Using, authoring, and shipping hintbooks |
 | [`docs/06-cli.md`](docs/06-cli.md) | CLI reference — every command, flag, and exit code |
-| [`docs/07-migration.md`](docs/07-migration.md) | Breaking changes in 1.1 and how to migrate |
+| [`docs/07-migration.md`](docs/07-migration.md) | Breaking changes through 1.3 and how to migrate |
 | [`docs/08-emit.md`](docs/08-emit.md) | Producing artifacts from specs; authoring an emitter or a language adapter |
 
 Working examples: [demo-pied-piper](https://github.com/open-hint-dev/demo-pied-piper) (a polyglot monorepo) · [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt) (a law firm's document repository).
@@ -331,6 +339,6 @@ If a `.hint` declares surfaces the code must contain, `hint verify <path>` check
 
 ---
 
-**Status** — 1.1; see [`docs/07-migration.md`](docs/07-migration.md) for the breaking changes. Engine under [`packages/transpiler/`](packages/transpiler/README.md), CLI under [`applications/cli/`](applications/cli/README.md), official hintbooks in their own repositories ([software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer), [lawyer](https://github.com/open-hint-dev/hintbook-lawyer)). Issues and PRs welcome.
+**Status** — 1.3; see [`docs/07-migration.md`](docs/07-migration.md) for the breaking changes. Engine under [`packages/transpiler/`](packages/transpiler/README.md), CLI under [`applications/cli/`](applications/cli/README.md), official hintbooks in their own repositories ([software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer), [lawyer](https://github.com/open-hint-dev/hintbook-lawyer)). Issues and PRs welcome.
 
 **License** — MIT, see [`LICENSE`](LICENSE).

@@ -2,6 +2,8 @@ import { execFile } from 'node:child_process';
 import * as Path from 'node:path';
 import { promisify } from 'node:util';
 
+import { toPortablePath } from './helper.js';
+
 const execFileAsync = promisify(execFile);
 
 // Pathspec that drops every `.hint` file — and every file inside a detached `<name>.hint/` store —
@@ -68,6 +70,55 @@ export type GitSnapshot = {
     dirty: Set<string>;
 };
 
+export type GitHistoryIndex = {
+    commits: { sha: string; paths: string[] }[];
+    lastCommitByPath: Map<string, string>;
+    paths: Set<string>;
+};
+
+// One history walk serves every scope in `hint status`: last-touch lookup, churn since that touch,
+// and whether a now-absent target ever existed. A failed walk disables only advisory git signals.
+export async function readGitHistoryIndex(projectRootPath: string): Promise<GitHistoryIndex | null> {
+    const stdout = await git(projectRootPath, ['log', '--all', '--relative', '--format=HINT-COMMIT:%H', '--name-only', '--', '.']);
+    if (stdout === null) return null;
+
+    const commits: { sha: string; paths: string[] }[] = [];
+    let current: { sha: string; paths: string[] } | null = null;
+
+    for (const line of stdout.split('\n')) {
+        if (line.startsWith('HINT-COMMIT:')) {
+            current = { sha: line.slice('HINT-COMMIT:'.length), paths: [] };
+            commits.push(current);
+        } else if (current && line) {
+            current.paths.push(toPortablePath(line));
+        }
+    }
+
+    const lastCommitByPath = new Map<string, string>();
+    const paths = new Set<string>();
+    for (const commit of commits) for (const path of commit.paths) {
+        paths.add(path);
+        if (!lastCommitByPath.has(path)) lastCommitByPath.set(path, commit.sha);
+    }
+
+    return { commits, lastCommitByPath, paths };
+}
+
+export function changedFilesFromHistory(history: GitHistoryIndex, commit: string, target: string): number | null {
+    const changed = new Set<string>();
+    let found = false;
+
+    for (const item of history.commits) {
+        if (item.sha === commit) {
+            found = true;
+            break;
+        }
+        for (const path of item.paths) if (!path.endsWith('.hint') && isUnderScope(path, target)) changed.add(path);
+    }
+
+    return found ? changed.size : null;
+}
+
 // `paths` narrows both reads. An inventory of the whole project passes the default; a single `hint
 // <path>` read passes just the scopes it is about to report on, so the cost of the signal stays
 // proportional to the question asked rather than to the size of the repository.
@@ -121,19 +172,28 @@ async function repositoryPrefix(projectRootPath: string): Promise<string> {
 // `git status --porcelain -z` emits `XY <path>` records separated by NULs; a rename additionally
 // emits its source path as the following record. Both sides are treated as dirty — a hint moved in
 // the working tree is still a hint the author is holding open.
-function parsePorcelain(stdout: string | null, prefix: string): Set<string> {
+export function parsePorcelain(stdout: string | null, prefix: string): Set<string> {
     const dirty = new Set<string>();
 
     if (stdout === null) {
         return dirty;
     }
 
+    let expectsRenameSource = false;
+
     for (const record of stdout.split('\0')) {
         if (record.length === 0) {
             continue;
         }
 
-        const path = record.length > 3 ? record.slice(3) : record;
+        const path = expectsRenameSource ? record : record.length > 3 ? record.slice(3) : record;
+
+        if (!expectsRenameSource) {
+            const status = record.slice(0, 2);
+            expectsRenameSource = status.includes('R') || status.includes('C');
+        } else {
+            expectsRenameSource = false;
+        }
 
         if (prefix && !path.startsWith(prefix)) {
             continue;
@@ -195,7 +255,7 @@ export async function isTrackedInHistory(projectRootPath: string, path: string):
 // Git speaks forward slashes on every platform, and so does every message quoting a path back at the
 // caller. Anything derived from `Path` has to pass through here before it reaches either.
 export function toGitPath(path: string): string {
-    return path.split(Path.sep).join('/');
+    return toPortablePath(path);
 }
 
 // Repository-relative, forward-slashed form of an absolute path.

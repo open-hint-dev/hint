@@ -1,0 +1,17 @@
+The CLI turns engine results into stable human and machine contracts without hiding unresolved work.
+
+# rule VerdictFirst
+
+Write the decisive stderr line before details. stdout contains knowledge, artifacts, or structured rows only; diagnostics always carry the `hint:` prefix.
+
+# invariant NonInteractive
+
+Only project configuration may prompt, and only when stdin is a TTY. Every other command must finish unattended; spawned git commands disable credential prompts.
+
+# rule NonEmptySuccess
+
+A command that operated on no resolved subject exits 2 and explains the fix. Successful inherited context is not empty: it remains exit 0 and names its source on stderr.
+
+# decision Layers
+
+Command classes orchestrate one operation, `report.ts` owns shared verdict and exit semantics, and terminal concerns stay at the CLI edge. Keep engine behavior out of Commander actions.

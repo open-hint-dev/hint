@@ -13,21 +13,16 @@
 // The adapter is declared on an emit pack, because a pack is already the per-target unit. A pack with
 // `symbols` and no templates is a pure adapter, and needs no new concept to register.
 
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-
 import type { CodeSymbol } from './adapters/contract.js';
 import { parseSymbols } from './adapters/contract.js';
 import { BUILTIN_PREFIX, builtinNames, findBuiltinAdapter } from './adapters/index.js';
+import { runAdapter } from './adapters/run.js';
 
 // Re-exported so the symbol contract stays reachable on `@openhint/transpiler`'s surface, wherever it
 // happens to live inside.
 export type { AdapterReading, CodeSymbol, SymbolMember } from './adapters/contract.js';
 export { parseSymbols } from './adapters/contract.js';
 
-const execFileAsync = promisify(execFile);
-
-const ADAPTER_TIMEOUT_MS = 20_000;
 
 // What an adapter had to say. `symbols` is null whenever there is no honest answer, and the two ways
 // that happens are kept apart on purpose:
@@ -43,22 +38,6 @@ export type SymbolReading = {
     symbols: CodeSymbol[] | null;
     failure?: string;
 };
-
-function describe(error: unknown): string {
-    const reason = error as { code?: string; killed?: boolean; stderr?: string };
-
-    if (reason?.killed) {
-        return `timed out after ${ADAPTER_TIMEOUT_MS / 1000}s`;
-    }
-
-    const stderr = (reason?.stderr ?? '').trim().split('\n')[0]?.trim();
-
-    if (stderr) {
-        return stderr;
-    }
-
-    return reason?.code ? `failed (${reason.code})` : 'failed';
-}
 
 // Splits a command template into argv, substituting `{file}`. Deliberately not a shell: the file path
 // reaches the adapter as one argument whatever it contains, so a path with a space or a quote in it
@@ -103,20 +82,5 @@ export async function readSymbols(projectRootPath: string, command: string | und
         return { symbols: null, failure: 'the configured command is empty' };
     }
 
-    try {
-        const { stdout } = await execFileAsync(executable, args, {
-            cwd: projectRootPath,
-            timeout: ADAPTER_TIMEOUT_MS,
-            maxBuffer: 32 * 1024 * 1024,
-            windowsHide: true,
-        });
-
-        const symbols = parseSymbols(stdout);
-
-        // An adapter that exits cleanly and prints something unreadable is as broken as one that
-        // crashes, and is easier to miss — it is a contract violation, not a missing install.
-        return symbols === null ? { symbols: null, failure: 'produced no readable symbol table' } : { symbols };
-    } catch (error: unknown) {
-        return { symbols: null, failure: describe(error) };
-    }
+    return runAdapter(executable, args, projectRootPath);
 }

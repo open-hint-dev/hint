@@ -268,11 +268,23 @@ function baseTokens(text: string): string[] {
         return [];
     }
 
-    const withBoundaries = text.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
+    const withBoundaries = text.normalize('NFC').replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
+    const runs = withBoundaries.toLowerCase().match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+|[\p{L}\p{N}]+/gu) ?? [];
+    const cjk = /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+$/u;
+    const tokens: string[] = [];
 
-    const raw = withBoundaries.toLowerCase().split(/[^a-z0-9]+/);
+    for (const run of runs) {
+        const codepoints = [...run];
 
-    return raw.filter((token) => token.length > 1 && !STOPWORDS.has(token));
+        if (cjk.test(run)) {
+            if (codepoints.length === 1) tokens.push(run);
+            else for (let index = 0; index < codepoints.length - 1; index++) tokens.push(`${codepoints[index]}${codepoints[index + 1]}`);
+        } else if (codepoints.length > 1 && !STOPWORDS.has(run)) {
+            tokens.push(run);
+        }
+    }
+
+    return tokens;
 }
 
 // Tokenizes and expands each token through the synonym index. Used for the document side only — the
@@ -523,7 +535,7 @@ export async function searchHints(projectRootPath: string, query: string, option
         }
     }
 
-    results.sort((a, b) => b.score - a.score || a.hint.localeCompare(b.hint));
+    results.sort((a, b) => b.score - a.score || (a.hint < b.hint ? -1 : a.hint > b.hint ? 1 : 0));
 
     const limit = options.limit ?? 20;
 

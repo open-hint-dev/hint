@@ -20,7 +20,7 @@ The verdict is the part that matters to a caller: `spec` (the path declares know
 
 `findHints(projectRootPath, paths)` combines both for callers that only need the tree.
 
-1. **Normalization.** Each argument is resolved against the project root (arguments escaping the root are dropped). Globs are expanded. A folder becomes its `_.hint`; a source file becomes its `<file>.hint` companion; a path that does not exist is still kept — specs can define files before they are created.
+1. **Normalization.** Each CLI argument is resolved against the current working directory and then contained to the project root. Globs are expanded. A folder becomes its `_.hint`; a source file becomes its `<file>.hint` companion; a path that does not exist is still kept — specs can define files before they are created.
 2. **Sorting.** Paths are ordered folder-first, parents before children, `_.hint` before its siblings — so the tree builds deterministically regardless of argument order. Duplicates are removed.
 3. **Tree building.** Every file is attached to its folder's `_.hint` node, and missing intermediate folder hints are synthesized up to the project root. The result is always rooted at the project's `_.hint`, mirroring how context inherits.
 

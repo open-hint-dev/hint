@@ -122,12 +122,17 @@ function parseExtractMap(value: unknown): Record<string, string> | undefined {
     return Object.keys(map).length > 0 ? map : undefined;
 }
 
-function metadataStrings(value: unknown): string[] | undefined {
-    if (!Array.isArray(value)) {
-        return undefined;
+function metadataStrings(value: unknown, source?: string): string[] | undefined {
+    if (value === undefined || value === null) return undefined;
+
+    const values = Array.isArray(value) ? value : [value];
+    const invalid = values.find((entry) => typeof entry !== 'string');
+
+    if (invalid !== undefined) {
+        throw new Error(`Invalid string list${source ? ` in '${source}'` : ''}: every value must be a string`);
     }
 
-    const strings = value.filter((entry): entry is string => typeof entry === 'string' && entry.trim() !== '');
+    const strings = (values as string[]).map((entry) => entry.trim()).filter(Boolean);
 
     return strings.length > 0 ? strings : undefined;
 }
@@ -143,7 +148,14 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
 
     // The manifest is read before the folder is walked, because `target` decides which file extension
     // counts as a template here — readdir order must not be able to change what loads.
-    const manifest = JSON.parse((await readFile(Path.join(hintbookPath, HINTBOOK_FILE_NAME))) ?? '{}');
+    const manifestPath = Path.join(hintbookPath, HINTBOOK_FILE_NAME);
+    let manifest: Record<string, any>;
+
+    try {
+        manifest = JSON.parse((await readFile(manifestPath)) ?? '{}') as Record<string, any>;
+    } catch (error: unknown) {
+        throw new Error(`Failed to read hintbook manifest '${manifestPath}': ${error instanceof Error ? error.message : String(error)}`);
+    }
 
     data.id = manifest.id || '';
     data.name = manifest.name || '';
@@ -151,11 +163,11 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
 
     if (typeof manifest.target === 'string' && manifest.target.trim()) {
         data.target = manifest.target.trim();
-        data.match = metadataStrings(manifest.match);
+        data.match = metadataStrings(manifest.match, manifestPath);
         data.comment = typeof manifest.comment === 'string' && manifest.comment.trim() ? manifest.comment.trim() : undefined;
         data.symbols = typeof manifest.symbols === 'string' && manifest.symbols.trim() ? manifest.symbols.trim() : undefined;
         data.extract = parseExtractMap(manifest.extract);
-        data.builtins = metadataStrings(manifest.builtins);
+        data.builtins = metadataStrings(manifest.builtins, manifestPath);
     }
 
     const extension = data.target ? TEMPLATE_EXTENSION : INSTRUCTION_EXTENSION;
@@ -169,6 +181,7 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
         }
 
         const content = (await readFile(Path.join(hintbookPath, file))) ?? '';
+        const instructionPath = Path.join(hintbookPath, file);
 
         const parsed = new VFile(content);
         matter(parsed, { strip: true });
@@ -182,7 +195,7 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
                 exclude: metadata.exclude,
                 name: metadataString(metadata, 'name') || undefined,
                 surface: metadata.surface,
-                synonyms: metadata.synonyms,
+                synonyms: metadataStrings(metadata.synonyms, instructionPath),
             },
         });
     }

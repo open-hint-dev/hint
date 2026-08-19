@@ -1,8 +1,8 @@
 # lang
 
-TypeScript (Node.js v20+ / ESM). All exports are pure ESM — no CommonJS.
+TypeScript (Node.js v24+ / ESM). All exports are pure ESM — no CommonJS.
 
-# deps
+# dep
 
 - `typescript` for type checking and declaration emit
 - `vite` + `vite-node` as the primary build engine

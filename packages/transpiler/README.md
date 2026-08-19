@@ -102,9 +102,9 @@ Producing the artifact a spec describes — deterministic, model-free, and optio
 | `findConfig`, `loadConfig`, `saveConfig` | Locate, read, and write the project's `ConfigData` (`name`, `description`, `books`, `ignore`). |
 | `CONFIG_INSTRUCTION`                     | The AGENTS.md / CLAUDE.md bootstrap block installed by `hint apply`.                           |
 
-Constants for the running vocabulary (`RUNNING_FILE`, `RUNNING_FOLDER`, `RUNNING_HEADER`, `RUNNING_FOOTER`, `RUNNING_SYSTEM`, `RUNNING_CHANGES`), placeholders (`PLACEHOLDER_ID`, `PLACEHOLDER_NAME`, `PLACEHOLDER_BODY`, `PLACEHOLDER_CHILDREN`), and book prefixes (`URL_FILE_PREFIX`, `URL_NPM_PREFIX`) are exported alongside the types `HintData`, `HintFileData`, `HintbookData`, `InstructionData`, `Resolution`, `PathRequest`, `ScopeNode`, `ScopeStaleness`, `StatusEntry`, `StatusReport`, and `ConfigData`.
+The package root is an explicit, curated export list. Pipeline, contract, emit, search, lint, status, MCP-facing operations, their public types, the book prefixes, and `RUNNING_SYSTEM` are stable. Filesystem interpolation helpers, placeholder constants, and internal tree wrappers are intentionally not exported.
 
-Migrating to 1.1 → [`docs/07-migration.md`](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md).
+Migrating to 1.3 → [`docs/07-migration.md`](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md).
 
 ## Documentation
 

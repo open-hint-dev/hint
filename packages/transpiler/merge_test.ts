@@ -76,6 +76,17 @@ describe('extractHoles', () => {
         expect(holes.get('#b:body')?.body).toBe('second();');
     });
 
+    it('treats marker text inside a hole body as user content', () => {
+        const content = generated('// hint:hole(#a:body)\nconsole.log("hint:end");\nconst note = "hint:begin";\n// hint:end of hole.');
+        expect(extractHoles(content).get('#a:body')?.body).toContain('console.log("hint:end")');
+        expect(extractHoles(content).get('#a:body')?.body).toContain('"hint:begin"');
+    });
+
+    it('reads legacy labels containing parentheses through the last delimiter', () => {
+        const holes = extractHoles(generated('// hint:hole(func settle(x):body) spec=abc12345\nreturn x;\n// hint:end of hole.'));
+        expect(holes.get('func settle(x):body')?.spec).toBe('abc12345');
+    });
+
     // A file truncated mid-hole. Nothing is recovered rather than the rest of the file being adopted
     // as a body, which would then be re-emitted into the next artifact.
     it('drops a hole that was never closed', () => {
@@ -143,6 +154,18 @@ describe('mergeArtifact', () => {
         const first = mergeArtifact(null, artifact, COMMENT, 'src/a.ts.hint');
 
         expect(mergeArtifact(first.content, artifact, COMMENT, 'src/a.ts.hint').content).toBe(first.content);
+    });
+
+    it('refuses a file containing two generated regions', () => {
+        expect(() => mergeArtifact(`${generated('one')}\n${generated('two')}`, artifact, COMMENT)).toThrow('multiple generated regions');
+    });
+
+    it('preserves CRLF when reconciling an existing artifact', () => {
+        const first = mergeArtifact(null, artifact, COMMENT).content.replaceAll('\n', '\r\n');
+        const second = mergeArtifact(first, artifact, COMMENT);
+        expect(second.content).toContain('\r\n');
+        expect(second.content.replaceAll('\r\n', '')).not.toContain('\n');
+        expect(inspectHoles(second.content, artifact)[0]?.filled).toBe(false);
     });
 });
 

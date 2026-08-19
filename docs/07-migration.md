@@ -1,4 +1,28 @@
-# Migrating to 1.1
+# Migrating to 1.3
+
+## Breaking changes in 1.3
+
+CLI path arguments now resolve from the current working directory, matching git, grep, and tsc. Internal and lock-file keys remain project-relative and use `/` on every platform.
+
+```diff
+  cd src/auth
+- hint ../../src/auth/token.ts   # old root-relative habit
++ hint token.ts                  # 1.3: cwd-relative
+```
+
+`hint lint` reports near-miss keywords, broken includes, duplicate ids, and empty specs; `--strict-vocab` turns intentional unknown headings into findings. `hint emit --check` now works without paths and checks the whole project. Contract commands consistently expand folder arguments to their file specs.
+
+CI-facing `verify`, `diff`, and `emit --check` now offer stable JSON output, while `apply --check` verifies generated agent instructions without writing. `status` is more tolerant of broken individual specs and substantially reduces Git subprocess work on large repositories. Search tokenization now handles Unicode scripts and canonical equivalence.
+
+The `@openhint/transpiler` package root now has an explicit curated export list. Code that imported incidental constants, tree internals, or interpolation helpers must move that logic behind the documented pipeline and contract APIs. The package name remains unchanged for 1.x: renaming “transpiler” to “engine” was considered, but is deferred to a future major release to avoid a second migration.
+
+New optional integrations do not change existing projects: `@openhint/mcp` exposes read-only context, search, status, and authoring tools; the VS Code extension under `editors/vscode` adds `.hint` highlighting, installed-vocabulary completion, hover, context lookup, and near-miss diagnostics.
+
+## What shipped in 1.2
+
+1.2 folded nine deterministic emit/adapter packs into the software-engineer hintbook (TypeScript, JavaScript, Go, Python, Ruby, SQL, YAML, TOML, and their symbol adapters) and added the lawyer hintbook's Markdown document emitter. `hint extract`, shape-aware `hint verify`, guarded generated regions, preserved holes, and bidirectional output drift are available when those packs are registered.
+
+## Migrating to 1.1
 
 1.1 repositions HINT from "a spec transpiler that emits an implementation prompt" to **spec-as-source without the generator**: the `.hint` files are the source of truth, and `hint` returns the part of that spec which governs the path you are about to touch — rather than a prompt that regenerates it. Your `.hint` files do not change. What changes is what `hint` prints by default, what it says when it cannot answer, and how much CLI there is.
 
@@ -54,7 +78,7 @@ Files with a second extension are ignored rather than misread, so an unmigrated 
 
 | Removed | Use instead |
 | ------- | ----------- |
-| `hint instruct` | `hint apply` — the same bytes, written deterministically, no agent and no permission prompt |
+| removed instruction-generation command | `hint apply` — the same bytes, written deterministically, no agent and no permission prompt |
 | `hint modes` | — (modes are gone) |
 | `hint list` | `hint version` — now prints the CLI version, every registered hintbook, its version, and where it resolved from |
 | `hint lock --strict` | `hint verify <path> && hint lock <path>` — composable, and gets the exit code right |

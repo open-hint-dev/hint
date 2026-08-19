@@ -36,7 +36,7 @@ export class CompileCommand implements ICommand {
         const config = await Transpiler.loadConfig(projectRootPath);
         const hintbooks = await Transpiler.loadHintbooks(projectRootPath, config?.books ?? []);
 
-        const resolution = await Transpiler.resolveRequests(projectRootPath, this.paths);
+        const resolution = await Transpiler.resolveRequests(projectRootPath, this.paths, process.cwd());
 
         // The verdict goes out before anything else, because an agent that truncates output keeps the
         // first lines. A run where every path resolved cleanly says nothing at all.
@@ -54,6 +54,17 @@ export class CompileCommand implements ICommand {
         const hintPaths = this.options.refs ? await Transpiler.resolveClosurePaths(projectRootPath, resolution.hintPaths) : resolution.hintPaths;
 
         let hints = await Transpiler.parseHintFiles(projectRootPath, hintPaths);
+        const vocabularyFindings = (await Transpiler.lintHintFiles(projectRootPath, resolution.hintPaths, hintbooks)).filter(
+            (finding) => finding.kind === 'vocab' && finding.severity === 'finding',
+        );
+
+        for (const finding of vocabularyFindings.slice(0, 3)) {
+            process.stderr.write(`hint: ${Transpiler.formatLintFinding(finding)}\n`);
+        }
+
+        if (vocabularyFindings.length > 3) {
+            process.stderr.write(`hint: ${vocabularyFindings.length - 3} more vocabulary near-miss(es); run 'hint lint' for the full report.\n`);
+        }
 
         // Measured before the lock gate prunes anything, so the staleness of a scope is reported whether
         // or not its output happens to be up to date. Which kind of knowledge a scope holds decides how

@@ -112,16 +112,7 @@ This is a specialization, not the main path. It applies only to companion `<file
 
 ## Keeping it current
 
-Recorded knowledge decays, and it decays quietly: an agent finishes a task and does not come back to update the spec, a file is renamed and its `.hint` is left behind, a block that restated a signature is now describing code that no longer exists. Nothing fails; the knowledge just gets less true, and the next reader is misled with the authority of a spec behind it.
-
-HINT does not try to fix this by asking harder. Anything that depends on remembering a step *after* the work is done gets skipped. Instead:
-
-- **The signal rides the read.** `hint <path>` is already run before an edit, so that is where staleness is reported: when the code under the governing hint has moved substantially since that hint was last committed, stderr says so. Advisory only — it never changes the output or the exit code. The correction is cheapest in the change you are already making.
-- **The measure is git, and it is scope-relative** — the share of a scope's files that changed since the hint's last commit — so it means the same thing for a one-file companion spec and for the repository root.
-- **The threshold depends on what the knowledge is.** A spec that *declares surfaces* restates the shape of the code and goes wrong as soon as the code moves. A `decision` or an `invariant` explains *why* the code is the way it is, and survives refactoring. Holding both to one bar would either miss the first or nag about the second until the signal is ignored.
-- **[`hint status`](06-cli.md#hint-status--what-has-come-loose) is the inventory pass** — the whole repository at once: knowledge the code has moved away from, specs whose target was deleted, drift against `hint.lock`. Run it in CI with `--exit-code`, or at the start of a session.
-
-The authoring guidance follows from the same observation. Knowledge that *explains* keeps; knowledge that *restates* the code is a copy that begins drifting immediately. Quoting the contents of another file into a spec is the worst case of it — a snapshot that goes stale silently. Reference the path and state the constraint instead.
+See [Keeping it current in the README](../README.md#keeping-it-current), the canonical explanation of staleness signals, thresholds, and the repository inventory.
 
 ## Principles
 
@@ -149,4 +140,4 @@ The authoring guidance follows from the same observation. Knowledge that *explai
 - [Hintbooks](05-hintbooks.md) — using, authoring, and distributing keyword vocabularies.
 - [CLI Reference](06-cli.md) — every command and flag.
 - [Emit](08-emit.md) — producing artifacts from specs, and authoring an emitter.
-- [Migrating to 1.1](07-migration.md) — what changed and why.
+- [Migration guide](07-migration.md) — what changed through 1.3 and why.

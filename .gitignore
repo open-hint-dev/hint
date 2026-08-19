@@ -7,5 +7,6 @@
 .yarn/install-state.gz
 build/
 node_modules/
+editors/vscode/out/
 release/
 coverage/

@@ -1,16 +1,17 @@
 import * as Path from 'node:path';
 
-import type { GitSnapshot } from './git.js';
+import type { GitHistoryIndex, GitSnapshot } from './git.js';
 import type { HintbookData } from './hintbook.js';
 import type { FileDrift } from './lock.js';
 import type { HoleState } from './merge.js';
 import type { ScopeStaleness } from './staleness.js';
 import { planEmit, renderArtifact } from './emit.js';
-import { isTrackedInHistory, readGitSnapshot, toGitPath } from './git.js';
+import { isTrackedInHistory, readGitHistoryIndex, readGitSnapshot, toGitPath } from './git.js';
 import { isPathExists, readFile } from './helper.js';
 import { collectFileNodes, computeDrift, hashTargetFiles, loadLock } from './lock.js';
+import { lintHintFiles } from './lint.js';
 import { inspectHoles } from './merge.js';
-import { collectIncludedPaths, listHintFiles, parseHintFiles } from './parser.js';
+import { collectIncludedPaths, listHintFiles, parseHintFile, parseHintFiles } from './parser.js';
 import { hintTargetName, isFolderHintPath } from './resolve.js';
 import { collectContractScopes, measureStaleness } from './staleness.js';
 
@@ -27,9 +28,11 @@ import { collectContractScopes, measureStaleness } from './staleness.js';
 // `pending` is informational, not a defect: writing the spec first is explicitly supported.
 // `unfilled` is work outstanding rather than something come loose, but it is counted, because a
 // repository whose specs describe work nobody has done is exactly what an inventory should surface.
-export type StatusKind = 'orphan' | 'outdated' | 'drifted' | 'stale' | 'unfilled' | 'unlocked' | 'pending';
+export type StatusKind = 'broken' | 'vocab' | 'orphan' | 'outdated' | 'drifted' | 'stale' | 'unfilled' | 'unlocked' | 'pending';
 
 const KIND_ORDER: StatusKind[] = [
+    'broken',
+    'vocab',
     'orphan',
     'outdated',
     'drifted',
@@ -73,6 +76,10 @@ function driftDetail(drift: FileDrift): string | null {
         return 'inherited context or vocabulary changed since it was locked';
     }
 
+    if (drift.status === 'unknown') {
+        return 'lock has no block detail — run hint lock to refresh it';
+    }
+
     if (drift.status === 'drifted-output') {
         return 'the generated output changed since it was locked';
     }
@@ -92,12 +99,18 @@ function driftDetail(drift: FileDrift): string | null {
 // a target that was once committed and is now gone was deleted or renamed, and its knowledge is a
 // tail nobody will notice otherwise; a target that never existed is a spec written ahead of its code.
 // Without git the two are indistinguishable, so neither is claimed.
-async function classifyAbsentTarget(projectRootPath: string, snapshot: GitSnapshot | null, target: string): Promise<StatusKind | null> {
+async function classifyAbsentTarget(
+    projectRootPath: string,
+    snapshot: GitSnapshot | null,
+    history: GitHistoryIndex | null,
+    target: string,
+): Promise<StatusKind | null> {
     if (snapshot === null) {
         return null;
     }
 
-    return (await isTrackedInHistory(projectRootPath, target)) ? 'orphan' : 'pending';
+    const tracked = history ? [...history.paths].some((path) => path === target || path.startsWith(`${target}/`)) : await isTrackedInHistory(projectRootPath, target);
+    return tracked ? 'orphan' : 'pending';
 }
 
 // Walks every `.hint` in the project and reports what has come loose from the code it describes.
@@ -112,6 +125,7 @@ export async function inspectProject(projectRootPath: string, hintbooks: Hintboo
     const hintPaths = allHintPaths.filter((hintPath) => !included.has(hintPath));
 
     const snapshot = await readGitSnapshot(projectRootPath);
+    const history = snapshot ? await readGitHistoryIndex(projectRootPath) : null;
     const lock = await loadLock(projectRootPath);
 
     const report: StatusReport = {
@@ -125,7 +139,37 @@ export async function inspectProject(projectRootPath: string, hintbooks: Hintboo
         return report;
     }
 
-    const hints = await parseHintFiles(projectRootPath, hintPaths);
+    const validHintPaths: string[] = [];
+
+    for (const hintPath of hintPaths) {
+        try {
+            await parseHintFile(projectRootPath, hintPath);
+            validHintPaths.push(hintPath);
+        } catch (error: unknown) {
+            const relative = toGitPath(Path.relative(projectRootPath, hintPath));
+
+            report.entries.push({
+                kind: 'broken',
+                hint: relative,
+                target: toGitPath(hintTargetName(projectRootPath, hintPath)),
+                detail: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+
+    const hints = await parseHintFiles(projectRootPath, validHintPaths);
+    const vocabularyFindings = (await lintHintFiles(projectRootPath, validHintPaths, hintbooks)).filter(
+        (finding) => finding.kind === 'vocab' && finding.severity === 'finding',
+    );
+
+    for (const finding of vocabularyFindings) {
+        report.entries.push({
+            kind: 'vocab',
+            hint: finding.hint,
+            target: toGitPath(hintTargetName(projectRootPath, Path.join(projectRootPath, finding.hint))),
+            detail: `${finding.line ? `line ${finding.line}: ` : ''}${finding.detail}`,
+        });
+    }
     const contracts = collectContractScopes(hints, hintbooks);
 
     // Holes are work the spec asked for. Both sides are derivable — a fresh render supplies the stubs,
@@ -154,12 +198,12 @@ export async function inspectProject(projectRootPath: string, hintbooks: Hintboo
         }
     }
 
-    for (const absoluteHintPath of hintPaths) {
+    for (const absoluteHintPath of validHintPaths) {
         const hintPath = toGitPath(Path.relative(projectRootPath, absoluteHintPath));
         const target = toGitPath(hintTargetName(projectRootPath, absoluteHintPath));
 
         if (!(await isPathExists(Path.join(projectRootPath, target)))) {
-            const kind = await classifyAbsentTarget(projectRootPath, snapshot, target);
+            const kind = await classifyAbsentTarget(projectRootPath, snapshot, history, target);
 
             if (kind) {
                 const detail = kind === 'orphan' ? 'target was removed from the repository' : 'target has not been written yet';
@@ -198,16 +242,6 @@ export async function inspectProject(projectRootPath: string, hintbooks: Hintboo
             continue;
         }
 
-        if (snapshot === null) {
-            continue;
-        }
-
-        const staleness = await measureStaleness(projectRootPath, snapshot, {
-            hintPath,
-            target,
-            contract: contracts.get(target) ?? false,
-        });
-
         if (unfilled.length > 0) {
             report.entries.push({
                 kind: 'unfilled',
@@ -218,6 +252,16 @@ export async function inspectProject(projectRootPath: string, hintbooks: Hintboo
 
             continue;
         }
+
+        if (snapshot === null) {
+            continue;
+        }
+
+        const staleness = await measureStaleness(projectRootPath, snapshot, {
+            hintPath,
+            target,
+            contract: contracts.get(target) ?? false,
+        }, history ?? undefined);
 
         if (staleness?.stale) {
             const moved = staleness.total === 1 ? 'the target changed' : `${staleness.changed} of ${staleness.total} files under the target changed`;
@@ -232,7 +276,7 @@ export async function inspectProject(projectRootPath: string, hintbooks: Hintboo
         }
     }
 
-    report.entries.sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || a.hint.localeCompare(b.hint));
+    report.entries.sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || (a.hint < b.hint ? -1 : a.hint > b.hint ? 1 : 0));
 
     return report;
 }

@@ -8,11 +8,16 @@ import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
 import * as Unified from 'unified';
 
+import { loadConfig } from './config.js';
 import { HINTBOOKS_FOLDER, isPathExists, readFile } from './helper.js';
 import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 import { FOLDER_HINT, HINT_EXT, hintTargetName, isFolderHintPath, normalizeHintPaths } from './resolve.js';
 
 const INCLUDE_DIRECTIVE = '@include';
+
+function compareCodepoints(a: string, b: string): number {
+    return a < b ? -1 : a > b ? 1 : 0;
+}
 
 export type HintFileData = {
     path: string;
@@ -26,6 +31,7 @@ export type HintData = {
     name: string;
     body: string;
     children: HintData[];
+    line?: number;
 };
 
 function sortHintPaths(normalizedHintPaths: string[]): string[] {
@@ -40,7 +46,7 @@ function sortHintPaths(normalizedHintPaths: string[]): string[] {
 
             for (let i = 0; i < minLength; i++) {
                 if (partsA[i] !== partsB[i]) {
-                    return partsA[i]!.localeCompare(partsB[i]!);
+                    return compareCodepoints(partsA[i]!, partsB[i]!);
                 }
             }
 
@@ -58,7 +64,7 @@ function sortHintPaths(normalizedHintPaths: string[]): string[] {
             return 1;
         }
 
-        return fileA.localeCompare(fileB);
+        return compareCodepoints(fileA, fileB);
     });
 }
 
@@ -186,8 +192,30 @@ async function resolveIncludePath(target: string, fromFilePath: string, projectR
 async function expandIncludes(filePath: string, content: string, projectRootPath: string, seen: Set<string>): Promise<string> {
     const lines = content.split('\n');
     const out: string[] = [];
+    let fence: { marker: string; length: number } | null = null;
 
     for (const line of lines) {
+        const fenceMatch = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+
+        if (fenceMatch) {
+            const marker = fenceMatch[1]![0]!;
+            const length = fenceMatch[1]!.length;
+
+            if (fence === null) {
+                fence = { marker, length };
+            } else if (fence.marker === marker && length >= fence.length) {
+                fence = null;
+            }
+
+            out.push(line);
+            continue;
+        }
+
+        if (fence !== null) {
+            out.push(line);
+            continue;
+        }
+
         const target = parseIncludeDirective(line);
 
         if (target === null) {
@@ -249,6 +277,7 @@ function parseHeading(heading: Heading): HintData {
         name: nameParts.join(' '),
         body: '',
         children: [],
+        line: heading.position?.start.line,
     };
 }
 
@@ -325,24 +354,22 @@ export async function parseHintFile(projectRootPath: string, hintPath: string): 
 // Enumerates every `.hint` file in the project, skipping dependency and hintbook stores. Paths are
 // returned relative to `projectRootPath`.
 export async function listHintFiles(projectRootPath: string): Promise<string[]> {
+    const config = await loadConfig(projectRootPath);
     const ignored = [
-        'node_modules',
-        '.git',
-        HINTBOOKS_FOLDER,
+        'node_modules/**',
+        '.git/**',
+        `${HINTBOOKS_FOLDER}/**`,
+        ...(config?.ignore ?? []),
     ];
     const results: string[] = [];
 
-    for await (const match of FsPromises.glob(`**/*${HINT_EXT}`, { cwd: projectRootPath })) {
-        const segments = match.split(Path.sep);
-
-        if (segments.some((segment) => ignored.includes(segment))) {
-            continue;
+    for await (const match of FsPromises.glob(`**/*${HINT_EXT}`, { cwd: projectRootPath, exclude: ignored })) {
+        if ((await FsPromises.stat(Path.join(projectRootPath, match))).isFile()) {
+            results.push(match);
         }
-
-        results.push(match);
     }
 
-    return results.sort();
+    return results.sort(compareCodepoints);
 }
 
 // The hint files that other hints pull in with `@include`. A fragment exists to be inlined, not to
@@ -359,7 +386,22 @@ export async function collectIncludedPaths(projectRootPath: string, hintPaths: s
             continue;
         }
 
+        let fence: { marker: string; length: number } | null = null;
+
         for (const line of content.split('\n')) {
+            const fenceMatch = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+
+            if (fenceMatch) {
+                const marker = fenceMatch[1]![0]!;
+                const length = fenceMatch[1]!.length;
+
+                if (fence === null) fence = { marker, length };
+                else if (fence.marker === marker && length >= fence.length) fence = null;
+                continue;
+            }
+
+            if (fence !== null) continue;
+
             const target = parseIncludeDirective(line);
 
             if (target === null) {

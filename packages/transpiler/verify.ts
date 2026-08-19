@@ -4,8 +4,9 @@ import type { HintbookData } from './hintbook.js';
 import type { HintData } from './parser.js';
 import { findInstruction } from './compiler.js';
 import { readFile } from './helper.js';
-import { RUNNING_FILE, RUNNING_FOLDER, vocabularyBooks } from './hintbook.js';
+import { vocabularyBooks } from './hintbook.js';
 import { collectFileNodes } from './lock.js';
+import { isScopeNode as isSubHint } from './tree.js';
 
 // A declared surface that must manifest by name in the generated output — the `keyword name` a spec
 // promised (e.g. `func executeLogin`, `error InvalidCredentialsException`, `party Discloser`).
@@ -46,10 +47,6 @@ export function mentionsSurface(content: string, name: string): boolean {
     const right = /\w$/.test(trimmed) ? '\\b' : '';
 
     return new RegExp(`${left}${escapeRegExp(trimmed)}${right}`).test(content);
-}
-
-function isSubHint(hint: HintData): boolean {
-    return hint.keyword === RUNNING_FILE || hint.keyword === RUNNING_FOLDER;
 }
 
 // The declared surfaces of a file node: every named block (at any depth) whose keyword resolves to an

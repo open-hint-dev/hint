@@ -186,6 +186,14 @@ describe('lock', () => {
     });
 
     describe('computeDrift', () => {
+        it('reports unknown granularity instead of fabricating block additions for old entries', () => {
+            const tree = sampleTree();
+            const lock = lockFor(tree);
+            const entry = lock.files['src/a.ts']!;
+            entry.hash = 'old';
+            delete entry.blocks;
+            expect(computeDrift(tree, lock, []).find((item) => item.name === 'src/a.ts')?.status).toBe('unknown');
+        });
         // Locks against empty hintbooks, so effective hashes reduce to spec + a stable (empty-vocab) component.
         function lockFor(tree: HintData[]): LockData {
             const effective = new Map(effectiveFileHashes(tree, []).map((f) => [f.name, f.hash]));
@@ -357,6 +365,14 @@ describe('lock', () => {
     });
 
     describe('saveLock / loadLock', () => {
+        it('rejects future lock versions and migrates backslash keys', async () => {
+            await withTempDir(async (dir) => {
+                await FsPromises.writeFile(Path.join(dir, 'hint.lock'), 'version: 999\nfiles: {}\n');
+                await expect(loadLock(dir)).rejects.toThrow(/newer hint/);
+                await FsPromises.writeFile(Path.join(dir, 'hint.lock'), 'version: 2\nfiles:\n  src\\\\a.ts:\n    hash: h\n');
+                expect((await loadLock(dir))?.files['src/a.ts']?.hash).toBe('h');
+            });
+        });
         it('round-trips a lock file', async () => {
             await withTempDir(async (dir) => {
                 const lock: LockData = {

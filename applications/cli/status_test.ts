@@ -105,6 +105,24 @@ afterAll(async () => {
 });
 
 describe('status', () => {
+    it('keeps inventorying detached stores, broken includes, cycles, and holes outside git', async () => {
+        const root = await makeProject(false);
+        await write(root, 'packages/db/value.ts', 'export const value = 1;\n');
+        await write(root, 'packages.hint/_.hint', '# decision Detached\n\nKept separately.\n');
+        await write(root, 'good.ts.hint', '# func good\n\nImplement it.\n');
+        await runCli(['emit', 'good.ts.hint'], root);
+        await write(root, 'broken.ts.hint', '@include missing.md\n');
+        await write(root, 'cycle.ts.hint', '@include cycle.md\n');
+        await write(root, 'cycle.md', '@include cycle.ts.hint\n');
+
+        const result = await runCli(['status', '--json', '--exit-code'], root);
+        const report = JSON.parse(result.stdout) as { entries: { kind: string; hint: string }[] };
+        expect(report.entries.filter((entry) => entry.kind === 'broken').map((entry) => entry.hint)).toEqual(['broken.ts.hint', 'cycle.ts.hint']);
+        expect(report.entries.some((entry) => entry.kind === 'unfilled' && entry.hint === 'good.ts.hint')).toBe(true);
+        expect(result.stderr).toContain('not a git repository');
+        expect(result.exitCode).toBe(1);
+    });
+
     it('exits 2 when the project has no .hint files at all', async () => {
         const root = await makeProject();
 

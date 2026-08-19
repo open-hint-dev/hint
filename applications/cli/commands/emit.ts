@@ -4,12 +4,14 @@ import * as Path from 'node:path';
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
+import { expandFolderPaths } from './paths.js';
 import { EXIT_FAILED, EXIT_UNRESOLVED, reportResolution } from './report.js';
 
 export type EmitOptions = {
     target?: string;
     stdout: boolean;
     check: boolean;
+    json?: boolean;
     // Write even when re-emission would leave an implementation with nowhere to go. Not `--force`: the
     // root command already defines that, and a program-level flag never reaches a subcommand.
     dropOrphans: boolean;
@@ -72,7 +74,8 @@ export class EmitCommand implements ICommand {
             return;
         }
 
-        const resolution = await Transpiler.resolveRequests(projectRootPath, await this.expandFolders(projectRootPath));
+        const defaulted = this.paths.length === 0 ? await Transpiler.listHintFiles(projectRootPath) : await expandFolderPaths(this.paths);
+        const resolution = await Transpiler.resolveRequests(projectRootPath, defaulted, this.paths.length === 0 ? projectRootPath : process.cwd());
 
         await reportResolution(projectRootPath, resolution);
 
@@ -125,7 +128,7 @@ export class EmitCommand implements ICommand {
         // A file with content and no region is not HINT's to write into. Appending one puts a second
         // copy of every declared surface into it, which does not fail loudly — it produces a file that
         // no longer compiles — and the run would report a cheerful "created" while doing it.
-        if (merged.adopted && !this.options.adopt && !this.options.check) {
+        if (merged.adopted && !this.options.adopt) {
             return { output: unit.output, outcome: 'unmanaged', restored: 0, drifted: [], orphaned: [] };
         }
 
@@ -145,22 +148,6 @@ export class EmitCommand implements ICommand {
         }
 
         return { output: unit.output, outcome, restored: merged.restored, drifted: merged.drifted, orphaned };
-    }
-
-    // A folder never emits, so `hint emit src/` can only mean "everything beneath src". Reading it the
-    // way `hint src/` does — that folder's own `_.hint` — would make every folder argument a dead end.
-    // Scoped to this command: it does not change what a plain read means.
-    private async expandFolders(projectRootPath: string): Promise<string[]> {
-        const expanded: string[] = [];
-
-        for (const path of this.paths) {
-            const absolute = Path.resolve(projectRootPath, path);
-            const isFolder = (await Transpiler.isPathExists(absolute)) && (await Transpiler.isPathFolder(absolute));
-
-            expanded.push(isFolder ? `${path.replace(/\/+$/, '')}/**` : path);
-        }
-
-        return expanded;
     }
 
     // "Nothing to emit" has several distinct causes and each one has a different fix, so it is worth
@@ -202,15 +189,30 @@ export class EmitCommand implements ICommand {
         const drifted = written.filter((entry) => entry.drifted.length > 0);
 
         if (this.options.check) {
+            if (this.options.json) {
+                process.stdout.write(
+                    `${JSON.stringify({ checked: written.length, findings: written.filter((entry) => entry.outcome !== 'unchanged') }, null, 2)}\n`,
+                );
+            }
+            const unmanaged = written.filter((entry) => entry.outcome === 'unmanaged');
+            const failed = differing.length + unmanaged.length;
             // The verdict goes first: under --check the answer is the exit code, and the first stderr
             // line is the one a truncating reader keeps.
-            if (differing.length === 0) {
+            if (failed === 0) {
                 process.stderr.write(`hint: ${written.length} artifact(s) match their specs.\n`);
             } else {
-                process.stderr.write(`hint: ${differing.length} of ${written.length} artifact(s) differ from what their specs produce.\n`);
+                process.stderr.write(
+                    unmanaged.length === 0
+                        ? `hint: ${differing.length} of ${written.length} artifact(s) differ from what their specs produce.\n`
+                        : `hint: ${failed} of ${written.length} artifact(s) need reconciliation.\n`,
+                );
 
                 for (const entry of differing) {
                     process.stderr.write(`hint:   ${entry.output} — run 'hint emit ${entry.output}' to reconcile.\n`);
+                }
+
+                for (const entry of unmanaged) {
+                    process.stderr.write(`hint:   ${entry.output} — unmanaged file; review it, then run 'hint emit --adopt ${entry.output}'.\n`);
                 }
 
                 process.exitCode = EXIT_FAILED;

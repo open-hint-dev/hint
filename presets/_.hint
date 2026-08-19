@@ -1,0 +1,9 @@
+Build presets are shared mechanics used by every workspace package.
+
+# decision GeneratedRelease
+
+`presets/typescript/release.ts` creates publishable package metadata and the top-level release task rebuilds `release/`. Treat that directory as disposable generated output and never patch it directly.
+
+# invariant WorkspaceConsistency
+
+Package test, lint, release, and publish targets follow the shared make and TypeScript presets so local runs and GitHub Actions execute the same pipeline.

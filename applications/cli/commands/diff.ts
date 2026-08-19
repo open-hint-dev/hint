@@ -1,17 +1,20 @@
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
+import { expandFolderPaths } from './paths.js';
 import { EXIT_UNRESOLVED, reportResolution } from './report.js';
 
 export class DiffCommand implements ICommand {
     private paths: string[] = [];
+    private json = false;
 
     constructor() {}
 
-    static new(paths: string[]): DiffCommand {
+    static new(paths: string[], json = false): DiffCommand {
         const command = new DiffCommand();
 
         command.paths = paths;
+        command.json = json;
 
         return command;
     }
@@ -42,7 +45,7 @@ export class DiffCommand implements ICommand {
         const config = await Transpiler.loadConfig(projectRootPath);
         const hintbooks = await Transpiler.loadHintbooks(projectRootPath, config?.books ?? []);
 
-        const resolution = await Transpiler.resolveRequests(projectRootPath, this.paths);
+        const resolution = await Transpiler.resolveRequests(projectRootPath, await expandFolderPaths(this.paths), process.cwd());
 
         await reportResolution(projectRootPath, resolution);
 
@@ -66,12 +69,18 @@ export class DiffCommand implements ICommand {
 
         const summary = Transpiler.formatDrift(drift);
 
+        if (this.json) {
+            process.stdout.write(
+                `${JSON.stringify({ compared: targetNames.length, findings: drift.filter((entry) => entry.status !== 'fresh') }, null, 2)}\n`,
+            );
+        }
+
         if (!summary) {
             process.stderr.write(`hint: ${targetNames.length} file(s) compared — all up to date.\n`);
 
             return;
         }
 
-        process.stdout.write(`${summary}\n`);
+        if (!this.json) process.stdout.write(`${summary}\n`);
     }
 }

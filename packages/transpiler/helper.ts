@@ -1,4 +1,5 @@
 import * as FsPromises from 'node:fs/promises';
+import * as Path from 'node:path';
 
 export const URL_FILE_PREFIX = 'file://';
 export const URL_NPM_PREFIX = 'npm://';
@@ -31,7 +32,15 @@ export function isGlobPattern(p: string): boolean {
 }
 
 export async function isPathFolder(path: string): Promise<boolean> {
-    return (await FsPromises.stat(path)).isDirectory();
+    try {
+        return (await FsPromises.stat(path)).isDirectory();
+    } catch (error: unknown) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            return false;
+        }
+
+        throw error;
+    }
 }
 
 export async function isPathExists(path: string): Promise<boolean> {
@@ -56,7 +65,32 @@ export async function readFile(path: string): Promise<string | null> {
     }
 }
 
-// Writes a UTF-8 file.
+let temporaryFileSequence = 0;
+
+// Writes a UTF-8 file atomically. The temporary file lives beside the destination, so rename is
+// atomic on the filesystems where the destination itself lives. A process-local sequence avoids
+// wall-clock/randomness while keeping concurrent writes from this process distinct.
 export async function writeFile(path: string, content: string): Promise<void> {
-    await FsPromises.writeFile(path, content, 'utf8');
+    const temporaryPath = Path.join(Path.dirname(path), `.${Path.basename(path)}.${process.pid}.${temporaryFileSequence++}.tmp`);
+
+    try {
+        await FsPromises.writeFile(temporaryPath, content, { encoding: 'utf8', flag: 'wx' });
+        await FsPromises.rename(temporaryPath, path);
+    } catch (error: unknown) {
+        await FsPromises.unlink(temporaryPath).catch(() => undefined);
+        throw error;
+    }
+}
+
+// True when `path` is the root itself or is contained by it. Prefix checks are insufficient:
+// `/work/repo-extra` starts with `/work/repo` but is not inside that project.
+export function isInsideProject(root: string, path: string): boolean {
+    const relative = Path.relative(root, path);
+
+    return relative === '' || (!relative.startsWith(`..${Path.sep}`) && relative !== '..' && !Path.isAbsolute(relative));
+}
+
+// Stable key form used in lock files, git maps, rendered target names, and JSON output.
+export function toPortablePath(path: string): string {
+    return path.replaceAll('\\', '/').split(Path.sep).join('/').replace(/\/{2,}/g, '/');
 }

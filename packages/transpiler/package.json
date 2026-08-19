@@ -19,7 +19,6 @@
         "remark-parse": "*",
         "remark-stringify": "*",
         "unified": "*",
-        "unist-util-visit": "*",
         "vfile": "*",
         "vfile-matter": "*",
         "yaml": "*"

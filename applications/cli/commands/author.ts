@@ -3,12 +3,13 @@ import * as Path from 'node:path';
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
+import { UnresolvedError } from './report.js';
 
 // Running instructions (`__file__`, `__header__`, …) are structural slots, not authoring keywords —
 // they never appear in a `.hint` heading, so the author prompt must not advertise them.
 const RUNNING_INSTRUCTION = /^__.+__$/;
 
-type Keyword = {
+export type Keyword = {
     keyword: string;
     synonyms: string[];
     description: string;
@@ -17,11 +18,13 @@ type Keyword = {
 
 export class AuthorCommand implements ICommand {
     private paths: string[] = [];
+    private json = false;
 
-    static new(paths: string[]): AuthorCommand {
+    static new(paths: string[], json = false): AuthorCommand {
         const command = new AuthorCommand();
 
         command.paths = paths;
+        command.json = json;
 
         return command;
     }
@@ -37,16 +40,18 @@ export class AuthorCommand implements ICommand {
         const books = config?.books ?? [];
 
         if (books.length === 0) {
-            throw new Error(`No hintbooks registered in ${Transpiler.CONFIG_FILE_YML} — run 'hint add <book>' to install a hintbook.`);
+            throw new UnresolvedError(`No hintbooks registered in ${Transpiler.CONFIG_FILE_YML} — run 'hint add <book>' to install a hintbook.`);
         }
 
         const keywords = await this.collectKeywords(projectRootPath, books);
 
         if (keywords.length === 0) {
-            throw new Error('No keywords found in the registered hintbooks.');
+            throw new UnresolvedError('No keywords found in the registered hintbooks.');
         }
 
-        process.stdout.write(`${buildAuthorPrompt(keywords, this.paths)}\n`);
+        process.stdout.write(
+            this.json ? `${JSON.stringify({ paths: this.paths, keywords }, null, 2)}\n` : `${buildAuthorPrompt(keywords, this.paths)}\n`,
+        );
     }
 
     private async collectKeywords(projectRootPath: string, books: string[]): Promise<Keyword[]> {
@@ -57,8 +62,7 @@ export class AuthorCommand implements ICommand {
             const hintbookPaths = await Transpiler.resolveHintbookPaths(projectRootPath, book);
 
             if (hintbookPaths.length === 0) {
-                process.stderr.write(`Skipping hintbook '${book}': not found\n`);
-                continue;
+                throw new UnresolvedError(`Hintbook '${book}' not found — run 'hint add ${book.replace(/^(npm|file):\/\//, '')}' to install it.`);
             }
 
             for (const hintbookPath of hintbookPaths) {
@@ -91,7 +95,7 @@ export class AuthorCommand implements ICommand {
             }
         }
 
-        return keywords.sort((a, b) => a.keyword.localeCompare(b.keyword));
+        return keywords.sort((a, b) => (a.keyword < b.keyword ? -1 : a.keyword > b.keyword ? 1 : 0));
     }
 }
 

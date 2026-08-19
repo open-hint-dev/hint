@@ -60,6 +60,21 @@ describe('hintbook', () => {
             // Keywords without a description front matter key leave it undefined.
             expect(rule?.metadata?.description).toBeUndefined();
         });
+
+        it('normalizes a scalar synonym and rejects non-string values with file context', async () => {
+            const hintbookPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-synonyms-'));
+            await FsPromises.writeFile(Path.join(hintbookPath, 'hintbook.json'), '{"id":"synonyms"}');
+            await FsPromises.writeFile(Path.join(hintbookPath, 'app.md'), '---\nsynonyms: application\n---\nbody');
+            expect((await loadHintbook(hintbookPath)).instructions[0]?.metadata?.synonyms).toEqual(['application']);
+            await FsPromises.writeFile(Path.join(hintbookPath, 'app.md'), '---\nsynonyms: [application, 2]\n---\nbody');
+            await expect(loadHintbook(hintbookPath)).rejects.toThrow(/app\.md/);
+        });
+
+        it('names a malformed hintbook manifest', async () => {
+            const hintbookPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-manifest-'));
+            await FsPromises.writeFile(Path.join(hintbookPath, 'hintbook.json'), '{bad json');
+            await expect(loadHintbook(hintbookPath)).rejects.toThrow(/hintbook\.json/);
+        });
     });
 
     describe('resolveHintbookPaths', () => {

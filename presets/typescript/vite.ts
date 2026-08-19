@@ -49,6 +49,10 @@ const pluginCopyReleaseFiles = (files: string[], environment = 'client') =>
 const pluginCopyRootLicense = (): Vite.PluginOption => ({
     name: 'copy-root-license',
     closeBundle() {
+        // Some bundled entry points produce no output directory before closeBundle
+        // (for example when Rollup aborts after transforming an empty server entry).
+        // The release metadata and shared files still need a stable destination.
+        Fs.mkdirSync(packageReleaseDir(), { recursive: true });
         Fs.copyFileSync(Path.join(rootDir(), 'LICENSE'), Path.join(packageReleaseDir(), 'LICENSE'));
     },
 });
