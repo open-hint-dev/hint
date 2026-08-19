@@ -6,6 +6,14 @@ This walkthrough uses the [software-engineer hintbook](https://github.com/open-h
 
 ---
 
+## Let your agent set it up
+
+For Claude Code, Codex, Cursor, VS Code / GitHub Copilot, or another MCP-capable coding agent, paste this into the agent while it is working in your repository:
+
+> Run `npx -y @openhint/cli bootstrap` from the repository root and follow exactly what it prints.
+
+The command does not change the repository. It prints a self-contained prompt that tells the agent how to initialize HINT, merge the correct project-level MCP configuration for the client it is running in, verify the setup, and report what changed. Continue below if you prefer to do those steps manually. Exact per-client configuration is in [Integrations](integrations.md).
+
 ## 1. Install the CLI
 
 ```bash

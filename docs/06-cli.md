@@ -15,6 +15,8 @@ Ad hoc, without installing: `npx @openhint/cli <paths...>`.
 
 All commands locate the project root by walking up from the current directory to the nearest `hint.yml` / `hint.yaml`.
 
+To let a coding agent perform the project and MCP setup, tell it: `Run npx -y @openhint/cli bootstrap from the repository root and follow exactly what it prints.`
+
 ---
 
 ## Exit codes and streams
@@ -31,6 +33,20 @@ Uniform across every command that takes paths:
 
 - **stdout** carries the answer: the compiled knowledge (`hint`), the drift report (`hint diff`), the verification report (`hint verify`), JSON results (`hint search`), the authoring guidance (`hint author`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`, `hint version`).
 - **stderr** carries the verdict, warnings, prompts, and subprocess output. **The first stderr line is the one that matters** — agents commonly truncate command output, so the most important message is emitted first.
+
+---
+
+## `hint bootstrap` — set up HINT through your agent
+
+Prints a self-contained prompt for Claude Code, Codex, Cursor, VS Code / GitHub Copilot, or another coding agent:
+
+```bash
+npx -y @openhint/cli bootstrap
+```
+
+The command itself is read-only: it creates no files and does not need an initialized HINT project. Its output tells the receiving agent to initialize `hint.yml`, install an appropriate hintbook, run `hint apply`, merge the HINT stdio server into that client's project-level MCP configuration, and verify the result. The prompt contains the distinct current formats for Claude Code, Codex, Cursor, and VS Code; the agent is told to configure only the client it is running in and to preserve unrelated configuration.
+
+Copy the output to another agent, or simply ask the current agent to run the command and follow it. See [Integrations](integrations.md) for the same configurations explained individually.
 
 ---
 

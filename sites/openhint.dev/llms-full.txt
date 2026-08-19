@@ -165,6 +165,14 @@ This walkthrough uses the [software-engineer hintbook](https://github.com/open-h
 
 ---
 
+## Let your agent set it up
+
+For Claude Code, Codex, Cursor, VS Code / GitHub Copilot, or another MCP-capable coding agent, paste this into the agent while it is working in your repository:
+
+> Run `npx -y @openhint/cli bootstrap` from the repository root and follow exactly what it prints.
+
+The command does not change the repository. It prints a self-contained prompt that tells the agent how to initialize HINT, merge the correct project-level MCP configuration for the client it is running in, verify the setup, and report what changed. Continue below if you prefer to do those steps manually. Exact per-client configuration is in [Integrations](https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md).
+
 ## 1. Install the CLI
 
 ```bash
@@ -816,6 +824,8 @@ Ad hoc, without installing: `npx @openhint/cli <paths...>`.
 
 All commands locate the project root by walking up from the current directory to the nearest `hint.yml` / `hint.yaml`.
 
+To let a coding agent perform the project and MCP setup, tell it: `Run npx -y @openhint/cli bootstrap from the repository root and follow exactly what it prints.`
+
 ---
 
 ## Exit codes and streams
@@ -832,6 +842,20 @@ Uniform across every command that takes paths:
 
 - **stdout** carries the answer: the compiled knowledge (`hint`), the drift report (`hint diff`), the verification report (`hint verify`), JSON results (`hint search`), the authoring guidance (`hint author`), status lines (`hint config`, `hint apply`, `hint add`, `hint remove`, `hint version`).
 - **stderr** carries the verdict, warnings, prompts, and subprocess output. **The first stderr line is the one that matters** — agents commonly truncate command output, so the most important message is emitted first.
+
+---
+
+## `hint bootstrap` — set up HINT through your agent
+
+Prints a self-contained prompt for Claude Code, Codex, Cursor, VS Code / GitHub Copilot, or another coding agent:
+
+```bash
+npx -y @openhint/cli bootstrap
+```
+
+The command itself is read-only: it creates no files and does not need an initialized HINT project. Its output tells the receiving agent to initialize `hint.yml`, install an appropriate hintbook, run `hint apply`, merge the HINT stdio server into that client's project-level MCP configuration, and verify the result. The prompt contains the distinct current formats for Claude Code, Codex, Cursor, and VS Code; the agent is told to configure only the client it is running in and to preserve unrelated configuration.
+
+Copy the output to another agent, or simply ask the current agent to run the command and follow it. See [Integrations](https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md) for the same configurations explained individually.
 
 ---
 
@@ -1191,6 +1215,139 @@ A clean comparison says how many files it checked (`3 file(s) compared — all u
 ## Migrating to 1.1
 
 See [`docs/07-migration.md`](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md).
+
+<!-- ============================================================ -->
+<!-- CORE DOCS — Integrations -->
+<!-- ============================================================ -->
+
+# Integrations
+
+HINT stays agent-neutral: `.hint` files are the authority, the CLI is the universal interface, and `hint mcp` exposes the same read-only engine over stdio. There is no second package to install or version independently.
+
+## One-line agent setup
+
+Tell Claude Code, Codex, Cursor, VS Code / GitHub Copilot, or another coding agent:
+
+> Run `npx -y @openhint/cli bootstrap` from the repository root and follow exactly what it prints.
+
+`bootstrap` is safe to run before the repository has `hint.yml`: it only prints a self-contained prompt. The receiving agent initializes HINT, merges the project-level MCP entry for the client it is currently running in, verifies the result, and reports what changed. It is explicitly told not to replace unrelated MCP servers or invent starter `.hint` content before inspecting the repository.
+
+The recipes below are the manual equivalent. They use `npx -y @openhint/cli mcp`, so the repository needs no global CLI or separate MCP package. If the CLI is already installed globally, `"command": "hint", "args": ["mcp"]` is equivalent.
+
+## Claude Code
+
+From the repository root:
+
+```bash
+claude mcp add --scope project hint -- npx -y @openhint/cli mcp
+```
+
+This creates or updates the shared project `.mcp.json`. The resulting server entry is:
+
+```json
+{
+  "mcpServers": {
+    "hint": {
+      "command": "npx",
+      "args": ["-y", "@openhint/cli", "mcp"]
+    }
+  }
+}
+```
+
+## Codex
+
+Merge this into the repository's `.codex/config.toml`:
+
+```toml
+[mcp_servers.hint]
+command = "npx"
+args = ["-y", "@openhint/cli", "mcp"]
+```
+
+Codex also supports `codex mcp add hint -- npx -y @openhint/cli mcp`, but that command writes user configuration. Use the checked-in `.codex/config.toml` form when the setup should travel with the repository. Codex loads project configuration for trusted projects.
+
+## Cursor
+
+Merge this into `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "hint": {
+      "command": "npx",
+      "args": ["-y", "@openhint/cli", "mcp"]
+    }
+  }
+}
+```
+
+Cursor rules can continue to carry client-specific conventions; HINT remains the path-scoped repository knowledge source.
+
+## VS Code / GitHub Copilot
+
+Merge this into `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "hint": {
+      "command": "npx",
+      "args": ["-y", "@openhint/cli", "mcp"]
+    }
+  }
+}
+```
+
+VS Code uses a top-level `servers` object, unlike the `mcpServers` object used by Claude Code and Cursor.
+
+## Other MCP clients
+
+Add a stdio server named `hint` with:
+
+```text
+command: npx
+args: -y, @openhint/cli, mcp
+working directory: repository root
+```
+
+The server offers `hint_context`, `hint_search`, `hint_status`, and `hint_author`. All four tools are read-only; writing `.hint` knowledge remains an ordinary repository edit by the agent. Some clients discover MCP servers only at startup, so restart the client after adding the configuration.
+
+Verify the repository side independently:
+
+```bash
+npx -y @openhint/cli apply --check
+npx -y @openhint/cli status
+```
+
+`status` exits `2` when the initialized repository has no `.hint` files yet; that is an empty inventory, not a broken MCP configuration.
+
+## Claude Code hooks
+
+Use the CLI when a lifecycle hook needs an exit code:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [{ "matcher": "Edit|Write", "hooks": [{ "type": "command", "command": "hint \"$CLAUDE_FILE_PATH\" >/dev/null" }] }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "hint status --exit-code" }] }]
+  }
+}
+```
+
+Plain-CLI agents do not need MCP: `hint apply` maintains the canonical `<hint>` instruction block in `AGENTS.md` and `CLAUDE.md`.
+
+## CI gates
+
+```bash
+hint lint '**/*.hint' --strict-vocab
+hint emit --check
+hint status --exit-code
+hint verify 'src/**'
+hint apply --check
+```
+
+Exit `1` means a check found work; exit `2` means the command resolved no subject. Do not turn either into a green build without deciding why the operation was empty.
 
 <!-- ============================================================ -->
 <!-- CORE DOCS — Migrating to 1.1 -->

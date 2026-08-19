@@ -2,7 +2,54 @@ import * as Path from 'node:path';
 
 import * as Transpiler from '@openhint/transpiler';
 
+import type { ICommand } from './command.js';
 import { UnresolvedError } from './report.js';
+
+export const BOOTSTRAP_PROMPT = `Set up HINT for this repository. Work from the repository root, make the changes, and verify them; do not merely describe the steps.
+
+1. Initialize HINT if needed:
+   - If hint.yml or hint.yaml is absent, run: npx -y @openhint/cli config
+   - If no hintbook is registered, use the repository's domain when one is known. For a software repository, run: npx -y @openhint/cli add --local @openhint/hintbook-software-engineer
+   - Run: npx -y @openhint/cli apply
+   - Preserve all existing content in AGENTS.md and CLAUDE.md outside the generated <hint> block.
+
+2. Configure the HINT MCP server for the agent you are currently running. Configure only that client, merge with existing configuration, and never overwrite unrelated servers:
+
+   Claude Code (shared project configuration):
+     claude mcp add --scope project hint -- npx -y @openhint/cli mcp
+
+   Codex (shared project configuration): merge this into .codex/config.toml:
+     [mcp_servers.hint]
+     command = "npx"
+     args = ["-y", "@openhint/cli", "mcp"]
+
+   Cursor (shared project configuration): merge this into .cursor/mcp.json:
+     {"mcpServers":{"hint":{"command":"npx","args":["-y","@openhint/cli","mcp"]}}}
+
+   VS Code / GitHub Copilot (shared workspace configuration): merge this into .vscode/mcp.json:
+     {"servers":{"hint":{"command":"npx","args":["-y","@openhint/cli","mcp"]}}}
+
+   Another MCP client: add a stdio server named "hint" whose command is "npx" and args are ["-y", "@openhint/cli", "mcp"].
+
+3. Verify the setup:
+   - Run: npx -y @openhint/cli apply --check
+   - Confirm the current agent sees hint_context, hint_search, hint_status, and hint_author. Restart the agent/client if it discovers MCP servers only at startup.
+   - If the repository already has .hint files, run: npx -y @openhint/cli status
+
+4. Report which files you changed, which client you configured, and the verification results. Do not create starter .hint content without first inspecting the repository and running npx -y @openhint/cli author.
+`;
+
+export class BootstrapCommand implements ICommand {
+    private constructor() {}
+
+    static new(): BootstrapCommand {
+        return new BootstrapCommand();
+    }
+
+    async execute(): Promise<void> {
+        process.stdout.write(BOOTSTRAP_PROMPT);
+    }
+}
 
 // The agent instruction files HINT bootstraps. HINT stays agent-neutral: `.hint` files are the source
 // of truth, and these files carry only the short block that tells an agent how to query HINT. Any other

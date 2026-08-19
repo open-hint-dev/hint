@@ -19,6 +19,7 @@ it('serves CLI context, search, status, and authoring data over MCP', async () =
 
     try {
         await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+        expect(client.getInstructions()).toContain('Before modifying repository paths, call hint_context');
         const context = await client.callTool({ name: 'hint_context', arguments: { paths: ['src/payment.ts'] } });
         const search = await client.callTool({ name: 'hint_search', arguments: { query: 'payment' } });
         const status = await client.callTool({ name: 'hint_status', arguments: {} });
