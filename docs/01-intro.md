@@ -139,5 +139,6 @@ See [Keeping it current in the README](../README.md#keeping-it-current), the can
 - [How It Works](04-how-it-works.md) — the resolve → parse → render pipeline in detail.
 - [Hintbooks](05-hintbooks.md) — using, authoring, and distributing keyword vocabularies.
 - [CLI Reference](06-cli.md) — every command and flag.
+- [Integrations](integrations.md) — one-line agent setup and project-level MCP configuration for Claude Code, Codex, Cursor, VS Code / GitHub Copilot, and generic clients.
 - [Emit](08-emit.md) — producing artifacts from specs, and authoring an emitter.
 - [Migration guide](07-migration.md) — what changed through 1.3 and why.

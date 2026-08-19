@@ -150,6 +150,7 @@ See [Keeping it current in the README](https://github.com/open-hint-dev/hint/blo
 - [How It Works](https://github.com/open-hint-dev/hint/blob/main/docs/04-how-it-works.md) — the resolve → parse → render pipeline in detail.
 - [Hintbooks](https://github.com/open-hint-dev/hint/blob/main/docs/05-hintbooks.md) — using, authoring, and distributing keyword vocabularies.
 - [CLI Reference](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md) — every command and flag.
+- [Integrations](https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md) — one-line agent setup and project-level MCP configuration for Claude Code, Codex, Cursor, VS Code / GitHub Copilot, and generic clients.
 - [Emit](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md) — producing artifacts from specs, and authoring an emitter.
 - [Migration guide](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md) — what changed through 1.3 and why.
 
