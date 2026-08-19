@@ -63,6 +63,7 @@ Run `hint author` for the keyword vocabulary before writing.
 hint src/billing/invoice.ts              # what applies to this path
 hint search "how are totals stored"      # which knowledge covers this task
 hint status                              # what has come loose from the code it describes
+hint mcp                                 # serve the same read-only engine to MCP clients
 hint emit src/billing/invoice.ts         # write the artifact this spec produces
 hint --prompt src/billing/invoice.ts \
   | claude -p                            # hand it to a fresh agent, with framing
@@ -110,9 +111,12 @@ hint <path...>            # knowledge that applies to these paths (own + every f
 hint search "<intent>"    # JSON: {hint, target, score, weak} — local BM25F, no model, no network
 hint author <path...>     # the keyword vocabulary, before you write or edit a .hint
 hint status               # what has come loose from the code it describes
+hint mcp                  # stdio MCP server: context, search, status, and authoring tools
 ```
 
 Cost is proportional to how much applies — a path nothing governs returns nothing — so run it **before** you edit, not only when stuck.
+
+MCP clients start the already-installed CLI with `hint mcp`; there is no separate server package. See the [integration recipes](../../docs/integrations.md).
 
 **Reading the result.** stdout is the knowledge; stderr is the verdict and its first line is written first because output gets truncated. Exit `0` succeeded, `1` a check failed, `2` nothing you asked for could be resolved. `no spec of its own for X; returning inherited context from Y` is **success** — most paths inherit, and that inherited knowledge is the answer.
 

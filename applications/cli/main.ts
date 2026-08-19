@@ -20,6 +20,7 @@ import { StatusCommand } from './commands/status.js';
 import { VerifyCommand } from './commands/verify.js';
 import { findCliVersion, VersionCommand } from './commands/version.js';
 import { UnresolvedError } from './commands/report.js';
+import { runMcpServer } from './mcp.js';
 
 type ContextOptions = {
     strict: boolean;
@@ -43,6 +44,7 @@ const EXAMPLES = `Examples:
   hint extract src/billing             draft specs from code that already exists
   hint emit src/billing/invoice.ts     write the artifact this spec produces
   hint emit --check                    CI: every artifact still matches its spec
+  hint mcp                             MCP: serve the same read-only engine over stdio
   hint apply                           install HINT instructions into AGENTS.md / CLAUDE.md
   hint version                         CLI version and installed hintbooks
 
@@ -55,13 +57,14 @@ Exit codes: 0 succeeded · 1 a check failed · 2 nothing matched the given paths
 
 export async function main(): Promise<void> {
     const program = new Command();
+    const version = await findCliVersion();
 
     program.exitOverride();
 
     program
         .name('hint')
         .description('Return the repository knowledge that applies to a path, for any coding agent to consume.')
-        .version(`@openhint/cli ${await findCliVersion()}`, '-v, --version', 'print the CLI version')
+        .version(`@openhint/cli ${version}`, '-v, --version', 'print the CLI version')
         .argument('[paths...]', 'paths to source files, folders, or .hint files (globs supported)')
         .option('--prompt', 'wrap the knowledge in a standalone implementation prompt, for piping to a fresh agent', false)
         .option('--strict', 'exit non-zero when a given path has no spec of its own, instead of returning inherited context', false)
@@ -210,6 +213,13 @@ export async function main(): Promise<void> {
                 dropOrphans: options.dropOrphans,
                 adopt: options.adopt,
             }).execute();
+        });
+
+    program
+        .command('mcp')
+        .description('Start the read-only HINT MCP server over stdio from the current project.')
+        .action(async () => {
+            await runMcpServer(version);
         });
 
     program

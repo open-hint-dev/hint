@@ -1,5 +1,0 @@
-{
-    "extends": "@openhint/preset-typescript/node.json",
-    "include": ["."],
-    "exclude": ["eslint.config.ts", "node_modules", "vite.config.ts"]
-}

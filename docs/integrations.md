@@ -1,6 +1,6 @@
 # Integrations
 
-HINT stays agent-neutral: `.hint` files are the authority, the CLI is the universal fallback, and `@openhint/mcp` exposes the same read-only engine over stdio.
+HINT stays agent-neutral: `.hint` files are the authority, the CLI is the universal interface, and `hint mcp` exposes the same read-only engine over stdio. There is no second package to install or version independently.
 
 ## MCP clients
 
@@ -9,12 +9,12 @@ Run the server from the repository working directory:
 ```json
 {
   "mcpServers": {
-    "hint": { "command": "npx", "args": ["-y", "@openhint/mcp"] }
+    "hint": { "command": "hint", "args": ["mcp"] }
   }
 }
 ```
 
-This is the project-level `.mcp.json` shape used by Claude Code. Cursor uses the same server entry under its MCP settings; GitHub Copilot in VS Code accepts it in `.vscode/mcp.json`. The server offers `hint_context`, `hint_search`, `hint_status`, and `hint_author` and never writes the repository.
+This is the project-level `.mcp.json` shape used by Claude Code. Cursor uses the same server entry under its MCP settings; GitHub Copilot in VS Code accepts it in `.vscode/mcp.json`. If the CLI is not installed globally, use `"command": "npx", "args": ["-y", "@openhint/cli", "mcp"]`. The server offers `hint_context`, `hint_search`, `hint_status`, and `hint_author` and never writes the repository.
 
 ## Claude Code hooks
 

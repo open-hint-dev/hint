@@ -17,8 +17,10 @@
         "test": "make test-js"
     },
     "dependencies": {
+        "@modelcontextprotocol/sdk": "*",
         "@openhint/transpiler": "workspace:*",
-        "commander": "*"
+        "commander": "*",
+        "zod": "*"
     },
     "devDependencies": {
         "@openhint/preset-eslint": "workspace:*",
