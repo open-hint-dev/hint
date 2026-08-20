@@ -57,6 +57,18 @@
   --tok-str:  #C9A777;
 }
 
+/* knowledge-wiki / librarian theme */
+[data-accent="librarian"] {
+  --accent:        #A34A18;
+  --accent-bright: #E58B52;
+  --accent-soft:   rgba(163,74,24,0.10);
+  --accent-line:   rgba(163,74,24,0.28);
+  --accent-2:      #367D78;
+  --tok-tag:  var(--accent-bright);
+  --tok-id:   #6CC4BC;
+  --tok-str:  #D9B27C;
+}
+
 /* ---------- Reset ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 * { margin: 0; padding: 0; }

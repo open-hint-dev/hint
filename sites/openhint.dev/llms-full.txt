@@ -1,7 +1,7 @@
 # HINT — Spec-as-Source for any repository — Full Documentation
 
-> HINT is Spec-as-Source: the specification is the artifact you maintain and the authority the work answers to — but without the regeneration clause the term usually carries. The intent lives in Markdown-native `.hint` files next to whatever they govern, versioned in git; given a path or an intent, `hint` returns the part of the spec that applies, inherited from the project root down, and reports when the work has drifted away from it. The engine has no built-in keyword vocabulary, so the same machinery serves a codebase and a law firm's matters alike. This file concatenates the complete HINT documentation and both official hintbook references for LLM consumption.
-> Website: https://openhint.dev  ·  Source: https://github.com/open-hint-dev/hint  ·  Version: 1.1
+> HINT is Spec-as-Source: the specification is the artifact you maintain and the authority the work answers to — but without the regeneration clause the term usually carries. The intent lives in Markdown-native `.hint` files next to whatever they govern, versioned in git; given a path or an intent, `hint` returns the part of the spec that applies, inherited from the project root down, and reports when the work has drifted away from it. The engine has no built-in keyword vocabulary, so the same machinery serves codebases, legal matters, and source-grounded knowledge wikis alike. This file concatenates the complete HINT documentation and bundled hintbook references for LLM consumption.
+> Website: https://openhint.dev  ·  Source: https://github.com/open-hint-dev/hint  ·  Version: 1.4
 
 ---
 
