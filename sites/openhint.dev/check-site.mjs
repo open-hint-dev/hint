@@ -70,7 +70,7 @@ for (const required of ['@openhint/hintbook-librarian', 'demo-knowledge-wiki', '
 
 const sitemap = Fs.readFileSync(Path.join(ROOT, 'sitemap.xml'), 'utf8');
 
-if (!sitemap.includes('https://openhint.dev/for-knowledge-librarians')) {
+if (!sitemap.includes('https://openhint.dev/for-knowledge-librarians.html')) {
     fail('sitemap.xml does not include the knowledge librarian page.');
 }
 
