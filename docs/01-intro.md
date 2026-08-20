@@ -131,7 +131,7 @@ See [Keeping it current in the README](../README.md#keeping-it-current), the can
 | [`@openhint/transpiler`](../packages/transpiler/README.md) | The library behind the CLI: resolve → parse → render, plus hintbook loading and the contract layer. |
 | [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) | The software-engineering vocabulary. |
 | [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) | The legal vocabulary — drafting and revising documents. |
-| [`@openhint/hintbook-librarian`](https://github.com/open-hint/hintbook-librarian) | The knowledge-repository vocabulary — sources, claims, questions, and linked topics. |
+| [`@openhint/hintbook-librarian`](https://github.com/open-hint-dev/hintbook-librarian) | The knowledge-repository vocabulary — sources, claims, questions, and linked topics. |
 
 ## Where to go next
 

@@ -2,7 +2,7 @@
 
 HINT can be the engine of a persistent team wiki, not only a specification layer beside code. In a knowledge repository the `.hint` files are the maintained artifact: agents ingest sources into typed topics, retrieve only the topics relevant to a question, and lint the links that make the wiki compound over time.
 
-The official [`@openhint/hintbook-librarian`](https://github.com/open-hint/hintbook-librarian) supplies this domain: provenance, concepts, entities, evidence-backed claims, decisions, open questions, supersession, chronology, and typed cross-links. Its prompts address a knowledge reader and maintainer rather than a software implementer.
+The official [`@openhint/hintbook-librarian`](https://github.com/open-hint-dev/hintbook-librarian) supplies this domain: provenance, concepts, entities, evidence-backed claims, decisions, open questions, supersession, chronology, and typed cross-links. Its prompts address a knowledge reader and maintainer rather than a software implementer.
 
 ## Repository shape
 

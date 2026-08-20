@@ -142,7 +142,7 @@ See [Keeping it current in the README](https://github.com/open-hint-dev/hint/blo
 | [`@openhint/transpiler`](https://github.com/open-hint-dev/hint/blob/main/packages/transpiler/README.md) | The library behind the CLI: resolve → parse → render, plus hintbook loading and the contract layer. |
 | [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) | The software-engineering vocabulary. |
 | [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) | The legal vocabulary — drafting and revising documents. |
-| [`@openhint/hintbook-librarian`](https://github.com/open-hint/hintbook-librarian) | The knowledge-repository vocabulary — sources, claims, questions, and linked topics. |
+| [`@openhint/hintbook-librarian`](https://github.com/open-hint-dev/hintbook-librarian) | The knowledge-repository vocabulary — sources, claims, questions, and linked topics. |
 
 ## Where to go next
 
@@ -813,7 +813,7 @@ For npm distribution, publish the package with `hintbook.json` and the keyword f
 
 - [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) is the official general-purpose vocabulary and the best example to copy from: thirty-plus keywords across intent, data, behavior, UI, and constraint declarations, deterministic emit packs, and a complete system glossary.
 - [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) shows the same machinery applied outside software entirely — legal document drafting with `party`, `clause`, `obligation`, and red-line vocabulary. Use it as the template when your domain is not code.
-- [`@openhint/hintbook-librarian`](https://github.com/open-hint/hintbook-librarian) turns a git repository into a persistent agent-maintained knowledge wiki with provenance, claims, decisions, open questions, and structural graph lint. See [Knowledge repositories](https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md).
+- [`@openhint/hintbook-librarian`](https://github.com/open-hint-dev/hintbook-librarian) turns a git repository into a persistent agent-maintained knowledge wiki with provenance, claims, decisions, open questions, and structural graph lint. See [Knowledge repositories](https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md).
 
 <!-- ============================================================ -->
 <!-- CORE DOCS — CLI Reference -->
@@ -2070,7 +2070,7 @@ None of this needs configuring — it falls out of what was written. Strictness 
 
 HINT can be the engine of a persistent team wiki, not only a specification layer beside code. In a knowledge repository the `.hint` files are the maintained artifact: agents ingest sources into typed topics, retrieve only the topics relevant to a question, and lint the links that make the wiki compound over time.
 
-The official [`@openhint/hintbook-librarian`](https://github.com/open-hint/hintbook-librarian) supplies this domain: provenance, concepts, entities, evidence-backed claims, decisions, open questions, supersession, chronology, and typed cross-links. Its prompts address a knowledge reader and maintainer rather than a software implementer.
+The official [`@openhint/hintbook-librarian`](https://github.com/open-hint-dev/hintbook-librarian) supplies this domain: provenance, concepts, entities, evidence-backed claims, decisions, open questions, supersession, chronology, and typed cross-links. Its prompts address a knowledge reader and maintainer rather than a software implementer.
 
 ## Repository shape
 
@@ -2477,4 +2477,4 @@ The authoritative meaning of every tag this book renders. `hint apply` installs 
 
 Its vocabulary is `source`, `concept`, `entity`, `claim`, `decision`, `openquestion`, `supersedes`, `log`, `relates`, and excluded `scratch`. No keyword declares a code surface. The operating loop is ingest, query, and structural graph lint; semantic contradictions remain proposals for an agent to evaluate, never silent deterministic edits.
 
-Install with `hint add --local @openhint/hintbook-librarian`, set `repo: knowledge`, and run `hint apply`. Full source: https://github.com/open-hint/hintbook-librarian
+Install with `hint add --local @openhint/hintbook-librarian`, set `repo: knowledge`, and run `hint apply`. Full source: https://github.com/open-hint-dev/hintbook-librarian
