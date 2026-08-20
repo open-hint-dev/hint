@@ -126,7 +126,7 @@ Nothing in the engine changes between those two columns. Authoring a hintbook ta
 
 Working example: [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt), a law firm's matters specified in `.hint`. Guide → [`docs/05-hintbooks.md`](docs/05-hintbooks.md).
 
-For a persistent team wiki, install [`@openhint/hintbook-librarian`](https://github.com/open-hint/hintbook-librarian): immutable sources under `raw/`, typed and interlinked topics under `wiki/`, scoped query, and deterministic graph lint. Guide → [`docs/09-knowledge-repos.md`](docs/09-knowledge-repos.md).
+For a persistent team wiki, install [`@openhint/hintbook-librarian`](https://github.com/open-hint-dev/hintbook-librarian): immutable sources under `raw/`, typed and interlinked topics under `wiki/`, scoped query, and deterministic graph lint. Guide → [`docs/09-knowledge-repos.md`](docs/09-knowledge-repos.md).
 
 ## Where HINT sits
 
@@ -350,6 +350,6 @@ If a `.hint` declares surfaces the code must contain, `hint verify <path>` check
 
 ---
 
-**Status** — 1.4; see [`docs/07-migration.md`](docs/07-migration.md) for the breaking changes. Engine under [`packages/transpiler/`](packages/transpiler/README.md), CLI under [`applications/cli/`](applications/cli/README.md), official hintbooks in their own repositories ([software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer), [lawyer](https://github.com/open-hint-dev/hintbook-lawyer), [librarian](https://github.com/open-hint/hintbook-librarian)). Issues and PRs welcome.
+**Status** — 1.4; see [`docs/07-migration.md`](docs/07-migration.md) for the breaking changes. Engine under [`packages/transpiler/`](packages/transpiler/README.md), CLI under [`applications/cli/`](applications/cli/README.md), official hintbooks in their own repositories ([software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer), [lawyer](https://github.com/open-hint-dev/hintbook-lawyer), [librarian](https://github.com/open-hint-dev/hintbook-librarian)). Issues and PRs welcome.
 
 **License** — MIT, see [`LICENSE`](LICENSE).

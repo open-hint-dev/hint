@@ -45,7 +45,7 @@ Key facts an LLM should know about HINT:
 
 - [hintbook-software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer): The official general-purpose software-engineering vocabulary.
 - [hintbook-lawyer](https://github.com/open-hint-dev/hintbook-lawyer): The legal-drafting vocabulary — the reference for adapting HINT outside software.
-- [hintbook-librarian](https://github.com/open-hint/hintbook-librarian): Provenance, claims, decisions, open questions, chronology, and typed cross-links for knowledge repositories.
+- [hintbook-librarian](https://github.com/open-hint-dev/hintbook-librarian): Provenance, claims, decisions, open questions, chronology, and typed cross-links for knowledge repositories.
 
 ## Demos
 
