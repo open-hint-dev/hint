@@ -16,6 +16,8 @@ const TEMPLATE_EXTENSION = '.tmpl';
 export const HINTBOOK_FILE_NAME = 'hintbook.json';
 
 export const RUNNING_CHANGES = '__changes__';
+export const RUNNING_AUTHORING = '__authoring__';
+export const RUNNING_CONFIG = '__config__';
 export const RUNNING_FILE = '__file__';
 export const RUNNING_FOLDER = '__folder__';
 export const RUNNING_FOOTER = '__footer__';
@@ -47,6 +49,9 @@ export type HintbookData = {
     id?: string;
     name?: string;
     description?: string;
+    // Domain search vocabulary. Groups are symmetric and data-only: the engine never assigns meaning
+    // to a term, it merely expands every member to the other members of its group.
+    synonyms?: string[][];
     // Present only on an emit pack — a book whose `<keyword>.tmpl` files render an artifact instead of
     // an instruction. Its presence is the whole distinction between the two kinds of book, so one
     // loader, one registry, and one first-wins precedence rule serve both.
@@ -122,6 +127,19 @@ function parseExtractMap(value: unknown): Record<string, string> | undefined {
     return Object.keys(map).length > 0 ? map : undefined;
 }
 
+function parseSynonymGroups(value: unknown, source: string): string[][] | undefined {
+    if (value === undefined || value === null) return undefined;
+    if (!Array.isArray(value)) throw new Error(`Invalid synonym groups in '${source}': expected an array of string arrays`);
+
+    const groups = value.map((group) => {
+        const terms = metadataStrings(group, source);
+        if (!Array.isArray(group) || !terms) throw new Error(`Invalid synonym groups in '${source}': every group must contain strings`);
+        return [...new Set(terms)];
+    }).filter((group) => group.length > 1);
+
+    return groups.length > 0 ? groups : undefined;
+}
+
 function metadataStrings(value: unknown, source?: string): string[] | undefined {
     if (value === undefined || value === null) return undefined;
 
@@ -160,6 +178,7 @@ export async function loadHintbook(hintbookPath: string): Promise<HintbookData> 
     data.id = manifest.id || '';
     data.name = manifest.name || '';
     data.description = manifest.description || '';
+    data.synonyms = parseSynonymGroups(manifest.synonyms, manifestPath);
 
     if (typeof manifest.target === 'string' && manifest.target.trim()) {
         data.target = manifest.target.trim();

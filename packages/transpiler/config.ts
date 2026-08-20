@@ -49,6 +49,8 @@ export type ConfigData = {
     description?: string;
     ignore?: string[];
     books?: string[];
+    repo?: 'code' | 'knowledge';
+    refs_depth?: number;
 };
 
 export async function findConfig(projectRootPath: string): Promise<string | null> {

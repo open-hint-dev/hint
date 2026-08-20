@@ -44,13 +44,15 @@ export class AuthorCommand implements ICommand {
         }
 
         const keywords = await this.collectKeywords(projectRootPath, books);
+        const hintbooks = await Transpiler.loadHintbooks(projectRootPath, books);
+        const authoring = Transpiler.findInstruction(hintbooks, Transpiler.RUNNING_AUTHORING)?.content.trim();
 
         if (keywords.length === 0) {
             throw new UnresolvedError('No keywords found in the registered hintbooks.');
         }
 
         process.stdout.write(
-            this.json ? `${JSON.stringify({ paths: this.paths, keywords }, null, 2)}\n` : `${buildAuthorPrompt(keywords, this.paths)}\n`,
+            this.json ? `${JSON.stringify({ paths: this.paths, keywords }, null, 2)}\n` : `${buildAuthorPrompt(keywords, this.paths, authoring)}\n`,
         );
     }
 
@@ -102,7 +104,16 @@ export class AuthorCommand implements ICommand {
 // The vocabulary comes first and fits on a screen. Picking a legal keyword is the decision an author
 // has to make; the syntax rules matter less and can be read after. Anyone who truncates this output
 // still gets the part they came for.
-function buildAuthorPrompt(keywords: Keyword[], paths: string[]): string {
+function buildAuthorPrompt(keywords: Keyword[], paths: string[], authoring?: string): string {
+    if (authoring) {
+        return [
+            authoring.replaceAll('{paths}', paths.join(', ')),
+            '## Keyword vocabulary',
+            formatKeywordIndex(keywords),
+            '## Keyword reference',
+            formatKeywordDetails(keywords),
+        ].join('\n\n');
+    }
     const target =
         paths.length > 0
             ? `Write or update the HINT knowledge (\`.hint\`) for: ${paths.join(', ')}.`

@@ -1,0 +1,11 @@
+# entity Attention {#shared_topic}
+
+Attention selects relevant context.
+
+# rule wiki/transformers
+
+Read the transformer topic with this one.
+
+# rule wiki/missing-topic
+
+This deliberately seeds one dead graph reference.

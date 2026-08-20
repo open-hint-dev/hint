@@ -22,7 +22,11 @@ async function inheritedFrom(projectRootPath: string, target: string | null): Pr
 
 // Says out loud what each requested path actually matched, one line per path that did not resolve to a
 // spec of its own. Returns how many did not. Silent when everything resolved, so a clean run stays clean.
-export async function reportResolution(projectRootPath: string, resolution: Transpiler.Resolution): Promise<number> {
+export async function reportResolution(
+    projectRootPath: string,
+    resolution: Transpiler.Resolution,
+    options: { suggestions?: (query: string) => Promise<Transpiler.SearchResult[]> } = {},
+): Promise<number> {
     let unresolved = 0;
 
     for (const request of resolution.requests) {
@@ -41,7 +45,10 @@ export async function reportResolution(projectRootPath: string, resolution: Tran
         const inherited = await inheritedFrom(projectRootPath, request.target);
 
         if (request.status === 'missing') {
-            process.stderr.write(`hint: ${request.request} does not exist in this repository and has no spec; ${inherited}.\n`);
+            const suggestions = options.suggestions ? await options.suggestions(request.request) : [];
+            const nearest =
+                suggestions.length > 0 ? ` Nearest knowledge: ${suggestions.map((result) => `${result.target} (${result.score})`).join(', ')}.` : '';
+            process.stderr.write(`hint: ${request.request} does not exist in this repository and has no spec; ${inherited}.${nearest}\n`);
 
             continue;
         }

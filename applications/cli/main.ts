@@ -256,7 +256,10 @@ export async function main(): Promise<void> {
         .argument('<paths...>', 'hint files, target files, or folders to inspect')
         .option('--json', 'print stable JSON findings', false)
         .option('--strict-vocab', 'treat every unknown keyword as a finding', false)
-        .action(async (paths: string[], options: { json: boolean; strictVocab: boolean }) => {
+        .option('--graph', 'also check cross-file references, ids, orphans, and block names', false)
+        .option('--strict-graph', 'run graph checks and promote their advisory notes to findings', false)
+        .action(async (paths: string[], options: { json: boolean; strictVocab: boolean; graph: boolean; strictGraph: boolean }) => {
+            options.graph ||= options.strictGraph;
             await LintCommand.new(paths, options).execute();
         });
 

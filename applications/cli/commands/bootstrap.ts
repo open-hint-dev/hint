@@ -69,8 +69,8 @@ export type HintbookSection = {
 // The `<hint>...</hint>` block written verbatim into the agent files: how to query HINT, plus each
 // hintbook's tag glossary. The glossary lives here — once, per project — rather than in every render,
 // which is what lets `hint <path>` return knowledge and nothing else.
-export function buildHintBlock(sections: HintbookSection[]): string {
-    const parts = [Transpiler.CONFIG_INSTRUCTION.trim()];
+export function buildHintBlock(sections: HintbookSection[], configInstruction = Transpiler.CONFIG_INSTRUCTION): string {
+    const parts = [configInstruction.trim()];
 
     for (const section of sections) {
         const tag = `hint_glossary_from_${section.id}`;
@@ -79,6 +79,11 @@ export function buildHintBlock(sections: HintbookSection[]): string {
     }
 
     return `<${HINT_TAG}>\n\n${parts.join('\n\n')}\n\n</${HINT_TAG}>`;
+}
+
+export async function collectConfigInstruction(projectRootPath: string, config: Transpiler.ConfigData): Promise<string> {
+    const hintbooks = await Transpiler.loadHintbooks(projectRootPath, config.books ?? []);
+    return Transpiler.findInstruction(hintbooks, Transpiler.RUNNING_CONFIG)?.content.trim() || Transpiler.CONFIG_INSTRUCTION;
 }
 
 // A hintbook id becomes part of a tag name, so it is reduced to lowercase letters, digits, and

@@ -3,11 +3,11 @@
 </p>
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-1.3-black">
+  <img alt="version" src="https://img.shields.io/badge/version-1.4-black">
   <img alt="paradigm" src="https://img.shields.io/badge/paradigm-Spec%E2%80%91as%E2%80%91Source-6e40c9">
   <img alt="format" src="https://img.shields.io/badge/format-Markdown%E2%80%91native-blue">
   <img alt="agents" src="https://img.shields.io/badge/agents-neutral-0aa">
-  <img alt="domains" src="https://img.shields.io/badge/domains-code%20%C2%B7%20law%20%C2%B7%20yours-e8590c">
+  <img alt="domains" src="https://img.shields.io/badge/domains-code%20%C2%B7%20law%20%C2%B7%20knowledge-e8590c">
   <img alt="license" src="https://img.shields.io/badge/license-MIT-green">
 </p>
 
@@ -125,6 +125,8 @@ Swap the hintbook and the same machinery specifies a different profession.
 Nothing in the engine changes between those two columns. Authoring a hintbook takes no programming — it is Markdown files with `{name}`-style placeholders — so a profession that can write down its own rules can have a vocabulary for them.
 
 Working example: [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt), a law firm's matters specified in `.hint`. Guide → [`docs/05-hintbooks.md`](docs/05-hintbooks.md).
+
+For a persistent team wiki, install [`@openhint/hintbook-librarian`](https://github.com/open-hint/hintbook-librarian): immutable sources under `raw/`, typed and interlinked topics under `wiki/`, scoped query, and deterministic graph lint. Guide → [`docs/09-knowledge-repos.md`](docs/09-knowledge-repos.md).
 
 ## Where HINT sits
 
@@ -256,6 +258,7 @@ MCP, editor, hook, and CI setup is collected in [Integrations](docs/integrations
 | [`docs/06-cli.md`](docs/06-cli.md) | CLI reference — every command, flag, and exit code |
 | [`docs/07-migration.md`](docs/07-migration.md) | Breaking changes through 1.3 and how to migrate |
 | [`docs/08-emit.md`](docs/08-emit.md) | Producing artifacts from specs; authoring an emitter or a language adapter |
+| [`docs/09-knowledge-repos.md`](docs/09-knowledge-repos.md) | Persistent knowledge wikis with the librarian hintbook |
 
 Working examples: [demo-pied-piper](https://github.com/open-hint-dev/demo-pied-piper) (a polyglot monorepo) · [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt) (a law firm's document repository).
 
@@ -347,6 +350,6 @@ If a `.hint` declares surfaces the code must contain, `hint verify <path>` check
 
 ---
 
-**Status** — 1.3; see [`docs/07-migration.md`](docs/07-migration.md) for the breaking changes. Engine under [`packages/transpiler/`](packages/transpiler/README.md), CLI under [`applications/cli/`](applications/cli/README.md), official hintbooks in their own repositories ([software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer), [lawyer](https://github.com/open-hint-dev/hintbook-lawyer)). Issues and PRs welcome.
+**Status** — 1.4; see [`docs/07-migration.md`](docs/07-migration.md) for the breaking changes. Engine under [`packages/transpiler/`](packages/transpiler/README.md), CLI under [`applications/cli/`](applications/cli/README.md), official hintbooks in their own repositories ([software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer), [lawyer](https://github.com/open-hint-dev/hintbook-lawyer), [librarian](https://github.com/open-hint/hintbook-librarian)). Issues and PRs welcome.
 
 **License** — MIT, see [`LICENSE`](LICENSE).

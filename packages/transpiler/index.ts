@@ -1,5 +1,6 @@
 // Deliberate package surface. Adding a symbol here is an API decision, not a side-effect of creating it.
-export { resolveClosurePaths } from './closure.js';
+export { resolveClosure, resolveClosurePaths } from './closure.js';
+export type { ClosureOptions, ClosureResult, ReferenceEdge } from './closure.js';
 export { findInstruction, renderContext, renderPrompt } from './compiler.js';
 export type { PromptOptions } from './compiler.js';
 export { CONFIG_FILE_YAML, CONFIG_FILE_YML, CONFIG_INSTRUCTION, findConfig, findProjectRoot, loadConfig, saveConfig } from './config.js';
@@ -14,7 +15,7 @@ export { readGitSnapshot, repositoryPath, toGitPath } from './git.js';
 export type { GitSnapshot } from './git.js';
 // Project-file operations remain public for CLI and integration consumers; writes are atomic.
 export { HINTBOOKS_FOLDER, URL_FILE_PREFIX, URL_NPM_PREFIX, isPathExists, isPathFolder, readFile, writeFile } from './helper.js';
-export { RUNNING_SYSTEM, emitPacks, isEmitPack, loadHintbook, loadHintbooks, resolveHintbookPaths, resolveHintbookVersion, vocabularyBooks } from './hintbook.js';
+export { RUNNING_AUTHORING, RUNNING_CONFIG, RUNNING_SYSTEM, emitPacks, isEmitPack, loadHintbook, loadHintbooks, resolveHintbookPaths, resolveHintbookVersion, vocabularyBooks } from './hintbook.js';
 export type { HintbookData, InstructionData, MetaData } from './hintbook.js';
 export { LOCK_VERSION, collectFileNodes, computeDrift, effectiveFileHashes, formatDrift, hashFileBlocks, hashTargetFile, hashTargetFiles, loadLock, pruneFreshHints, saveLock, selectFreshTargets } from './lock.js';
 export type { BlockDiff, BlockHashes, FileDrift, FileDriftStatus, FileHash, LockData, LockEntry } from './lock.js';

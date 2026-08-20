@@ -67,4 +67,17 @@ describe('searchHints', () => {
             await FsPromises.rm(root, { recursive: true, force: true });
         }
     });
+
+    it('uses synonym groups supplied as hintbook data', async () => {
+        const root = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-domain-search-'));
+        try {
+            await FsPromises.writeFile(Path.join(root, 'cats.hint'), '# claim Felines\n\nFeline cognition.\n');
+            const results = await searchHints(root, 'catlike', {
+                hintbooks: [{ instructions: [], synonyms: [['catlike', 'feline']] }],
+            });
+            expect(results[0]?.hint).toBe('cats.hint');
+        } finally {
+            await FsPromises.rm(root, { recursive: true, force: true });
+        }
+    });
 });

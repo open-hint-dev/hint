@@ -1,4 +1,14 @@
-# Migrating to 1.3
+# Migrating to 1.4
+
+## Additive changes in 1.4
+
+Knowledge repositories are now a first-class profile. Set `repo: knowledge` only for a repository where `.hint` is the maintained artifact: target-less specs stop appearing as pending, code-oriented staleness is suppressed, and missing paths gain local search suggestions without changing exit code 2. Existing projects with no `repo` field remain code repositories and retain their output.
+
+Hintbooks may provide `__authoring__`, `__config__`, and manifest-level search synonym groups. Reference closure remains unlimited unless `refs_depth` is set. `hint lint --graph` adds advisory cross-file checks; `--strict-graph` promotes them for CI. See [Knowledge repositories](09-knowledge-repos.md).
+
+No migration is required for existing projects or hintbooks.
+
+## What shipped in 1.3
 
 ## Breaking changes in 1.3
 

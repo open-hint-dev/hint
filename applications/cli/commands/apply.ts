@@ -3,7 +3,7 @@ import * as Path from 'node:path';
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
-import { AGENT_FILE_NAMES, buildHintBlock, collectHintbookSections, HINT_TAG } from './bootstrap.js';
+import { AGENT_FILE_NAMES, buildHintBlock, collectConfigInstruction, collectHintbookSections, HINT_TAG } from './bootstrap.js';
 import { EXIT_FAILED } from './report.js';
 
 const HINT_BLOCK_PATTERN = new RegExp(`<${HINT_TAG}>[\\s\\S]*?<\\/${HINT_TAG}>`, 'g');
@@ -31,7 +31,7 @@ export class ApplyCommand implements ICommand {
             throw new Error(`No ${Transpiler.CONFIG_FILE_YML} found — run 'hint config' to initialize the project.`);
         }
 
-        const block = buildHintBlock(await collectHintbookSections(projectRootPath, config));
+        const block = buildHintBlock(await collectHintbookSections(projectRootPath, config), await collectConfigInstruction(projectRootPath, config));
 
         const targets = await resolveTargets(projectRootPath);
 

@@ -131,6 +131,7 @@ See [Keeping it current in the README](../README.md#keeping-it-current), the can
 | [`@openhint/transpiler`](../packages/transpiler/README.md) | The library behind the CLI: resolve → parse → render, plus hintbook loading and the contract layer. |
 | [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) | The software-engineering vocabulary. |
 | [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) | The legal vocabulary — drafting and revising documents. |
+| [`@openhint/hintbook-librarian`](https://github.com/open-hint/hintbook-librarian) | The knowledge-repository vocabulary — sources, claims, questions, and linked topics. |
 
 ## Where to go next
 
@@ -141,4 +142,5 @@ See [Keeping it current in the README](../README.md#keeping-it-current), the can
 - [CLI Reference](06-cli.md) — every command and flag.
 - [Integrations](integrations.md) — one-line agent setup and project-level MCP configuration for Claude Code, Codex, Cursor, VS Code / GitHub Copilot, and generic clients.
 - [Emit](08-emit.md) — producing artifacts from specs, and authoring an emitter.
-- [Migration guide](07-migration.md) — what changed through 1.3 and why.
+- [Knowledge repositories](09-knowledge-repos.md) — persistent agent-maintained wikis with the librarian hintbook.
+- [Migration guide](07-migration.md) — what changed through 1.4 and why.

@@ -105,6 +105,12 @@ surface: false
 | `surface`     | When `true`, this keyword is a **verifiable surface**: `hint verify` requires each block's declared name to appear verbatim in the generated output, so `hint verify <path> && hint lock <path>` refuses to record a target until it does. Mark only keywords whose name is a code identifier or defined term that must appear unchanged (e.g. `func`, `entity`, `field`) — not ones whose name is a descriptive phrase. Has no effect on compiled output. |
 | `description` | A one-line summary of what the keyword declares. `hint author` lists it next to the keyword so an agent picks the right one when writing specs. Has no effect on compiled output. |
 
+The manifest may also declare domain search synonyms as symmetric groups. Groups from registered books are applied before the built-in general groups and identical sets are deduplicated:
+
+```json
+{"synonyms": [["llm", "language model"], ["organisation", "organization", "org"]]}
+```
+
 ### Modes
 
 A hintbook is **flat**: one `<keyword>.md` file per keyword, no mode dimension. Files carrying a second extension (`__header__.fix.md`, `__mode__.review.md`) are leftovers from the removed 1.x mode system and are ignored — an unmigrated book still loads its base vocabulary. See [migration](07-migration.md#2-modes-are-gone).
@@ -121,6 +127,8 @@ Names of the form `__name__` are **running instructions** — structural slots t
 | `__folder__` | Same for folder hints; `{name}` is the folder path (`.` for the project root).                                                                         |
 | `__system__` | `hint apply` installs it into the agent context files (AGENTS.md / CLAUDE.md), and `hint --standalone` prepends it. Put the tag glossary and reading rules here. |
 | `__changes__` | Rendered inside `--prompt` output only when a `hint.lock` exists and blocks have drifted; `{body}` is the block-level drift list. Never authored by hand. |
+| `__authoring__` | Optional replacement for the default `hint author` framing. Use `{paths}` for the requested targets. The vocabulary index and reference are still appended. |
+| `__config__` | Optional replacement for the core instruction block that `hint apply` installs. The first vocabulary book defining it wins. |
 
 ## Authoring guidelines
 
@@ -147,3 +155,4 @@ For npm distribution, publish the package with `hintbook.json` and the keyword f
 
 - [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) is the official general-purpose vocabulary and the best example to copy from: thirty-plus keywords across intent, data, behavior, UI, and constraint declarations, deterministic emit packs, and a complete system glossary.
 - [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) shows the same machinery applied outside software entirely — legal document drafting with `party`, `clause`, `obligation`, and red-line vocabulary. Use it as the template when your domain is not code.
+- [`@openhint/hintbook-librarian`](https://github.com/open-hint/hintbook-librarian) turns a git repository into a persistent agent-maintained knowledge wiki with provenance, claims, decisions, open questions, and structural graph lint. See [Knowledge repositories](09-knowledge-repos.md).

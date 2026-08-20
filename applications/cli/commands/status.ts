@@ -31,7 +31,7 @@ export class StatusCommand implements ICommand {
         const config = await Transpiler.loadConfig(projectRootPath);
         const hintbooks = await Transpiler.loadHintbooks(projectRootPath, config?.books ?? []);
 
-        const report = await Transpiler.inspectProject(projectRootPath, hintbooks);
+        const report = await Transpiler.inspectProject(projectRootPath, hintbooks, { repositoryKind: config?.repo });
 
         // "Nothing to report" over zero hint files is the hollow success this whole exit taxonomy
         // exists to prevent — it is indistinguishable from a healthy repository, and reads as one.

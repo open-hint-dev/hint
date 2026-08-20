@@ -1,11 +1,16 @@
+import * as Path from 'node:path';
+
 import type { HintbookData } from './hintbook.js';
 import type { HintData } from './parser.js';
+import { collectReferenceEdges } from './closure.js';
+import { isPathExists } from './helper.js';
 import { vocabularyBooks } from './hintbook.js';
-import { parseHintFile } from './parser.js';
+import { parseHintFile, parseHintFiles } from './parser.js';
 import { repositoryPath } from './git.js';
+import { hintTargetName } from './resolve.js';
 
 export type LintFinding = {
-    kind: 'vocab' | 'include' | 'duplicate-id' | 'empty';
+    kind: 'vocab' | 'include' | 'duplicate-id' | 'empty' | 'dead-ref' | 'orphan' | 'duplicate-name' | 'near-name';
     severity: 'finding' | 'info';
     hint: string;
     line?: number;
@@ -103,11 +108,85 @@ function analyze(hintPath: string, root: HintData, hintbooks: HintbookData[], st
     return findings;
 }
 
+type NamedBlock = { hint: string; name: string; id: string; line?: number };
+
+function namedBlocks(root: HintData, hint: string): NamedBlock[] {
+    const blocks: NamedBlock[] = [];
+    const walk = (nodes: HintData[]): void => {
+        for (const node of nodes) {
+            if (node.name) blocks.push({ hint, name: node.name, id: node.id, line: node.line });
+            walk(node.children);
+        }
+    };
+    walk(root.children);
+    return blocks;
+}
+
+async function analyzeGraph(projectRootPath: string, hintPaths: string[], strict: boolean): Promise<LintFinding[]> {
+    const roots: { absolute: string; hint: string; root: HintData | null }[] = [];
+    for (const absolute of hintPaths) {
+        try {
+            roots.push({ absolute, hint: repositoryPath(projectRootPath, absolute), root: await parseHintFile(projectRootPath, absolute) });
+        } catch {
+            // The ordinary per-file pass already owns the broken-include finding. Keep the remaining
+            // repository graph useful instead of replacing every graph result with that same error.
+        }
+    }
+    const valid = roots.filter((entry): entry is typeof entry & { root: HintData } => entry.root !== null);
+    const graphHints = await parseHintFiles(projectRootPath, valid.map((entry) => entry.absolute));
+    const edges = await collectReferenceEdges(projectRootPath, graphHints);
+    const referenced = new Set(edges.flatMap((edge) => edge.to ? [Path.resolve(edge.to)] : []));
+    const findings: LintFinding[] = [];
+    const severity = strict ? 'finding' : 'info';
+
+    for (const edge of edges.filter((candidate) => candidate.to === null)) {
+        findings.push({ kind: 'dead-ref', severity, hint: repositoryPath(projectRootPath, edge.from), line: edge.line, detail: `reference '${edge.ref}' resolves to no .hint file` });
+    }
+
+    for (const entry of valid) {
+        const target = hintTargetName(projectRootPath, entry.absolute);
+        if (!referenced.has(Path.resolve(entry.absolute)) && target !== '.' && !(await isPathExists(Path.join(projectRootPath, target)))) {
+            findings.push({ kind: 'orphan', severity, hint: entry.hint, detail: 'no other hint references this file and its target does not exist' });
+        }
+    }
+
+    const blocks = valid.flatMap((entry) => namedBlocks(entry.root, entry.hint));
+    const ids = new Map<string, NamedBlock>();
+    for (const block of blocks.filter((entry) => entry.id)) {
+        const previous = ids.get(block.id);
+        if (previous && previous.hint !== block.hint) {
+            findings.push({ kind: 'duplicate-id', severity, hint: block.hint, line: block.line, detail: `duplicate {#${block.id}} across files; first declared in ${previous.hint}${previous.line ? `:${previous.line}` : ''}` });
+        } else if (!previous) ids.set(block.id, block);
+    }
+
+    const names = new Map<string, NamedBlock>();
+    for (const block of blocks.filter((entry) => !entry.name.includes('/') && !entry.name.includes('.'))) {
+        const normalized = block.name.trim().toLowerCase();
+        const previous = names.get(normalized);
+        if (previous && previous.hint !== block.hint) {
+            findings.push({ kind: 'duplicate-name', severity, hint: block.hint, line: block.line, detail: `block name '${block.name}' is also declared in ${previous.hint}${previous.line ? `:${previous.line}` : ''}` });
+        } else if (!previous) names.set(normalized, block);
+    }
+
+    const uniqueNames = [...names.entries()].filter(([name]) => [...name].length >= 5);
+    for (let left = 0; left < uniqueNames.length; left++) {
+        for (let right = left + 1; right < uniqueNames.length; right++) {
+            const [a, first] = uniqueNames[left]!;
+            const [b, second] = uniqueNames[right]!;
+            if (first.hint !== second.hint && editDistance(a, b) === 1) {
+                findings.push({ kind: 'near-name', severity, hint: second.hint, line: second.line, detail: `block name '${second.name}' is one edit from '${first.name}' in ${first.hint}` });
+            }
+        }
+    }
+
+    return findings;
+}
+
 export async function lintHintFiles(
     projectRootPath: string,
     hintPaths: string[],
     hintbooks: HintbookData[],
-    options: { strictVocabulary?: boolean } = {},
+    options: { strictVocabulary?: boolean; graph?: boolean; strictGraph?: boolean } = {},
 ): Promise<LintFinding[]> {
     const findings: LintFinding[] = [];
 
@@ -121,6 +200,14 @@ export async function lintHintFiles(
                 kind: 'include', severity: 'finding', hint: hintPath,
                 detail: error instanceof Error ? error.message : String(error),
             });
+        }
+    }
+
+    if (options.graph) {
+        try {
+            findings.push(...await analyzeGraph(projectRootPath, [...new Set(hintPaths)], Boolean(options.strictGraph)));
+        } catch (error: unknown) {
+            findings.push({ kind: 'include', severity: 'finding', hint: '.', detail: error instanceof Error ? error.message : String(error) });
         }
     }
 
