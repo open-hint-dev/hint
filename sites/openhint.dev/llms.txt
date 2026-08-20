@@ -37,9 +37,9 @@ Key facts an LLM should know about HINT:
 ## Pages
 
 - [Home](https://openhint.dev/): What HINT is, how it scopes and retrieves knowledge, the professions it serves, and quick start.
-- [For Software Engineers](https://openhint.dev/for-software-engineers): The software-engineer hintbook — keywords across intent & scope, project context, decisions & invariants, data, behavior, UI, and constraints.
-- [For Lawyers](https://openhint.dev/for-lawyers): The lawyer hintbook — legal drafting vocabulary (party, clause, obligation, right, exception, breach, liability, redline, never, authority); the same rigor applied to documents.
-- [For Knowledge Librarians](https://openhint.dev/for-knowledge-librarians): The librarian hintbook — immutable sources, evidence-backed claims, linked topics, bounded reference closure, and graph lint for persistent agent-maintained knowledge wikis.
+- [For Software Engineers](https://openhint.dev/for-software-engineers.html): The software-engineer hintbook — keywords across intent & scope, project context, decisions & invariants, data, behavior, UI, and constraints.
+- [For Lawyers](https://openhint.dev/for-lawyers.html): The lawyer hintbook — legal drafting vocabulary (party, clause, obligation, right, exception, breach, liability, redline, never, authority); the same rigor applied to documents.
+- [For Knowledge Librarians](https://openhint.dev/for-knowledge-librarians.html): The librarian hintbook — immutable sources, evidence-backed claims, linked topics, bounded reference closure, and graph lint for persistent agent-maintained knowledge wikis.
 - [Knowledge Repositories](https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md): The librarian pattern for persistent agent-maintained wikis.
 
 ## Hintbooks
