@@ -10,6 +10,7 @@ const PAGES = [
     'index.html',
     'for-software-engineers.html',
     'for-lawyers.html',
+    'for-knowledge-librarians.html',
 ];
 const BOOTSTRAP = 'npx -y @openhint/cli bootstrap';
 
@@ -51,6 +52,26 @@ for (const page of PAGES) {
             fail(`${page} references missing local asset '${match[1]}'.`);
         }
     }
+}
+
+const home = Fs.readFileSync(Path.join(ROOT, 'index.html'), 'utf8');
+
+if (!home.includes('data-prof="librarian"') || !home.includes('data-prof-panel="librarian"')) {
+    fail('index.html does not expose the librarian example in the profession switcher.');
+}
+
+const librarian = Fs.readFileSync(Path.join(ROOT, 'for-knowledge-librarians.html'), 'utf8');
+
+for (const required of ['@openhint/hintbook-librarian', 'demo-knowledge-wiki', 'hint lint . --strict-graph']) {
+    if (!librarian.includes(required)) {
+        fail(`for-knowledge-librarians.html is missing '${required}'.`);
+    }
+}
+
+const sitemap = Fs.readFileSync(Path.join(ROOT, 'sitemap.xml'), 'utf8');
+
+if (!sitemap.includes('https://openhint.dev/for-knowledge-librarians')) {
+    fail('sitemap.xml does not include the knowledge librarian page.');
 }
 
 if (!process.exitCode) {

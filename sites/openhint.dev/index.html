@@ -218,7 +218,7 @@
       <a class="nav__link" href="index.html#verify">Verify</a>
       <a class="nav__link" href="for-software-engineers.html">For Engineers</a>
       <a class="nav__link" href="for-lawyers.html">For Lawyers</a>
-      <a class="nav__link" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md" target="_blank" rel="noopener">Knowledge Wikis</a>
+      <a class="nav__link" href="for-knowledge-librarians.html">For Librarians</a>
       <a class="nav__link" href="https://github.com/open-hint-dev/hint/tree/main/docs" target="_blank" rel="noopener">Docs</a>
       <a class="nav__link" href="index.html#quickstart">Quick start</a>
     </div>
@@ -240,7 +240,7 @@
   <a href="index.html#verify">Verify</a>
   <a href="for-software-engineers.html">For Engineers</a>
   <a href="for-lawyers.html">For Lawyers</a>
-  <a href="https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md" target="_blank" rel="noopener">Knowledge Wikis ↗</a>
+  <a href="for-knowledge-librarians.html">For Librarians</a>
   <a href="https://github.com/open-hint-dev/hint/tree/main/docs" target="_blank" rel="noopener">Docs ↗</a>
   <a href="index.html#quickstart">Quick start</a>
   <a href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">GitHub ↗</a>
@@ -272,7 +272,7 @@
       <div class="demo__switch" role="tablist" aria-label="Choose a profession">
         <button data-prof="se" data-accent="" class="is-active"><span class="dot-ok"></span>Software</button>
         <button data-prof="law" data-accent="law"><span class="dot-ok"></span>Law</button>
-        <button disabled>+ more soon</button>
+        <button data-prof="librarian" data-accent="librarian"><span class="dot-ok"></span>Knowledge</button>
       </div>
 
       <!-- SE panel -->
@@ -389,6 +389,60 @@
         </div>
         <p class="demo__note"><span class="t-kw">redline Survival</span> never reached the document — the hintbook ships no template for it, so an internal position stays internal.</p>
       </div>
+
+      <!-- LIBRARIAN panel -->
+      <div data-prof-panel="librarian" class="demo__stack" hidden>
+        <div class="code-wrap">
+          <div class="code demo__src">
+            <div class="code__bar">
+              <span class="code__dots"><i></i><i></i><i></i></span>
+              <span class="code__file"><b>wiki/retrieval/_.hint</b></span>
+              <span class="code__tag">knowledge wiki</span>
+            </div>
+<div class="code__body"><span class="t-h"># </span><span class="t-kw">concept</span> <span class="t-nm">Retrieval-augmented generation</span> <span class="t-id">{#rag}</span>
+
+<span class="t-bd">Ground answers in retrieved evidence instead of relying only on model memory.</span>
+
+<span class="t-h">## </span><span class="t-kw">claim</span> <span class="t-nm">External memory</span>
+
+<span class="t-bd">Retrieval can update factual context without retraining the model.</span>
+
+<span class="t-h">## </span><span class="t-kw">relates</span> <span class="t-nm">Source</span>
+
+<span class="t-bd">../../raw/retrieval.md</span>
+
+<span class="t-h">## </span><span class="t-kw">openquestion</span> <span class="t-nm">Freshness</span>
+
+<span class="t-bd">How should stale sources be retired without erasing provenance?</span></div>
+          </div>
+        </div>
+        <div class="demo__connector">
+          <span class="ln"></span>
+          <span class="chip"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h8M8 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>hint wiki/retrieval</span>
+          <span class="ln"></span>
+        </div>
+        <div class="code-wrap">
+          <div class="code">
+            <div class="code__bar">
+              <span class="code__dots"><i></i><i></i><i></i></span>
+              <span class="code__file"><b>governing knowledge</b> — topic plus linked evidence</span>
+              <span class="code__tag">local closure</span>
+            </div>
+<div class="code__body"><span class="t-kw">concept</span> <span class="t-nm">Retrieval-augmented generation</span>
+<span class="t-bd">Ground answers in retrieved evidence instead of relying only on model memory.</span>
+
+<span class="t-kw">claim</span> <span class="t-nm">External memory</span>
+<span class="t-bd">Retrieval can update factual context without retraining the model.</span>
+
+<span class="t-kw">source</span> <span class="t-nm">Retrieval paper</span>
+<span class="t-bd">Immutable source record from raw/retrieval.md.</span>
+
+<span class="t-kw">openquestion</span> <span class="t-nm">Freshness</span>
+<span class="t-bd">How should stale sources be retired without erasing provenance?</span></div>
+          </div>
+        </div>
+        <p class="demo__note">The agent asks for one topic and gets its evidence closure — not a dump of the whole wiki. <code class="inl">hint lint . --strict-graph</code> catches dead links, orphan topics, and duplicate identities in CI.</p>
+      </div>
     </div>
   </div>
 </header>
@@ -456,20 +510,21 @@
     </div>
     <div class="reveal" style="overflow-x:auto;">
       <table class="cmp">
-        <thead><tr><th></th><th>A software repository</th><th>A law firm's matters</th></tr></thead>
+        <thead><tr><th></th><th>A software repository</th><th>A law firm's matters</th><th>A knowledge wiki</th></tr></thead>
         <tbody>
-          <tr><td>Hintbook</td><td><code class="inl">hintbook-software-engineer</code></td><td><code class="inl">hintbook-lawyer</code></td></tr>
-          <tr><td>Vocabulary</td><td><code class="inl">decision</code> <code class="inl">invariant</code> <code class="inl">func</code> <code class="inl">entity</code> <code class="inl">bad</code></td><td><code class="inl">party</code> <code class="inl">clause</code> <code class="inl">obligation</code> <code class="inl">right</code> <code class="inl">redline</code></td></tr>
-          <tr><td>A scope</td><td><code class="inl">src/billing/_.hint</code> governs billing</td><td><code class="inl">clients/acme/nda/_.hint</code> governs that matter</td></tr>
-          <tr><td>Before touching it</td><td>the constraints that apply to this file</td><td>the constraints that apply to this document</td></tr>
-          <tr><td>Drift means</td><td>the code moved away from the spec</td><td>the document moved away from the position</td></tr>
+          <tr><td>Hintbook</td><td><code class="inl">hintbook-software-engineer</code></td><td><code class="inl">hintbook-lawyer</code></td><td><code class="inl">hintbook-librarian</code></td></tr>
+          <tr><td>Vocabulary</td><td><code class="inl">decision</code> <code class="inl">invariant</code> <code class="inl">func</code> <code class="inl">entity</code> <code class="inl">bad</code></td><td><code class="inl">party</code> <code class="inl">clause</code> <code class="inl">obligation</code> <code class="inl">right</code> <code class="inl">redline</code></td><td><code class="inl">source</code> <code class="inl">concept</code> <code class="inl">claim</code> <code class="inl">decision</code> <code class="inl">openquestion</code></td></tr>
+          <tr><td>A scope</td><td><code class="inl">src/billing/_.hint</code> governs billing</td><td><code class="inl">clients/acme/nda/_.hint</code> governs that matter</td><td><code class="inl">wiki/retrieval/_.hint</code> defines one linked topic</td></tr>
+          <tr><td>Before touching it</td><td>the constraints that apply to this file</td><td>the constraints that apply to this document</td><td>the topic, claims, and linked evidence needed now</td></tr>
+          <tr><td>Drift means</td><td>the code moved away from the spec</td><td>the document moved away from the position</td><td>a dead link, orphan topic, or conflicting identity appeared</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="reveal" style="margin-top:22px; color:var(--ink-2); max-width:70ch;">Nothing in the engine changes between those two columns — that is the whole point. Authoring a hintbook takes no programming: Markdown files with <code class="inl">{name}</code>-style placeholders. A profession that can write down its own rules can have a vocabulary for them.</p>
+    <p class="reveal" style="margin-top:22px; color:var(--ink-2); max-width:70ch;">Nothing in the engine changes between those columns — that is the whole point. Authoring a hintbook takes no programming: Markdown files with <code class="inl">{name}</code>-style placeholders. A profession that can write down its own rules can have a vocabulary for them.</p>
     <div class="hero__cta reveal" style="margin-top:26px;">
       <a class="btn btn--ghost" href="#professions">Every profession</a>
       <a class="btn btn--ghost" href="https://github.com/open-hint-dev/demo-pearson-specter-litt" target="_blank" rel="noopener">A law firm, specified in .hint</a>
+      <a class="btn btn--ghost" href="https://github.com/open-hint-dev/demo-knowledge-wiki" target="_blank" rel="noopener">A source-grounded knowledge wiki</a>
     </div>
   </div>
 </section>
@@ -675,7 +730,7 @@
         </div>
         <span class="proftile__go">Explore <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h9M8 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       </a>
-      <a class="proftile proftile--live" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md" target="_blank" rel="noopener">
+      <a class="proftile proftile--live" href="for-knowledge-librarians.html">
         <svg class="proftile__ico" viewBox="0 0 32 32" fill="none"><path d="M7 6h7a5 5 0 0 1 5 5v15h-7a5 5 0 0 0-5 1V6Zm18 0h-6a5 5 0 0 0-5 5v15h6a5 5 0 0 1 5 1V6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
         <div>
           <h4>Knowledge Librarians</h4>
@@ -849,6 +904,7 @@
       <a class="btn btn--primary" href="#quickstart">Get started</a>
       <a class="btn btn--ghost" href="for-software-engineers.html">For engineers</a>
       <a class="btn btn--ghost" href="for-lawyers.html">For lawyers</a>
+      <a class="btn btn--ghost" href="for-knowledge-librarians.html">For librarians</a>
     </div>
   </div>
 </section>
@@ -877,7 +933,7 @@
         <ul>
           <li><a href="for-software-engineers.html">For Engineers</a></li>
           <li><a href="for-lawyers.html">For Lawyers</a></li>
-          <li><a href="https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md" target="_blank" rel="noopener">Knowledge Wikis ↗</a></li>
+          <li><a href="for-knowledge-librarians.html">For Librarians</a></li>
           <li><a href="index.html#professions">More soon</a></li>
         </ul>
       </div>
