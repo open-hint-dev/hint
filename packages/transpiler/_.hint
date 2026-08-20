@@ -8,6 +8,14 @@ Keep the main data flow explicit: resolve requests, parse their inherited tree, 
 
 The engine knows no domain keywords. Meanings, surfaces, synonyms, emit templates, and adapter declarations come from registered hintbooks.
 
+# decision DomainProfiles
+
+Repository profiles may change advisory ergonomics but never parsing, vocabulary meaning, output channels, or exit taxonomy. Domain search synonyms and author/config framing remain hintbook data; absent book data and an absent profile preserve code-repository output.
+
+# rule ReferenceGraph
+
+Reference closure is breadth-first, cycle-safe, and unlimited by default. A configured depth limit must name every trimmed reference; graph lint reads only workspace state and remains advisory unless explicitly promoted.
+
 # bad AdapterBypass
 
 Do not call language tooling outside the JSON symbol-adapter contract. Built-in and external adapters must report through the same failure vocabulary and degrade visibly.

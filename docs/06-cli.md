@@ -102,6 +102,8 @@ hint --strict 'src/**/*.hint'                  # CI: every named spec must resol
 
 Referenced specs (a spec's `# read` targets and path links) are pulled in automatically with shared ancestors emitted once, so you never need a second call for a path the first one pointed at.
 
+Set `refs_depth` in `hint.yml` to limit reference closure by breadth-first hops. The default is unlimited for compatibility; when a limit omits a tail, its reference names are printed on stderr.
+
 **Breadth guard.** A run crossing roughly 25 scopes or ~20k estimated tokens prints a one-line notice on stderr with the scope count and token estimate. Both file and folder scopes count, so the guard works in a folder-knowledge-only repository too.
 
 **Staleness.** For each path you name — not the reference closure — the hint that governs it (its own spec, else the nearest ancestor `_.hint`) is checked against git, and stderr says so when the code beneath it has moved substantially since that hint was last committed. Advisory: it never changes the exit code or the output. It stays silent outside git, for a hint that has never been committed, for one with uncommitted changes (you are editing it right now), and for a call naming more than ten paths. At most three lines per run. `hint status` applies the same measure to the whole project.
@@ -139,6 +141,8 @@ hint search "service account authentication"
 **`weak` is advisory and never filters.** Scores are corpus-relative, so a high score says nothing about whether a hit is on topic; term coverage is the honest signal. A result flagged `weak` is still returned — a false `weak` costs a glance, a hidden result costs the knowledge. When every result is weak, a `no strong match` note goes to stderr.
 
 Matching is deterministic and local: no model, service, or network. It splits identifiers so `grpcServer` / `grpc_server` / `rpc/server` all match `grpc`, `server`; bridges a small set of software synonyms so `database` reaches a spec that only says `db`; and falls back to edit-distance-1 for typos. Malformed specs are skipped rather than failing the search.
+
+Registered hintbooks can add domain-specific synonym groups through their manifests; the engine treats those groups as data and remains vocabulary-neutral.
 
 `--limit <n>` caps results (default `20`; negative returns all).
 
@@ -235,6 +239,19 @@ Reads each source file through its target's language adapter and drafts a `.hint
 The draft records **shape only**, and says so in its own preamble. The rationale is the half no parser can recover, and it is the half worth having.
 
 Requires an emit pack that declares both a `symbols` adapter and an `extract` map for the target; without one it says so and exits `2`. Full reference → [`docs/08-emit.md`](08-emit.md#hint-extract--the-brownfield-on-ramp).
+
+---
+
+## `hint lint <paths...>` — validate knowledge
+
+Checks vocabulary near-misses, broken includes, duplicate ids within a file, and empty specs. `--strict-vocab` promotes every unknown heading to a finding; `--json` prints stable machine-readable output.
+
+`--graph` adds a deterministic repository graph pass over the selected hints: dead path references, unreferenced hints whose targets do not exist, duplicate ids across files, and duplicate or edit-distance-near block names. Graph results are advisory notes by default. `--strict-graph` implies `--graph`, promotes its notes to findings, and exits `1` when any are present.
+
+```bash
+hint lint . --graph
+hint lint . --strict-graph --json
+```
 
 ---
 

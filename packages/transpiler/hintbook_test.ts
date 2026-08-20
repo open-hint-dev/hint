@@ -75,6 +75,16 @@ describe('hintbook', () => {
             await FsPromises.writeFile(Path.join(hintbookPath, 'hintbook.json'), '{bad json');
             await expect(loadHintbook(hintbookPath)).rejects.toThrow(/hintbook\.json/);
         });
+
+        it('loads domain synonym groups from the manifest', async () => {
+            const hintbookPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-manifest-synonyms-'));
+            await FsPromises.writeFile(Path.join(hintbookPath, 'hintbook.json'), '{"synonyms":[["feline","cat"],["ml","machine learning"]]}');
+
+            expect((await loadHintbook(hintbookPath)).synonyms).toEqual([
+                ['feline', 'cat'],
+                ['ml', 'machine learning'],
+            ]);
+        });
     });
 
     describe('resolveHintbookPaths', () => {

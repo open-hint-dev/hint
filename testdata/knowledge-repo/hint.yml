@@ -1,0 +1,5 @@
+name: knowledge-fixture
+repo: knowledge
+refs_depth: 1
+books:
+  - file://../hintbook

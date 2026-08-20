@@ -117,7 +117,11 @@ async function classifyAbsentTarget(
 // This is the inventory pass — the one place that answers "what has accumulated?" without being
 // asked about a specific path, because knowledge that nobody queries is exactly the knowledge that
 // rots unnoticed.
-export async function inspectProject(projectRootPath: string, hintbooks: HintbookData[]): Promise<StatusReport> {
+export async function inspectProject(
+    projectRootPath: string,
+    hintbooks: HintbookData[],
+    options: { repositoryKind?: 'code' | 'knowledge' } = {},
+): Promise<StatusReport> {
     const allHintPaths = (await listHintFiles(projectRootPath)).map((hintFile) => Path.join(projectRootPath, hintFile));
     const included = await collectIncludedPaths(projectRootPath, allHintPaths);
     // Shared `@include` fragments describe no path, so they are not part of the inventory at all —
@@ -203,6 +207,7 @@ export async function inspectProject(projectRootPath: string, hintbooks: Hintboo
         const target = toGitPath(hintTargetName(projectRootPath, absoluteHintPath));
 
         if (!(await isPathExists(Path.join(projectRootPath, target)))) {
+            if (options.repositoryKind === 'knowledge') continue;
             const kind = await classifyAbsentTarget(projectRootPath, snapshot, history, target);
 
             if (kind) {
@@ -253,7 +258,7 @@ export async function inspectProject(projectRootPath: string, hintbooks: Hintboo
             continue;
         }
 
-        if (snapshot === null) {
+        if (snapshot === null || options.repositoryKind === 'knowledge') {
             continue;
         }
 

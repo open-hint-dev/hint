@@ -40,7 +40,15 @@ export class CompileCommand implements ICommand {
 
         // The verdict goes out before anything else, because an agent that truncates output keeps the
         // first lines. A run where every path resolved cleanly says nothing at all.
-        const unresolved = await reportResolution(projectRootPath, resolution);
+        const unresolved = await reportResolution(
+            projectRootPath,
+            resolution,
+            config?.repo === 'knowledge'
+                ? {
+                      suggestions: async (query) => Transpiler.searchHints(projectRootPath, query, { limit: 3, hintbooks }),
+                  }
+                : undefined,
+        );
 
         if (this.options.strict && unresolved > 0) {
             process.stderr.write(`hint: --strict: ${unresolved} of ${resolution.requests.length} path(s) have no spec of their own.\n`);
@@ -51,7 +59,14 @@ export class CompileCommand implements ICommand {
 
         // Reference closure (on by default): pull the specs of referenced files into this one render so
         // shared ancestors are emitted once, instead of the agent re-invoking `hint` per referenced file.
-        const hintPaths = this.options.refs ? await Transpiler.resolveClosurePaths(projectRootPath, resolution.hintPaths) : resolution.hintPaths;
+        const closure = this.options.refs
+            ? await Transpiler.resolveClosure(projectRootPath, resolution.hintPaths, { depth: config?.refs_depth })
+            : { paths: resolution.hintPaths, trimmed: [] };
+        const hintPaths = closure.paths;
+
+        if (closure.trimmed.length > 0) {
+            process.stderr.write(`hint: references beyond depth ${config?.refs_depth} not included: ${closure.trimmed.join(', ')}.\n`);
+        }
 
         let hints = await Transpiler.parseHintFiles(projectRootPath, hintPaths);
         const vocabularyFindings = (await Transpiler.lintHintFiles(projectRootPath, resolution.hintPaths, hintbooks)).filter(
@@ -69,7 +84,9 @@ export class CompileCommand implements ICommand {
         // Measured before the lock gate prunes anything, so the staleness of a scope is reported whether
         // or not its output happens to be up to date. Which kind of knowledge a scope holds decides how
         // far the code may move before it is worth saying anything.
-        await reportStaleness(projectRootPath, resolution, Transpiler.collectContractScopes(hints, hintbooks));
+        if (config?.repo !== 'knowledge') {
+            await reportStaleness(projectRootPath, resolution, Transpiler.collectContractScopes(hints, hintbooks));
+        }
 
         const lock = await Transpiler.loadLock(projectRootPath);
 

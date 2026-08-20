@@ -1,5 +1,6 @@
 import Path from 'node:path';
 
+import type { HintbookData } from './hintbook.js';
 import type { HintData } from './parser.js';
 import { listHintFiles, parseHintFile } from './parser.js';
 
@@ -13,6 +14,7 @@ export type SearchResult = {
 
 export type SearchOptions = {
     limit?: number;
+    hintbooks?: HintbookData[];
 };
 
 // Scores are corpus-relative, so a high one says nothing about whether a hit is on topic — the reason a
@@ -230,12 +232,10 @@ const SYNONYM_GROUPS: string[][] = [
     ],
 ];
 
-const SYNONYMS: Map<string, string[]> = buildSynonymIndex();
-
-function buildSynonymIndex(): Map<string, string[]> {
+function buildSynonymIndex(groups: string[][]): Map<string, string[]> {
     const index = new Map<string, Set<string>>();
 
-    for (const group of SYNONYM_GROUPS) {
+    for (const group of groups) {
         for (const term of group) {
             const bucket = index.get(term) ?? new Set<string>();
 
@@ -290,16 +290,16 @@ function baseTokens(text: string): string[] {
 // Tokenizes and expands each token through the synonym index. Used for the document side only — the
 // query stays on its base tokens, and since synonym groups are symmetric, an expanded document is
 // guaranteed to contain the query's own term whenever they share a group.
-function expandedTokens(text: string): string[] {
+function expandedTokens(text: string, synonyms: Map<string, string[]>): string[] {
     const tokens: string[] = [];
 
     for (const token of baseTokens(text)) {
         tokens.push(token);
 
-        const synonyms = SYNONYMS.get(token);
+        const related = synonyms.get(token);
 
-        if (synonyms) {
-            for (const synonym of synonyms) {
+        if (related) {
+            for (const synonym of related) {
                 if (synonym !== token) {
                     tokens.push(synonym);
                 }
@@ -336,14 +336,14 @@ function flattenDeclarations(hint: HintData): { names: string; bodies: string } 
     return { names: names.join(' '), bodies: bodies.join(' ') };
 }
 
-function buildDocument(hintPath: string, hint: HintData): Document {
+function buildDocument(hintPath: string, hint: HintData, synonyms: Map<string, string[]>): Document {
     const { names, bodies } = flattenDeclarations(hint);
 
     // `hint.name` is the path the spec describes — the strongest signal — so it anchors the path zone.
     const zones: Record<Zone, string[]> = {
-        path: expandedTokens(hint.name),
-        name: expandedTokens(names),
-        body: expandedTokens(`${hint.name} ${hint.body} ${bodies}`),
+        path: expandedTokens(hint.name, synonyms),
+        name: expandedTokens(names, synonyms),
+        body: expandedTokens(`${hint.name} ${hint.body} ${bodies}`, synonyms),
     };
 
     return {
@@ -418,6 +418,18 @@ export async function searchHints(projectRootPath: string, query: string, option
 
     const hintPaths = await listHintFiles(projectRootPath);
     const documents: Document[] = [];
+    const groups: string[][] = [];
+    const seenGroups = new Set<string>();
+
+    for (const group of [...(options.hintbooks ?? []).flatMap((book) => book.synonyms ?? []), ...SYNONYM_GROUPS]) {
+        const normalized = [...new Set(group.map((term) => term.toLowerCase()))].sort();
+        const identity = normalized.join('\0');
+        if (normalized.length > 1 && !seenGroups.has(identity)) {
+            seenGroups.add(identity);
+            groups.push(normalized);
+        }
+    }
+    const synonyms = buildSynonymIndex(groups);
 
     for (const hintPath of hintPaths) {
         // A single malformed spec (bad include, cycle) must not sink the whole search — it is simply
@@ -426,7 +438,7 @@ export async function searchHints(projectRootPath: string, query: string, option
             const hint = await parseHintFile(projectRootPath, Path.resolve(projectRootPath, hintPath));
 
             if (hint) {
-                documents.push(buildDocument(hintPath, hint));
+                documents.push(buildDocument(hintPath, hint, synonyms));
             }
         } catch {
             continue;

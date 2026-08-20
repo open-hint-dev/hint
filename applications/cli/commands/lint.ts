@@ -4,11 +4,11 @@ import type { ICommand } from './command.js';
 import { expandFolderPaths } from './paths.js';
 import { EXIT_FAILED, EXIT_UNRESOLVED, reportResolution } from './report.js';
 
-export type LintOptions = { json: boolean; strictVocab: boolean };
+export type LintOptions = { json: boolean; strictVocab: boolean; graph: boolean; strictGraph: boolean };
 
 export class LintCommand implements ICommand {
     private paths: string[] = [];
-    private options: LintOptions = { json: false, strictVocab: false };
+    private options: LintOptions = { json: false, strictVocab: false, graph: false, strictGraph: false };
 
     private constructor() {}
 
@@ -37,6 +37,8 @@ export class LintCommand implements ICommand {
 
         const findings = await Transpiler.lintHintFiles(projectRootPath, resolution.hintPaths, hintbooks, {
             strictVocabulary: this.options.strictVocab,
+            graph: this.options.graph,
+            strictGraph: this.options.strictGraph,
         });
         const failures = findings.filter((finding) => finding.severity === 'finding');
 

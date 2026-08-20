@@ -15,3 +15,7 @@ A command that operated on no resolved subject exits 2 and explains the fix. Suc
 # decision Layers
 
 Command classes orchestrate one operation, `report.ts` owns shared verdict and exit semantics, and terminal concerns stay at the CLI edge. Keep engine behavior out of Commander actions.
+
+# rule KnowledgeProfile
+
+`repo: knowledge` suppresses code-target staleness and pending noise and enriches missing-path verdicts with local search suggestions. It must not alter stdout knowledge or turn a missing path into success.

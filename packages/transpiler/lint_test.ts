@@ -7,6 +7,7 @@ import { loadHintbook } from './hintbook.js';
 import { lintHintFiles, nearestKeyword } from './lint.js';
 
 const here = Path.dirname(fileURLToPath(import.meta.url));
+const knowledgeRoot = Path.resolve(here, '../../testdata/knowledge-repo');
 
 describe('hint lint', () => {
     test('recognizes case and edit-distance near misses without claiming custom headings', async () => {
@@ -39,5 +40,26 @@ describe('hint lint', () => {
         } finally {
             await FsPromises.rm(root, { recursive: true, force: true });
         }
+    });
+
+    test('reports exactly the seeded cross-file graph defects as advisory notes', async () => {
+        const book = await loadHintbook(Path.resolve(here, '../../testdata/hintbook/keywords'));
+        const paths = [
+            '_.hint',
+            'raw/paper-a.md.hint',
+            'wiki/attention/_.hint',
+            'wiki/language-models/_.hint',
+            'wiki/orphan.hint',
+            'wiki/transformers/_.hint',
+        ].map((path) => Path.join(knowledgeRoot, path));
+        const findings = (await lintHintFiles(knowledgeRoot, paths, [book], { graph: true })).filter((finding) =>
+            ['dead-ref', 'orphan', 'duplicate-id', 'duplicate-name', 'near-name'].includes(finding.kind),
+        );
+
+        expect(findings.map(({ kind, severity, hint }) => ({ kind, severity, hint }))).toEqual([
+            { kind: 'dead-ref', severity: 'info', hint: 'wiki/attention/_.hint' },
+            { kind: 'orphan', severity: 'info', hint: 'wiki/orphan.hint' },
+            { kind: 'duplicate-id', severity: 'info', hint: 'wiki/transformers/_.hint' },
+        ]);
     });
 });

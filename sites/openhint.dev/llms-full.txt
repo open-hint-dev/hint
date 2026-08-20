@@ -142,6 +142,7 @@ See [Keeping it current in the README](https://github.com/open-hint-dev/hint/blo
 | [`@openhint/transpiler`](https://github.com/open-hint-dev/hint/blob/main/packages/transpiler/README.md) | The library behind the CLI: resolve → parse → render, plus hintbook loading and the contract layer. |
 | [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) | The software-engineering vocabulary. |
 | [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) | The legal vocabulary — drafting and revising documents. |
+| [`@openhint/hintbook-librarian`](https://github.com/open-hint/hintbook-librarian) | The knowledge-repository vocabulary — sources, claims, questions, and linked topics. |
 
 ## Where to go next
 
@@ -152,7 +153,8 @@ See [Keeping it current in the README](https://github.com/open-hint-dev/hint/blo
 - [CLI Reference](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md) — every command and flag.
 - [Integrations](https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md) — one-line agent setup and project-level MCP configuration for Claude Code, Codex, Cursor, VS Code / GitHub Copilot, and generic clients.
 - [Emit](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md) — producing artifacts from specs, and authoring an emitter.
-- [Migration guide](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md) — what changed through 1.3 and why.
+- [Knowledge repositories](https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md) — persistent agent-maintained wikis with the librarian hintbook.
+- [Migration guide](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md) — what changed through 1.4 and why.
 
 <!-- ============================================================ -->
 <!-- CORE DOCS — Quick Start -->
@@ -761,6 +763,12 @@ surface: false
 | `surface`     | When `true`, this keyword is a **verifiable surface**: `hint verify` requires each block's declared name to appear verbatim in the generated output, so `hint verify <path> && hint lock <path>` refuses to record a target until it does. Mark only keywords whose name is a code identifier or defined term that must appear unchanged (e.g. `func`, `entity`, `field`) — not ones whose name is a descriptive phrase. Has no effect on compiled output. |
 | `description` | A one-line summary of what the keyword declares. `hint author` lists it next to the keyword so an agent picks the right one when writing specs. Has no effect on compiled output. |
 
+The manifest may also declare domain search synonyms as symmetric groups. Groups from registered books are applied before the built-in general groups and identical sets are deduplicated:
+
+```json
+{"synonyms": [["llm", "language model"], ["organisation", "organization", "org"]]}
+```
+
 ### Modes
 
 A hintbook is **flat**: one `<keyword>.md` file per keyword, no mode dimension. Files carrying a second extension (`__header__.fix.md`, `__mode__.review.md`) are leftovers from the removed 1.x mode system and are ignored — an unmigrated book still loads its base vocabulary. See [migration](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md#2-modes-are-gone).
@@ -777,6 +785,8 @@ Names of the form `__name__` are **running instructions** — structural slots t
 | `__folder__` | Same for folder hints; `{name}` is the folder path (`.` for the project root).                                                                         |
 | `__system__` | `hint apply` installs it into the agent context files (AGENTS.md / CLAUDE.md), and `hint --standalone` prepends it. Put the tag glossary and reading rules here. |
 | `__changes__` | Rendered inside `--prompt` output only when a `hint.lock` exists and blocks have drifted; `{body}` is the block-level drift list. Never authored by hand. |
+| `__authoring__` | Optional replacement for the default `hint author` framing. Use `{paths}` for the requested targets. The vocabulary index and reference are still appended. |
+| `__config__` | Optional replacement for the core instruction block that `hint apply` installs. The first vocabulary book defining it wins. |
 
 ## Authoring guidelines
 
@@ -803,6 +813,7 @@ For npm distribution, publish the package with `hintbook.json` and the keyword f
 
 - [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) is the official general-purpose vocabulary and the best example to copy from: thirty-plus keywords across intent, data, behavior, UI, and constraint declarations, deterministic emit packs, and a complete system glossary.
 - [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) shows the same machinery applied outside software entirely — legal document drafting with `party`, `clause`, `obligation`, and red-line vocabulary. Use it as the template when your domain is not code.
+- [`@openhint/hintbook-librarian`](https://github.com/open-hint/hintbook-librarian) turns a git repository into a persistent agent-maintained knowledge wiki with provenance, claims, decisions, open questions, and structural graph lint. See [Knowledge repositories](https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md).
 
 <!-- ============================================================ -->
 <!-- CORE DOCS — CLI Reference -->
@@ -912,6 +923,8 @@ hint --strict 'src/**/*.hint'                  # CI: every named spec must resol
 
 Referenced specs (a spec's `# read` targets and path links) are pulled in automatically with shared ancestors emitted once, so you never need a second call for a path the first one pointed at.
 
+Set `refs_depth` in `hint.yml` to limit reference closure by breadth-first hops. The default is unlimited for compatibility; when a limit omits a tail, its reference names are printed on stderr.
+
 **Breadth guard.** A run crossing roughly 25 scopes or ~20k estimated tokens prints a one-line notice on stderr with the scope count and token estimate. Both file and folder scopes count, so the guard works in a folder-knowledge-only repository too.
 
 **Staleness.** For each path you name — not the reference closure — the hint that governs it (its own spec, else the nearest ancestor `_.hint`) is checked against git, and stderr says so when the code beneath it has moved substantially since that hint was last committed. Advisory: it never changes the exit code or the output. It stays silent outside git, for a hint that has never been committed, for one with uncommitted changes (you are editing it right now), and for a call naming more than ten paths. At most three lines per run. `hint status` applies the same measure to the whole project.
@@ -949,6 +962,8 @@ hint search "service account authentication"
 **`weak` is advisory and never filters.** Scores are corpus-relative, so a high score says nothing about whether a hit is on topic; term coverage is the honest signal. A result flagged `weak` is still returned — a false `weak` costs a glance, a hidden result costs the knowledge. When every result is weak, a `no strong match` note goes to stderr.
 
 Matching is deterministic and local: no model, service, or network. It splits identifiers so `grpcServer` / `grpc_server` / `rpc/server` all match `grpc`, `server`; bridges a small set of software synonyms so `database` reaches a spec that only says `db`; and falls back to edit-distance-1 for typos. Malformed specs are skipped rather than failing the search.
+
+Registered hintbooks can add domain-specific synonym groups through their manifests; the engine treats those groups as data and remains vocabulary-neutral.
 
 `--limit <n>` caps results (default `20`; negative returns all).
 
@@ -1045,6 +1060,19 @@ Reads each source file through its target's language adapter and drafts a `.hint
 The draft records **shape only**, and says so in its own preamble. The rationale is the half no parser can recover, and it is the half worth having.
 
 Requires an emit pack that declares both a `symbols` adapter and an `extract` map for the target; without one it says so and exits `2`. Full reference → [`docs/08-emit.md`](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md#hint-extract--the-brownfield-on-ramp).
+
+---
+
+## `hint lint <paths...>` — validate knowledge
+
+Checks vocabulary near-misses, broken includes, duplicate ids within a file, and empty specs. `--strict-vocab` promotes every unknown heading to a finding; `--json` prints stable machine-readable output.
+
+`--graph` adds a deterministic repository graph pass over the selected hints: dead path references, unreferenced hints whose targets do not exist, duplicate ids across files, and duplicate or edit-distance-near block names. Graph results are advisory notes by default. `--strict-graph` implies `--graph`, promotes its notes to findings, and exits `1` when any are present.
+
+```bash
+hint lint . --graph
+hint lint . --strict-graph --json
+```
 
 ---
 
@@ -1354,7 +1382,17 @@ Exit `1` means a check found work; exit `2` means the command resolved no subjec
 <!-- CORE DOCS — Migrating to 1.1 -->
 <!-- ============================================================ -->
 
-# Migrating to 1.3
+# Migrating to 1.4
+
+## Additive changes in 1.4
+
+Knowledge repositories are now a first-class profile. Set `repo: knowledge` only for a repository where `.hint` is the maintained artifact: target-less specs stop appearing as pending, code-oriented staleness is suppressed, and missing paths gain local search suggestions without changing exit code 2. Existing projects with no `repo` field remain code repositories and retain their output.
+
+Hintbooks may provide `__authoring__`, `__config__`, and manifest-level search synonym groups. Reference closure remains unlimited unless `refs_depth` is set. `hint lint --graph` adds advisory cross-file checks; `--strict-graph` promotes them for CI. See [Knowledge repositories](https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md).
+
+No migration is required for existing projects or hintbooks.
+
+## What shipped in 1.3
 
 ## Breaking changes in 1.3
 
@@ -2025,6 +2063,73 @@ None of this needs configuring — it falls out of what was written. Strictness 
 - [Introduction](https://github.com/open-hint-dev/hint/blob/main/docs/01-intro.md) — Spec-as-Source, and why the generator is optional.
 
 <!-- ============================================================ -->
+<!-- CORE DOCS — Knowledge Repositories -->
+<!-- ============================================================ -->
+
+# Knowledge repositories
+
+HINT can be the engine of a persistent team wiki, not only a specification layer beside code. In a knowledge repository the `.hint` files are the maintained artifact: agents ingest sources into typed topics, retrieve only the topics relevant to a question, and lint the links that make the wiki compound over time.
+
+The official [`@openhint/hintbook-librarian`](https://github.com/open-hint/hintbook-librarian) supplies this domain: provenance, concepts, entities, evidence-backed claims, decisions, open questions, supersession, chronology, and typed cross-links. Its prompts address a knowledge reader and maintainer rather than a software implementer.
+
+## Repository shape
+
+```text
+_.hint                         # index and repository-wide knowledge
+hint.yml
+raw/
+  source-a.md                  # immutable source material
+  source-a.md.hint             # provenance and notes about that source
+wiki/
+  attention/_.hint             # one topic
+  transformers/_.hint          # another topic
+```
+
+Use `wiki/<topic>/_.hint` for topics. Folder hints make the topic path directly queryable and allow sections below it to inherit topic framing. Keep original material under `raw/`; do not silently rewrite a source after it has been ingested. A root `_.hint` acts as the index and records policies that govern every topic.
+
+Initialize the repository:
+
+```bash
+npx -y @openhint/cli config
+npx -y @openhint/cli add --local @openhint/hintbook-librarian
+```
+
+Then set the repository profile and, optionally, a reference depth guard:
+
+```yaml
+repo: knowledge
+refs_depth: 2
+books:
+  - npm://@openhint/hintbook-librarian
+```
+
+Run `npx -y @openhint/cli apply` after registering the book.
+
+## Ingest, query, lint
+
+**Ingest.** Add the source under `raw/`, create its companion `.hint`, and update every affected topic. Claims name their evidence; a changed conclusion supersedes the old claim instead of erasing history.
+
+**Query.** Start with `hint search "question or intent"`, then read useful targets with `hint wiki/<topic>`. A path-shaped `relates` block includes the referenced topic through the normal reference closure. `refs_depth` limits this breadth-first traversal; omitted references are always named on stderr.
+
+**Lint.** Run `hint lint . --graph`. The graph pass reports dead references, unreferenced target-less hints, ids duplicated across files, and duplicate or near-miss block names. These are advisory notes by default. Use `--strict-graph` to promote them to findings and exit `1` in CI.
+
+`repo: knowledge` changes ergonomics, not the exit taxonomy: a missing topic still exits `2`, but stderr adds nearest search results; status suppresses target-less `pending` noise; code-oriented staleness advisories are disabled. Without the profile, all existing code-repository behavior is unchanged.
+
+## What the contract commands mean here
+
+Usually, nothing. A knowledge repository does not have generated code targets, and the librarian vocabulary declares no verifiable surfaces. Do not run `verify`, `lock`, `diff`, `emit`, or `extract` unless the repository deliberately adds another hintbook that defines such an artifact workflow.
+
+## Migrating a Markdown wiki
+
+1. Move immutable inputs into `raw/` without rewriting them.
+2. Create `wiki/<topic>/_.hint` topics around durable concepts, not around a temporary task list.
+3. Convert factual prose into evidence-backed claims and preserve unresolved conflicts as open questions.
+4. Replace informal links with path-shaped `relates` blocks, then run `hint lint . --graph`.
+5. Add the root index last, after the topic boundaries have emerged from real material.
+
+The Markdown remains readable and reviewable in git. HINT adds scoped inheritance, deterministic retrieval, domain synonyms, bounded link closure, and structural graph checks; it does not introduce a database, embedding index, or network dependency.
+
+<!-- ============================================================ -->
 <!-- HINTBOOK: software-engineer — Keyword Reference -->
 <!-- ============================================================ -->
 
@@ -2360,3 +2465,16 @@ This is contextual, not selected. There is no mode to pass — HINT renders it e
 ## `__system__` — the tag glossary
 
 The authoritative meaning of every tag this book renders. `hint apply` installs it once into `AGENTS.md` / `CLAUDE.md`, so the default output can be knowledge alone; `--standalone` prepends it for an assistant that never loaded those files.
+
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: librarian — Reference -->
+<!-- ============================================================ -->
+
+# Librarian hintbook
+
+`@openhint/hintbook-librarian` turns a git repository into a persistent knowledge wiki. Immutable inputs live under `raw/` with provenance in companion hints; maintained topics live at `wiki/<topic>/_.hint`; the root `_.hint` is the index.
+
+Its vocabulary is `source`, `concept`, `entity`, `claim`, `decision`, `openquestion`, `supersedes`, `log`, `relates`, and excluded `scratch`. No keyword declares a code surface. The operating loop is ingest, query, and structural graph lint; semantic contradictions remain proposals for an agent to evaluate, never silent deterministic edits.
+
+Install with `hint add --local @openhint/hintbook-librarian`, set `repo: knowledge`, and run `hint apply`. Full source: https://github.com/open-hint/hintbook-librarian

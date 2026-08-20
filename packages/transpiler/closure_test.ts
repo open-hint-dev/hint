@@ -2,7 +2,7 @@ import * as FsPromises from 'node:fs/promises';
 import * as Os from 'node:os';
 import * as Path from 'node:path';
 
-import { resolveClosurePaths } from './closure.js';
+import { resolveClosure, resolveClosurePaths } from './closure.js';
 import { normalizeHintPaths } from './resolve.js';
 
 async function withProject(files: Record<string, string>, run: (dir: string) => Promise<void>): Promise<void> {
@@ -66,6 +66,21 @@ describe('closure', () => {
                     'b.ts.hint',
                     'c.ts.hint',
                 ]);
+            },
+        );
+    });
+
+    it('limits breadth-first closure depth, reports the trimmed tail, and resolves folder topics', async () => {
+        await withProject(
+            {
+                'wiki/a/_.hint': '# read wiki/b',
+                'wiki/b/_.hint': '# read wiki/c',
+                'wiki/c/_.hint': 'leaf',
+            },
+            async (dir) => {
+                const closure = await resolveClosure(dir, await normalizeHintPaths(dir, ['wiki/a']), { depth: 1 });
+                expect(hintPaths(dir, closure.paths)).toEqual(['wiki/a/_.hint', 'wiki/b/_.hint']);
+                expect(closure.trimmed).toEqual(['wiki/c']);
             },
         );
     });

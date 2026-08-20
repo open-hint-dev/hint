@@ -31,6 +31,7 @@ const SECTIONS = [
     { file: 'integrations.md', title: 'Integrations' },
     { file: '07-migration.md', title: 'Migrating to 1.1' },
     { file: '08-emit.md', title: 'Emit (artifacts from specs)' },
+    { file: '09-knowledge-repos.md', title: 'Knowledge Repositories' },
 ];
 
 const RULE = '<!-- ============================================================ -->';

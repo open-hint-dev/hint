@@ -24,7 +24,9 @@ export class SearchCommand implements ICommand {
             throw new Error(`No ${Transpiler.CONFIG_FILE_YML} found — run 'hint config' to initialize the project.`);
         }
 
-        const results = await Transpiler.searchHints(projectRootPath, this.query, { limit: this.limit });
+        const config = await Transpiler.loadConfig(projectRootPath);
+        const hintbooks = await Transpiler.loadHintbooks(projectRootPath, config?.books ?? []);
+        const results = await Transpiler.searchHints(projectRootPath, this.query, { limit: this.limit, hintbooks });
 
         // A ranked list with nothing strong in it reads as confident even when it is noise, because
         // scores are corpus-relative. Say so on stderr — the results still print, unfiltered.

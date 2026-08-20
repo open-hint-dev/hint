@@ -8,6 +8,7 @@ import { main } from './main.js';
 
 const here = Path.dirname(fileURLToPath(import.meta.url));
 const projectRootPath = Path.resolve(here, '../../testdata/project');
+const knowledgeRootPath = Path.resolve(here, '../../testdata/knowledge-repo');
 
 type CliResult = {
     stdout: string;
@@ -179,6 +180,27 @@ describe('cli', () => {
 
             expect(result.exitCode).toBe(2);
         });
+
+        it('limits wiki reference closure and names the omitted tail on stderr', async () => {
+            const result = await runCli(['wiki/attention'], knowledgeRootPath);
+            expect(result.stdout).toContain('path="wiki/transformers"');
+            expect(result.stdout).not.toContain('path="wiki/language-models"');
+            expect(result.stderr).toContain('references beyond depth 1 not included: wiki/language-models');
+        });
+
+        it('keeps exit 2 for a missing wiki topic and adds nearest knowledge', async () => {
+            const result = await runCli(['wiki/attentio'], knowledgeRootPath);
+            expect(result.exitCode).toBe(2);
+            expect(result.stderr).toContain('Nearest knowledge: wiki/attention');
+        });
+
+        it('does not turn target-less knowledge files into pending status noise', async () => {
+            const result = await runCli(['status', '--json'], knowledgeRootPath);
+            const report = JSON.parse(result.stdout);
+            expect(report.scanned).toBe(6);
+            expect(report.entries).toEqual([]);
+            expect(result.stderr).not.toContain('not written yet');
+        });
     });
 
     describe('config', () => {
@@ -333,6 +355,19 @@ describe('cli', () => {
                 await FsPromises.rm(temporaryPath, { recursive: true, force: true });
             }
         });
+
+        it('uses book-supplied config framing instead of the code default', async () => {
+            const temporaryPath = await makeProject();
+            try {
+                await FsPromises.writeFile(Path.join(temporaryPath, 'book', '__config__.md'), 'Query and maintain this knowledge repository.\n', 'utf8');
+                await runCli(['apply'], temporaryPath);
+                const content = await FsPromises.readFile(Path.join(temporaryPath, 'AGENTS.md'), 'utf8');
+                expect(content).toContain('Query and maintain this knowledge repository.');
+                expect(content).not.toContain('Before you modify code');
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
+        });
     });
 
     describe('add and remove', () => {
@@ -460,6 +495,26 @@ describe('cli', () => {
             expect(result.exitCode).toBeUndefined();
             expect(result.stdout).toContain('Authoring HINT knowledge');
             expect(result.stdout).toContain('| entity |');
+        });
+
+        it('replaces code-flavoured authoring with the first book override', async () => {
+            const temporaryPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-author-override-'));
+            try {
+                await FsPromises.writeFile(Path.join(temporaryPath, 'hint.yml'), 'books:\n  - file://book\n');
+                await FsPromises.mkdir(Path.join(temporaryPath, 'book'));
+                await FsPromises.writeFile(Path.join(temporaryPath, 'book', 'hintbook.json'), '{"id":"wiki"}');
+                await FsPromises.writeFile(Path.join(temporaryPath, 'book', 'claim.md'), '---\ndescription: A supported assertion.\n---\n<claim>{body}</claim>');
+                await FsPromises.writeFile(Path.join(temporaryPath, 'book', '__authoring__.md'), '# Maintain the wiki\n\nIngest evidence for {paths}.');
+
+                const result = await runCli(['author', 'wiki/attention'], temporaryPath);
+                expect(result.stdout).toContain('Maintain the wiki');
+                expect(result.stdout).toContain('wiki/attention');
+                expect(result.stdout).toContain('| claim |');
+                expect(result.stdout).not.toContain('What lasts, and what rots');
+                expect(result.stdout).not.toContain('implementation');
+            } finally {
+                await FsPromises.rm(temporaryPath, { recursive: true, force: true });
+            }
         });
 
         it('shows help text for author command', async () => {
@@ -1150,6 +1205,19 @@ describe('cli truthfulness', () => {
 
                     expect(result.stderr).toContain('no strong match');
                     expect(JSON.parse(result.stdout).count).toBeGreaterThan(0);
+                },
+            );
+        });
+
+        it('uses domain synonym groups from the registered book manifest', async () => {
+            await withProject(
+                {
+                    'book/hintbook.json': '{"id":"demo","synonyms":[["catlike","feline"]]}\n',
+                    'cats.hint': '# rule Cats\n\nFeline cognition.\n',
+                },
+                async (dir) => {
+                    const parsed = JSON.parse((await runCli(['search', 'catlike'], dir)).stdout);
+                    expect(parsed.results[0].hint).toBe('cats.hint');
                 },
             );
         });

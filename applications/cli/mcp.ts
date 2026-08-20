@@ -3,11 +3,11 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import * as Transpiler from '@openhint/transpiler';
 import { z } from 'zod';
 
-async function project(): Promise<{ root: string; hintbooks: Transpiler.HintbookData[] }> {
+async function project(): Promise<{ root: string; config: Transpiler.ConfigData; hintbooks: Transpiler.HintbookData[] }> {
     const root = await Transpiler.findProjectRoot(process.cwd());
     if (!root) throw new Error(`No ${Transpiler.CONFIG_FILE_YML} found from '${process.cwd()}'`);
     const config = await Transpiler.loadConfig(root);
-    return { root, hintbooks: await Transpiler.loadHintbooks(root, config?.books ?? []) };
+    return { root, config: config ?? {}, hintbooks: await Transpiler.loadHintbooks(root, config?.books ?? []) };
 }
 
 function textResult(text: string, structuredContent: Record<string, unknown>) {
@@ -30,16 +30,16 @@ export function createMcpServer(version = '0.0.0'): McpServer {
             inputSchema: { paths: z.array(z.string()).min(1) },
         },
         async ({ paths }) => {
-            const { root, hintbooks } = await project();
+            const { root, config, hintbooks } = await project();
             const resolution = await Transpiler.resolveRequests(root, paths, process.cwd());
-            const closure = await Transpiler.resolveClosurePaths(root, resolution.hintPaths);
-            const hints = await Transpiler.parseHintFiles(root, closure);
+            const closure = await Transpiler.resolveClosure(root, resolution.hintPaths, { depth: config.refs_depth });
+            const hints = await Transpiler.parseHintFiles(root, closure.paths);
             const knowledge = Transpiler.renderContext(hints, hintbooks);
             const snapshot = await Transpiler.readGitSnapshot(root);
             const contracts = Transpiler.collectContractScopes(hints, hintbooks);
             const staleness: Transpiler.ScopeStaleness[] = [];
 
-            if (snapshot) {
+            if (snapshot && config.repo !== 'knowledge') {
                 for (const verdict of resolution.requests) {
                     const hintPath = verdict.hintPath
                         ? Transpiler.repositoryPath(root, verdict.hintPath)
@@ -56,7 +56,7 @@ export function createMcpServer(version = '0.0.0'): McpServer {
                 }
             }
 
-            return textResult(knowledge, { knowledge, verdicts: resolution.requests, staleness });
+            return textResult(knowledge, { knowledge, verdicts: resolution.requests, staleness, trimmedReferences: closure.trimmed });
         },
     );
 
@@ -67,8 +67,8 @@ export function createMcpServer(version = '0.0.0'): McpServer {
             inputSchema: { query: z.string().min(1), limit: z.number().int().optional() },
         },
         async ({ query, limit }) => {
-            const { root } = await project();
-            const results = await Transpiler.searchHints(root, query, { limit });
+            const { root, hintbooks } = await project();
+            const results = await Transpiler.searchHints(root, query, { limit, hintbooks });
             return textResult(JSON.stringify({ query, count: results.length, results }, null, 2), { query, count: results.length, results });
         },
     );
@@ -81,8 +81,8 @@ export function createMcpServer(version = '0.0.0'): McpServer {
             inputSchema: {},
         },
         async () => {
-            const { root, hintbooks } = await project();
-            const report = await Transpiler.inspectProject(root, hintbooks);
+            const { root, config, hintbooks } = await project();
+            const report = await Transpiler.inspectProject(root, hintbooks, { repositoryKind: config.repo });
             return textResult(JSON.stringify(report, null, 2), report as unknown as Record<string, unknown>);
         },
     );
@@ -96,6 +96,7 @@ export function createMcpServer(version = '0.0.0'): McpServer {
         },
         async ({ paths = [] }) => {
             const { hintbooks } = await project();
+            const authoring = Transpiler.findInstruction(hintbooks, Transpiler.RUNNING_AUTHORING)?.content.trim();
             const keywords = Transpiler.vocabularyBooks(hintbooks)
                 .flatMap((book) =>
                     book.instructions.map((instruction) => ({
@@ -105,7 +106,7 @@ export function createMcpServer(version = '0.0.0'): McpServer {
                     })),
                 )
                 .filter((entry) => !entry.keyword.startsWith('__'));
-            const payload = { paths, keywords, syntax: '# keyword Name {#optional_id}' };
+            const payload = { paths, keywords, syntax: '# keyword Name {#optional_id}', ...(authoring ? { guidance: authoring.replaceAll('{paths}', paths.join(', ')) } : {}) };
             return textResult(JSON.stringify(payload, null, 2), payload);
         },
     );
