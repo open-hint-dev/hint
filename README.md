@@ -139,7 +139,7 @@ Swap the hintbook and the same machinery specifies a different profession.
 
 Nothing in the engine changes between those two columns. Authoring a hintbook takes no programming — it is Markdown files with `{name}`-style placeholders — so a profession that can write down its own rules can have a vocabulary for them.
 
-Fifteen more profession vocabularies are shipping through the [profession hub](https://openhint.dev/professions.html); the package map and composition rules live in [`docs/10-professions.md`](docs/10-professions.md).
+Eighteen profession vocabularies are live in the [profession hub](https://openhint.dev/professions.html); the package map, demos, and composition rules live in [`docs/10-professions.md`](docs/10-professions.md).
 
 Working example: [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt), a law firm's matters specified in `.hint`. Guide → [`docs/05-hintbooks.md`](docs/05-hintbooks.md).
 
@@ -369,6 +369,6 @@ If a `.hint` declares surfaces the code must contain, `hint verify <path>` check
 
 ---
 
-**Status** — 1.5; see [`docs/07-migration.md`](docs/07-migration.md) for release changes. Engine under [`packages/transpiler/`](packages/transpiler/README.md), CLI under [`applications/cli/`](applications/cli/README.md), official hintbooks in their own repositories ([software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer), [lawyer](https://github.com/open-hint-dev/hintbook-lawyer), [librarian](https://github.com/open-hint-dev/hintbook-librarian)). Issues and PRs welcome.
+**Status** — 1.5; see [`docs/07-migration.md`](docs/07-migration.md) for release changes. Engine under [`packages/transpiler/`](packages/transpiler/README.md), CLI under [`applications/cli/`](applications/cli/README.md), and all 18 official hintbooks are linked from the [profession guide](docs/10-professions.md). Issues and PRs welcome.
 
 **License** — MIT, see [`LICENSE`](LICENSE).

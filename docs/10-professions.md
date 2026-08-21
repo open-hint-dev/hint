@@ -27,7 +27,7 @@ HINT uses one engine for many kinds of high-stakes work. A profession hintbook s
 | Operations & learning | Educational Designers | [`@openhint/hintbook-instructional-designer`](https://github.com/open-hint-dev/hintbook-instructional-designer) | Alignment you can check; Rubrics consistent by construction; Facts from cited materials Surfaces: objective. Internal positions have no emit templates. | [demo-greendale-courses](https://github.com/open-hint-dev/demo-greendale-courses) |
 <!-- profession-rows:end -->
 
-The remaining profession rows are added here as each book, demo, page, and package ships. See the live status on [openhint.dev/professions.html](https://openhint.dev/professions.html).
+All 18 official profession books, demos, pages, and packages are live. The reader-first setup guides are listed on [openhint.dev/professions.html](https://openhint.dev/professions.html).
 
 ## Combining books in one repository
 
