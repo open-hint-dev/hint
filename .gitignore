@@ -11,3 +11,4 @@ node_modules/
 editors/vscode/out/
 release/
 coverage/
+/sites/openhint.dev/shots/

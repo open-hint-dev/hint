@@ -1,5 +1,6 @@
 import * as Fs from 'node:fs';
 import * as Path from 'node:path';
+import { footer, head, nav, script } from './site-components.mjs';
 
 const ROOT = import.meta.dirname;
 const manifest = JSON.parse(Fs.readFileSync(Path.join(ROOT, 'professions.json'), 'utf8'));
@@ -27,10 +28,9 @@ function replace(file, marker, body) {
 
 function home() {
     const live = manifest.filter(({ status }) => status === 'live');
-    const soon = manifest.filter(({ status }) => status === 'soon');
-    const liveCards = live.map((entry) => `      <a class="proftile proftile--live" data-profession="${entry.slug}" data-status="live" href="${entry.page}"><div><h4>${escape(entry.title)}</h4><p>${escape(entry.tileLine)}</p></div><span class="proftile__go">Explore →</span></a>`).join('\n');
-    const soonCards = soon.map((entry) => `      <div class="soontile" data-profession="${entry.slug}" data-status="soon"><h4>${escape(entry.title)}</h4><p>${escape(entry.tileLine)}</p><span class="soontile__tag">soon</span></div>`).join('\n');
-    return `    <div class="profgrid reveal" style="margin-bottom:14px;">\n${liveCards}\n    </div>\n\n    <div class="reveal profession-more"><a class="btn btn--ghost" href="professions.html">All professions →</a></div>\n\n    <div class="soongrid reveal">\n${soonCards}\n      <a class="soontile soontile--author" href="https://github.com/open-hint-dev/hintbook-template"><h4>Your profession</h4><p>Author a hintbook — no code required</p><span class="soontile__tag">open vocabulary</span></a>\n    </div>`;
+    const featured = live.slice(0, 6);
+    const liveCards = featured.map((entry) => `      <a class="proftile proftile--live" data-profession="${entry.slug}" data-status="live" href="${entry.page}"><div><h3>${escape(entry.title)}</h3><p>${escape(entry.tileLine)}</p></div><span class="proftile__go">Explore →</span></a>`).join('\n');
+    return `    <div class="profgrid reveal" style="margin-bottom:14px;">\n${liveCards}\n    </div>\n\n    <div class="reveal profession-more"><a class="btn btn--ghost" href="professions.html">Browse all 18 professions →</a></div>`;
 }
 
 const familyNames = {
@@ -48,8 +48,38 @@ function hub() {
             const href = entry.status === 'live' ? ` href="${entry.page}"` : '';
             return `        <${tag} class="profession-card profession-card--${entry.status}"${href} data-profession="${entry.slug}" data-status="${entry.status}"><span class="pill ${entry.status === 'live' ? 'pill--on' : ''}">${entry.status}</span><h3>${escape(entry.title)}</h3><p>${escape(entry.tileLine)}.</p>${entry.status === 'soon' ? '<small>Watch the open-hint-dev organization for the release.</small>' : '<small>Open the profession guide →</small>'}</${tag}>`;
         }).join('\n');
-        return `    <section class="profession-family" data-family="${family}"><div class="eyebrow">${label}</div><div class="profession-family__grid">\n${cards}\n      </div></section>`;
+        return `    <section class="profession-family" data-family="${family}"><h2>${label}</h2><div class="profession-family__grid">\n${cards}\n      </div></section>`;
     }).join('\n');
+}
+
+function hubPage() {
+    const jsonLd = [
+        {'@context':'https://schema.org','@type':'CollectionPage',name:'HINT profession guides',url:'https://openhint.dev/professions.html',description:'Choose your profession and give your AI assistant the rules, evidence and vocabulary that apply to your work.'},
+        {'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[{'@type':'ListItem',position:1,name:'Home',item:'https://openhint.dev/'},{'@type':'ListItem',position:2,name:'Professions',item:'https://openhint.dev/professions.html'}]},
+    ];
+    return `<!DOCTYPE html>
+<html lang="en" data-accent="delivery">
+<head>
+${head({title:'HINT profession guides — find your work',description:'Choose your profession and give your AI assistant the rules, evidence and vocabulary that apply to your work.',canonical:'https://openhint.dev/professions.html',jsonLd})}
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+${nav('professions')}
+<noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+<main id="content">
+  <header class="section section--tight"><div class="wrap"><nav class="crumb" aria-label="Breadcrumb"><a href="index.html">Home</a> / Professions</nav><p class="eyebrow">Profession guides</p><h1 class="display">Which profession are you?</h1><p class="lede profession-thesis">Pick the work you do. Each guide shows how your AI assistant can follow its vocabulary, evidence and non-negotiable rules.</p></div></header>
+  <section class="section divider"><div class="wrap">
+    <!-- profession-hub:begin -->
+${hub()}
+    <!-- profession-hub:end -->
+  </div></section>
+  <section class="section divider"><div class="wrap"><aside class="handoff"><p class="eyebrow">Start without learning a command</p><h2>Ask your AI assistant to set it up</h2><p>Pick your profession above, then copy the message on its page. Your assistant will run <code class="inl">npx -y @openhint/cli bootstrap</code>, follow the printed instructions and install the right vocabulary. <a href="https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md" target="_blank" rel="noopener">Which assistants can do this?</a></p><a class="btn btn--primary" href="for-business-analysts.html#handoff-title">See an example guide</a></aside></div></section>
+</main>
+${footer(manifest)}
+${script()}
+</body>
+</html>
+`;
 }
 
 function sitemap() {
@@ -62,7 +92,29 @@ function sitemap() {
 }
 
 replace('index.html', 'professions', home());
-replace('professions.html', 'profession-hub', hub());
+const hubPath = Path.join(ROOT, 'professions.html');
+const hubBuilt = hubPage();
+const hubExisting = Fs.readFileSync(hubPath, 'utf8');
+if (checking && hubExisting !== hubBuilt) {
+    console.error('::error::professions.html has drifted from the manifest');
+    process.exitCode = 1;
+} else if (!checking && hubExisting !== hubBuilt) {
+    Fs.writeFileSync(hubPath, hubBuilt);
+}
+
+function replaceShared(file, pattern, built, label) {
+    const path = Path.join(ROOT, file);
+    const source = Fs.readFileSync(path, 'utf8');
+    if (!pattern.test(source)) throw new Error(`${file}: missing ${label}`);
+    const output = source.replace(pattern, built);
+    if (checking && source !== output) {
+        console.error(`::error::${file} generated ${label} has drifted`);
+        process.exitCode = 1;
+    } else if (!checking && source !== output) Fs.writeFileSync(path, output);
+}
+
+replaceShared('index.html', /(?:<!-- shared-nav:begin -->[\s\S]*?<!-- shared-nav:end -->|<nav class="nav">[\s\S]*?<\/nav>)/, nav(''), 'navigation');
+replaceShared('index.html', /(?:<!-- shared-footer:begin -->[\s\S]*?<!-- shared-footer:end -->|<footer class="footer">[\s\S]*?<\/footer>)/, footer(manifest), 'footer');
 const sitemapPath = Path.join(ROOT, 'sitemap.xml');
 const sitemapBuilt = sitemap();
 const sitemapExisting = Fs.readFileSync(sitemapPath, 'utf8');
