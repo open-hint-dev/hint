@@ -115,6 +115,38 @@ Use the CLI when a lifecycle hook needs an exit code:
 
 Plain-CLI agents do not need MCP: `hint apply` maintains the canonical `<hint>` instruction block in `AGENTS.md` and `CLAUDE.md`.
 
+For just-in-time prefetch, use `PreToolUse` for `Edit|Write|MultiEdit`: run `hint "$CLAUDE_FILE_PATH"`, inject stdout into the tool context, and retain the first stderr line as the verdict note. Cursor and Copilot currently have no equivalent portable file-edit hook; call MCP `hint_context` before editing there.
+
+At session end, lint only changed knowledge and print the write-back rule. The command is silent when no `.hint` changed:
+
+```bash
+changed=$(git diff --name-only --diff-filter=ACMR HEAD -- '*.hint')
+test -z "$changed" || hint lint $changed
+test -z "$changed" || printf '%s\n' 'record durable learnings in the most specific .hint; mark origin=agent'
+```
+
+For a plain git pre-commit hook:
+
+```bash
+staged=$(git diff --cached --name-only --diff-filter=ACMR -- '*.hint')
+test -z "$staged" || hint lint $staged
+hint status --exit-code
+```
+
+Equivalent `.pre-commit-config.yaml` entry:
+
+```yaml
+- repo: local
+  hooks:
+    - id: hint-lint
+      name: HINT lint
+      entry: hint lint
+      language: system
+      files: \\.hint$
+```
+
+PR review checklist: `unreviewed blocks: hint status`.
+
 ## CI gates
 
 ```bash

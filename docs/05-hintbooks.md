@@ -68,7 +68,7 @@ Every `*.md` file is one instruction. The file name is the keyword; the content 
 </data_structure>
 ```
 
-Four placeholders are available — `{id}`, `{name}`, `{body}`, and `{children}` (the block's already-rendered child blocks). Every occurrence is replaced.
+Templates can use `{id}`, `{name}`, `{body}`, `{children}` (already-rendered children), `{attrs}`, `{overrides}`, `{overridden_by}`, `{superseded_by}`, `{source}`, and `{included_from}`. `{attrs}` renders sorted `key="value"` pairs. If an older template uses none of the relation placeholders, HINT appends a deterministic plain-Markdown relation line so an override cannot disappear silently. Every occurrence is replaced.
 
 **The HTML-like tags are a convention, not a requirement.** An instruction is a pure markdown file, and the compiler does nothing but placeholder replacement — a template can be plain prose just as well:
 

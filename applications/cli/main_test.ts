@@ -1221,6 +1221,21 @@ describe('cli truthfulness', () => {
                 },
             );
         });
+
+        it('passes --expand through to one-hop graph retrieval', async () => {
+            await withProject(
+                {
+                    'wiki/alpha/_.hint': '# rule Alpha\n\nUnique lexical anchor.\n\n# read wiki/beta\n\nFollow beta.\n',
+                    'wiki/beta/_.hint': '# rule Beta\n\nNeighbor-only content.\n',
+                },
+                async (dir) => {
+                    const parsed = JSON.parse((await runCli(['search', '--expand', 'unique', 'lexical', 'anchor'], dir)).stdout);
+                    expect(parsed.results).toEqual(expect.arrayContaining([
+                        expect.objectContaining({ hint: 'wiki/beta/_.hint', via: 'wiki/alpha' }),
+                    ]));
+                },
+            );
+        });
     });
 
     describe('authoring', () => {

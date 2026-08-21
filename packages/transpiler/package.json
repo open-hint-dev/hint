@@ -15,7 +15,6 @@
     },
     "dependencies": {
         "mdast-util-to-string": "*",
-        "remark-custom-header-id": "*",
         "remark-parse": "*",
         "remark-stringify": "*",
         "unified": "*",

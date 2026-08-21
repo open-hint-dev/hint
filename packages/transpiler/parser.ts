@@ -3,13 +3,12 @@ import Path from 'node:path';
 
 import type { Heading, Root, RootContent } from 'mdast';
 import { toString as mdastToString } from 'mdast-util-to-string';
-import remarkCustomHeaderId from 'remark-custom-header-id';
 import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
 import * as Unified from 'unified';
 
 import { loadConfig } from './config.js';
-import { HINTBOOKS_FOLDER, isPathExists, readFile } from './helper.js';
+import { HINTBOOKS_FOLDER, isPathExists, readFile, toPortablePath } from './helper.js';
 import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
 import { FOLDER_HINT, HINT_EXT, hintTargetName, isFolderHintPath, normalizeHintPaths } from './resolve.js';
 
@@ -28,11 +27,23 @@ export type HintData = {
     level: number;
     keyword: string;
     id: string;
+    attrs: Record<string, string>;
     name: string;
     body: string;
     children: HintData[];
     line?: number;
+    endLine?: number;
+    source?: string;
+    includedFrom?: string;
 };
+
+type LineOrigin = {
+    path: string;
+    line: number;
+    includedFrom?: { path: string; line: number };
+};
+
+type ExpandedContent = { content: string; origins: LineOrigin[] };
 
 function sortHintPaths(normalizedHintPaths: string[]): string[] {
     return normalizedHintPaths.sort((a: string, b: string): number => {
@@ -128,12 +139,11 @@ async function readHintContent(path: string): Promise<string | null> {
     return isFolderHintPath(path) ? '' : null;
 }
 
-async function parseHintContent(path: string, content: string, projectRootPath: string): Promise<Root> {
+async function parseHintContent(path: string, content: string, projectRootPath: string): Promise<{ root: Root; origins: LineOrigin[] }> {
     const expanded = await expandIncludes(path, content, projectRootPath, new Set([path]));
+    const processor = Unified.unified().use(remarkParse);
 
-    const processor = Unified.unified().use(remarkParse).use(remarkCustomHeaderId);
-
-    return (await processor.run(processor.parse(expanded))) as Root;
+    return { root: (await processor.run(processor.parse(expanded.content))) as Root, origins: expanded.origins };
 }
 
 // A line is an `@include` directive when, ignoring surrounding whitespace, it is exactly
@@ -189,12 +199,14 @@ async function resolveIncludePath(target: string, fromFilePath: string, projectR
 // Inlines `@include` targets as-is: the referenced file's raw content replaces the directive line
 // before any markdown parsing, so an included file behaves exactly as if its text were written in
 // place. Includes nest, and a file may not include itself transitively (cycle).
-async function expandIncludes(filePath: string, content: string, projectRootPath: string, seen: Set<string>): Promise<string> {
+async function expandIncludes(filePath: string, content: string, projectRootPath: string, seen: Set<string>): Promise<ExpandedContent> {
     const lines = content.split('\n');
     const out: string[] = [];
+    const origins: LineOrigin[] = [];
     let fence: { marker: string; length: number } | null = null;
 
-    for (const line of lines) {
+    for (const [lineIndex, line] of lines.entries()) {
+        const ownOrigin: LineOrigin = { path: filePath, line: lineIndex + 1 };
         const fenceMatch = /^ {0,3}(`{3,}|~{3,})/.exec(line);
 
         if (fenceMatch) {
@@ -208,11 +220,13 @@ async function expandIncludes(filePath: string, content: string, projectRootPath
             }
 
             out.push(line);
+            origins.push(ownOrigin);
             continue;
         }
 
         if (fence !== null) {
             out.push(line);
+            origins.push(ownOrigin);
             continue;
         }
 
@@ -220,6 +234,7 @@ async function expandIncludes(filePath: string, content: string, projectRootPath
 
         if (target === null) {
             out.push(line);
+            origins.push(ownOrigin);
             continue;
         }
 
@@ -249,39 +264,77 @@ async function expandIncludes(filePath: string, content: string, projectRootPath
             ]),
         );
 
-        out.push(expanded.trim());
+        const rawLines = expanded.content.split('\n');
+        let first = 0;
+        let last = rawLines.length;
+        while (first < last && rawLines[first]!.trim() === '') first += 1;
+        while (last > first && rawLines[last - 1]!.trim() === '') last -= 1;
+        const trimmedLines = rawLines.slice(first, last);
+        out.push(...trimmedLines);
+        for (let index = 0; index < trimmedLines.length; index++) {
+            const real = expanded.origins[first + index] ?? { path: resolved, line: first + index + 1 };
+            origins.push({ path: filePath, line: lineIndex + 1, includedFrom: real.includedFrom ?? { path: real.path, line: real.line } });
+        }
     }
 
-    return out.join('\n');
+    return { content: out.join('\n'), origins };
 }
 
 function stringifyHintBody(nodes: RootContent[]): string {
     return Unified.unified().use(remarkStringify).stringify({ type: 'root', children: nodes }).trim();
 }
 
-function parseHeading(heading: Heading): HintData {
+function parseHeading(heading: Heading, projectRootPath: string, origins: LineOrigin[]): HintData {
+    const raw = mdastToString(heading).trim();
+    const attributeSuffix = /\s+\{#([A-Za-z0-9_.:-]+)((?:\s+[A-Za-z_][\w.-]*=(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s}]+))*)\}$/.exec(raw);
+    const attributes: Record<string, string> = {};
+    let id = '';
+    let headingText = raw;
+
+    if (attributeSuffix) {
+        id = attributeSuffix[1]!;
+        headingText = raw.slice(0, attributeSuffix.index).trimEnd();
+        const tail = attributeSuffix[2] ?? '';
+        const attribute = /([A-Za-z_][\w.-]*)=("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s}]+)/g;
+        for (const match of tail.matchAll(attribute)) {
+            const quoted = match[2]!;
+            attributes[match[1]!] = (quoted.startsWith('"') || quoted.startsWith("'"))
+                ? quoted.slice(1, -1).replace(/\\([\\"'])/g, '$1')
+                : quoted;
+        }
+    }
+
     const [
         first = '',
         ...nameParts
-    ] = mdastToString(heading).trim().split(/\s+/);
+    ] = headingText.split(/\s+/);
 
     // `## result: Invoice` is how a person writes it; the tokenizer would otherwise read the keyword
     // as `result:` and match no instruction at all. Normalizing the trailing colon keeps authoring a
     // matter of writing English rather than of knowing where the split happens.
     const keyword = first.replace(/:+$/, '');
 
+    const origin = heading.position?.start.line ? origins[heading.position.start.line - 1] : undefined;
+    const portableSource = origin ? `${toPortablePath(Path.relative(projectRootPath, origin.path))}:${origin.line}` : undefined;
+    const includedFrom = origin?.includedFrom
+        ? `${toPortablePath(Path.relative(projectRootPath, origin.includedFrom.path))}:${origin.includedFrom.line}`
+        : undefined;
+
     return {
         level: heading.depth,
         keyword,
-        id: (heading.data as { id?: string } | undefined)?.id ?? '',
+        id,
+        attrs: attributes,
         name: nameParts.join(' '),
         body: '',
         children: [],
-        line: heading.position?.start.line,
+        line: origin?.line ?? heading.position?.start.line,
+        source: portableSource,
+        includedFrom,
     };
 }
 
-function parseHeadings(root: Root, parent: HintData): void {
+function parseHeadings(root: Root, parent: HintData, projectRootPath: string, origins: LineOrigin[]): void {
     const stack: HintData[] = [parent];
 
     let current = parent;
@@ -289,6 +342,9 @@ function parseHeadings(root: Root, parent: HintData): void {
 
     const flushBody = (): void => {
         current.body = stringifyHintBody(bodyNodes);
+        const expandedEnd = bodyNodes.at(-1)?.position?.end.line;
+        const endOrigin = expandedEnd ? origins[expandedEnd - 1] : undefined;
+        current.endLine = endOrigin?.line ?? current.line;
         bodyNodes = [];
     };
 
@@ -300,7 +356,7 @@ function parseHeadings(root: Root, parent: HintData): void {
 
         flushBody();
 
-        const hint = parseHeading(node);
+        const hint = parseHeading(node, projectRootPath, origins);
 
         while (stack.length > 1 && stack.at(-1)!.level >= hint.level) {
             stack.pop();
@@ -325,12 +381,14 @@ async function parseHint(projectRootPath: string, hintFile: HintFileData): Promi
         level: 0,
         keyword: isFolderHintPath(hintFile.path) ? RUNNING_FOLDER : RUNNING_FILE,
         id: '',
+        attrs: {},
         name: hintTargetName(projectRootPath, hintFile.path),
         body: '',
         children: [],
     };
 
-    parseHeadings(await parseHintContent(hintFile.path, content, projectRootPath), hint);
+    const parsed = await parseHintContent(hintFile.path, content, projectRootPath);
+    parseHeadings(parsed.root, hint, projectRootPath, parsed.origins);
 
     for (const childFile of hintFile.children) {
         const childHint = await parseHint(projectRootPath, childFile);

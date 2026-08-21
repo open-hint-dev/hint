@@ -13,6 +13,8 @@ export { draftSpec, extractMap } from './extract.js';
 export type { ExtractMap } from './extract.js';
 export { readGitSnapshot, repositoryPath, toGitPath } from './git.js';
 export type { GitSnapshot } from './git.js';
+export { findUnreviewedBlocks } from './provenance.js';
+export type { BlockProvenance } from './provenance.js';
 // Project-file operations remain public for CLI and integration consumers; writes are atomic.
 export { HINTBOOKS_FOLDER, URL_FILE_PREFIX, URL_NPM_PREFIX, isPathExists, isPathFolder, readFile, writeFile } from './helper.js';
 export { RUNNING_AUTHORING, RUNNING_CONFIG, RUNNING_SYSTEM, emitPacks, isEmitPack, loadHintbook, loadHintbooks, resolveHintbookPaths, resolveHintbookVersion, vocabularyBooks } from './hintbook.js';

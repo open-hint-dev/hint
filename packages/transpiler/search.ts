@@ -2,6 +2,7 @@ import Path from 'node:path';
 
 import type { HintbookData } from './hintbook.js';
 import type { HintData } from './parser.js';
+import { collectReferenceEdges } from './closure.js';
 import { listHintFiles, parseHintFile } from './parser.js';
 
 // A ranked hit: the knowledge closest to the query, what it governs, and how close.
@@ -10,11 +11,14 @@ export type SearchResult = {
     target: string; // the path this knowledge governs (`src/rpc/server.ts`, or a folder, or `.`)
     score: number; // BM25F relevance score; higher is closer. Only positive scores are returned.
     weak: boolean; // matched under half the query's terms — probably not what you meant
+    line?: number; // heading line of the first declaration in the matched spec
+    via?: string; // top lexical hit through which this one-hop graph result was reached
 };
 
 export type SearchOptions = {
     limit?: number;
     hintbooks?: HintbookData[];
+    expand?: boolean;
 };
 
 // Scores are corpus-relative, so a high one says nothing about whether a hit is on topic — the reason a
@@ -316,7 +320,18 @@ type Document = {
     target: string;
     zones: Record<Zone, string[]>;
     length: Record<Zone, number>;
+    line?: number;
+    root: HintData;
 };
+
+function firstDeclarationLine(hint: HintData): number | undefined {
+    for (const child of hint.children) {
+        if (child.line) return child.line;
+        const nested = firstDeclarationLine(child);
+        if (nested) return nested;
+    }
+    return undefined;
+}
 
 function flattenDeclarations(hint: HintData): { names: string; bodies: string } {
     const names: string[] = [];
@@ -353,6 +368,8 @@ function buildDocument(hintPath: string, hint: HintData, synonyms: Map<string, s
         target: hint.name,
         zones,
         length: { path: zones.path.length, name: zones.name.length, body: zones.body.length },
+        line: firstDeclarationLine(hint),
+        root: hint,
     };
 }
 
@@ -431,18 +448,21 @@ export async function searchHints(projectRootPath: string, query: string, option
     }
     const synonyms = buildSynonymIndex(groups);
 
-    for (const hintPath of hintPaths) {
-        // A single malformed spec (bad include, cycle) must not sink the whole search — it is simply
-        // left out of the index. Compile/verify remain the place where such errors are surfaced.
-        try {
-            const hint = await parseHintFile(projectRootPath, Path.resolve(projectRootPath, hintPath));
-
-            if (hint) {
-                documents.push(buildDocument(hintPath, hint, synonyms));
+    // Bound read concurrency so a large repository does not serialize thousands of small file reads,
+    // while avoiding an unbounded Promise.all that can exhaust descriptors on hosted runners.
+    for (let start = 0; start < hintPaths.length; start += 128) {
+        const batch = hintPaths.slice(start, start + 128);
+        const parsed = await Promise.all(batch.map(async (hintPath) => {
+            // A single malformed spec (bad include, cycle) must not sink the whole search — it is simply
+            // left out of the index. Compile/verify remain the place where such errors are surfaced.
+            try {
+                const hint = await parseHintFile(projectRootPath, Path.resolve(projectRootPath, hintPath));
+                return hint ? buildDocument(hintPath, hint, synonyms) : null;
+            } catch {
+                return null;
             }
-        } catch {
-            continue;
-        }
+        }));
+        documents.push(...parsed.filter((document): document is Document => document !== null));
     }
 
     if (documents.length === 0) {
@@ -543,6 +563,7 @@ export async function searchHints(projectRootPath: string, query: string, option
                 // evidence that this repository does not cover the intent — which is exactly the case a
                 // corpus-relative score cannot express.
                 weak: isWeakMatch(matchedTerms, queryTerms.length),
+                line: document.line,
             });
         }
     }
@@ -550,6 +571,44 @@ export async function searchHints(projectRootPath: string, query: string, option
     results.sort((a, b) => b.score - a.score || (a.hint < b.hint ? -1 : a.hint > b.hint ? 1 : 0));
 
     const limit = options.limit ?? 20;
+    const lexical = limit >= 0 ? results.slice(0, limit) : results;
 
-    return limit >= 0 ? results.slice(0, limit) : results;
+    if (!options.expand || lexical.length === 0) return lexical;
+
+    const documentsByHint = new Map(documents.map((document) => [document.hint, document]));
+    const idOwners = new Map<string, string>();
+    const relationEdges: { from: string; to: string }[] = [];
+    const walkRelations = (node: HintData, hint: string): void => {
+        if (node.id) idOwners.set(node.id, hint);
+        for (const target of [node.attrs?.overrides, node.attrs?.supersedes]) if (target) relationEdges.push({ from: hint, to: target });
+        for (const child of node.children) walkRelations(child, hint);
+    };
+    for (const document of documents) walkRelations(document.root, document.hint);
+
+    const expanded = [...lexical];
+    const present = new Set(lexical.map((result) => result.hint));
+    for (const hit of lexical) {
+        const document = documentsByHint.get(hit.hint);
+        if (!document) continue;
+        const refs = await collectReferenceEdges(projectRootPath, [document.root]);
+        const reached = new Set<string>();
+        for (const edge of refs) if (edge.to) reached.add(Path.relative(projectRootPath, edge.to).replaceAll('\\', '/'));
+        for (const relation of relationEdges) {
+            if (relation.from === hit.hint) {
+                const owner = idOwners.get(relation.to);
+                if (owner) reached.add(owner);
+            }
+            const owner = idOwners.get(relation.to);
+            if (owner === hit.hint) reached.add(relation.from);
+        }
+        for (const hint of [...reached].sort()) {
+            if (present.has(hint)) continue;
+            const reachedDocument = documentsByHint.get(hint);
+            if (!reachedDocument) continue;
+            present.add(hint);
+            expanded.push({ hint, target: reachedDocument.target, score: Math.round(hit.score * 0.7 * 1000) / 1000, weak: hit.weak, line: reachedDocument.line, via: hit.target });
+        }
+    }
+    expanded.sort((a, b) => b.score - a.score || (a.hint < b.hint ? -1 : a.hint > b.hint ? 1 : 0));
+    return limit >= 0 ? expanded.slice(0, limit) : expanded;
 }

@@ -18,9 +18,9 @@ async function contextFor(paths: string[]): Promise<string> {
 
 // Synthetic hint nodes, so the elision branches can be exercised precisely without carrying a fixture
 // for every shape. `keyword: 'data'` maps to the fixture's data_structure template.
-const folder = (name: string, children: HintData[], body = ''): HintData => ({ level: 0, keyword: RUNNING_FOLDER, id: '', name, body, children });
-const file = (name: string, children: HintData[] = [], body = ''): HintData => ({ level: 0, keyword: RUNNING_FILE, id: '', name, body, children });
-const block = (keyword: string, name: string, body: string): HintData => ({ level: 1, keyword, id: '', name, body, children: [] });
+const folder = (name: string, children: HintData[], body = ''): HintData => ({ level: 0, keyword: RUNNING_FOLDER, id: '', attrs: {}, name, body, children });
+const file = (name: string, children: HintData[] = [], body = ''): HintData => ({ level: 0, keyword: RUNNING_FILE, id: '', attrs: {}, name, body, children });
+const block = (keyword: string, name: string, body: string): HintData => ({ level: 1, keyword, id: '', attrs: {}, name, body, children: [] });
 
 describe('compiler', () => {
     describe('renderContext', () => {
@@ -118,6 +118,32 @@ describe('compiler', () => {
 
             expect(output).toContain('custom keyword body passes through unchanged');
             expect(output).not.toContain('customkeyword');
+        });
+
+        it('renders relations through a deterministic fallback for older templates', () => {
+            const base = block('rule', 'Typing', 'Use strict typing.');
+            base.id = 'strict_types';
+            const legacy = block('rule', 'Typing', 'Legacy input stays permissive.');
+            legacy.id = 'legacy_types';
+            legacy.attrs = { overrides: 'strict_types' };
+            const output = renderContext([folder('.', [base, folder('legacy', [legacy])])], [hintbook]);
+
+            expect(output).toContain('Overrides {#strict_types} for this scope.');
+            expect(output).toContain('Overridden in this scope by {#legacy_types}.');
+        });
+
+        it('exposes attributes and source to relation-aware templates', () => {
+            const aware = { ...hintbook, instructions: hintbook.instructions.map((instruction) => instruction.name === 'rule'
+                ? { ...instruction, content: '<rule id="{id}" {attrs} source="{source}">{body}</rule>' }
+                : instruction) };
+            const rule = block('rule', 'Legacy', 'Exception.');
+            rule.id = 'legacy';
+            rule.attrs = { overrides: 'base', origin: 'agent' };
+            rule.source = 'legacy/_.hint:4';
+            const output = renderContext([rule], [aware]);
+            expect(output).toContain('origin="agent" overrides="base"');
+            expect(output).toContain('source="legacy/_.hint:4"');
+            expect(output).not.toContain('Overrides {#base}');
         });
 
         it('emits no persona, glossary, or reporting framing', async () => {

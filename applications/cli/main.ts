@@ -100,7 +100,8 @@ export async function main(): Promise<void> {
         )
         .argument('<query...>', 'search terms, e.g. service account authentication')
         .option('--limit <n>', 'maximum number of results (use a negative value for no limit)', '20')
-        .action(async (query: string[], options: { limit: string }) => {
+        .option('--expand', 'append one-hop reference and relation neighbors of the top lexical hits', false)
+        .action(async (query: string[], options: { limit: string; expand: boolean }) => {
             const limit = Number(options.limit);
 
             if (!Number.isInteger(limit)) {
@@ -109,7 +110,7 @@ export async function main(): Promise<void> {
                 return;
             }
 
-            await SearchCommand.new(query.join(' '), limit).execute();
+            await SearchCommand.new(query.join(' '), limit, options.expand).execute();
         });
 
     program
@@ -188,6 +189,7 @@ export async function main(): Promise<void> {
         )
         .option('--json', 'print the inventory as JSON instead of a table', false)
         .option('--exit-code', 'exit 1 when anything needs attention, for CI', false)
+        .option('--strict-curation', 'exit 1 when agent-authored blocks await human review', false)
         .action(async (options: StatusOptions) => {
             await StatusCommand.new(options).execute();
         });

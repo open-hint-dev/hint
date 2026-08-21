@@ -69,9 +69,13 @@ export class CompileCommand implements ICommand {
         }
 
         let hints = await Transpiler.parseHintFiles(projectRootPath, hintPaths);
-        const vocabularyFindings = (await Transpiler.lintHintFiles(projectRootPath, resolution.hintPaths, hintbooks)).filter(
-            (finding) => finding.kind === 'vocab' && finding.severity === 'finding',
-        );
+        const unreviewed = await Transpiler.findUnreviewedBlocks(projectRootPath, hints, config?.curation?.agent_authors);
+        if (unreviewed.length > 0) {
+            process.stderr.write(`hint: ${unreviewed.length} of ${countKnowledgeBlocks(hints)} blocks here are agent-authored and unreviewed.\n`);
+        }
+        const vocabularyFindings = (
+            await Transpiler.lintHintFiles(projectRootPath, resolution.hintPaths, hintbooks, { reconcile: false, duplicates: false })
+        ).filter((finding) => finding.kind === 'vocab' && finding.severity === 'finding');
 
         for (const finding of vocabularyFindings.slice(0, 3)) {
             process.stderr.write(`hint: ${Transpiler.formatLintFinding(finding)}\n`);
@@ -152,6 +156,18 @@ export class CompileCommand implements ICommand {
             changes: Transpiler.formatDrift(Transpiler.computeDrift(hints, lock, hintbooks, targetHashes)),
         };
     }
+}
+
+function countKnowledgeBlocks(hints: Transpiler.HintData[]): number {
+    let count = 0;
+    const walk = (nodes: Transpiler.HintData[]): void => {
+        for (const node of nodes) {
+            if (!node.keyword.startsWith('__')) count += 1;
+            walk(node.children);
+        }
+    };
+    walk(hints);
+    return count;
 }
 
 // A run that pulls in a large slice of the tree is usually an accidental whole-repo render (a broad

@@ -23,6 +23,7 @@ books:
 | `name`, `description` | Project identity, available to tooling.                                                                                                                            |
 | `books`               | Hintbooks providing the keyword vocabulary. `file://` paths resolve relative to the project root; `npm://` names resolve through local then global `node_modules`. |
 | `ignore`              | Glob patterns excluded from project-wide inventory, status, search, and lint walks.                                                                                 |
+| `curation.agent_authors` | Optional git-author globs (for example `*bot*`) used to identify agent-authored blocks that await human review.                                                    |
 
 Two kinds of specification files live in the tree:
 
@@ -51,16 +52,19 @@ A path outside the project root, or one that names nothing in the repository, is
 Every markdown heading opens a typed block:
 
 ```markdown
-# entity PaymentData {#payment_data}
+# entity PaymentData {#payment_data origin=agent}
 
 this entity describes the payment data contract
 ```
 
-A heading has three parts:
+A heading has four parts:
 
 - **Keyword** — the first word (`entity`). Matched against the instruction names and synonyms of your hintbooks; case matters, so write keywords the way the hintbook declares them.
 - **Name** — everything after the first word (`PaymentData`). May be empty.
 - **Id** — an optional `{#stable_id}` suffix. Ids give blocks a stable handle that survives renames; hintbook templates typically render them as `id="..."` attributes so other blocks and agents can reference them.
+- **Attributes** — optional `key=value` pairs after the id, with quotes for spaces: `{#legacy overrides=strict note="old client"}`. Unknown attributes are preserved. `overrides=<id>` replaces an ancestor-scope block only in the narrower scope; sibling/deeper targets are invalid. `supersedes=<id>` says the target is obsolete everywhere and lint requires the old block to be removed. `origin=agent` marks knowledge awaiting human review.
+
+Every rendered block carries its portable heading location (`source`, and `included_from` when an `@include` supplied it). Relations never hide either side: the narrower exception and the rule it overrides are both visible. `hint lint` rejects missing, same-scope, cyclic, or lingering supersession relations and advises when matching inherited blocks may conflict without an explicit override.
 
 ### Body
 

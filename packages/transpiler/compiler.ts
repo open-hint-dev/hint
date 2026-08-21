@@ -3,9 +3,15 @@ import type { HintData } from './parser.js';
 import { interpolate } from './helper.js';
 import {
     PLACEHOLDER_BODY,
+    PLACEHOLDER_ATTRS,
     PLACEHOLDER_CHILDREN,
     PLACEHOLDER_ID,
+    PLACEHOLDER_INCLUDED_FROM,
     PLACEHOLDER_NAME,
+    PLACEHOLDER_OVERRIDDEN_BY,
+    PLACEHOLDER_OVERRIDES,
+    PLACEHOLDER_SOURCE,
+    PLACEHOLDER_SUPERSEDED_BY,
     RUNNING_CHANGES,
     RUNNING_FILE,
     RUNNING_FOLDER,
@@ -59,7 +65,38 @@ export function findInstruction(hintbooks: HintbookData[], keyword: string): Ins
     return null;
 }
 
-function renderHint(hint: HintData, hintbooks: HintbookData[]): string {
+type RelationIndex = {
+    overriddenBy: Map<string, string[]>;
+    supersededBy: Map<string, string[]>;
+};
+
+function relationIndex(hints: HintData[]): RelationIndex {
+    const overriddenBy = new Map<string, string[]>();
+    const supersededBy = new Map<string, string[]>();
+    const walk = (nodes: HintData[]): void => {
+        for (const node of nodes) {
+            const source = node.id || node.source || node.name;
+            for (const [target, index] of [
+                [node.attrs?.overrides, overriddenBy],
+                [node.attrs?.supersedes, supersededBy],
+            ] as const) {
+                if (!target) continue;
+                const values = index.get(target) ?? [];
+                if (!values.includes(source)) values.push(source);
+                index.set(target, values);
+            }
+            walk(node.children);
+        }
+    };
+    walk(hints);
+    return { overriddenBy, supersededBy };
+}
+
+function escapeAttribute(value: string): string {
+    return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+function renderHint(hint: HintData, hintbooks: HintbookData[], relations: RelationIndex): string {
     const instruction = findInstruction(hintbooks, hint.keyword);
 
     if (instruction?.metadata?.exclude) {
@@ -67,7 +104,7 @@ function renderHint(hint: HintData, hintbooks: HintbookData[]): string {
     }
 
     const children = hint.children
-        .map((child) => renderHint(child, hintbooks))
+        .map((child) => renderHint(child, hintbooks, relations))
         .filter(Boolean)
         .join('\n\n');
 
@@ -87,11 +124,35 @@ function renderHint(hint: HintData, hintbooks: HintbookData[]): string {
             .join('\n\n');
     }
 
+    const attrs = Object.entries(hint.attrs ?? {}).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
+        .map(([key, value]) => `${key}="${escapeAttribute(value)}"`).join(' ');
+    const overriddenBy = hint.id ? relations.overriddenBy.get(hint.id) ?? [] : [];
+    const supersededBy = hint.id ? relations.supersededBy.get(hint.id) ?? [] : [];
+    let body = hint.body;
+    const supportsRelations = [PLACEHOLDER_ATTRS, PLACEHOLDER_OVERRIDES, PLACEHOLDER_OVERRIDDEN_BY, PLACEHOLDER_SUPERSEDED_BY]
+        .some((placeholder) => instruction.content.includes(`{${placeholder}}`));
+
+    if (!supportsRelations) {
+        const fallback = [
+            hint.attrs?.overrides ? `Overrides {#${hint.attrs.overrides}} for this scope.` : '',
+            hint.attrs?.supersedes ? `Supersedes {#${hint.attrs.supersedes}}.` : '',
+            ...overriddenBy.map((source) => `Overridden in this scope by {#${source}}.`),
+            ...supersededBy.map((source) => `Superseded by {#${source}}.`),
+        ].filter(Boolean).join('\n');
+        body = [body, fallback].filter(Boolean).join('\n\n');
+    }
+
     return interpolate(instruction.content, {
         [PLACEHOLDER_ID]: hint.id,
         [PLACEHOLDER_NAME]: hint.name,
-        [PLACEHOLDER_BODY]: hint.body,
+        [PLACEHOLDER_BODY]: body,
         [PLACEHOLDER_CHILDREN]: children,
+        [PLACEHOLDER_ATTRS]: attrs,
+        [PLACEHOLDER_OVERRIDES]: hint.attrs?.overrides ?? '',
+        [PLACEHOLDER_OVERRIDDEN_BY]: overriddenBy.join(' '),
+        [PLACEHOLDER_SUPERSEDED_BY]: supersededBy.join(' '),
+        [PLACEHOLDER_SOURCE]: hint.source ?? '',
+        [PLACEHOLDER_INCLUDED_FROM]: hint.includedFrom ?? '',
     }).trim();
 }
 
@@ -105,9 +166,10 @@ function tidy(text: string): string {
 // workflow instructions, no reporting format — so the cost of asking HINT what applies to a path is
 // proportional to how much actually applies. `renderPrompt` wraps this when framing is wanted.
 export function renderContext(hints: HintData[], hintbooks: HintbookData[]): string {
+    const relations = relationIndex(hints);
     return tidy(
         hints
-            .map((hint) => renderHint(hint, hintbooks))
+            .map((hint) => renderHint(hint, hintbooks, relations))
             .filter(Boolean)
             .join('\n\n'),
     );

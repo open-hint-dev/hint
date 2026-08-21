@@ -1,9 +1,11 @@
+import * as FsPromises from 'node:fs/promises';
+import * as Os from 'node:os';
 import * as Path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { HintData } from './parser.js';
 import { RUNNING_FILE, RUNNING_FOLDER } from './hintbook.js';
-import { findHints, parseHints } from './parser.js';
+import { findHints, parseHintFile, parseHints } from './parser.js';
 
 const here = Path.dirname(fileURLToPath(import.meta.url));
 const projectRootPath = Path.resolve(here, '../../testdata/project');
@@ -112,6 +114,31 @@ describe('parser', () => {
     });
 
     describe('parseHints', () => {
+        it('parses heading attributes and degrades malformed suffixes to ordinary name text', async () => {
+            const root = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-attrs-'));
+            try {
+                await FsPromises.writeFile(Path.join(root, 'valid.hint'), '# rule Legacy {#legacy overrides=base note="two words"}\n');
+                await FsPromises.writeFile(Path.join(root, 'malformed.hint'), '# rule Legacy {#legacy broken}\n');
+                const valid = (await parseHintFile(root, Path.join(root, 'valid.hint')))!;
+                const malformed = (await parseHintFile(root, Path.join(root, 'malformed.hint')))!;
+                expect(valid.children[0]).toMatchObject({ id: 'legacy', name: 'Legacy', attrs: { overrides: 'base', note: 'two words' }, source: 'valid.hint:1' });
+                expect(malformed.children[0]).toMatchObject({ id: '', name: 'Legacy {#legacy broken}', attrs: {} });
+            } finally {
+                await FsPromises.rm(root, { recursive: true, force: true });
+            }
+        });
+
+        it('reports the include directive as source and the real heading as includedFrom', async () => {
+            const root = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-source-'));
+            try {
+                await FsPromises.writeFile(Path.join(root, 'fragment.hint'), 'preamble\r\n# rule Included {#included}\r\n');
+                await FsPromises.writeFile(Path.join(root, 'main.hint'), 'before\n@include fragment.hint\n');
+                const parsed = (await parseHintFile(root, Path.join(root, 'main.hint')))!;
+                expect(parsed.children[0]).toMatchObject({ line: 2, source: 'main.hint:2', includedFrom: 'fragment.hint:2' });
+            } finally {
+                await FsPromises.rm(root, { recursive: true, force: true });
+            }
+        });
         it('wraps files and folders into running hints', async () => {
             const hints = await parseHints(projectRootPath, ['src/payment.ts.hint']);
 

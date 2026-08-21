@@ -1,4 +1,10 @@
-# Migrating to 1.4
+# Migrating to 1.5
+
+## Additive changes in 1.5
+
+Heading suffixes accept attributes after the stable id. `overrides`, `supersedes`, and `origin=agent` add deterministic reconcile and curation semantics; unknown attributes remain forward-compatible. Rendered blocks can expose source locations, and search results include heading lines. `hint search --expand` follows one graph hop. `hint status --strict-curation` opts into gating agent-authored knowledge. The default read exit codes and attribute-free syntax remain compatible.
+
+The benchmark harness (`make bench`, `make eval`) and published engineering numbers are new. Release 1.5 also removes the unused heading-id parser dependency; no hintbook or spec migration is required.
 
 ## Additive changes in 1.4
 
