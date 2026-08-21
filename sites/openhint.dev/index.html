@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html lang="en" data-accent-host>
 <head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HINT — durable context for every AI assistant</title>
+<meta name="description" content="Keep durable project knowledge beside the work it governs. HINT gives every AI assistant the relevant rules before it starts." />
+<link rel="canonical" href="https://openhint.dev/" />
+<meta property="og:title" content="HINT — durable context for every AI assistant" />
+<meta property="og:description" content="Keep durable project knowledge beside the work it governs and give assistants only the rules that apply." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://openhint.dev/" />
+<meta property="og:image" content="https://openhint.dev/assets/og/delivery.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="alternate" type="text/plain" href="llms.txt" title="LLM-readable site summary" />
+<link rel="icon" type="image/png" href="favicon.png" />
+<link rel="apple-touch-icon" href="favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" />
+<link rel="stylesheet" href="styles.css?v=1.7.0-site-quality" />
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"SoftwareApplication","name":"HINT","applicationCategory":"DeveloperApplication","operatingSystem":"Cross-platform","url":"https://openhint.dev/","description":"Durable project knowledge delivered to AI assistants when it applies.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is HINT?","acceptedAnswer":{"@type":"Answer","text":"HINT keeps durable project knowledge in Markdown files beside the work it governs and returns the relevant part on demand."}},{"@type":"Question","name":"Does HINT call an AI model?","acceptedAnswer":{"@type":"Answer","text":"No. Retrieval, compilation, verification and emission are deterministic local operations."}},{"@type":"Question","name":"Which assistants work with HINT?","acceptedAnswer":{"@type":"Answer","text":"Any assistant that can run commands or connect through MCP, including Claude Code, Cursor, Codex, GitHub Copilot and OpenCode."}},{"@type":"Question","name":"Is HINT only for software?","acceptedAnswer":{"@type":"Answer","text":"No. Install a profession hintbook to use the same engine for legal, audit, product, documentation and other work."}}]}]</script>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-9KTEZLFTRE"></script>
 <script>
@@ -10,14 +29,6 @@
 
   gtag('config', 'G-9KTEZLFTRE');
 </script>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HINT — Spec-as-Source for any repository</title>
-<meta name="description" content="Spec-as-Source without the model in the loop. Your intent lives in Markdown-native .hint files scoped by path and inherited from the root down; HINT returns the part of the spec that governs what you are about to touch, emits what the spec fully determines, and reports when the work has drifted from it. Agent-neutral, deterministic, and not only for code." />
-<link rel="canonical" href="https://openhint.dev" />
-<link rel="icon" type="image/png" href="favicon.png" />
-<link rel="apple-touch-icon" href="favicon.png" />
-<link rel="stylesheet" href="styles.css?v=1.6.1-code-contrast" />
 <style>
 /* ---------- Landing-specific ---------- */
 .hero { padding-top: clamp(48px, 6vw, 88px); padding-bottom: clamp(56px, 7vw, 96px); position: relative; overflow: hidden; }
@@ -96,7 +107,7 @@
 .proftile__ico { width: 30px; height: 30px; color: var(--ink); }
 .proftile--soon { background: transparent; border-style: dashed; }
 .proftile--soon .proftile__ico { color: var(--ink-3); }
-.proftile h4 { font-size: 1.05rem; }
+.proftile h3, .proftile h4 { font-size: 1.05rem; }
 .proftile p { font-size: 0.85rem; color: var(--ink-3); margin-top: -6px; }
 .proftile__go { margin-top: auto; font-family: var(--font-mono); font-size: 0.76rem; color: var(--accent); display: inline-flex; align-items: center; gap: 6px; }
 .proftile__soon { margin-top: auto; font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-3); letter-spacing: 0.04em; }
@@ -205,46 +216,29 @@
 </style>
 </head>
 <body>
+<a class="skip-link" href="#content">Skip to content</a>
 
 <!-- NAV -->
-<nav class="nav">
+<!-- shared-nav:begin -->
+<nav class="nav" aria-label="Main navigation">
   <div class="wrap nav__inner">
-    <a class="logo" href="index.html" aria-label="hint — openhint.dev home">
-      <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
-    </a>
+    <a class="logo" href="index.html" aria-label="HINT home"><img class="logo__img" src="assets/logo-full.svg" alt="" width="147" height="46" /></a>
     <div class="nav__links">
       <a class="nav__link" href="index.html#how">How it works</a>
-      <a class="nav__link" href="index.html#emit">Emit</a>
-      <a class="nav__link" href="index.html#verify">Verify</a>
-      <a class="nav__link" href="for-software-engineers.html">For Engineers</a>
-      <a class="nav__link" href="for-lawyers.html">For Lawyers</a>
-      <a class="nav__link" href="for-knowledge-librarians.html">For Librarians</a>
+      <a class="nav__link" href="professions.html">Professions</a>
       <a class="nav__link" href="https://github.com/open-hint-dev/hint/tree/main/docs" target="_blank" rel="noopener">Docs</a>
-      <a class="nav__link" href="index.html#quickstart">Quick start</a>
+      <a class="nav__link" href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn btn--primary nav__primary" href="index.html#quickstart">Get started</a>
     </div>
-    <div class="nav__cta">
-      <a class="nav__github" href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.7c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
-        <span>GitHub</span>
-      </a>
-      <a class="btn btn--primary" href="index.html#quickstart">Get started</a>
-    </div>
-    <button class="nav__menu-btn" aria-label="Menu" aria-expanded="false">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 5h16M2 10h16M2 15h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    </button>
+    <button class="nav__menu-btn" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open navigation"><span></span><span></span><span></span></button>
   </div>
 </nav>
-<div class="mobile-menu">
-  <a href="index.html#how">How it works</a>
-  <a href="index.html#emit">Emit</a>
-  <a href="index.html#verify">Verify</a>
-  <a href="for-software-engineers.html">For Engineers</a>
-  <a href="for-lawyers.html">For Lawyers</a>
-  <a href="for-knowledge-librarians.html">For Librarians</a>
-  <a href="https://github.com/open-hint-dev/hint/tree/main/docs" target="_blank" rel="noopener">Docs ↗</a>
-  <a href="index.html#quickstart">Quick start</a>
-  <a href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">GitHub ↗</a>
+<div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+  <a href="index.html#how">How it works</a><a href="professions.html">Professions</a><a href="https://github.com/open-hint-dev/hint/tree/main/docs">Docs</a><a href="https://github.com/open-hint-dev/hint">GitHub</a><a href="index.html#quickstart">Get started</a>
 </div>
+<!-- shared-nav:end -->
+<noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+<main id="content">
 
 <!-- HERO -->
 <header class="hero">
@@ -252,7 +246,7 @@
     <div class="hero__text">
       <div class="eyebrow hero__kicker">Spec-as-Source&nbsp;· Scoped&nbsp;· Agent-neutral&nbsp;· Any profession</div>
       <h1 class="display">The spec is<br />the <span class="em">source</span>.</h1>
-      <p class="lede">Your intent lives in Markdown files next to what they govern, and that is the artifact you maintain. HINT returns the part of the spec that applies to the path at hand, tells you when the work has drifted away from it, and — where the spec is machine-derivable — writes the artifact itself. No model call, no network, no vendor.</p>
+      <p class="lede">Keep durable intent beside the work it governs. HINT gives every agent the relevant rules, reports drift, and writes what the spec fully determines.</p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="#quickstart">
           Quick start
@@ -264,19 +258,20 @@
         <span><span class="pr">$</span> npx -y @openhint/cli bootstrap</span>
         <button data-copy data-copy-text="Run `npx -y @openhint/cli bootstrap` from the repository root and follow exactly what it prints.">Copy prompt</button>
       </div>
-      <p class="hero__note" style="margin-top:16px;">Give that line to Claude Code, Codex, Cursor, Copilot, or your own agent. It configures the same HINT CLI and MCP server — no second package.</p>
+      <div class="hero-human" style="margin-top:14px;"><button class="btn btn--ghost" type="button" data-copy data-copy-text="Set up HINT in this folder. Run `npx -y @openhint/cli bootstrap` and follow exactly what it prints. When you are done, show me what you created and explain how I should write my first `.hint` file. If you cannot run commands, say so and show me the manual steps from https://openhint.dev/#quickstart." aria-label="Copy the setup message for your AI assistant">Not technical? Copy a message for your AI</button><span class="copy-status" aria-live="polite"></span></div>
+      <p class="hero__note" style="margin-top:16px;">Works with Claude Code, Cursor, Codex, GitHub Copilot, OpenCode, or your own agent.</p>
     </div>
 
     <!-- DEMO -->
     <div class="demo" data-switcher>
       <div class="demo__switch" role="tablist" aria-label="Choose a profession">
-        <button data-prof="se" data-accent="" class="is-active"><span class="dot-ok"></span>Software</button>
-        <button data-prof="law" data-accent="law"><span class="dot-ok"></span>Law</button>
-        <button data-prof="librarian" data-accent="librarian"><span class="dot-ok"></span>Knowledge</button>
+        <button id="profession-tab-se" role="tab" aria-selected="true" aria-controls="profession-panel-se" data-prof="se" data-accent="" class="is-active"><span class="dot-ok"></span>Software</button>
+        <button id="profession-tab-law" role="tab" aria-selected="false" aria-controls="profession-panel-law" tabindex="-1" data-prof="law" data-accent="law-assurance"><span class="dot-ok"></span>Law</button>
+        <button id="profession-tab-librarian" role="tab" aria-selected="false" aria-controls="profession-panel-librarian" tabindex="-1" data-prof="librarian" data-accent="analysis-knowledge"><span class="dot-ok"></span>Knowledge</button>
       </div>
 
       <!-- SE panel -->
-      <div data-prof-panel="se" class="demo__stack">
+      <div id="profession-panel-se" role="tabpanel" aria-labelledby="profession-tab-se" data-prof-panel="se" class="demo__stack">
         <div class="code-wrap">
           <div class="code demo__src">
             <div class="code__bar">
@@ -300,7 +295,7 @@
 
 <span class="t-h">## </span><span class="t-kw">bad</span> <span class="t-nm">SilentDefaults</span>
 
-<span class="t-bd">Never coerce an invalid Invoice valid.</span></div>
+<span class="t-bd">Never make an invalid Invoice appear valid.</span></div>
           </div>
         </div>
         <div class="demo__connector">
@@ -328,7 +323,7 @@
 <span class="t-kw2">export function</span> <span class="t-nm">validateInvoice</span>(invoice: <span class="t-nm">Invoice</span>): <span class="t-nm">Invoice</span> {
     <span class="t-mut">// Honor:</span>
     <span class="t-mut">//   bad SilentDefaults:</span>
-    <span class="t-mut">//     Never coerce an invalid Invoice valid.</span>
+    <span class="t-mut">//     Never make an invalid Invoice appear valid.</span>
     <span class="t-hole">// hint:hole(func validateInvoice:body) — your code; kept across re-emits.</span>
     <span class="t-bd">throw new Error("Not implemented.");</span>
     <span class="t-hole">// hint:end of hole.</span>
@@ -339,7 +334,7 @@
       </div>
 
       <!-- LAW panel -->
-      <div data-prof-panel="law" class="demo__stack" hidden>
+      <div id="profession-panel-law" role="tabpanel" aria-labelledby="profession-tab-law" data-prof-panel="law" class="demo__stack" hidden>
         <div class="code-wrap">
           <div class="code demo__src">
             <div class="code__bar">
@@ -391,7 +386,7 @@
       </div>
 
       <!-- LIBRARIAN panel -->
-      <div data-prof-panel="librarian" class="demo__stack" hidden>
+      <div id="profession-panel-librarian" role="tabpanel" aria-labelledby="profession-tab-librarian" data-prof-panel="librarian" class="demo__stack" hidden>
         <div class="code-wrap">
           <div class="code demo__src">
             <div class="code__bar">
@@ -451,10 +446,9 @@
   <div class="wrap">
     <div class="eyebrow" id="numbers-title" style="margin-bottom:22px;">Measured · Apple M2 · Node 26.6.0 · 2026-08-21</div>
     <div class="numbers">
-      <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>185.04 ms</strong><span>cold read p50 · 10,000 hints</span></a>
-      <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>3.25×</strong><span>smaller median task context · demo-pied-piper</span></a>
-      <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>1.000 P@1</strong><span>65-query retrieval fixture</span></a>
-      <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>4 git processes</strong><span>status · 10,000 hints</span></a>
+      <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>185 ms</strong><span>to answer across 10,000 files</span></a>
+      <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>3.25× less</strong><span>context per measured task</span></a>
+      <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>100%</strong><span>of 65 test queries found the right spec</span></a>
       <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>333,144 bytes</strong><span>packed CLI · 0 native modules</span></a>
     </div>
   </div>
@@ -677,7 +671,7 @@
     <div class="callout reveal">
       <svg viewBox="0 0 24 24" fill="none"><path d="M12 3l8 4v6c0 4.4-3.4 7.3-8 8-4.6-.7-8-3.6-8-8V7l8-4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <div>
-        <h4>It never reports a check it did not run.</h4>
+        <h3>It never reports a check it did not run.</h3>
         <p>Having no adapter is a supported setup and passes in silence. An adapter that <em>was</em> configured and could not answer — a missing toolchain, a version that moved, a file that will not parse — is named on stderr with its own reason, and the summary says it fell back to the weaker check. The alternative is a project that believes it has conformance checking while nothing is being checked.</p>
       </div>
     </div>
@@ -728,37 +722,20 @@
 
     <!-- professions:begin -->
     <div class="profgrid reveal" style="margin-bottom:14px;">
-      <a class="proftile proftile--live" data-profession="software-engineers" data-status="live" href="for-software-engineers.html"><div><h4>Software Engineers</h4><p>Architecture, contracts, data models, and anti-patterns</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="lawyers" data-status="live" href="for-lawyers.html"><div><h4>Lawyers</h4><p>Matters, clauses, obligations, sources, and red lines</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="knowledge-librarians" data-status="live" href="for-knowledge-librarians.html"><div><h4>Knowledge Librarians</h4><p>Sources, claims, decisions, open questions, and linked topics</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="business-analysts" data-status="live" href="for-business-analysts.html"><div><h4>Business Analysts</h4><p>Requirements, use cases, business rules, and traceability</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="product-managers" data-status="live" href="for-product-managers.html"><div><h4>Product Managers</h4><p>PRDs, stories, criteria, goals, and sourced metrics</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="qa-engineers" data-status="live" href="for-qa-engineers.html"><div><h4>QA Engineers</h4><p>Test plans, negative paths, coverage, and deterministic Gherkin</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="technical-writers" data-status="live" href="for-technical-writers.html"><div><h4>Technical Writers</h4><p>Doc types, terminology, required sections, and runnable samples</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="compliance-and-risk" data-status="live" href="for-compliance-and-risk.html"><div><h4>Compliance &amp; Risk</h4><p>Frameworks, controls, evidence, exceptions, and escalation</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="auditors" data-status="live" href="for-auditors.html"><div><h4>Auditors</h4><p>Engagement scope, procedures, evidence, findings, and severity</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="data-analysts" data-status="live" href="for-data-analysts.html"><div><h4>Data &amp; BI Analysts</h4><p>Metrics, grains, formulas, sources, SQL, and caveats</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="financial-analysts" data-status="live" href="for-financial-analysts.html"><div><h4>Financial Analysts</h4><p>Sourced inputs, formulas, scenarios, sensitivities, and checks</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="procurement" data-status="live" href="for-procurement.html"><div><h4>Procurement</h4><p>Neutral RFPs, requirements, timelines, and internal scoring</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="sales-and-proposals" data-status="live" href="for-sales-and-proposals.html"><div><h4>Sales &amp; Proposals</h4><p>Offers, substantiated claims, commitments, and compliance matrices</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="customer-support" data-status="live" href="for-customer-support.html"><div><h4>Customer Support</h4><p>Approved answers, entitlement, verification, and escalation</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="marketing-and-brand" data-status="live" href="for-marketing-and-brand.html"><div><h4>Marketing &amp; Brand</h4><p>Brand voice, terminology, channel constraints, and proven claims</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="policy-analysts" data-status="live" href="for-policy-analysts.html"><div><h4>Policy Analysts</h4><p>Cited instruments, options, criteria, impacts, and recommendations</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="clinical-operations" data-status="live" href="for-clinical-operations.html"><div><h4>Clinical Operations</h4><p>Operational SOPs, routing, roles, records, and escalation</p></div><span class="proftile__go">Explore →</span></a>
-      <a class="proftile proftile--live" data-profession="educational-designers" data-status="live" href="for-educational-designers.html"><div><h4>Educational Designers</h4><p>Objectives, activities, assessments, rubrics, and alignment</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="software-engineers" data-status="live" href="for-software-engineers.html"><div><h3>Software Engineers</h3><p>Architecture, contracts, data models, and anti-patterns</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="lawyers" data-status="live" href="for-lawyers.html"><div><h3>Lawyers</h3><p>Matters, clauses, obligations, sources, and red lines</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="knowledge-librarians" data-status="live" href="for-knowledge-librarians.html"><div><h3>Knowledge Librarians</h3><p>Sources, claims, decisions, open questions, and linked topics</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="business-analysts" data-status="live" href="for-business-analysts.html"><div><h3>Business Analysts</h3><p>Requirements, use cases, business rules, and traceability</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="product-managers" data-status="live" href="for-product-managers.html"><div><h3>Product Managers</h3><p>PRDs, stories, criteria, goals, and sourced metrics</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="qa-engineers" data-status="live" href="for-qa-engineers.html"><div><h3>QA Engineers</h3><p>Test plans, negative paths, coverage, and deterministic Gherkin</p></div><span class="proftile__go">Explore →</span></a>
     </div>
 
-    <div class="reveal profession-more"><a class="btn btn--ghost" href="professions.html">All professions →</a></div>
-
-    <div class="soongrid reveal">
-
-      <a class="soontile soontile--author" href="https://github.com/open-hint-dev/hintbook-template"><h4>Your profession</h4><p>Author a hintbook — no code required</p><span class="soontile__tag">open vocabulary</span></a>
-    </div>
+    <div class="reveal profession-more"><a class="btn btn--ghost" href="professions.html">Browse all 18 professions →</a></div>
     <!-- professions:end -->
 
     <div class="intentlayer reveal">
       <div>
-        <h3>Not just for programmers — a context layer under AI.</h3>
+        <h3>Not just for programmers — context for your assistant.</h3>
         <p>HINT pays off most wherever a wrong answer is expensive: <b>analytics, compliance, finance, procurement, medicine, government, QA, documentation, and product</b>. Anywhere the job means repeatable, high-stakes artifacts.</p>
       </div>
       <div class="artifacts">
@@ -789,9 +766,9 @@
         <div class="vocab__body">
           <span class="kw">goal</span><span class="kw">scope</span><span class="kw">entity</span><span class="kw">field</span><span class="kw">func</span><span class="kw">flow</span><span class="kw">error</span><span class="kw">rule</span><span class="kw">bad</span><span class="kw">test</span><span class="kw">ui</span><span class="kw">dep</span>
         </div>
-        <p class="vocab__foot">45 keywords including the shared core, across intent, data, behavior, UI &amp; constraints.</p>
+        <p class="vocab__foot">A shared core plus engineering contracts for intent, data, behavior, UI and constraints.</p>
       </div>
-      <div class="vocab" data-accent="law">
+      <div class="vocab" data-accent="law-assurance">
         <div class="vocab__head">
           <svg class="vocab__ico" viewBox="0 0 32 32" fill="none"><path d="M16 5v22M8 27h16M16 5l-9 4 3 6a4 4 0 0 1-6 0l3-6M16 5l9 4-3 6a4 4 0 0 0 6 0l-3-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <h4>hintbook-lawyer</h4>
@@ -800,7 +777,7 @@
         <div class="vocab__body">
           <span class="kw">party</span><span class="kw">clause</span><span class="kw">obligation</span><span class="kw">right</span><span class="kw">exception</span><span class="kw">breach</span><span class="kw">redline</span><span class="kw">never</span><span class="kw">liability</span><span class="kw">authority</span>
         </div>
-        <p class="vocab__foot">48 keywords including the shared core, across the full anatomy of a legal norm.</p>
+        <p class="vocab__foot">A shared core plus the vocabulary of matters, clauses, obligations and red lines.</p>
       </div>
       <div class="vocab" data-accent="analysis-knowledge">
         <div class="vocab__head"><h4>hintbook-librarian</h4><span class="pill pill--on"><span class="dot-ok"></span>live</span></div>
@@ -849,7 +826,7 @@
       </div>
       <div class="qsstep reveal" data-d="1">
         <div class="qsstep__h"><span class="qsstep__n">02</span><h3 style="color:var(--on-surface)">Record it, then ask about a path</h3></div>
-        <p style="color:var(--on-surface-mut)">Write what a folder or a file needs future work to know, then ask what applies before you touch it — referenced knowledge comes along automatically. Don't know the path? <code class="inl">hint search</code> ranks every <code class="inl">.hint</code> offline. Knowledge decays quietly, so <code class="inl">hint</code> says on stderr when the code under a hint has moved since anyone revisited it, and <code class="inl">hint status</code> inventories the whole repository. When a spec <em>declares</em> surfaces the code must contain, <code class="inl">hint verify</code> checks them for free — optional, and only for that case.</p>
+        <p style="color:var(--on-surface-mut)">Write what future work must know, then run <code class="inl">hint &lt;path&gt;</code> before changing that path. Use <code class="inl">hint search</code> when you know the task rather than the file, and <code class="inl">hint status</code> to inventory drift.</p>
         <div class="code-wrap on-dark">
           <button class="code__copy" data-copy data-copy-text="hint src/billing/invoice.ts&#10;hint search &quot;how are invoice totals stored&quot;&#10;hint status&#10;hint --prompt src/billing/invoice.ts | claude -p&#10;hint verify src/billing/invoice.ts&#10;hint lock src/billing/invoice.ts">Copy</button>
           <div class="code">
@@ -892,6 +869,8 @@
   </div>
 </section>
 
+<section class="section divider" id="faq"><div class="wrap faq-layout"><div><div class="eyebrow">FAQ</div><h2 class="h2" style="margin-top:16px;">The short version</h2></div><div><details class="faq"><summary>What is HINT?</summary><p>HINT keeps durable project knowledge in Markdown files beside the work it governs and returns the relevant part on demand.</p></details><details class="faq"><summary>Does HINT call an AI model?</summary><p>No. Retrieval, compilation, verification and emission are deterministic local operations.</p></details><details class="faq"><summary>Which assistants work with HINT?</summary><p>Any assistant that can run commands or connect through MCP, including Claude Code, Cursor, Codex, GitHub Copilot and OpenCode.</p></details><details class="faq"><summary>Is HINT only for software?</summary><p>No. Install a profession hintbook to use the same engine for legal, audit, product, documentation and other work.</p></details></div></div></section>
+
 <!-- FINAL CTA -->
 <section class="section">
   <div class="wrap cta-final reveal">
@@ -907,50 +886,21 @@
 </section>
 
 <!-- FOOTER -->
+</main>
+<!-- shared-footer:begin -->
 <footer class="footer">
   <div class="wrap">
     <div class="footer__grid">
-      <div class="footer__brand footer__col">
-        <div class="logo footer__logo">
-          <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
-        </div>
-        <p>Spec-as-Source for any repository. Your intent in Markdown, scoped by path and inherited from the root down — so an agent gets what governs here, and nothing else.</p>
-      </div>
-      <div class="footer__col">
-        <h5>Product</h5>
-        <ul>
-          <li><a href="index.html#how">How it works</a></li>
-          <li><a href="index.html#quickstart">Quick start</a></li>
-          <li><a href="professions.html">Professions</a></li>
-          <li><a href="https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md" target="_blank" rel="noopener">Agent setup ↗</a></li>
-        </ul>
-      </div>
-      <div class="footer__col">
-        <h5>Professions</h5>
-        <ul>
-          <li><a href="for-software-engineers.html">For Engineers</a></li>
-          <li><a href="for-lawyers.html">For Lawyers</a></li>
-          <li><a href="for-knowledge-librarians.html">For Librarians</a></li>
-          <li><a href="professions.html">All profession guides</a></li>
-        </ul>
-      </div>
-      <div class="footer__col">
-        <h5>Source</h5>
-        <ul>
-          <li><a href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">hint ↗</a></li>
-          <li><a href="https://github.com/open-hint-dev/hintbook-software-engineer" target="_blank" rel="noopener">hintbook-software-engineer ↗</a></li>
-          <li><a href="https://github.com/open-hint-dev/hintbook-lawyer" target="_blank" rel="noopener">hintbook-lawyer ↗</a></li>
-          <li><a href="https://github.com/open-hint-dev/hintbook-librarian" target="_blank" rel="noopener">hintbook-librarian ↗</a></li>
-        </ul>
-      </div>
+      <div class="footer__brand footer__col"><div class="logo footer__logo"><img class="logo__img" src="assets/logo-full.svg" alt="HINT" width="147" height="46" /></div><p>Durable project knowledge, kept beside the work and delivered to your assistant when it applies.</p></div>
+      <div class="footer__col"><h2>Product</h2><ul><li><a href="index.html#how">How it works</a></li><li><a href="index.html#quickstart">Quick start</a></li><li><a href="https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md" target="_blank" rel="noopener">Assistant setup ↗</a></li></ul></div>
+      <div class="footer__col footer__professions"><h2>Professions</h2><ul><li><a href="for-software-engineers.html">Software Engineers</a></li><li><a href="for-lawyers.html">Lawyers</a></li><li><a href="for-knowledge-librarians.html">Knowledge Librarians</a></li><li><a href="for-business-analysts.html">Business Analysts</a></li><li><a href="for-product-managers.html">Product Managers</a></li><li><a href="for-qa-engineers.html">QA Engineers</a></li><li><a href="for-technical-writers.html">Technical Writers</a></li><li><a href="for-compliance-and-risk.html">Compliance &amp; Risk</a></li><li><a href="for-auditors.html">Auditors</a></li><li><a href="for-data-analysts.html">Data &amp; BI Analysts</a></li><li><a href="for-financial-analysts.html">Financial Analysts</a></li><li><a href="for-procurement.html">Procurement</a></li><li><a href="for-sales-and-proposals.html">Sales &amp; Proposals</a></li><li><a href="for-customer-support.html">Customer Support</a></li><li><a href="for-marketing-and-brand.html">Marketing &amp; Brand</a></li><li><a href="for-policy-analysts.html">Policy Analysts</a></li><li><a href="for-clinical-operations.html">Clinical Operations</a></li><li><a href="for-educational-designers.html">Educational Designers</a></li><li><a href="professions.html">All professions</a></li></ul></div>
+      <div class="footer__col"><h2>Source</h2><ul><li><a href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">HINT ↗</a></li><li><a href="https://github.com/open-hint-dev/hintbook-template" target="_blank" rel="noopener">Build a hintbook ↗</a></li><li><a href="https://www.npmjs.com/org/openhint" target="_blank" rel="noopener">npm packages ↗</a></li></ul></div>
     </div>
-    <div class="footer__bottom">
-      <span>© 2026 openhint.dev · MIT licensed</span>
-      <span>Tell your agent what matters here.</span>
-    </div>
+    <div class="footer__bottom"><span>© 2026 openhint.dev · MIT licensed</span><span>HINT 1.5 · Tell your assistant what matters here.</span></div>
   </div>
 </footer>
+<!-- shared-footer:end -->
 
-<script src="site.js"></script>
+<script src="site.js?v=1.7.0-site-quality"></script>
 </body>
 </html>
