@@ -104,9 +104,9 @@ function build(existing) {
 function buildShort(existing) {
     const begin = '<!-- professions:begin -->';
     const end = '<!-- professions:end -->';
-    const pages = ['- [Profession hub](https://openhint.dev/professions.html): All official and planned profession vocabularies.', ...MANIFEST.filter(({status}) => status === 'live').map((entry) => `- [For ${entry.title}](https://openhint.dev/${entry.page}): ${entry.tileLine}.`)];
+    const pages = ['- [Profession hub](https://openhint.dev/professions.html): All 18 live profession vocabularies.', ...MANIFEST.filter(({status}) => status === 'live').map((entry) => `- [For ${entry.title}](https://openhint.dev/${entry.page}): ${entry.tileLine}.`)];
     const books = MANIFEST.filter(({status}) => status === 'live').map((entry) => `- [${entry.bookRepo}](https://github.com/open-hint-dev/${entry.bookRepo}): ${entry.tileLine}.`);
-    const demos = MANIFEST.filter(({status}) => status === 'live').map((entry) => `- [${entry.demoRepo}](https://github.com/open-hint-dev/${entry.demoRepo}): Demonstrates ${entry.title.toLowerCase()} Spec-as-Source.`);
+    const demos = MANIFEST.filter(({status}) => status === 'live').map((entry) => `- [${entry.demoRepo}](https://github.com/open-hint-dev/${entry.demoRepo}): Demonstrates Spec-as-Source for ${entry.plural}.`);
     const fragment = `${begin}\n## Pages\n\n${pages.join('\n')}\n\n## Hintbooks\n\n${books.join('\n')}\n\n## Demos\n\n${demos.join('\n')}\n${end}`;
     if (!existing.includes(begin) || !existing.includes(end)) throw new Error('llms.txt profession markers are missing');
     return existing.replace(new RegExp(`${begin}[\\s\\S]*?${end}`), fragment);

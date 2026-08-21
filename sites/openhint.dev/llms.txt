@@ -37,7 +37,7 @@ Key facts an LLM should know about HINT:
 <!-- professions:begin -->
 ## Pages
 
-- [Profession hub](https://openhint.dev/professions.html): All official and planned profession vocabularies.
+- [Profession hub](https://openhint.dev/professions.html): All 18 live profession vocabularies.
 - [For Software Engineers](https://openhint.dev/for-software-engineers.html): Architecture, contracts, data models, and anti-patterns.
 - [For Lawyers](https://openhint.dev/for-lawyers.html): Matters, clauses, obligations, sources, and red lines.
 - [For Knowledge Librarians](https://openhint.dev/for-knowledge-librarians.html): Sources, claims, decisions, open questions, and linked topics.
@@ -80,24 +80,24 @@ Key facts an LLM should know about HINT:
 
 ## Demos
 
-- [demo-pied-piper](https://github.com/open-hint-dev/demo-pied-piper): Demonstrates software engineers Spec-as-Source.
-- [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt): Demonstrates lawyers Spec-as-Source.
-- [demo-knowledge-wiki](https://github.com/open-hint-dev/demo-knowledge-wiki): Demonstrates knowledge librarians Spec-as-Source.
-- [demo-initech-requirements](https://github.com/open-hint-dev/demo-initech-requirements): Demonstrates business analysts Spec-as-Source.
-- [demo-hooli-product](https://github.com/open-hint-dev/demo-hooli-product): Demonstrates product managers Spec-as-Source.
-- [demo-nakatomi-qa](https://github.com/open-hint-dev/demo-nakatomi-qa): Demonstrates qa engineers Spec-as-Source.
-- [demo-pied-piper-docs](https://github.com/open-hint-dev/demo-pied-piper-docs): Demonstrates technical writers Spec-as-Source.
-- [demo-wonka-compliance](https://github.com/open-hint-dev/demo-wonka-compliance): Demonstrates compliance & risk Spec-as-Source.
-- [demo-wonka-audit](https://github.com/open-hint-dev/demo-wonka-audit): Demonstrates auditors Spec-as-Source.
-- [demo-dunder-mifflin-bi](https://github.com/open-hint-dev/demo-dunder-mifflin-bi): Demonstrates data & bi analysts Spec-as-Source.
-- [demo-bluth-finance](https://github.com/open-hint-dev/demo-bluth-finance): Demonstrates financial analysts Spec-as-Source.
-- [demo-springfield-procurement](https://github.com/open-hint-dev/demo-springfield-procurement): Demonstrates procurement Spec-as-Source.
-- [demo-monorail-proposal](https://github.com/open-hint-dev/demo-monorail-proposal): Demonstrates sales & proposals Spec-as-Source.
-- [demo-vandelay-support](https://github.com/open-hint-dev/demo-vandelay-support): Demonstrates customer support Spec-as-Source.
-- [demo-sterling-cooper-brand](https://github.com/open-hint-dev/demo-sterling-cooper-brand): Demonstrates marketing & brand Spec-as-Source.
-- [demo-pawnee-policy](https://github.com/open-hint-dev/demo-pawnee-policy): Demonstrates policy analysts Spec-as-Source.
-- [demo-sacred-heart-clinical](https://github.com/open-hint-dev/demo-sacred-heart-clinical): Demonstrates clinical operations Spec-as-Source.
-- [demo-greendale-courses](https://github.com/open-hint-dev/demo-greendale-courses): Demonstrates educational designers Spec-as-Source.
+- [demo-pied-piper](https://github.com/open-hint-dev/demo-pied-piper): Demonstrates Spec-as-Source for Software Engineers.
+- [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt): Demonstrates Spec-as-Source for Lawyers.
+- [demo-knowledge-wiki](https://github.com/open-hint-dev/demo-knowledge-wiki): Demonstrates Spec-as-Source for Knowledge Librarians.
+- [demo-initech-requirements](https://github.com/open-hint-dev/demo-initech-requirements): Demonstrates Spec-as-Source for Business Analysts.
+- [demo-hooli-product](https://github.com/open-hint-dev/demo-hooli-product): Demonstrates Spec-as-Source for Product Managers.
+- [demo-nakatomi-qa](https://github.com/open-hint-dev/demo-nakatomi-qa): Demonstrates Spec-as-Source for QA Engineers.
+- [demo-pied-piper-docs](https://github.com/open-hint-dev/demo-pied-piper-docs): Demonstrates Spec-as-Source for Technical Writers.
+- [demo-wonka-compliance](https://github.com/open-hint-dev/demo-wonka-compliance): Demonstrates Spec-as-Source for Compliance & Risk.
+- [demo-wonka-audit](https://github.com/open-hint-dev/demo-wonka-audit): Demonstrates Spec-as-Source for Auditors.
+- [demo-dunder-mifflin-bi](https://github.com/open-hint-dev/demo-dunder-mifflin-bi): Demonstrates Spec-as-Source for Data & BI Analysts.
+- [demo-bluth-finance](https://github.com/open-hint-dev/demo-bluth-finance): Demonstrates Spec-as-Source for Financial Analysts.
+- [demo-springfield-procurement](https://github.com/open-hint-dev/demo-springfield-procurement): Demonstrates Spec-as-Source for Procurement Specialists.
+- [demo-monorail-proposal](https://github.com/open-hint-dev/demo-monorail-proposal): Demonstrates Spec-as-Source for Proposal Managers.
+- [demo-vandelay-support](https://github.com/open-hint-dev/demo-vandelay-support): Demonstrates Spec-as-Source for Support Agents.
+- [demo-sterling-cooper-brand](https://github.com/open-hint-dev/demo-sterling-cooper-brand): Demonstrates Spec-as-Source for Marketing Managers.
+- [demo-pawnee-policy](https://github.com/open-hint-dev/demo-pawnee-policy): Demonstrates Spec-as-Source for Policy Analysts.
+- [demo-sacred-heart-clinical](https://github.com/open-hint-dev/demo-sacred-heart-clinical): Demonstrates Spec-as-Source for Clinical Operations.
+- [demo-greendale-courses](https://github.com/open-hint-dev/demo-greendale-courses): Demonstrates Spec-as-Source for Instructional Designers.
 <!-- professions:end -->
 
 ## Source
