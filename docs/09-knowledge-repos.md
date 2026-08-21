@@ -41,7 +41,7 @@ Run `npx -y @openhint/cli apply` after registering the book.
 
 **Ingest.** Add the source under `raw/`, create its companion `.hint`, and update every affected topic. Claims name their evidence; a changed conclusion supersedes the old claim instead of erasing history.
 
-**Query.** Start with `hint search "question or intent"`, then read useful targets with `hint wiki/<topic>`. A path-shaped `relates` block includes the referenced topic through the normal reference closure. `refs_depth` limits this breadth-first traversal; omitted references are always named on stderr.
+**Query.** Start with `hint search "question or intent"`, then read useful targets with `hint wiki/<topic>`. Add `--expand` when the answer may be one graph hop away: reference and `overrides`/`supersedes` neighbors are appended with a discounted score and `via`. A path-shaped `relates` block includes the referenced topic through the normal reference closure. `refs_depth` limits this breadth-first traversal; omitted references are always named on stderr.
 
 **Lint.** Run `hint lint . --graph`. The graph pass reports dead references, unreferenced target-less hints, ids duplicated across files, and duplicate or near-miss block names. These are advisory notes by default. Use `--strict-graph` to promote them to findings and exit `1` in CI.
 

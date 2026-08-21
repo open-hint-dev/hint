@@ -764,7 +764,6 @@ __metadata:
     "@vitest/coverage-v8": "npm:*"
     eslint: "npm:*"
     mdast-util-to-string: "npm:*"
-    remark-custom-header-id: "npm:*"
     remark-parse: "npm:*"
     remark-stringify: "npm:*"
     typescript: "npm:*"
@@ -1060,7 +1059,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/unist@npm:*, @types/unist@npm:^3.0.0, @types/unist@npm:^3.0.2":
+"@types/unist@npm:*, @types/unist@npm:^3.0.0":
   version: 3.0.3
   resolution: "@types/unist@npm:3.0.3"
   checksum: 10c0/2b1e4adcab78388e088fcc3c0ae8700f76619dbcb4741d7d201f87e2cb346bfc29a89003cfea2d76c996e1061452e14fcd737e8b25aacf949c1f2d6b2bc3dd60
@@ -4273,16 +4272,6 @@ __metadata:
   dependencies:
     picomatch: "npm:^2.2.1"
   checksum: 10c0/6fa848cf63d1b82ab4e985f4cf72bd55b7dcfd8e0a376905804e48c3634b7e749170940ba77b32804d5fe93b3cc521aa95a8d7e7d725f830da6d93f3669ce66b
-  languageName: node
-  linkType: hard
-
-"remark-custom-header-id@npm:1.0.0":
-  version: 1.0.0
-  resolution: "remark-custom-header-id@npm:1.0.0"
-  dependencies:
-    "@types/unist": "npm:^3.0.2"
-    unist-util-visit: "npm:^5.0.0"
-  checksum: 10c0/a8492d5921325ded03dfdccd55e0c4298390f13fcfa00545b7f5c4598bce48e093fe24a8b8c20c6ff92881bcd844de82039086583b4859bcecb84b949ff0a8f8
   languageName: node
   linkType: hard
 

@@ -64,11 +64,11 @@ export function createMcpServer(version = '0.0.0'): McpServer {
         'hint_search',
         {
             description: 'Rank the repository knowledge closest to an intent. Offline and deterministic; weak results are explicitly marked.',
-            inputSchema: { query: z.string().min(1), limit: z.number().int().optional() },
+            inputSchema: { query: z.string().min(1), limit: z.number().int().optional(), expand: z.boolean().optional() },
         },
-        async ({ query, limit }) => {
+        async ({ query, limit, expand }) => {
             const { root, hintbooks } = await project();
-            const results = await Transpiler.searchHints(root, query, { limit, hintbooks });
+            const results = await Transpiler.searchHints(root, query, { limit, hintbooks, expand });
             return textResult(JSON.stringify({ query, count: results.length, results }, null, 2), { query, count: results.length, results });
         },
     );
@@ -82,7 +82,7 @@ export function createMcpServer(version = '0.0.0'): McpServer {
         },
         async () => {
             const { root, config, hintbooks } = await project();
-            const report = await Transpiler.inspectProject(root, hintbooks, { repositoryKind: config.repo });
+            const report = await Transpiler.inspectProject(root, hintbooks, { repositoryKind: config.repo, agentAuthors: config.curation?.agent_authors });
             return textResult(JSON.stringify(report, null, 2), report as unknown as Record<string, unknown>);
         },
     );

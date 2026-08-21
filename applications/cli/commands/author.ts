@@ -175,6 +175,7 @@ const OUTPUT_RULES = [
     '- Record it at the most specific scope that applies: the file’s companion hint, else the folder’s `_.hint`, else the root `_.hint`. Knowledge in the wrong scope either misses the work it should govern or pollutes work it should not.',
     '- Keep it declarative and minimal: state what must be true and why. Do not write the implementation.',
     '- Reuse stable ids when revising so references stay intact.',
+    '- When an agent records newly learned knowledge, add `origin=agent` in the heading attributes. A human reviewer removes or changes the marker.',
     '- After writing, run `hint <path>` to see exactly what a coding agent will receive.',
     '- Commit the `.hint` in the same change as the code it describes. Staleness is measured from the hint’s last commit against the churn beneath it, so a hint committed with its code starts clean.',
 ].join('\n');

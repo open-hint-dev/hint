@@ -244,7 +244,7 @@ Requires an emit pack that declares both a `symbols` adapter and an `extract` ma
 
 ## `hint lint <paths...>` — validate knowledge
 
-Checks vocabulary near-misses, broken includes, duplicate ids within a file, and empty specs. `--strict-vocab` promotes every unknown heading to a finding; `--json` prints stable machine-readable output.
+Checks vocabulary near-misses, broken includes, duplicate ids, empty specs, invalid `overrides`/`supersedes` relations, inheritance conflicts, and likely duplicate knowledge. `--strict-vocab` promotes every unknown heading to a finding; `--json` prints stable machine-readable output.
 
 `--graph` adds a deterministic repository graph pass over the selected hints: dead path references, unreferenced hints whose targets do not exist, duplicate ids across files, and duplicate or edit-distance-near block names. Graph results are advisory notes by default. `--strict-graph` implies `--graph`, promotes its notes to findings, and exits `1` when any are present.
 
@@ -263,6 +263,7 @@ Recorded knowledge decays in ways nobody notices at the time: a spec is not upda
 hint status                 # the inventory
 hint status --json          # machine-readable, includes the informational rows
 hint status --exit-code     # exit 1 when anything needs attention, for CI
+hint status --strict-curation # exit 1 when agent-authored blocks await review
 ```
 
 ```
@@ -281,6 +282,7 @@ unlocked  src/gateway/handler.go    companion spec has never been locked
 | `stale` | The code under the scope has moved substantially since the hint was last committed. An observation, not a verdict. |
 | `unfilled` | The spec declares holes that still hold their emitted stub — work asked for and not yet done. |
 | `unlocked` | A companion spec in a project that uses `hint.lock`, never locked. Only reported when a lock exists. |
+| `unreviewed` | A block marked `origin=agent`, or last changed by an identity matching `curation.agent_authors`. Advisory unless `--strict-curation`; JSON includes author, email, commit, date, and repository-relative age. |
 | `pending` | The target has not been written yet — a spec written ahead of its code. Supported and expected, so it is counted on stderr and listed only under `--json`, never in the table. |
 
 **Staleness is measured against git**, as the share of a scope's files that changed between the hint's last commit and `HEAD`. That is why it means the same thing for a single-file companion spec and for the repository root. Two thresholds apply, because two kinds of knowledge decay at different rates:
@@ -293,6 +295,13 @@ unlocked  src/gateway/handler.go    companion spec has never been locked
 Outside a git repository, or when git is unavailable, staleness and orphan detection are skipped and stderr says so — an unmeasurable scope is never reported as a healthy one. Hint files that exist only to be `@include`d are fragments describing no path, and are left out of the inventory entirely.
 
 Exit `0` when the inventory is clean, `2` when the project has no `.hint` files at all, and `1` only with `--exit-code` and at least one finding. Without `--exit-code` it always exits `0` on a populated project, so it is safe to run from a hook.
+
+Configure secondary git provenance explicitly; HINT never guesses which identities are agents:
+
+```yaml
+curation:
+  agent_authors: ["*bot*", "agent@*"]
+```
 
 ### Wiring it in
 
@@ -337,7 +346,7 @@ Full reference, including template syntax and how to author an emitter → [`doc
 Prints the CLI version, then every registered hintbook with its version and where it resolved from:
 
 ```
-@openhint/cli 1.3.0
+@openhint/cli 1.5.0
 npm://@openhint/hintbook-software-engineer 1.0.6 — /usr/local/lib/node_modules/@openhint/…/keywords
 file://hintbooks/team-conventions (version unknown) — hintbooks/team-conventions
 npm://@openhint/hintbook-chef (not installed)

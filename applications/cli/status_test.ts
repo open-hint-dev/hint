@@ -149,6 +149,56 @@ describe('status', () => {
         expect(result.stdout).toBe('');
     });
 
+    it('includes invalid knowledge relations in the project inventory', async () => {
+        const root = await makeProject(false);
+        await write(root, 'src/value.ts', 'export const value = 1;\n');
+        await write(root, 'src/value.ts.hint', '# decision Local rule {#local overrides=missing}\n\nNarrow exception.\n');
+
+        const result = await runCli(['status', '--json', '--exit-code'], root);
+        const report = JSON.parse(result.stdout) as { entries: { kind: string; detail: string }[] };
+
+        expect(report.entries).toEqual(expect.arrayContaining([
+            expect.objectContaining({ kind: 'lint', detail: expect.stringContaining('overrides target {#missing} was not found') }),
+        ]));
+        expect(result.exitCode).toBe(1);
+    });
+
+    it('queues origin=agent blocks without git and promotes them only under --strict-curation', async () => {
+        const root = await makeProject(false);
+        await write(root, 'src/login.ts', 'export const a = 1;\n');
+        await write(root, 'src/login.ts.hint', '# decision Login {#login origin=agent}\n\nRecorded by an agent.\n');
+
+        const advisory = await runCli(['status', '--json', '--exit-code'], root);
+        const report = JSON.parse(advisory.stdout) as { entries: { kind: string; hint: string }[] };
+        expect(report.entries).toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'unreviewed', hint: 'src/login.ts.hint:1' })]));
+        expect(advisory.exitCode).toBeUndefined();
+        expect(advisory.stderr).toContain('1 agent-authored block(s) await human review');
+        expect((await runCli(['status', '--strict-curation'], root)).exitCode).toBe(1);
+
+        await write(root, 'src/login.ts.hint', '# decision Login {#login}\n\nReviewed.\n');
+        expect((await runCli(['status', '--json'], root)).stdout).not.toContain('unreviewed');
+    });
+
+    it('uses configured git author globs without guessing unmatched identities', async () => {
+        const root = await makeProject();
+        await write(root, 'hint.yml', 'name: temp\nbooks:\n    - file://books\ncuration:\n    agent_authors:\n        - "*bot*"\n');
+        await write(root, 'src/bot.ts', 'export const a = 1;\n');
+        await write(root, 'src/bot.ts.hint', '# decision Automated\n\nRecorded.\n');
+        await git(root, 'config', 'user.name', 'Build Bot');
+        await git(root, 'config', 'user.email', 'bot@example.com');
+        await commit(root, 'bot knowledge');
+
+        const bot = JSON.parse((await runCli(['status', '--json'], root)).stdout) as { entries: { kind: string }[] };
+        expect(bot.entries.some((entry) => entry.kind === 'unreviewed')).toBe(true);
+
+        await git(root, 'config', 'user.name', 'Human Reviewer');
+        await git(root, 'config', 'user.email', 'human@example.com');
+        await write(root, 'src/bot.ts.hint', '# decision Automated\n\nReviewed by a person.\n');
+        await commit(root, 'review knowledge');
+        const reviewed = JSON.parse((await runCli(['status', '--json'], root)).stdout) as { entries: { kind: string }[] };
+        expect(reviewed.entries.some((entry) => entry.kind === 'unreviewed')).toBe(false);
+    });
+
     it('flags a spec whose target was deleted as orphaned', async () => {
         const root = await makeProject();
 

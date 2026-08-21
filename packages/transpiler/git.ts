@@ -15,6 +15,15 @@ const EXCLUDE_HINTS = ':(exclude)*.hint';
 // Wall-clock ceiling for any single git invocation. Staleness is advisory: a repository large or
 // slow enough to blow through this gets no signal rather than a stalled command.
 const GIT_TIMEOUT_MS = 5_000;
+let gitTimeoutCount = 0;
+
+export function resetGitTimeoutCount(): void {
+    gitTimeoutCount = 0;
+}
+
+export function readGitTimeoutCount(): number {
+    return gitTimeoutCount;
+}
 
 // Runs git and returns its stdout, or null for *any* failure — git missing, not a repository, a
 // broken invocation, a timeout. Every caller treats null as "no signal available" and stays silent,
@@ -30,7 +39,9 @@ async function git(projectRootPath: string, args: string[]): Promise<string | nu
         });
 
         return stdout;
-    } catch {
+    } catch (error: unknown) {
+        const failure = error as NodeJS.ErrnoException & { killed?: boolean };
+        if (failure.killed || failure.code === 'ETIMEDOUT') gitTimeoutCount += 1;
         return null;
     }
 }
@@ -75,6 +86,33 @@ export type GitHistoryIndex = {
     lastCommitByPath: Map<string, string>;
     paths: Set<string>;
 };
+
+export type GitBlameLine = { commit: string; author: string; email: string; time: number };
+export type GitBlame = { lines: Map<number, GitBlameLine>; referenceTime: number };
+
+// One porcelain blame per hint file supplies every block in it. `referenceTime` is the newest commit
+// timestamp in the file, not the wall clock, so age remains a deterministic repository-derived value.
+export async function readGitBlame(projectRootPath: string, path: string): Promise<GitBlame | null> {
+    const stdout = await git(projectRootPath, ['blame', '--line-porcelain', '--', path]);
+    if (stdout === null) return null;
+    const result = new Map<number, GitBlameLine>();
+    let current: Partial<GitBlameLine> & { line?: number } = {};
+    let referenceTime = 0;
+    for (const line of stdout.split('\n')) {
+        const header = /^([0-9a-f^]{40,41}) \d+ (\d+)(?: \d+)?$/.exec(line);
+        if (header) {
+            current = { commit: header[1]!.replace(/^\^/, ''), line: Number(header[2]) };
+        } else if (line.startsWith('author ')) current.author = line.slice(7);
+        else if (line.startsWith('author-mail ')) current.email = line.slice(12).replace(/^<|>$/g, '');
+        else if (line.startsWith('author-time ')) current.time = Number(line.slice(12));
+        else if (line.startsWith('\t') && current.line && current.commit && current.author && current.email && current.time !== undefined) {
+            const value = { commit: current.commit, author: current.author, email: current.email, time: current.time };
+            result.set(current.line, value);
+            referenceTime = Math.max(referenceTime, value.time);
+        }
+    }
+    return { lines: result, referenceTime };
+}
 
 // One history walk serves every scope in `hint status`: last-touch lookup, churn since that touch,
 // and whether a now-absent target ever existed. A failed walk disables only advisory git signals.

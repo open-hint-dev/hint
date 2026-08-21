@@ -30,6 +30,12 @@ export const PLACEHOLDER_ID = 'id';
 export const PLACEHOLDER_NAME = 'name';
 export const PLACEHOLDER_BODY = 'body';
 export const PLACEHOLDER_CHILDREN = 'children';
+export const PLACEHOLDER_ATTRS = 'attrs';
+export const PLACEHOLDER_OVERRIDES = 'overrides';
+export const PLACEHOLDER_SUPERSEDED_BY = 'superseded_by';
+export const PLACEHOLDER_OVERRIDDEN_BY = 'overridden_by';
+export const PLACEHOLDER_SOURCE = 'source';
+export const PLACEHOLDER_INCLUDED_FROM = 'included_from';
 
 export type MetaData = {
     description?: string;

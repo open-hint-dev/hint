@@ -7,6 +7,7 @@ import { searchHints } from './search.js';
 
 const here = Path.dirname(fileURLToPath(import.meta.url));
 const projectRootPath = Path.resolve(here, '../../testdata/project');
+const knowledgeRootPath = Path.resolve(here, '../../testdata/knowledge-repo');
 
 describe('searchHints', () => {
     it('ranks the hint whose spec matches the query first, with a positive score', async () => {
@@ -14,6 +15,16 @@ describe('searchHints', () => {
 
         expect(results[0]?.hint).toBe('src/payment.ts.hint');
         expect(results[0]?.score).toBeGreaterThan(0);
+        expect(results[0]?.line).toBeGreaterThan(0);
+    });
+
+    it('optionally appends one-hop graph neighbors with a discounted score and via marker', async () => {
+        const plain = await searchHints(knowledgeRootPath, 'selects relevant context', { limit: 20 });
+        const expanded = await searchHints(knowledgeRootPath, 'selects relevant context', { limit: 20, expand: true });
+        expect(plain.some((result) => result.hint === 'wiki/transformers/_.hint')).toBe(false);
+        expect(expanded).toEqual(expect.arrayContaining([
+            expect.objectContaining({ hint: 'wiki/transformers/_.hint', via: 'wiki/attention' }),
+        ]));
     });
 
     it('finds hints kept in detached `.hint` folder stores', async () => {

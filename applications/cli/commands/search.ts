@@ -5,14 +5,16 @@ import type { ICommand } from './command.js';
 export class SearchCommand implements ICommand {
     private query: string = '';
     private limit: number = 20;
+    private expand: boolean = false;
 
     constructor() {}
 
-    static new(query: string, limit: number): SearchCommand {
+    static new(query: string, limit: number, expand = false): SearchCommand {
         const command = new SearchCommand();
 
         command.query = query;
         command.limit = limit;
+        command.expand = expand;
 
         return command;
     }
@@ -26,7 +28,7 @@ export class SearchCommand implements ICommand {
 
         const config = await Transpiler.loadConfig(projectRootPath);
         const hintbooks = await Transpiler.loadHintbooks(projectRootPath, config?.books ?? []);
-        const results = await Transpiler.searchHints(projectRootPath, this.query, { limit: this.limit, hintbooks });
+        const results = await Transpiler.searchHints(projectRootPath, this.query, { limit: this.limit, hintbooks, expand: this.expand });
 
         // A ranked list with nothing strong in it reads as confident even when it is noise, because
         // scores are corpus-relative. Say so on stderr — the results still print, unfiltered.

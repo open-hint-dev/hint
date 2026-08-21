@@ -62,4 +62,38 @@ describe('hint lint', () => {
             { kind: 'duplicate-id', severity: 'info', hint: 'wiki/transformers/_.hint' },
         ]);
     });
+
+    test('reconciles overrides, supersedes, conflicts, and relation cycles', async () => {
+        const root = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-relations-'));
+        try {
+            const book = await loadHintbook(Path.resolve(here, '../../testdata/hintbook/keywords'));
+            await FsPromises.mkdir(Path.join(root, 'legacy'));
+            await FsPromises.writeFile(Path.join(root, '_.hint'), '# rule Typing {#base}\n\nStrict.\n# rule Removed {#removed}\n');
+            await FsPromises.writeFile(Path.join(root, 'legacy/_.hint'), '# rule Typing {#legacy overrides=base}\n\nException.\n# rule Bad {#bad overrides=missing}\n# rule Tombstone {#tomb supersedes=removed}\n# rule A {#a overrides=b}\n# rule B {#b overrides=a}\n');
+            const findings = await lintHintFiles(root, [Path.join(root, 'legacy/_.hint')], [book]);
+            expect(findings).toEqual(expect.arrayContaining([
+                expect.objectContaining({ kind: 'relation', detail: expect.stringContaining('was not found') }),
+                expect.objectContaining({ kind: 'relation', detail: expect.stringContaining('still exists') }),
+                expect.objectContaining({ kind: 'relation', detail: expect.stringContaining('relation cycle') }),
+            ]));
+            expect(findings.some((finding) => finding.kind === 'conflict' && finding.detail.includes('Typing'))).toBe(false);
+        } finally {
+            await FsPromises.rm(root, { recursive: true, force: true });
+        }
+    });
+
+    test('advises on a near-copy elsewhere but ignores short shared wording', async () => {
+        const root = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-similar-'));
+        try {
+            const book = await loadHintbook(Path.resolve(here, '../../testdata/hintbook/keywords'));
+            await FsPromises.writeFile(Path.join(root, 'first.hint'), '# rule Durable authentication\n\nEvery service account token must rotate automatically before expiry and preserve the previous audit identifier.\n');
+            await FsPromises.writeFile(Path.join(root, 'second.hint'), '# rule Durable authentication copy\n\nEvery service account token must rotate automatically before expiry and preserve the previous audit identifier for tracing.\n');
+            await FsPromises.writeFile(Path.join(root, 'short.hint'), '# rule Tokens\n\nRotate tokens.\n');
+            const findings = await lintHintFiles(root, [Path.join(root, 'second.hint'), Path.join(root, 'short.hint')], [book]);
+            expect(findings).toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'similar', hint: 'second.hint', severity: 'info' })]));
+            expect(findings.some((finding) => finding.kind === 'similar' && finding.hint === 'short.hint')).toBe(false);
+        } finally {
+            await FsPromises.rm(root, { recursive: true, force: true });
+        }
+    });
 });

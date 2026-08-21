@@ -6,10 +6,11 @@ import { EXIT_FAILED, EXIT_UNRESOLVED } from './report.js';
 export type StatusOptions = {
     json: boolean;
     exitCode: boolean;
+    strictCuration: boolean;
 };
 
 export class StatusCommand implements ICommand {
-    private options: StatusOptions = { json: false, exitCode: false };
+    private options: StatusOptions = { json: false, exitCode: false, strictCuration: false };
 
     constructor() {}
 
@@ -31,7 +32,10 @@ export class StatusCommand implements ICommand {
         const config = await Transpiler.loadConfig(projectRootPath);
         const hintbooks = await Transpiler.loadHintbooks(projectRootPath, config?.books ?? []);
 
-        const report = await Transpiler.inspectProject(projectRootPath, hintbooks, { repositoryKind: config?.repo });
+        const report = await Transpiler.inspectProject(projectRootPath, hintbooks, {
+            repositoryKind: config?.repo,
+            agentAuthors: config?.curation?.agent_authors,
+        });
 
         // "Nothing to report" over zero hint files is the hollow success this whole exit taxonomy
         // exists to prevent — it is indistinguishable from a healthy repository, and reads as one.
@@ -62,25 +66,36 @@ export class StatusCommand implements ICommand {
     private reportSummary(report: Transpiler.StatusReport): void {
         const findings = Transpiler.countFindings(report);
         const pending = Transpiler.countPending(report);
+        const unreviewed = report.entries.filter((entry) => entry.kind === 'unreviewed').length;
 
         // Say what could not be checked, so a quiet report is not mistaken for a thorough one.
         if (!report.git) {
             process.stderr.write(`hint: not a git repository — staleness and orphaned specs were not evaluated.\n`);
         }
 
+        if (report.gitTimeouts > 0) {
+            process.stderr.write(`hint: git signals incomplete (${report.gitTimeouts} timeout(s)).\n`);
+        }
+
         if (pending > 0) {
             process.stderr.write(`hint: ${pending} spec(s) describe a target that is not written yet — listed under --json.\n`);
         }
 
+        if (unreviewed > 0) {
+            process.stderr.write(`hint: ${unreviewed} agent-authored block(s) await human review.\n`);
+        }
+
         if (findings === 0) {
             process.stderr.write(`hint: ${report.scanned} hint file(s) inventoried — nothing has come loose.\n`);
+
+            if (this.options.strictCuration && unreviewed > 0) process.exitCode = EXIT_FAILED;
 
             return;
         }
 
         process.stderr.write(`hint: ${findings} of ${report.scanned} hint file(s) need attention.\n`);
 
-        if (this.options.exitCode) {
+        if (this.options.exitCode || (this.options.strictCuration && unreviewed > 0)) {
             process.exitCode = EXIT_FAILED;
         }
     }

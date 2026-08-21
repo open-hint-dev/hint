@@ -6,12 +6,13 @@ import type { FileDrift } from './lock.js';
 import type { HoleState } from './merge.js';
 import type { ScopeStaleness } from './staleness.js';
 import { planEmit, renderArtifact } from './emit.js';
-import { isTrackedInHistory, readGitHistoryIndex, readGitSnapshot, toGitPath } from './git.js';
+import { isTrackedInHistory, readGitHistoryIndex, readGitSnapshot, readGitTimeoutCount, resetGitTimeoutCount, toGitPath } from './git.js';
 import { isPathExists, readFile } from './helper.js';
 import { collectFileNodes, computeDrift, hashTargetFiles, loadLock } from './lock.js';
 import { lintHintFiles } from './lint.js';
 import { inspectHoles } from './merge.js';
 import { collectIncludedPaths, listHintFiles, parseHintFile, parseHintFiles } from './parser.js';
+import { findUnreviewedBlocks } from './provenance.js';
 import { hintTargetName, isFolderHintPath } from './resolve.js';
 import { collectContractScopes, measureStaleness } from './staleness.js';
 
@@ -28,17 +29,19 @@ import { collectContractScopes, measureStaleness } from './staleness.js';
 // `pending` is informational, not a defect: writing the spec first is explicitly supported.
 // `unfilled` is work outstanding rather than something come loose, but it is counted, because a
 // repository whose specs describe work nobody has done is exactly what an inventory should surface.
-export type StatusKind = 'broken' | 'vocab' | 'orphan' | 'outdated' | 'drifted' | 'stale' | 'unfilled' | 'unlocked' | 'pending';
+export type StatusKind = 'broken' | 'vocab' | 'lint' | 'orphan' | 'outdated' | 'drifted' | 'stale' | 'unfilled' | 'unlocked' | 'unreviewed' | 'pending';
 
 const KIND_ORDER: StatusKind[] = [
     'broken',
     'vocab',
+    'lint',
     'orphan',
     'outdated',
     'drifted',
     'stale',
     'unfilled',
     'unlocked',
+    'unreviewed',
     'pending',
 ];
 
@@ -50,6 +53,7 @@ export type StatusEntry = {
     target: string;
     detail: string;
     staleness?: ScopeStaleness;
+    provenance?: { author?: string; email?: string; commit?: string; date?: string; ageDays?: number; marker: boolean };
 };
 
 export type StatusReport = {
@@ -61,6 +65,7 @@ export type StatusReport = {
     git: boolean;
     // Whether the project uses the contract layer, which is what makes `drifted`/`unlocked` meaningful.
     locked: boolean;
+    gitTimeouts: number;
 };
 
 function driftDetail(drift: FileDrift): string | null {
@@ -120,8 +125,9 @@ async function classifyAbsentTarget(
 export async function inspectProject(
     projectRootPath: string,
     hintbooks: HintbookData[],
-    options: { repositoryKind?: 'code' | 'knowledge' } = {},
+    options: { repositoryKind?: 'code' | 'knowledge'; agentAuthors?: string[] } = {},
 ): Promise<StatusReport> {
+    resetGitTimeoutCount();
     const allHintPaths = (await listHintFiles(projectRootPath)).map((hintFile) => Path.join(projectRootPath, hintFile));
     const included = await collectIncludedPaths(projectRootPath, allHintPaths);
     // Shared `@include` fragments describe no path, so they are not part of the inventory at all —
@@ -137,9 +143,11 @@ export async function inspectProject(
         scanned: hintPaths.length,
         git: snapshot !== null,
         locked: lock !== null,
+        gitTimeouts: 0,
     };
 
     if (hintPaths.length === 0) {
+        report.gitTimeouts = readGitTimeoutCount();
         return report;
     }
 
@@ -162,13 +170,23 @@ export async function inspectProject(
     }
 
     const hints = await parseHintFiles(projectRootPath, validHintPaths);
-    const vocabularyFindings = (await lintHintFiles(projectRootPath, validHintPaths, hintbooks)).filter(
-        (finding) => finding.kind === 'vocab' && finding.severity === 'finding',
+    for (const row of await findUnreviewedBlocks(projectRootPath, hints, options.agentAuthors)) {
+        const absoluteHint = Path.join(projectRootPath, row.hint);
+        report.entries.push({
+            kind: 'unreviewed',
+            hint: `${row.hint}:${row.line}`,
+            target: toGitPath(hintTargetName(projectRootPath, absoluteHint)),
+            detail: `${row.heading} is agent-authored and unreviewed${row.ageDays === undefined ? '' : ` (${row.ageDays} day(s))`}`,
+            provenance: { author: row.author, email: row.email, commit: row.commit, date: row.date, ageDays: row.ageDays, marker: row.marker },
+        });
+    }
+    const lintFindings = (await lintHintFiles(projectRootPath, validHintPaths, hintbooks, { duplicates: false, parsedRepository: hints })).filter(
+        (finding) => finding.severity === 'finding',
     );
 
-    for (const finding of vocabularyFindings) {
+    for (const finding of lintFindings) {
         report.entries.push({
-            kind: 'vocab',
+            kind: finding.kind === 'vocab' ? 'vocab' : 'lint',
             hint: finding.hint,
             target: toGitPath(hintTargetName(projectRootPath, Path.join(projectRootPath, finding.hint))),
             detail: `${finding.line ? `line ${finding.line}: ` : ''}${finding.detail}`,
@@ -283,12 +301,13 @@ export async function inspectProject(
 
     report.entries.sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || (a.hint < b.hint ? -1 : a.hint > b.hint ? 1 : 0));
 
+    report.gitTimeouts = readGitTimeoutCount();
     return report;
 }
 
 // Everything except `pending`, which records a supported authoring order rather than a problem.
 export function countFindings(report: StatusReport): number {
-    return report.entries.filter((entry) => entry.kind !== 'pending').length;
+    return report.entries.filter((entry) => entry.kind !== 'pending' && entry.kind !== 'unreviewed').length;
 }
 
 export function countPending(report: StatusReport): number {

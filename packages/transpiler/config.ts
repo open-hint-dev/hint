@@ -23,7 +23,7 @@ This repository is **Spec-as-Source**: its durable intent — decisions, invaria
 
 **Authoring.** You may read \`.hint\` files directly whenever you are writing or editing them — that is the only way to edit them, and it is expected. Do not read them directly to *consume* knowledge; \`hint <path>\` gives you that in the form agents are meant to receive, with inheritance resolved. Run \`hint author <path...>\` first for the keyword vocabulary and syntax, then write the files yourself.
 
-**Recording what you learn.** When you discover something durable that future work on this repository should know — an architectural decision, a subsystem invariant, an operational hazard, a security constraint, an approach that does not work and why — record it in the most specific \`.hint\` that applies: the file's companion \`<file>.hint\`, else the folder's \`_.hint\`, else the root \`_.hint\`. Prefer this over a separate agent-memory file, so the knowledge is versioned with the code and available to every tool. Do not record session state, task progress, or anything that stops being true when the task ends.
+**Recording what you learn.** When you discover something durable that future work on this repository should know — an architectural decision, a subsystem invariant, an operational hazard, a security constraint, an approach that does not work and why — record it in the most specific \`.hint\` that applies: the file's companion \`<file>.hint\`, else the folder's \`_.hint\`, else the root \`_.hint\`. Mark a block you write back as \`origin=agent\`; a human reviewer removes that marker (or changes it), and that diff is the review. Prefer this over a separate agent-memory file, so the knowledge is versioned with the code and available to every tool. Do not record session state, task progress, or anything that stops being true when the task ends.
 
 Write knowledge that *explains* — a decision and its rationale, an invariant, a hazard — not knowledge that *restates* code. A block that copies a signature, a schema, or the contents of another file is a snapshot that goes stale silently and then steers the next reader wrong; reference the file by path and state the constraint instead. Commit the \`.hint\` in the same change as the code it describes.
 
@@ -51,6 +51,7 @@ export type ConfigData = {
     books?: string[];
     repo?: 'code' | 'knowledge';
     refs_depth?: number;
+    curation?: { agent_authors?: string[] };
 };
 
 export async function findConfig(projectRootPath: string): Promise<string | null> {
