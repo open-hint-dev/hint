@@ -316,12 +316,36 @@ code.inl {
 .dot-ok { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-2); }
 
 /* Measured claims; every tile links to the committed methodology and results. */
-.numbers { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-.number { padding: 24px; border-right: 1px solid var(--line); background: var(--paper); }
-.number:last-child { border-right: 0; }
-.number strong { display: block; font-family: var(--font-display); font-size: clamp(1.35rem, 2.4vw, 2rem); color: var(--accent); }
-.number span { display: block; margin-top: 6px; color: var(--ink-2); font-size: 0.82rem; line-height: 1.4; }
-@media (max-width: 720px) { .number { border-right: 0; border-bottom: 1px solid var(--line); } .number:last-child { border-bottom: 0; } }
+.numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.number {
+  min-width: 0;
+  min-height: 136px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--paper);
+  transition: background .18s ease;
+}
+.number:hover { background: var(--paper-2); }
+.number strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 1.8vw, 1.75rem);
+  line-height: 1.08;
+  color: var(--accent);
+  text-wrap: balance;
+}
+.number span { display: block; margin-top: 18px; color: var(--ink-2); font-size: 0.82rem; line-height: 1.4; }
+@media (max-width: 480px) { .number { min-height: 116px; padding: 20px; } }
 
 /* keyword chip */
 .kw {
