@@ -146,12 +146,38 @@ See [Keeping it current in the README](https://github.com/open-hint-dev/hint/blo
 | [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) | The legal vocabulary — drafting and revising documents. |
 | [`@openhint/hintbook-librarian`](https://github.com/open-hint-dev/hintbook-librarian) | The knowledge-repository vocabulary — sources, claims, questions, and linked topics. |
 
+## Profession packages
+
+<!-- profession-packages:begin -->
+| Profession | Package | Guide |
+| --- | --- | --- |
+| Software Engineers | [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) | [Guide](https://openhint.dev/for-software-engineers.html) |
+| Lawyers | [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) | [Guide](https://openhint.dev/for-lawyers.html) |
+| Knowledge Librarians | [`@openhint/hintbook-librarian`](https://github.com/open-hint-dev/hintbook-librarian) | [Guide](https://openhint.dev/for-knowledge-librarians.html) |
+| Business Analysts | [`@openhint/hintbook-business-analyst`](https://github.com/open-hint-dev/hintbook-business-analyst) | [Guide](https://openhint.dev/for-business-analysts.html) |
+| Product Managers | [`@openhint/hintbook-product-manager`](https://github.com/open-hint-dev/hintbook-product-manager) | [Guide](https://openhint.dev/for-product-managers.html) |
+| QA Engineers | [`@openhint/hintbook-qa-engineer`](https://github.com/open-hint-dev/hintbook-qa-engineer) | [Guide](https://openhint.dev/for-qa-engineers.html) |
+| Technical Writers | [`@openhint/hintbook-technical-writer`](https://github.com/open-hint-dev/hintbook-technical-writer) | [Guide](https://openhint.dev/for-technical-writers.html) |
+| Compliance & Risk | [`@openhint/hintbook-compliance-officer`](https://github.com/open-hint-dev/hintbook-compliance-officer) | [Guide](https://openhint.dev/for-compliance-and-risk.html) |
+| Auditors | [`@openhint/hintbook-auditor`](https://github.com/open-hint-dev/hintbook-auditor) | [Guide](https://openhint.dev/for-auditors.html) |
+| Data & BI Analysts | [`@openhint/hintbook-data-analyst`](https://github.com/open-hint-dev/hintbook-data-analyst) | [Guide](https://openhint.dev/for-data-analysts.html) |
+| Financial Analysts | [`@openhint/hintbook-financial-analyst`](https://github.com/open-hint-dev/hintbook-financial-analyst) | [Guide](https://openhint.dev/for-financial-analysts.html) |
+| Procurement | [`@openhint/hintbook-procurement-specialist`](https://github.com/open-hint-dev/hintbook-procurement-specialist) | [Guide](https://openhint.dev/for-procurement.html) |
+| Sales & Proposals | [`@openhint/hintbook-proposal-manager`](https://github.com/open-hint-dev/hintbook-proposal-manager) | [Guide](https://openhint.dev/for-sales-and-proposals.html) |
+| Customer Support | [`@openhint/hintbook-support-agent`](https://github.com/open-hint-dev/hintbook-support-agent) | [Guide](https://openhint.dev/for-customer-support.html) |
+| Marketing & Brand | [`@openhint/hintbook-marketing-manager`](https://github.com/open-hint-dev/hintbook-marketing-manager) | [Guide](https://openhint.dev/for-marketing-and-brand.html) |
+| Policy Analysts | [`@openhint/hintbook-policy-analyst`](https://github.com/open-hint-dev/hintbook-policy-analyst) | [Guide](https://openhint.dev/for-policy-analysts.html) |
+| Clinical Operations | [`@openhint/hintbook-clinical-operations`](https://github.com/open-hint-dev/hintbook-clinical-operations) | [Guide](https://openhint.dev/for-clinical-operations.html) |
+| Educational Designers | [`@openhint/hintbook-instructional-designer`](https://github.com/open-hint-dev/hintbook-instructional-designer) | [Guide](https://openhint.dev/for-educational-designers.html) |
+<!-- profession-packages:end -->
+
 ## Where to go next
 
 - [Quick Start](https://github.com/open-hint-dev/hint/blob/main/docs/02-quick-start.md) — record your first knowledge and query it in minutes.
 - [Syntax](https://github.com/open-hint-dev/hint/blob/main/docs/03-syntax.md) — the complete structural grammar of `.hint` files.
 - [How It Works](https://github.com/open-hint-dev/hint/blob/main/docs/04-how-it-works.md) — the resolve → parse → render pipeline in detail.
 - [Hintbooks](https://github.com/open-hint-dev/hint/blob/main/docs/05-hintbooks.md) — using, authoring, and distributing keyword vocabularies.
+- [Profession hintbooks](https://github.com/open-hint-dev/hint/blob/main/docs/10-professions.md) — the live profession catalog, common-core composition, and guidance for adjacent books.
 - [CLI Reference](https://github.com/open-hint-dev/hint/blob/main/docs/06-cli.md) — every command and flag.
 - [Integrations](https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md) — one-line agent setup and project-level MCP configuration for Claude Code, Codex, Cursor, VS Code / GitHub Copilot, and generic clients.
 - [Emit](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md) — producing artifacts from specs, and authoring an emitter.
@@ -691,6 +717,27 @@ A book entry points at a **base directory**; every directory inside it containin
 
 When several hintbooks define the same keyword, the first one in `books` order wins.
 
+## Common core and composition
+
+Official profession hintbooks carry the same small, profession-neutral core. Its keywords, synonyms, rendered tags, and glossary sentences are identical in every book, so first-book-wins resolution is harmless for these collisions:
+
+| Keyword | Canonical tag | Neutral meaning |
+| --- | --- | --- |
+| `never` | `strict_prohibition` | Content or behavior that must never appear, unconditionally. |
+| `source` | `evidence_source` | Where a fact, figure, or citation came from; a missing source is a gap, never a blank to fill. |
+| `term` | `defined_term` | A defined term used verbatim and consistently. |
+| `assumption` | `stated_assumption` | Something taken as true for this work, with its basis. |
+| `risk` | `identified_risk` | A risk with its declared likelihood, impact, and mitigation. |
+| `decision` | `settled_decision` | A settled choice with rationale; extend it rather than silently relitigating it. |
+| `openquestion` | `open_question` | An unresolved point to report, not resolve silently. |
+| `checklist` | `verification_checklist` | Items that must all be satisfied before the work is done. |
+| `style` | `style_requirements` | Tone, format, and voice requirements for produced text. |
+| `example`, `good`, `bad` | `few_shot_example`, `enforced_patterns`, `prohibited_anti_patterns` | A worked example, a required pattern, and a prohibited pattern. |
+| `read`, `res` | `read_it`, `static_asset` | A runtime reference and an asset to use as declared. |
+| `notes` | excluded | Private scratch content that is never rendered. |
+
+A profession book may add domain keywords but must not redefine this core. Put the most task-specific book first in `books:` so genuine domain collisions resolve deliberately; the shared core behaves identically in any order.
+
 ## Anatomy of a hintbook
 
 ```
@@ -796,6 +843,8 @@ Names of the form `__name__` are **running instructions** — structural slots t
 | `__config__` | Optional replacement for the core instruction block that `hint apply` installs. The first vocabulary book defining it wins. |
 
 ## Authoring guidelines
+
+Start from the [`open-hint-dev/hintbook-template`](https://github.com/open-hint-dev/hintbook-template) repository. It ships the common core, running-instruction placeholders, CI, a package-quality checker, test data, and a checklist for the book/demo/page contract. Create from the template, replace every `<!-- fill -->` marker, then keep `scripts/check-book.mjs` green while adding domain vocabulary.
 
 - **One concept per keyword.** Small, sharply-defined vocabulary beats a sprawling one — every keyword is something a spec author must remember and an agent must obey.
 - **Make templates binding.** Render into explicit tags with imperative bodies ("implement exactly", "do not rename") and define each tag in `__system__.md` in the same authoritative voice.
@@ -2184,351 +2233,1438 @@ Usually, nothing. A knowledge repository does not have generated code targets, a
 The Markdown remains readable and reviewable in git. HINT adds scoped inheritance, deterministic retrieval, domain synonyms, bounded link closure, and structural graph checks; it does not introduce a database, embedding index, or network dependency.
 
 <!-- ============================================================ -->
-<!-- HINTBOOK: software-engineer — Keyword Reference -->
+<!-- CORE DOCS — Profession Hintbooks -->
 <!-- ============================================================ -->
 
-# Keyword Reference
+# Profession hintbooks
 
-Every keyword in this hintbook, the tag it compiles into, and how to use it. Write keywords as markdown headings — `# keyword Name {#optional_id}` — at any nesting level; heading depth nests blocks into their parents.
+HINT uses one engine for many kinds of high-stakes work. A profession hintbook supplies the vocabulary, operating rules, and optional deterministic emit templates; `.hint` files remain plain Markdown scoped to the artifacts they govern.
 
-All templates render the block's name and id as attributes and place the body before the compiled children, so nested declarations stay visibly inside their parent's scope.
+## Live books
 
----
+<!-- profession-rows:begin -->
+| Family | Profession | Package | What it governs | Demo |
+| --- | --- | --- | --- | --- |
+| Delivery | Software Engineers | [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) | Architecture, contracts, data models, and anti-patterns | [demo-pied-piper](https://github.com/open-hint-dev/demo-pied-piper) |
+| Law & assurance | Lawyers | [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) | Matters, clauses, obligations, sources, and red lines | [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt) |
+| Analysis & knowledge | Knowledge Librarians | [`@openhint/hintbook-librarian`](https://github.com/open-hint-dev/hintbook-librarian) | Sources, claims, decisions, open questions, and linked topics | [demo-knowledge-wiki](https://github.com/open-hint-dev/demo-knowledge-wiki) |
+| Delivery | Business Analysts | [`@openhint/hintbook-business-analyst`](https://github.com/open-hint-dev/hintbook-business-analyst) | Traceable by construction; Rules win over prose; Gaps, not guesses Surfaces: requirement. Internal positions have no emit templates. | [demo-initech-requirements](https://github.com/open-hint-dev/demo-initech-requirements) |
+| Delivery | Product Managers | [`@openhint/hintbook-product-manager`](https://github.com/open-hint-dev/hintbook-product-manager) | Stories trace to goals; No invented metrics; Non-goals stay out Surfaces: story, metric. Internal positions have no emit templates. | [demo-hooli-product](https://github.com/open-hint-dev/demo-hooli-product) |
+| Delivery | QA Engineers | [`@openhint/hintbook-qa-engineer`](https://github.com/open-hint-dev/hintbook-qa-engineer) | Expected results trace; Negative paths are mandatory; Gherkin emitted, never retyped Surfaces: case. The emit pack contains only derivable structure. | [demo-nakatomi-qa](https://github.com/open-hint-dev/demo-nakatomi-qa) |
+| Delivery | Technical Writers | [`@openhint/hintbook-technical-writer`](https://github.com/open-hint-dev/hintbook-technical-writer) | Required sections, emitted; One term, everywhere; Facts from source, not memory Surfaces: page. The emit pack contains only derivable structure. | [demo-pied-piper-docs](https://github.com/open-hint-dev/demo-pied-piper-docs) |
+| Law & assurance | Compliance & Risk | [`@openhint/hintbook-compliance-officer`](https://github.com/open-hint-dev/hintbook-compliance-officer) | Owner and evidence for every control; Exceptions expire; No uncited regulation Surfaces: requirement, control. Internal positions have no emit templates. | [demo-wonka-compliance](https://github.com/open-hint-dev/demo-wonka-compliance) |
+| Law & assurance | Auditors | [`@openhint/hintbook-auditor`](https://github.com/open-hint-dev/hintbook-auditor) | No finding without evidence; Severity from the scale; Scope is a wall Surfaces: finding. Internal positions have no emit templates. | [demo-wonka-audit](https://github.com/open-hint-dev/demo-wonka-audit) |
+| Analysis & knowledge | Data & BI Analysts | [`@openhint/hintbook-data-analyst`](https://github.com/open-hint-dev/hintbook-data-analyst) | One metric, one definition; SQL verified, not trusted; Caveats travel with numbers Surfaces: metric. The emit pack contains only derivable structure. | [demo-dunder-mifflin-bi](https://github.com/open-hint-dev/demo-dunder-mifflin-bi) |
+| Analysis & knowledge | Financial Analysts | [`@openhint/hintbook-financial-analyst`](https://github.com/open-hint-dev/hintbook-financial-analyst) | Every input sourced and dated; Scenarios change only declared inputs; Checks fail loudly Surfaces: input, output. Internal positions have no emit templates. | [demo-bluth-finance](https://github.com/open-hint-dev/demo-bluth-finance) |
+| Commercial | Procurement | [`@openhint/hintbook-procurement-specialist`](https://github.com/open-hint-dev/hintbook-procurement-specialist) | Weights never reach the RFP; Vendor-neutral by rule; Budget from source only Surfaces: requirement. Internal positions have no emit templates. | [demo-springfield-procurement](https://github.com/open-hint-dev/demo-springfield-procurement) |
+| Commercial | Sales & Proposals | [`@openhint/hintbook-proposal-manager`](https://github.com/open-hint-dev/hintbook-proposal-manager) | Claims carry proof; Commitments stay in the envelope; Comply means evidence Surfaces: none. Internal positions have no emit templates. | [demo-monorail-proposal](https://github.com/open-hint-dev/demo-monorail-proposal) |
+| Commercial | Customer Support | [`@openhint/hintbook-support-agent`](https://github.com/open-hint-dev/hintbook-support-agent) | Policies never mix across tiers; Verify before disclosure; Unknown is an answer Surfaces: answer. Internal positions have no emit templates. | [demo-vandelay-support](https://github.com/open-hint-dev/demo-vandelay-support) |
+| Commercial | Marketing & Brand | [`@openhint/hintbook-marketing-manager`](https://github.com/open-hint-dev/hintbook-marketing-manager) | One brand's rules never leak; Claims carry proof or a flag; Channel limits built in Surfaces: tagline. Internal positions have no emit templates. | [demo-sterling-cooper-brand](https://github.com/open-hint-dev/demo-sterling-cooper-brand) |
+| Law & assurance | Policy Analysts | [`@openhint/hintbook-policy-analyst`](https://github.com/open-hint-dev/hintbook-policy-analyst) | No uncited instrument; Evidence and judgment separated; Options use declared criteria Surfaces: regulation, option. Internal positions have no emit templates. | [demo-pawnee-policy](https://github.com/open-hint-dev/demo-pawnee-policy) |
+| Operations & learning | Clinical Operations | [`@openhint/hintbook-clinical-operations`](https://github.com/open-hint-dev/hintbook-clinical-operations) | Operations, never judgment; Every route has a source; Red flags first Surfaces: protocol. Internal positions have no emit templates. | [demo-sacred-heart-clinical](https://github.com/open-hint-dev/demo-sacred-heart-clinical) |
+| Operations & learning | Educational Designers | [`@openhint/hintbook-instructional-designer`](https://github.com/open-hint-dev/hintbook-instructional-designer) | Alignment you can check; Rubrics consistent by construction; Facts from cited materials Surfaces: objective. Internal positions have no emit templates. | [demo-greendale-courses](https://github.com/open-hint-dev/demo-greendale-courses) |
+<!-- profession-rows:end -->
 
-## Intent and scope
+The remaining profession rows are added here as each book, demo, page, and package ships. See the live status on [openhint.dev/professions.html](https://openhint.dev/professions.html).
 
-These declare *why* the work exists, *when* it is done, and *where* its edges are. They carry no implementation themselves — they steer every decision the other blocks leave open. Lead a spec with them.
+## Combining books in one repository
 
-| Keyword | Synonyms | Compiles to | Use it for |
-| --- | --- | --- | --- |
-| `goal` | `why`, `intent` | `<product_goal_and_intent>` | Why the work exists and the outcome it must produce. The tie-breaker for every decision the spec is silent on — the agent chooses what serves the goal. |
-| `done` | `accept`, `acceptance`, `criteria` | `<acceptance_criteria>` | The observable, verifiable conditions for "done." The work is incomplete until every one is demonstrably met — proven, not asserted. |
-| `scope` | `nongoal`, `nongoals`, `outofscope` | `<scope_boundary>` | What is in scope and what is explicitly out of it. The agent builds nothing outside the boundary and reports rather than silently expanding it. |
+Every official profession book carries the common core documented in [Hintbooks](https://github.com/open-hint-dev/hint/blob/main/docs/05-hintbooks.md#common-core-and-composition). HINT resolves a duplicated keyword from the first registered book. Core collisions are safe because their tags, synonyms, and glossary meanings are identical; domain collisions are not automatically equivalent, so order the most task-specific book first:
 
-## Project context
-
-| Keyword | Synonyms | Compiles to | Use it for |
-| --- | --- | --- | --- |
-| `app` | `application` | `<application_context>` | The domain, purpose, and overall structure of the application. Informs naming, architecture, and behavioral decisions everywhere. |
-| `lang` | `language` | `<environment_runtime_and_language>` | The language and runtime target. The agent must use only syntax, APIs, and idioms belonging to it. |
-| `build` | | `<compilation_and_testing_pipeline>` | Build and test commands. Generated code must never break these pipelines. |
-| `dep` | `deps`, `dependency`, `dependencies` | `<approved_dependency_whitelist>` | The approved dependency list. The agent is forbidden from installing or importing anything outside it without asking. |
-| `module` | | `<reusable_module_context>` | A reusable module in the codebase: responsibilities, exports, consumers. The agent must reuse it, not duplicate it. |
-| `lib` | `library` | `<reusable_library_context>` | A shared library (internal or external): API surface, version constraints, usage patterns. |
-| `namespace` | | `<reusable_namespace_context>` | The namespace/package/module path all code in scope must be emitted under. |
-| `res` | `resource`, `resources` | `<static_asset>` | A data asset definition — structure and access patterns. |
-| `read` | | `<read_it>` | Files the agent must open and read before writing code that touches them — mirroring their formatting, exports, and error handling. |
-
-## Data
-
-| Keyword | Synonyms | Compiles to | Use it for |
-| --- | --- | --- | --- |
-| `data` | `const`, `constant`, `value`, `var`, `variable` | `<data_definition>` | A meaningful concrete value — a named constant, magic value, enum member, or config default. Used exactly as given, and referenced rather than duplicated as a literal. |
-| `entity` | | `<data_structure>` | A data model with an exact schema. No renamed fields, changed types, extra or missing fields. |
-| `field` | | `<field>` | One named property of an entity or form: type, optionality, validation. Implement exactly as declared. |
-| `table` | | `<table>` | A tabular structure or UI table: columns, row shape, persistence/display behavior. |
-| `column` | | `<table_column>` | One column: name, type, label, constraints. |
-| `row` | | `<table_row>` | The shape and content of a single row. |
-
-## Behavior
-
-| Keyword | Synonyms | Compiles to | Use it for |
-| --- | --- | --- | --- |
-| `func` | `function` | `<function_contract>` | A binding function contract: arguments, return, errors, and logic flow are all mandatory. |
-| `arg` | `argument` | `<argument>` | One input: name, type, constraints, defaults — honored exactly. |
-| `result` | `return` | `<return>` | The output: declared type and shape exactly, on every code path. |
-| `flow` | | `<logic_flow>` | A step-by-step logical sequence the implementation must follow without skipping validations. |
-| `action` | | `<reusable_automation_script>` | A macro behavior: when the described condition is met (or the action is referenced by name), execute its steps exactly. |
-| `error` | | `<error>` | Exact error types under exact conditions — never substituted, wrapped, or renamed; each one backed by a regression test. |
-
-## Constraints
-
-| Keyword | Synonyms | Compiles to | Use it for |
-| --- | --- | --- | --- |
-| `rule` | `rules` | `<critical_system_mandates>` | Non-negotiable system-level constraints every function, data access, and error path must satisfy. |
-| `decision` | `adr` | `<architectural_decision>` | A settled design decision **and its rationale** — so future work extends it instead of relitigating or silently contradicting it. |
-| `invariant` | | `<system_invariant>` | A property that must hold before and after every change. A change that would falsify it is wrong, not the invariant. |
-| `good` | | `<enforced_patterns>` | Required patterns and practices, applied without exception or substitution. |
-| `bad` | | `<prohibited_anti_patterns>` | Unconditional prohibitions — real past failures the agent must never reintroduce, even if examples seem to suggest them. |
-| `test` | | `<verification_and_unit_test_criteria>` | Test scenarios that must all appear in the test output: edge cases, mock shapes, assertions. |
-| `example` | | `<few_shot_example>` | A demonstration of the required pattern — structure, naming, and style to replicate exactly. |
-
-## User interface
-
-| Keyword | Synonyms | Compiles to | Use it for |
-| --- | --- | --- | --- |
-| `ui` | | `<user_interface_surface>` | A UI surface built exactly as specified — only the declared elements, all of the declared elements. |
-| `form` | | `<user_interface_form>` | A form: every field, label, validation rule, and submission behavior as described. |
-| `block` | | `<user_interface_block>` | A named reusable component or layout section (card, panel, sidebar). |
-| `image` | | `<user_interface_image>` | An image element: exact source, alt text, dimensions, display properties. |
-
-## Spec-internal
-
-| Keyword | Synonyms | Compiles to | Use it for |
-| --- | --- | --- | --- |
-| `notes` | | *(nothing — excluded)* | Author-facing notes that must never reach the compiled prompt. The block and everything nested under it are dropped. |
-
----
-
-## Verifiable surfaces
-
-Six keywords are marked **surfaces** (`surface: true` in their instruction front matter): `func`, `entity`, `field`, `error`, `data`, and `column`. A surface is a declaration whose *name* must appear verbatim in the generated code — exactly the keywords whose contract forbids renaming or substitution.
-
-`hint verify <path>` uses this. It reads the generated file and checks, deterministically and without spending a token, that every declared surface name is present. A missing name means a whole declaration was dropped — a stubbed or forgotten function, an unhandled error type, an omitted field, an unused constant. This is a *presence* check, not a proof of correctness. Compose it as `hint verify <path> && hint lock <path>` to refuse recording a target as generated until it verifies.
-
-Keywords whose name is not a verbatim code identifier are deliberately **not** surfaces — a `ui` titled "Invoice page", an `arg` that idiomatic code destructures away, a prose `table` name — so that a verify failure stays a reliable signal of a real omission rather than noise.
-
----
-
-## Choosing keywords
-
-- **Lead with intent.** A `goal` and a `scope` at the top of a spec resolve the decisions every other block leaves open and stop the agent from building past the edges. A `done` block turns "looks finished" into "passes these checks."
-- **Reach for the most specific keyword.** `field` inside an `entity` beats a bullet list in the entity body — the agent gets a named, binding block it cannot gloss over.
-- **Give ids to anything referenced elsewhere.** `# entity PaymentData {#payment_data}` keeps a stable handle through renames.
-- **State prohibitions with `bad`, not prose.** Its template adds the strongest enforcement language in the book.
-- **Record *why*, not just *what*.** A `decision` without its rationale is a rule someone will overturn the first time it is inconvenient; with the rationale it tells a reader whether a new situation is still covered. Use `invariant` for what must always hold, `rule` for how work must be done, and `bad` for what must never happen.
-- **Unknown keywords don't fail** — the transpiler passes their bodies through as plain markdown — but only declared keywords carry the binding tag language defined in the system glossary.
-
-
-<!-- ============================================================ -->
-<!-- HINTBOOK: software-engineer — Prompt Framing -->
-<!-- ============================================================ -->
-
-# Prompt framing
-
-By default `hint <paths>` returns the knowledge that applies to a path and nothing else — no persona, no reporting format. That is what an agent already mid-session needs.
-
-For an agent starting cold with no other instructions, `hint --prompt <paths>` wraps that same knowledge in this book's framing:
-
-```bash
-hint src/billing/invoice.ts             # knowledge only (default)
-hint --prompt src/billing/invoice.ts    # + role header and verification footer
-hint --standalone src/billing/invoice.ts  # implies --prompt, + the tag glossary
+```yaml
+books:
+  - npm://@openhint/hintbook-product-manager
+  - npm://@openhint/hintbook-software-engineer
 ```
 
-Framing is a wrapper, not part of the compiled form. Removing it loses no repository knowledge.
+Use explicit collision-free names where the official books prescribe them: `bizrule`, `testdata`, `unit`, `audittest`, `identify`, and `record`.
 
----
+## Which book when
 
-## `__header__` — the role
-
-Opens `--prompt` output. Casts the agent as a senior engineer implementing from a binding specification, and sets the operating rules: read the whole spec first, implement exactly what is specified, do the complete thing, reuse before writing, don't guess past genuine ambiguity, and let the more specific block win a conflict.
-
-## `__footer__` — the close
-
-Ends `--prompt` output with a verification walk (every declared structure implemented, every acceptance criterion met, no prohibited pattern present, names and types exact, build and tests green) and a required report: **What you built**, **Gaps**, and a **Status** of `DONE` / `DONE_WITH_CONCERNS` / `BLOCKED` / `NEEDS_CONTEXT`.
-
-The gap report is the point: decisions the spec left open come back to the author instead of being silently made.
-
-## `__changes__` — reconciliation
-
-Rendered inside `--prompt` output **only** when a `hint.lock` exists and blocks have drifted since the code was generated. It carries the block-level drift list and scopes the work to it: change only the code governed by a listed block, leave conforming code untouched, implement `new` blocks in full, re-verify a file marked `inherited`.
-
-This is contextual, not selected. There is no mode to pass — HINT renders it exactly when there is drift to reconcile.
-
-> **Note for users of `@openhint/cli` 1.0.x.** This book previously shipped `fix` and `review` modes selected with `--mode`. The mode system was removed in 1.1: `review`'s mechanical half is `hint verify` (deterministic and token-free), and `fix` became the automatic behaviour described above. See the [migration guide](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md).
-
-## `__system__` — the tag glossary
-
-The authoritative meaning of every tag this book renders. `hint apply` installs it once into `AGENTS.md` / `CLAUDE.md`, so the default output can be knowledge alone; `--standalone` prepends it for an agent that never loaded those files.
-
+- A business analyst book governs traceable requirements and business processes; a product manager book governs outcomes, personas, prioritization, and product trade-offs.
+- A compliance book describes the framework, controls, and approved exceptions; an auditor book tests them and reports evidence-backed findings; a policy analyst book compares public-policy options under cited instruments.
+- A procurement book publishes the buyer's neutral requirements while keeping evaluation weights internal; a proposal book answers those requirements from an approved offer and proof set.
 
 <!-- ============================================================ -->
-<!-- HINTBOOK: lawyer — Keyword Reference -->
+<!-- HINTBOOK: software-engineers — README -->
 <!-- ============================================================ -->
 
-# Keyword Reference
+# @openhint/hintbook-software-engineer
 
-Every keyword in this hintbook, the tag it compiles into, and how to use it. Write keywords as markdown headings — `# keyword Name {#optional_id}` — at any nesting level; heading depth nests blocks into their parents (an `obligation` under a `clause`, a `deadline` under an `obligation`).
+The official general-purpose [hintbook](https://github.com/open-hint-dev/hint/blob/main/docs/05-hintbooks.md) for [HINT](https://github.com/open-hint-dev/hint#readme) — the keyword vocabulary that turns `.hint` specifications into binding implementation prompts for AI coding agents.
 
----
+A hintbook supplies what the HINT engine deliberately leaves open: the meaning of every keyword. This book covers the day-to-day vocabulary of software engineering — data structures, function contracts, logic flows, UI surfaces, dependency policies, prohibitions, and test criteria.
 
-## Matter context
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
 
-| Keyword | Synonyms | Compiles to | Use it for |
-| --- | --- | --- | --- |
-| `matter` | `case`, `engagement` | `<matter_overview>` | The matter itself: parties' goals, deal background, scope of engagement. Informs every drafting decision. |
-| `jurisdiction` | `law` | `<governing_law_and_jurisdiction>` | Governing law and forum. Drafting follows its conventions and mandatory rules; unenforceable requests get flagged. |
-| `party` | `parties` | `<party>` | A party: exact legal name, role, capacity — used consistently, never varied. |
-| `definition` | `term`, `terms`, `definitions` | `<defined_term>` | A defined term: defined once, capitalized as defined, no synonyms for the concept. |
-| `recital` | `whereas`, `background` | `<recital>` | Background for the recitals — context and intent, never operative obligations. |
-| `fact` | `facts` | `<established_fact>` | A fact of the matter: relied on as stated, never contradicted or embellished. |
-| `read` | | `<read_it>` | Documents the assistant must open and read before drafting anything that relies on them. |
-| `precedent` | `template`, `model` | `<drafting_precedent>` | A model document or fragment whose structure, numbering, and style must be replicated. |
-| `style` | `tone`, `voice` | `<drafting_style>` | Style and tone requirements for all drafted text. |
+## Installation
 
-## Document structure
+```bash
+hint add @openhint/hintbook-software-engineer
+```
 
-| Keyword | Synonyms | Compiles to | Use it for |
-| --- | --- | --- | --- |
-| `clause` | `provision`, `section`, `article` | `<clause>` | A contractual provision drafted exactly as specified — scope, carve-outs, cross-references. |
-| `obligation` | `obligations`, `duty`, `covenant` | `<binding_obligation>` | What a party must do: clear mandatory language, unambiguous who/what/when. |
-| `prohibition` | `prohibitions`, `restriction`, `restrictions` | `<prohibited_conduct>` | What a party must not do: clear prohibitory language ("shall not"), unambiguous who is bound and what is prohibited. |
-| `right` | `rights`, `entitlement` | `<granted_right>` | A right granted: holder, scope, conditions, duration — neither broadened nor narrowed. |
-| `condition` | `conditions` | `<condition>` | A condition precedent or subsequent: trigger, effect, consequence of failure. |
-| `exception` | `carveout`, `carve-out`, `proviso`, `unless`, `notwithstanding` | `<exception>` | A narrow carve-out to the enclosing obligation, prohibition, right, or clause. Applies exactly as stated — never swallows the rule it qualifies. |
-| `breach` | `violation`, `default` | `<breach>` | What constitutes breach of the enclosing provision. Nest a `remedy` inside to declare the consequence. |
-| `source` | `basis`, `statute`, `regulation` | `<legal_basis>` | The law or rule the enclosing provision exists to satisfy. Conflicts between spec and source get flagged, never silently resolved. |
-| `representation` | `warranty`, `warranties` | `<representation_and_warranty>` | A rep or warranty with its knowledge/materiality qualifiers exactly as declared. |
-| `remedy` | `remedies` | `<remedy>` | Remedies for the described breach — none added, none waived. |
-| `indemnity` | `indemnification` | `<indemnification>` | Who indemnifies whom, covered losses, exclusions, procedure. |
-| `liability` | `limitation` | `<liability_allocation>` | Caps, exclusions, carve-outs — declared amounts only. |
-| `termination` | | `<termination_provision>` | Grounds, notice, and effects of termination. |
-| `payment` | `fee`, `fees`, `consideration` | `<payment_terms>` | Amounts, currency, schedule, late-payment consequences. Missing figures are gaps, not blanks to fill. |
-| `deadline` | `period`, `periods`, `timing` | `<time_provision>` | Deadlines and periods: exact durations, triggers, business vs calendar days. |
-| `notice` | `notices` | `<notice_requirements>` | How notices are validly given: addressees, channels, deemed receipt. |
-| `dispute` | `arbitration` | `<dispute_resolution>` | Forum and process: courts or arbitration, seat, rules, language. |
-| `exhibit` | `schedule`, `annex`, `appendix`, `attachment` | `<exhibit>` | An attachment, referenced in the body under its declared designation. |
-| `signature` | `execution` | `<execution_block>` | Execution requirements: signatories, capacity, witnesses, notarization. |
+This registers the book in your project's `hint.yml`:
 
-## Litigation & argument
+```yaml
+books:
+    - npm://@openhint/hintbook-software-engineer
+```
 
-| Keyword | Synonyms | Compiles to | Use it for |
-| --- | --- | --- | --- |
-| `claim` | `claims`, `count` | `<claim>` | A cause of action: its elements and supporting facts as declared, and only those. |
-| `argument` | `arguments` | `<legal_argument>` | An argument developed issue → rule → application → conclusion from the declared body. |
-| `authority` | `citation`, `citations`, `caselaw` | `<legal_authority>` | Authorities to cite — precisely, only for the stated point. Unverifiable citations are reported, never invented. |
+Then run `hint apply` to add the book's system glossary to your `AGENTS.md` / `CLAUDE.md`, so agents know how to read the compiled tags.
 
-## Positions & constraints
+## Vocabulary at a glance
 
-| Keyword | Synonyms | Compiles to | Use it for |
-| --- | --- | --- | --- |
-| `redline` | `redlines`, `rule`, `rules` | `<non_negotiable_position>` | Client red lines, honored without exception in every provision. The template carries explicit never-trade-away language. |
-| `never` | `forbidden`, `banned` | `<strict_prohibition>` | Content that must never appear in or be permitted by the document — enforced with the strongest language in the book. |
-| `fallback` | `fallbacks`, `alternative` | `<fallback_position>` | An ordered negotiation fallback to the enclosing position. Conceded in declared order, never past the last one, never across a red line. |
-| `standard` | `standards`, `boilerplate` | `<required_drafting_standards>` | Required boilerplate and drafting standards, applied without substitution. |
-| `risk` | `risks` | `<risk_to_mitigate>` | A known risk the document must address — the report must say which provision mitigates it. |
-| `checklist` | `verification` | `<verification_checklist>` | Items that must each hold true in the final document, verified explicitly. |
+Write any of these as a markdown heading — `# keyword Name {#optional_id}` — at any nesting level:
 
-## Drafting discipline
+| Area            | Keywords                                                                   |
+| --------------- | -------------------------------------------------------------------------- |
+| Intent & scope  | `goal`, `done`, `scope`                                                    |
+| Project context | `app`, `lang`, `build`, `dep`, `module`, `lib`, `namespace`, `res`, `read` |
+| Data            | `data`, `entity`, `field`, `table`, `column`, `row`                        |
+| Behavior        | `func`, `arg`, `result`, `flow`, `action`, `error`                         |
+| Constraints     | `rule`, `decision`, `invariant`, `good`, `bad`, `test`, `example`          |
+| User interface  | `ui`, `form`, `block`, `image`                                             |
+| Spec-internal   | `notes` (excluded from compiled output)                                    |
 
-Cross-cutting guardrails that keep the assistant inside strict borders:
+Common long forms work as synonyms: `application` → `app`, `function` → `func`, `dependencies` → `dep`, `language` → `lang`, `library` → `lib`, `argument` → `arg`, `return` → `result`, `intent` → `goal`, `acceptance` → `done`, `outofscope` → `scope`, `constant` → `data`, and more.
 
-| Keyword | Synonyms | Compiles to | Use it for |
-| --- | --- | --- | --- |
-| `example` | `examples`, `sample` | `<drafting_example>` | A worked example of the expected output — form to match, not substance to copy. |
-| `good` | `prefer`, `preferred` | `<enforced_drafting_patterns>` | Mandatory drafting patterns, applied consistently in every provision. |
-| `bad` | `avoid` | `<prohibited_drafting_patterns>` | Drafting patterns that must never be used — absolute, even where a precedent uses them. |
-| `action` | `procedure`, `procedures` | `<reusable_procedure>` | A step-by-step procedure executed exactly as written when invoked — conflict checks, defined-term sweeps, filing routines. |
-| `res` | `resource`, `resources` | `<static_asset>` | Material used verbatim — letterhead, riders, standard schedules. Never retyped, paraphrased, or "improved". |
+See the full reference with rendered tags and usage guidance in [docs/keywords.md](docs/keywords.md).
 
-## Spec-internal
+## Output
 
-| Keyword | Synonyms | Compiles to | Use it for |
-| --- | --- | --- | --- |
-| `notes` | | *(nothing — excluded)* | Author-facing notes — open questions for the client, reminders — that must never reach the compiled prompt. |
+| Invocation                  | What you get                                                                                                                  |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `hint <paths>`              | The knowledge that applies, rendered through this book's tags. No persona, no footer — what an agent already mid-session needs. |
+| `hint --prompt <paths>`     | The same knowledge wrapped in the role header and verification/report footer, for an agent starting cold.                       |
+| `hint --standalone <paths>` | Implies `--prompt`, and prepends the tag glossary for an agent that never loaded `AGENTS.md`.                                   |
 
----
+When a `hint.lock` exists and blocks have drifted, `--prompt` output additionally carries the drift list and scopes the work to it — automatically, with no mode to select. Details in [docs/framing.md](docs/framing.md).
 
-## Nesting patterns
+> Requires `@openhint/cli` 1.1+. This book no longer ships `--mode fix` / `--mode review`; see the [migration guide](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md).
 
-The whole anatomy of a legal norm is expressed by nesting — no new syntax, just heading depth:
+## Emit: producing the code
+
+This hintbook also ships **emit packs** — `emit/typescript/` and `emit/go/` — so `hint emit` can produce the declarations a spec describes, deterministically and without a model:
+
+```bash
+hint emit src/billing/invoice.ts    # write it
+hint emit --check                   # CI: the artifact still matches its spec
+```
+
+| Keyword | TypeScript | Go |
+| --- | --- | --- |
+| `entity` + `field` | `export interface` | `type … struct` |
+| `func` + `arg` + `result` | `export function` with a hole for the body | `func` returning `(T, error)` with a hole |
+
+A type is always optional. `## arg invoice` is a spec a person wrote, and the template — not you — decides how to cope: TypeScript drops the annotation, Go falls back to `any`. Writing `## arg invoice: Invoice` when you know the type simply gives the emitter more to work with.
+
+Everything else has no template and therefore produces no code: `decision`, `invariant`, `rule`, `bad`, `good`, `flow`, `error`, `test`, `lang`, `dep`, `build`. Those are not declarations — they are what the implementation must honour, so they reach the implementer as constraints inside the hole rather than as syntax. A `flow` nested under a `func` becomes that function's step list, right where the body has to be written.
+
+## Example
 
 ```markdown
-# clause NonCompete
+# entity PaymentData {#payment_data}
 
-## prohibition Restraint
+this entity describes the payment data contract
 
-The Employee shall not engage in any Competing Business.
+## field timestamp
 
-### condition Scope
+unix epoch milliseconds
+```
 
-Applies within the Territory during the Restricted Period.
+compiles (inside the file/folder context chain, header, and footer) into:
 
-### exception ExistingHoldings
+```markdown
+<data_structure name="PaymentData" id="payment_data">
 
-Passive holdings of less than 3% in listed companies.
+this entity describes the payment data contract
+
+<field name="timestamp" id="">
+
+unix epoch milliseconds
+
+</field>
+
+</data_structure>
+```
+
+The `__system__` glossary defines `data_structure`, `field`, and every other tag as a binding directive — that pairing of rendered tags and glossary is what makes the output enforceable rather than decorative.
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: lawyers — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-lawyer
+
+A [hintbook](https://github.com/open-hint-dev/hint/blob/main/docs/05-hintbooks.md) for [HINT](https://github.com/open-hint-dev/hint#readme) that turns `.hint` specifications into binding **legal drafting prompts** for AI assistants.
+
+HINT is not only for software. The same structure — companion specs, typed blocks, strict borders — serves anyone whose work demands structured thinking. This book applies it to legal documents: you declare parties, defined terms, clauses, obligations, red lines, and prohibitions in plain markdown next to the documents they govern; the compiler turns them into a prompt where every declaration is a binding drafting directive, and the assistant drafts inside the borders instead of improvising around them.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+matter/
+├── hint.yml                  ← project root, registers this book
+├── _.hint                    ← the matter: parties' goals, governing law, red lines
+└── contracts/
+    ├── nda.md.hint           ← defines contracts/nda.md
+    └── spa.md.hint           ← defines contracts/spa.md
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-lawyer
+```
+
+This registers the book in your project's `hint.yml`. Then `hint apply` adds the book's system glossary to your agent context files so assistants know how to read the compiled tags.
+
+## Vocabulary at a glance
+
+Write any of these as a markdown heading — `# keyword Name {#optional_id}` — at any nesting level:
+
+| Area                    | Keywords                                                                                                                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Matter context          | `matter`, `jurisdiction`, `party`, `definition`, `recital`, `fact`, `read`, `precedent`, `style`                                                                                      |
+| Document structure      | `clause`, `obligation`, `prohibition`, `right`, `condition`, `exception`, `breach`, `source`, `representation`, `remedy`, `indemnity`, `liability`, `termination`, `payment`, `deadline`, `notice`, `dispute`, `exhibit`, `signature` |
+| Litigation & argument   | `claim`, `argument`, `authority`                                                                                                                                                      |
+| Positions & constraints | `redline`, `never` (banned content), `fallback`, `standard`, `risk`, `checklist`                                                                                                      |
+| Drafting discipline     | `example`, `good`, `bad`, `action`, `res`                                                                                                                                             |
+| Spec-internal           | `notes` (excluded from compiled output)                                                                                                                                               |
+
+Natural long forms work as synonyms: `provision`/`section`/`article` → `clause`, `warranty` → `representation`, `whereas` → `recital`, `schedule`/`annex`/`appendix` → `exhibit`, `carveout`/`proviso`/`unless`/`notwithstanding` → `exception`, `violation`/`default` → `breach`, `rule` → `redline`, and more.
+
+Full reference → [docs/keywords.md](docs/keywords.md).
+
+## Output
+
+| Invocation                  | What you get                                                                                                                                                     |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `hint <paths>`              | The knowledge that applies to that matter or document, rendered through this book's tags. No persona, no footer — what an assistant already mid-session needs.    |
+| `hint --prompt <paths>`     | The same knowledge wrapped in the drafting role and closing checklist: defined-term discipline, no invented facts, figures, or citations, gaps reported not filled. |
+| `hint --standalone <paths>` | Implies `--prompt`, and prepends the tag glossary for an assistant that never loaded `AGENTS.md`.                                                                 |
+
+When a `hint.lock` exists and clauses have drifted, `--prompt` output additionally carries the drift list and scopes the revision to it — automatically, with no mode to select.
+
+The `--prompt` footer reminds the assistant that the output requires review by licensed counsel — the book makes drafting strict, not lawyers optional.
+
+Details → [docs/framing.md](docs/framing.md).
+
+> Requires `@openhint/cli` 1.1+. This book no longer ships `--mode fix` / `--mode review`; see the [migration guide](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md).
+
+## Emit: the document itself
+
+This hintbook also ships an **emit pack** — `emit/markdown/` — so `hint emit` can assemble the document a matter spec describes, deterministically and without a model:
+
+```bash
+hint emit clients/acme/nda/agreement.md      # write it
+hint emit --check                            # CI: the document still matches the matter spec
+```
+
+Because a legal document *is* prose, this target has no holes at all: emission is complete. The templates assemble the structure and reproduce your text — they never rewrite a sentence.
+
+| Keyword | Renders as |
+| --- | --- |
+| `matter` | an `#` heading, then its body and children |
+| `clause` `exhibit` `signature` | a `##` heading, then its body and children |
+| `party` | `**Name** — body` |
+| `recital` | `WHEREAS, body` |
+| `definition` | the body as written — the defined term is already stated in your own sentence |
+| `obligation` `prohibition` `right` `condition` `breach` `remedy` `indemnity` `liability` `termination` `payment` `notice` `deadline` `jurisdiction` `representation` | `**Name.** body` — the run-in label is dropped when the block is unnamed |
+| `exception` | `*Exception — Name:* body` |
+
+**What is deliberately left out is the point.** `redline`, `never`, `bad`, `risk`, `fallback`, `precedent`, `authority`, `standard`, and `style` have no template, so they never reach the document. They are your negotiating position and house drafting rules — exactly the material that must not travel to the counterparty in the file you send them. Blocks with no template become constraints on the drafting instead, which is where they belong.
+
+## Example
+
+```markdown
+# clause Confidentiality
+
+## obligation NonDisclosure
+
+The Receiving Party shall not disclose Confidential Information to any third party.
+
+### exception Advisors
+
+Disclosure to professional advisors bound by equivalent confidentiality duties.
 
 ### breach
 
-Any breach of the Restraint, directly or through affiliates.
+Any disclosure outside the declared exceptions.
 
 #### remedy
 
 Injunctive relief without proof of damages.
 
-### source
+## deadline Term
 
-Enforceability limits on restraints of trade under the governing law.
+Five (5) years from the Effective Date; calendar days.
 ```
 
-| Pattern | Meaning |
-| --- | --- |
-| `condition` under a provision | when the provision applies — its trigger. |
-| `exception` under a provision | a carve-out — applies exactly as stated, never swallows the rule. |
-| `breach` → `remedy` chain | what breaks the provision, and what follows when it breaks. |
-| `source` under a provision | why the provision exists — the law it must satisfy; conflicts get flagged. |
-| `fallback` under a position | the negotiation order — concede in sequence, never past the last fallback. |
+compiles (inside the matter/document context chain, header, and footer) into:
 
-## Verifiable surfaces
+```markdown
+<clause name="Confidentiality" id="">
 
-Three keywords are marked **surfaces** (`surface: true` in their instruction front matter): `party`, `definition`, and `exhibit`. A surface is a declaration whose *name* must appear verbatim in the drafted document — the defined terms and designations the book enforces mechanically: a party's designation used and never varied, a defined term capitalized and used consistently everywhere, an exhibit referenced under its declared designation.
+<binding_obligation name="NonDisclosure" id="">
 
-`hint verify <path>` uses this. It reads the drafted document and checks, deterministically and without spending a token, that every declared surface name is present. A missing name means a defined term was never used or an exhibit was never referenced. This is a *presence* check, not a proof that the drafting is sound. Compose it as `hint verify <path> && hint lock <path>` to refuse recording a document as generated until it verifies.
+The Receiving Party shall not disclose Confidential Information to any third party.
 
-Provision keywords whose name is a descriptive heading rather than a verbatim term — `clause`, `obligation`, `right`, and the like — are deliberately **not** surfaces, so that a verify failure stays a reliable signal of a genuinely missing term rather than noise from a reworded heading.
+<exception name="Advisors" id="">
 
----
+A narrow exception to the enclosing block. It applies exactly as stated and no further — never broaden it, and never let it swallow the rule it qualifies:
 
-## Choosing keywords
+Disclosure to professional advisors bound by equivalent confidentiality duties.
 
-- **Declare terms before you use them.** A `definition` block per defined term gives the assistant something it can enforce mechanically — consistent capitalization, no synonyms.
-- **Name the bound party.** Every `obligation`, `prohibition`, and `right` should say which declared `party` performs, refrains, or holds it — a deontic block with no identifiable bearer is reported as a gap.
-- **Duties not to act go in `prohibition`; banned document content goes in `never`; client red lines go in `redline`.** All three carry explicit enforcement language; prose buried in a clause body does not.
-- **Figures belong in `payment` and `deadline` blocks.** The glossary forbids inventing amounts and dates — but only declared blocks make a missing figure visibly a gap.
-- **Use `authority` for anything cited, `source` for anything complied with.** `authority` is what the document argues from; `source` is what a provision answers to. Both are anti-hallucination guards: cite precisely or report the gap.
-- **Unknown keywords don't fail** — their bodies pass through as plain markdown — but only declared vocabulary carries the binding tag language defined in the system glossary.
+</exception>
 
+<breach name="" id="">
+
+What constitutes a breach of the enclosing provision. Draft so that exactly this conduct — no more, no less — triggers the consequences declared inside:
+
+Any disclosure outside the declared exceptions.
+
+<remedy name="" id="">
+
+Injunctive relief without proof of damages.
+
+</remedy>
+
+</breach>
+
+</binding_obligation>
+
+<time_provision name="Term" id="">
+
+Five (5) years from the Effective Date; calendar days.
+
+</time_provision>
+
+</clause>
+```
+
+The whole anatomy of a norm — trigger (`condition`), carve-out (`exception`), what breaks it (`breach`), what follows (`remedy`), the law it answers to (`source`), the negotiation order (`fallback`) — is expressed by nesting headings a lawyer already writes. No new syntax, ever.
+
+The `__system__` glossary defines every tag as a binding drafting directive — including the anti-hallucination rules that matter most in legal work: defined terms used with total discipline, and citations never invented.
+
+## License
+
+MIT
 
 <!-- ============================================================ -->
-<!-- HINTBOOK: lawyer — Prompt Framing -->
+<!-- HINTBOOK: knowledge-librarians — README -->
 <!-- ============================================================ -->
 
-# Prompt framing
+# @openhint/hintbook-librarian
 
-By default `hint <paths>` returns the knowledge that applies to a matter or document and nothing else — no persona, no closing checklist. That is what an assistant already mid-session needs.
+The official HINT vocabulary for persistent, git-backed knowledge repositories. It turns `.hint` files into an interlinked team wiki that agents can ingest, query, and structurally lint without a database, embeddings, or network service.
 
-For an assistant starting cold, `hint --prompt <paths>` wraps that same knowledge in this book's framing:
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+## Install
 
 ```bash
-hint contracts/nda.md                      # knowledge only (default)
-hint --prompt contracts/nda.md             # + drafting role and closing checklist
-hint --standalone contracts/nda.md         # implies --prompt, + the tag glossary
+npx -y @openhint/cli add --local @openhint/hintbook-librarian
+npx -y @openhint/cli apply
 ```
 
-Framing is a wrapper, not part of the compiled form. Removing it loses no recorded knowledge.
+Set `repo: knowledge`, optionally set `refs_depth`, and register `npm://@openhint/hintbook-librarian` in `hint.yml`.
 
----
+## Repository shape
 
-## `__header__` — the role
+```text
+_.hint                    # index and policies inherited by every topic
+raw/source.md             # immutable source
+raw/source.md.hint        # provenance and source-specific notes
+wiki/topic-name/_.hint    # one maintained topic
+```
 
-Opens `--prompt` output. Casts the assistant as a senior attorney drafting from a binding specification: defined terms used with total discipline, no invented facts, figures, parties, or citations, and gaps reported rather than filled with something plausible.
+Use `wiki/<topic>/_.hint` for topics. Keep raw inputs immutable; supersede an earlier claim instead of silently rewriting history.
 
-## `__footer__` — the close
+## Vocabulary
 
-Ends `--prompt` output with a verification walk over the declared parties, clauses, obligations, and exhibits, a required report of what was drafted and where the spec was silent, and the standing reminder that the output requires review by licensed counsel.
+`source`, `concept`, `entity`, `claim`, `decision`, `openquestion`, `supersedes`, `log`, `relates`, and `scratch` (excluded from output). No keyword declares a code surface.
 
-## `__changes__` — reconciliation
+- Ingest: add a source, record provenance, then update every affected topic.
+- Query: `hint search "question"`, followed by `hint wiki/<topic>`.
+- Lint: `hint lint . --graph`; use `--strict-graph` in CI.
 
-Rendered inside `--prompt` output **only** when a `hint.lock` exists and blocks have drifted since the document was generated. It carries the block-level drift list and scopes the revision to it: change only the provisions governed by a listed block and leave conforming language untouched.
+Full guide: [Knowledge repositories](https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md).
 
-This is contextual, not selected. There is no mode to pass — HINT renders it exactly when there is drift to reconcile.
+## License
 
-> **Note for users of `@openhint/cli` 1.0.x.** This book previously shipped `fix` (revise) and `review` (audit) modes selected with `--mode`. The mode system was removed in 1.1: the mechanical half of `review` is `hint verify` (deterministic and token-free), and `fix` became the automatic behaviour described above. See the [migration guide](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md).
-
-## `__system__` — the tag glossary
-
-The authoritative meaning of every tag this book renders. `hint apply` installs it once into `AGENTS.md` / `CLAUDE.md`, so the default output can be knowledge alone; `--standalone` prepends it for an assistant that never loaded those files.
-
+MIT
 
 <!-- ============================================================ -->
-<!-- HINTBOOK: librarian — Reference -->
+<!-- HINTBOOK: business-analysts — README -->
 <!-- ============================================================ -->
 
-# Librarian hintbook
+# @openhint/hintbook-business-analyst
 
-`@openhint/hintbook-librarian` turns a git repository into a persistent knowledge wiki. Immutable inputs live under `raw/` with provenance in companion hints; maintained topics live at `wiki/<topic>/_.hint`; the root `_.hint` is the index.
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for business analysts. The assistant documents inside declared borders; it never invents stakeholders, figures, systems, or regulations.
 
-Its vocabulary is `source`, `concept`, `entity`, `claim`, `decision`, `openquestion`, `supersedes`, `log`, `relates`, and excluded `scratch`. No keyword declares a code surface. The operating loop is ingest, query, and structural graph lint; semantic contradictions remain proposals for an agent to evaluate, never silent deterministic edits.
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
 
-Install with `hint add --local @openhint/hintbook-librarian`, set `repo: knowledge`, and run `hint apply`. Full source: https://github.com/open-hint-dev/hintbook-librarian
+```
+hint.yml
+_.hint
+tps-reporting/
+├── _.hint
+└── artifact.md.hint
+payroll-integration/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-business-analyst
+hint apply
+```
+
+## Vocabulary
+
+| Context | `domain`, `stakeholder`, `process`, `system` |
+| Requirements | `requirement`, `nfr`, `bizrule`, `constraint`, `dependency` |
+| Behavior | `usecase`, `scenario`, `step`, `alternate`, `edgecase`, `acceptance` |
+| Boundaries | `scope`, `outofscope`, `trace`, `priority` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `requirement`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable requirements document structure without a model. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+Internal positions — `risk`, `openquestion` — deliberately have no emit template. They constrain the work and never leak into the published artifact.
+
+## Example
+
+```markdown
+# domain tps-reporting
+
+Declared context for the requirements document.
+
+# never Invented details
+
+The assistant documents inside declared borders; it never invents stakeholders, figures, systems, or regulations.
+```
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: product-managers — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-product-manager
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for product managers. The assistant drafts inside declared product intent; it never invents personas, baselines, metrics, or trade-off decisions.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+nucleus/
+├── _.hint
+└── artifact.md.hint
+hoolichat/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-product-manager
+hint apply
+```
+
+## Vocabulary
+
+| Context | `product`, `persona`, `problem`, `goal`, `metric`, `principle` |
+| Requirements | `story`, `criteria`, `scope`, `outofscope`, `priority`, `constraint` |
+| Discovery | `hypothesis`, `experiment`, `insight`, `competitor` |
+| Delivery | `milestone`, `release`, `dependency`, `launch` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `story`, `metric`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable product document structure without a model. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+Internal positions — `hypothesis`, `insight`, `competitor` — deliberately have no emit template. They constrain the work and never leak into the published artifact.
+
+## Example
+
+```markdown
+# product nucleus
+
+Declared context for the product document.
+
+# never Invented details
+
+The assistant drafts inside declared product intent; it never invents personas, baselines, metrics, or trade-off decisions.
+```
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: qa-engineers — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-qa-engineer
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for qa engineers. The assistant derives cases from declared requirements; it never invents results or weakens expected behavior to match an implementation.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+vault-access/
+├── _.hint
+└── artifact.md.hint
+elevator-control/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-qa-engineer
+hint apply
+```
+
+## Vocabulary
+
+| Plan | `plan`, `sut`, `env`, `strategy`, `exitcriteria` |
+| Cases | `case`, `precondition`, `step`, `expected`, `testdata`, `negative`, `edge`, `oracle` |
+| Coverage | `covers`, `severity`, `priority`, `defect` |
+| Automation | `automate`, `flaky` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `case`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable test document structure without a model. A Gherkin pack emits plain `.feature` scenarios. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+## Example
+
+```markdown
+# plan vault-access
+
+Declared context for the test document.
+
+# never Invented details
+
+The assistant derives cases from declared requirements; it never invents results or weakens expected behavior to match an implementation.
+```
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: technical-writers — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-technical-writer
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for technical writers. The assistant writes inside the declared doc set; it never invents flags, fields, defaults, or product behavior.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+tutorials/
+├── _.hint
+└── artifact.md.hint
+reference/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-technical-writer
+hint apply
+```
+
+## Vocabulary
+
+| Doc set | `docset`, `audience`, `doctype`, `version`, `applies`, `nav` |
+| Page | `page`, `section`, `prerequisite`, `procedure`, `admonition`, `snippet`, `link` |
+| Language | `banned`, `locale` |
+| Governance | `owner`, `review`, `deprecate` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `page`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable documentation page structure without a model. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+## Example
+
+```markdown
+# docset tutorials
+
+Declared context for the documentation page.
+
+# never Invented details
+
+The assistant writes inside the declared doc set; it never invents flags, fields, defaults, or product behavior.
+```
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: compliance-and-risk — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-compliance-officer
+
+This package supports compliance documentation; it is not legal advice and requires review by the compliance owner.
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for compliance & risk. The assistant drafts inside declared controls and frameworks; it never cites an undeclared regulation or approves an exception.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+factory/
+├── _.hint
+└── artifact.md.hint
+promotions/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-compliance-officer
+hint apply
+```
+
+## Vocabulary
+
+| Framework | `framework`, `requirement`, `unit` |
+| Controls | `policy`, `control`, `owner`, `evidence`, `mapping`, `procedure`, `step` |
+| Risk | `appetite`, `mitigation`, `redflag`, `escalation`, `incident` |
+| Exceptions | `exception`, `review` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `requirement`, `control`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable compliance document structure without a model. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+Internal positions — `appetite`, `redflag`, `incident`, `risk` — deliberately have no emit template. They constrain the work and never leak into the published artifact.
+
+## Example
+
+```markdown
+# framework factory
+
+Declared context for the compliance document.
+
+# never Invented details
+
+The assistant drafts inside declared controls and frameworks; it never cites an undeclared regulation or approves an exception.
+```
+
+## Disclaimer
+
+This package supports compliance documentation; it is not legal advice and requires review by the compliance owner.
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: auditors — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-auditor
+
+This package supports audit documentation and requires review by the engagement lead.
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for auditors. The assistant drafts strictly from declared audit evidence; it never invents sample results or unsupported findings.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+factory-access-2026/
+├── _.hint
+└── artifact.md.hint
+promotions-data-2025/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-auditor
+hint apply
+```
+
+## Vocabulary
+
+| Engagement | `engagement`, `scope`, `objective`, `criteria`, `auditee`, `independence`, `period` |
+| Fieldwork | `procedure`, `step`, `sample`, `evidence`, `observation`, `audittest` |
+| Findings | `finding`, `condition`, `cause`, `effect`, `severity`, `recommendation`, `response`, `followup`, `scale` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `finding`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable audit workpaper structure without a model. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+Internal positions — `observation`, `notes` — deliberately have no emit template. They constrain the work and never leak into the published artifact.
+
+## Example
+
+```markdown
+# engagement factory-access-2026
+
+Declared context for the audit workpaper.
+
+# never Invented details
+
+The assistant drafts strictly from declared audit evidence; it never invents sample results or unsupported findings.
+```
+
+## Disclaimer
+
+This package supports audit documentation and requires review by the engagement lead.
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: data-analysts — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-data-analyst
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for data & bi analysts. The assistant queries declared sources and columns only; it never invents data, columns, freshness, or metric definitions.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+sales/
+├── _.hint
+└── artifact.md.hint
+warehouse/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-data-analyst
+hint apply
+```
+
+## Vocabulary
+
+| Sources | `table`, `column`, `grain`, `freshness`, `quality` |
+| Semantics | `metric`, `formula`, `dimension`, `filter`, `unit`, `caveat`, `owner` |
+| Delivery | `question`, `dashboard`, `report` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `metric`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable analytics artifact structure without a model. A SQL pack emits reviewable view/check skeletons. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+## Example
+
+```markdown
+# table sales
+
+Declared context for the analytics artifact.
+
+# never Invented details
+
+The assistant queries declared sources and columns only; it never invents data, columns, freshness, or metric definitions.
+```
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: financial-analysts — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-financial-analyst
+
+This package is for analysis support only. It is not financial or investment advice and requires qualified review.
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for financial analysts. The assistant works from declared inputs and formulas; it never invents a figure, rate, comparable, or baseline.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+banana-stand/
+├── _.hint
+└── artifact.md.hint
+sudden-valley/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-financial-analyst
+hint apply
+```
+
+## Vocabulary
+
+| Model | `model`, `input`, `driver`, `formula`, `output`, `period`, `unit`, `check` |
+| Analysis | `scenario`, `sensitivity`, `benchmark`, `memo` |
+| Governance | `approval`, `disclaimer`, `review` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `input`, `output`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable finance artifact structure without a model. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+Internal positions — `benchmark` — deliberately have no emit template. They constrain the work and never leak into the published artifact.
+
+## Example
+
+```markdown
+# model banana-stand
+
+Declared context for the finance artifact.
+
+# never Invented details
+
+The assistant works from declared inputs and formulas; it never invents a figure, rate, comparable, or baseline.
+```
+
+## Disclaimer
+
+This package is for analysis support only. It is not financial or investment advice and requires qualified review.
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: procurement — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-procurement-specialist
+
+This package supports procurement documentation and requires review by the procurement authority.
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for procurement. The assistant drafts vendor-neutral tender text; it never invents budgets or exposes internal scoring weights.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+monorail/
+├── _.hint
+└── artifact.md.hint
+tire-fire-cleanup/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-procurement-specialist
+hint apply
+```
+
+## Vocabulary
+
+| Tender | `tender`, `need`, `budget`, `timeline`, `contact`, `process` |
+| Requirements | `requirement`, `exclusion`, `question`, `deliverable`, `sla` |
+| Evaluation | `criterion`, `weight`, `scale`, `panel`, `conflict` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `requirement`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable procurement document structure without a model. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+Internal positions — `criterion`, `weight`, `scale`, `panel` — deliberately have no emit template. They constrain the work and never leak into the published artifact.
+
+## Example
+
+```markdown
+# tender monorail
+
+Declared context for the procurement document.
+
+# never Invented details
+
+The assistant drafts vendor-neutral tender text; it never invents budgets or exposes internal scoring weights.
+```
+
+## Disclaimer
+
+This package supports procurement documentation and requires review by the procurement authority.
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: sales-and-proposals — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-proposal-manager
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for sales & proposals. The assistant writes inside the approved offer; it never invents references, pricing, proof, or commitments.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+springfield-monorail/
+├── _.hint
+└── artifact.md.hint
+ogdenville/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-proposal-manager
+hint apply
+```
+
+## Vocabulary
+
+| Offer | `offer`, `valueprop`, `differentiator`, `proof`, `claim`, `pricing`, `exclusion`, `commitment` |
+| Response | `requirement`, `answer`, `question`, `theme`, `objection`, `rebuttal` |
+| Governance | `legalreview`, `approval`, `deadline` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: None; descriptive names are not treated as identifiers. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable proposal document structure without a model. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+Internal positions — `objection`, `rebuttal`, `theme` — deliberately have no emit template. They constrain the work and never leak into the published artifact.
+
+## Example
+
+```markdown
+# offer springfield-monorail
+
+Declared context for the proposal document.
+
+# never Invented details
+
+The assistant writes inside the approved offer; it never invents references, pricing, proof, or commitments.
+```
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: customer-support — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-support-agent
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for customer support. The assistant answers inside declared policy; it never promises outside entitlement, skips verification, or invents an ETA.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+latex/
+├── _.hint
+└── artifact.md.hint
+exports/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-support-agent
+hint apply
+```
+
+## Vocabulary
+
+| Context | `product`, `tier`, `channel`, `audience` |
+| Policy | `intent`, `answer`, `entitlement`, `refund`, `identify`, `escalate` |
+| Knowledge | `faq`, `knownissue`, `gap` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `answer`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable support playbook structure without a model. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+Internal positions — `decision`, `risk`, `notes` — deliberately have no emit template. They constrain the work and never leak into the published artifact.
+
+## Example
+
+```markdown
+# product latex
+
+Declared context for the support playbook.
+
+# never Invented details
+
+The assistant answers inside declared policy; it never promises outside entitlement, skips verification, or invents an ETA.
+```
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: marketing-and-brand — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-marketing-manager
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for marketing & brand. The assistant writes inside the declared brand and channel; it never invents proof, uses banned terms, or disparages competitors.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+acme/
+├── _.hint
+└── artifact.md.hint
+vandelay/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-marketing-manager
+hint apply
+```
+
+## Vocabulary
+
+| Brand | `brand`, `audience`, `segment`, `banned`, `asset`, `tagline` |
+| Campaign | `campaign`, `message`, `claim`, `proof`, `cta`, `channel`, `metric`, `offer` |
+| Compliance | `disclaimer`, `legalreview`, `regulated`, `competitor` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `tagline`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable marketing document structure without a model. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+Internal positions — `competitor`, `decision` — deliberately have no emit template. They constrain the work and never leak into the published artifact.
+
+## Example
+
+```markdown
+# brand acme
+
+Declared context for the marketing document.
+
+# never Invented details
+
+The assistant writes inside the declared brand and channel; it never invents proof, uses banned terms, or disparages competitors.
+```
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: policy-analysts — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-policy-analyst
+
+This package supports policy analysis; it is not legal advice and requires review by the responsible officer.
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for policy analysts. The assistant analyzes inside the cited frame; it never invents an instrument, impact figure, stakeholder position, or partisan conclusion.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+lot-48-park/
+├── _.hint
+└── artifact.md.hint
+sugar-tax/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-policy-analyst
+hint apply
+```
+
+## Vocabulary
+
+| Frame | `issue`, `context`, `stakeholder`, `mandate`, `constraint` |
+| Law | `regulation`, `provision`, `precedent` |
+| Analysis | `option`, `criterion`, `impact`, `evidence`, `tradeoff`, `recommendation`, `justification`, `position`, `timeline` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `regulation`, `option`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable policy document structure without a model. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+Internal positions — `position` — deliberately have no emit template. They constrain the work and never leak into the published artifact.
+
+## Example
+
+```markdown
+# issue lot-48-park
+
+Declared context for the policy document.
+
+# never Invented details
+
+The assistant analyzes inside the cited frame; it never invents an instrument, impact figure, stakeholder position, or partisan conclusion.
+```
+
+## Disclaimer
+
+This package supports policy analysis; it is not legal advice and requires review by the responsible officer.
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: clinical-operations — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-clinical-operations
+
+You draft and check clinical operations documents. You do not provide medical advice, diagnosis, treatment, dosing, or triage decisions.
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for clinical operations. The assistant drafts clinical operations documents only; it never gives medical advice, diagnosis, treatment, dosing, or triage decisions.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+emergency-intake/
+├── _.hint
+└── artifact.md.hint
+outpatient-pharmacy/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-clinical-operations
+hint apply
+```
+
+## Vocabulary
+
+| Documents | `protocol`, `sop`, `record`, `consent` |
+| Rules | `step`, `role`, `criterion`, `route`, `redflag`, `escalate`, `deviation`, `timing` |
+| Governance | `review`, `training`, `audit` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `protocol`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable clinical operations document structure without a model. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+Internal positions — `decision`, `risk`, `notes` — deliberately have no emit template. They constrain the work and never leak into the published artifact.
+
+## Example
+
+```markdown
+# protocol emergency-intake
+
+Declared context for the clinical operations document.
+
+# never Invented details
+
+The assistant drafts clinical operations documents only; it never gives medical advice, diagnosis, treatment, dosing, or triage decisions.
+```
+
+## Disclaimer
+
+You draft and check clinical operations documents. You do not provide medical advice, diagnosis, treatment, dosing, or triage decisions.
+
+## License
+
+MIT
+
+<!-- ============================================================ -->
+<!-- HINTBOOK: educational-designers — README -->
+<!-- ============================================================ -->
+
+# @openhint/hintbook-instructional-designer
+
+The official [HINT](https://github.com/open-hint-dev/hint) vocabulary for educational designers. The assistant designs inside declared course alignment; it never invents facts, assesses an undeclared objective, or changes grading policy.
+
+Measured performance and retrieval results live in the core [benchmark report](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
+```
+hint.yml
+_.hint
+spanish-101/
+├── _.hint
+└── artifact.md.hint
+pottery-ii/
+└── _.hint
+shared/policy.hint
+```
+
+## Installation
+
+```bash
+hint add @openhint/hintbook-instructional-designer
+hint apply
+```
+
+## Vocabulary
+
+| Course | `course`, `audience`, `prerequisite`, `coursemodule`, `duration`, `material`, `accessibility` |
+| Design | `objective`, `outcome`, `activity`, `assessment`, `rubric`, `criterion`, `level`, `alignment` |
+| Policy | `grading`, `feedback`, `integrity` |
+| Shared core | `never`, `source`, `term`, `assumption`, `risk`, `decision`, `openquestion`, `checklist`, `style`, `example`, `good`, `bad`, `read`, `res`, `notes` |
+
+Natural plurals and long forms are included as keyword synonyms; profession search synonyms are declared in `keywords/hintbook.json`. Full reference: [docs/keywords.md](docs/keywords.md).
+
+## Output and framing
+
+| Command | Result |
+| --- | --- |
+| `hint <path>` | Scoped profession knowledge only. |
+| `hint --prompt <path>` | Role header, scoped knowledge, verification footer. |
+| `hint --standalone <path>` | Prompt plus the complete tag glossary. |
+
+Verifiable surfaces: `objective`. These names are stable artifact identifiers and must appear verbatim.
+
+## Deterministic emit
+
+The markdown pack emits reviewable course document structure without a model. Run `hint emit <path>` and gate CI with `hint emit --check`. Prose that templates cannot derive remains a marked hole.
+
+Internal positions — `decision`, `notes` — deliberately have no emit template. They constrain the work and never leak into the published artifact.
+
+## Example
+
+```markdown
+# course spanish-101
+
+Declared context for the course document.
+
+# never Invented details
+
+The assistant designs inside declared course alignment; it never invents facts, assesses an undeclared objective, or changes grading policy.
+```
+
+## License
+
+MIT

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-accent="delivery">
 <head>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-9KTEZLFTRE"></script>
@@ -12,12 +12,16 @@
 </script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HINT for Software Engineers — the knowledge that applies to this path</title>
-<meta name="description" content="The software-engineer hintbook gives HINT a vocabulary for architectural decisions, invariants, data models, function contracts, and anti-patterns — scoped to the paths they govern and returned to any coding agent." />
+<title>HINT for Software Engineers — specs agents follow</title>
+<meta name="description" content="Architecture, contracts, data models, and constraints scoped per path; AI agents implement inside declared borders and never invent project facts." />
 <link rel="canonical" href="https://openhint.dev/for-software-engineers.html" />
+<meta property="og:title" content="HINT for Software Engineers" /><meta property="og:description" content="Specs agents follow: scoped architecture, contracts, and constraints." /><meta property="og:type" content="website" /><meta property="og:url" content="https://openhint.dev/for-software-engineers.html" /><meta property="og:image" content="https://openhint.dev/assets/og/delivery.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="alternate" type="text/plain" href="llms.txt" />
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","name":"HINT for Software Engineers","url":"https://openhint.dev/for-software-engineers.html"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://openhint.dev/"},{"@type":"ListItem","position":2,"name":"Professions","item":"https://openhint.dev/professions.html"},{"@type":"ListItem","position":3,"name":"Software Engineers"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does HINT generate implementations?","acceptedAnswer":{"@type":"Answer","text":"No. HINT retrieves governing knowledge and deterministically emits only what templates fully determine."}},{"@type":"Question","name":"Can several hintbooks share one repository?","acceptedAnswer":{"@type":"Answer","text":"Yes. Official hintbooks share a neutral common core; book order resolves domain-specific collisions."}},{"@type":"Question","name":"Is verification deterministic?","acceptedAnswer":{"@type":"Answer","text":"Yes. hint verify and hint emit --check run without a model."}}]},{"@type":"SoftwareApplication","name":"HINT","applicationCategory":"DeveloperApplication","sameAs":"https://github.com/open-hint-dev"}]}</script>
 <link rel="icon" type="image/png" href="favicon.png" />
 <link rel="apple-touch-icon" href="favicon.png" />
-<link rel="stylesheet" href="styles.css?v=1.5.1-numbers" />
+<link rel="stylesheet" href="styles.css?v=1.6.0-professions" />
 <style>
 .subhero { padding-top: clamp(40px, 5vw, 72px); padding-bottom: clamp(40px, 5vw, 64px); }
 .crumb { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3); margin-bottom: 26px; letter-spacing: 0.02em; }
@@ -148,7 +152,7 @@
 <!-- SUBHERO -->
 <header class="subhero">
   <div class="wrap">
-    <div class="crumb"><a href="index.html">hint</a><span class="sep">/</span><a href="index.html#professions">professions</a><span class="sep">/</span><span style="color:var(--ink)">for software engineers</span></div>
+    <div class="crumb"><a href="index.html">Home</a><span class="sep">/</span><a href="professions.html">Professions</a><span class="sep">/</span><span style="color:var(--ink)">Software Engineers</span></div>
     <div class="subhero__grid">
       <div>
         <span class="bookline"><span class="dot-ok"></span>@openhint/hintbook-software-engineer</span>
@@ -520,6 +524,8 @@ before adding anything new.</span></div>
   </div>
 </section>
 
+<section class="section divider" id="faq"><div class="wrap"><div class="eyebrow">FAQ</div><h2 class="h2" style="margin:18px 0 28px">What engineers ask before adopting HINT</h2><div class="grid-3"><article class="card"><h3>Does HINT generate implementations?</h3><p>No. It retrieves the governing knowledge and deterministically emits only what templates fully determine.</p></article><article class="card"><h3>Can several hintbooks share one repo?</h3><p>Yes. Official books share a neutral common core; book order resolves domain-specific vocabulary.</p></article><article class="card"><h3>Is verification deterministic?</h3><p>Yes. <code class="inl">hint verify</code> and <code class="inl">hint emit --check</code> use no model.</p></article></div><p style="margin-top:28px">Key facts: HINT, <strong>Spec-as-Source</strong>, <strong>hintbook-software-engineer</strong>, and <strong>demo-pied-piper</strong> keep durable engineering intent beside the paths it governs. The assistant implements inside the borders; it never invents project facts.</p></div></section>
+
 <!-- FINAL CTA -->
 <section class="section divider">
   <div class="wrap cta-final reveal">
@@ -555,6 +561,7 @@ before adding anything new.</span></div>
       <div class="footer__col">
         <h5>Professions</h5>
         <ul>
+          <li><a href="professions.html">All professions</a></li>
           <li><a href="for-software-engineers.html">For Engineers</a></li>
           <li><a href="for-lawyers.html">For Lawyers</a></li>
           <li><a href="for-knowledge-librarians.html">For Librarians</a></li>

@@ -135,12 +135,38 @@ See [Keeping it current in the README](../README.md#keeping-it-current), the can
 | [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) | The legal vocabulary — drafting and revising documents. |
 | [`@openhint/hintbook-librarian`](https://github.com/open-hint-dev/hintbook-librarian) | The knowledge-repository vocabulary — sources, claims, questions, and linked topics. |
 
+## Profession packages
+
+<!-- profession-packages:begin -->
+| Profession | Package | Guide |
+| --- | --- | --- |
+| Software Engineers | [`@openhint/hintbook-software-engineer`](https://github.com/open-hint-dev/hintbook-software-engineer) | [Guide](https://openhint.dev/for-software-engineers.html) |
+| Lawyers | [`@openhint/hintbook-lawyer`](https://github.com/open-hint-dev/hintbook-lawyer) | [Guide](https://openhint.dev/for-lawyers.html) |
+| Knowledge Librarians | [`@openhint/hintbook-librarian`](https://github.com/open-hint-dev/hintbook-librarian) | [Guide](https://openhint.dev/for-knowledge-librarians.html) |
+| Business Analysts | [`@openhint/hintbook-business-analyst`](https://github.com/open-hint-dev/hintbook-business-analyst) | [Guide](https://openhint.dev/for-business-analysts.html) |
+| Product Managers | [`@openhint/hintbook-product-manager`](https://github.com/open-hint-dev/hintbook-product-manager) | [Guide](https://openhint.dev/for-product-managers.html) |
+| QA Engineers | [`@openhint/hintbook-qa-engineer`](https://github.com/open-hint-dev/hintbook-qa-engineer) | [Guide](https://openhint.dev/for-qa-engineers.html) |
+| Technical Writers | [`@openhint/hintbook-technical-writer`](https://github.com/open-hint-dev/hintbook-technical-writer) | [Guide](https://openhint.dev/for-technical-writers.html) |
+| Compliance & Risk | [`@openhint/hintbook-compliance-officer`](https://github.com/open-hint-dev/hintbook-compliance-officer) | [Guide](https://openhint.dev/for-compliance-and-risk.html) |
+| Auditors | [`@openhint/hintbook-auditor`](https://github.com/open-hint-dev/hintbook-auditor) | [Guide](https://openhint.dev/for-auditors.html) |
+| Data & BI Analysts | [`@openhint/hintbook-data-analyst`](https://github.com/open-hint-dev/hintbook-data-analyst) | [Guide](https://openhint.dev/for-data-analysts.html) |
+| Financial Analysts | [`@openhint/hintbook-financial-analyst`](https://github.com/open-hint-dev/hintbook-financial-analyst) | [Guide](https://openhint.dev/for-financial-analysts.html) |
+| Procurement | [`@openhint/hintbook-procurement-specialist`](https://github.com/open-hint-dev/hintbook-procurement-specialist) | [Guide](https://openhint.dev/for-procurement.html) |
+| Sales & Proposals | [`@openhint/hintbook-proposal-manager`](https://github.com/open-hint-dev/hintbook-proposal-manager) | [Guide](https://openhint.dev/for-sales-and-proposals.html) |
+| Customer Support | [`@openhint/hintbook-support-agent`](https://github.com/open-hint-dev/hintbook-support-agent) | [Guide](https://openhint.dev/for-customer-support.html) |
+| Marketing & Brand | [`@openhint/hintbook-marketing-manager`](https://github.com/open-hint-dev/hintbook-marketing-manager) | [Guide](https://openhint.dev/for-marketing-and-brand.html) |
+| Policy Analysts | [`@openhint/hintbook-policy-analyst`](https://github.com/open-hint-dev/hintbook-policy-analyst) | [Guide](https://openhint.dev/for-policy-analysts.html) |
+| Clinical Operations | [`@openhint/hintbook-clinical-operations`](https://github.com/open-hint-dev/hintbook-clinical-operations) | [Guide](https://openhint.dev/for-clinical-operations.html) |
+| Educational Designers | [`@openhint/hintbook-instructional-designer`](https://github.com/open-hint-dev/hintbook-instructional-designer) | [Guide](https://openhint.dev/for-educational-designers.html) |
+<!-- profession-packages:end -->
+
 ## Where to go next
 
 - [Quick Start](02-quick-start.md) — record your first knowledge and query it in minutes.
 - [Syntax](03-syntax.md) — the complete structural grammar of `.hint` files.
 - [How It Works](04-how-it-works.md) — the resolve → parse → render pipeline in detail.
 - [Hintbooks](05-hintbooks.md) — using, authoring, and distributing keyword vocabularies.
+- [Profession hintbooks](10-professions.md) — the live profession catalog, common-core composition, and guidance for adjacent books.
 - [CLI Reference](06-cli.md) — every command and flag.
 - [Integrations](integrations.md) — one-line agent setup and project-level MCP configuration for Claude Code, Codex, Cursor, VS Code / GitHub Copilot, and generic clients.
 - [Emit](08-emit.md) — producing artifacts from specs, and authoring an emitter.

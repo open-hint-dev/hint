@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<!-- TEMPLATE ONLY: copy to for-<professions>.html, replace every {{TOKEN}}, then add it to professions.json. -->
+<html lang="en" data-accent="{{FAMILY}}">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HINT for {{PROFESSIONS}} — {{BENEFIT}}</title>
+<meta name="description" content="{{DESCRIPTION_MAX_155}}" />
+<link rel="canonical" href="https://openhint.dev/{{PAGE}}" />
+<meta property="og:title" content="HINT for {{PROFESSIONS}}" /><meta property="og:description" content="{{DESCRIPTION_MAX_155}}" /><meta property="og:type" content="website" /><meta property="og:url" content="https://openhint.dev/{{PAGE}}" /><meta property="og:image" content="https://openhint.dev/assets/og/{{FAMILY}}.png" />
+<meta name="twitter:card" content="summary_large_image" /><link rel="alternate" type="text/plain" href="llms.txt" />
+<link rel="icon" type="image/png" href="favicon.png" /><link rel="stylesheet" href="styles.css?v={{SITE_VERSION}}" />
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","name":"HINT for {{PROFESSIONS}}","url":"https://openhint.dev/{{PAGE}}"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://openhint.dev/"},{"@type":"ListItem","position":2,"name":"Professions","item":"https://openhint.dev/professions.html"},{"@type":"ListItem","position":3,"name":"{{PROFESSIONS}}"}]},{"@type":"FAQPage","mainEntity":[]},{"@type":"SoftwareApplication","name":"HINT","sameAs":"https://github.com/open-hint-dev"}]}</script>
+</head>
+<body>
+<nav class="nav"><div class="wrap nav__inner"><a class="logo" href="index.html"><img class="logo__img" src="assets/logo-full.svg" alt="hint" /></a><div class="nav__links"><a class="nav__link" href="professions.html">Professions</a><a class="nav__link" href="#vocabulary">Vocabulary</a><a class="nav__link" href="#quickstart">Quick start</a></div></div></nav>
+<main>
+<header class="section section--tight"><div class="wrap"><div class="crumb"><a href="index.html">Home</a> / <a href="professions.html">Professions</a> / {{PROFESSIONS}}</div><div class="bookline"><code>hint add {{PACKAGE}}</code> · live</div><h1 class="display">{{H1_WITH_ONE_EM}}</h1><p class="lede">{{LEDE_MAX_44CH}}</p><a class="btn btn--primary" href="#quickstart">Quick start</a> <a class="btn btn--ghost" href="https://github.com/open-hint-dev/{{DEMO}}">Explore the demo ↗</a></div></header>
+<section class="section divider" aria-label="Measured results"><div class="wrap numbers">{{ONLY_BENCHMARKED_NUMBERS}}</div></section>
+<section class="section divider"><div class="wrap"><div class="grid-3">{{THREE_VALUE_CARDS}}</div></div></section>
+<section class="section divider"><div class="wrap"><h2 class="h2">The rigor of a specification, now for {{ARTIFACTS}}</h2><p class="lede">{{PROBLEM_TO_HINT_EXPLAINER}}</p></div></section>
+<section class="section divider" id="vocabulary"><div class="wrap">{{VOCABULARY_GROUPS}}<details><summary>Common core shared with every hintbook</summary>{{COMMON_CORE}}</details></div></section>
+<section class="section divider" id="compile"><div class="wrap"><h2 class="h2">From readable Markdown to binding context</h2>{{HINT_AND_COMPILED_EXAMPLE}}<p>{{NEVER_SENTENCE}}</p></div></section>
+<section class="section divider"><div class="wrap"><div class="grid-3">{{LOAD_DRAFT_CHECK_FLOW}}</div></div></section>
+<section class="section divider" id="quickstart"><div class="wrap"><h2 class="h2">Quick start</h2><pre><code>npx -y @openhint/cli bootstrap
+hint config
+hint add {{PACKAGE}}
+hint apply
+hint &lt;path&gt;</code></pre><p><a href="https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md">Agent integrations →</a> · <a href="https://github.com/open-hint-dev/{{DEMO}}">Demo →</a></p></div></section>
+<section class="section divider" id="faq"><div class="wrap"><h2 class="h2">FAQ</h2>{{THREE_TO_FIVE_VISIBLE_FAQS}}</div></section>
+<section class="section divider"><div class="wrap"><h2 class="h2">Works with</h2>{{TWO_TO_THREE_RELATED_TILES}}</div></section>
+<section class="section divider"><div class="wrap"><h2 class="h2">{{CLOSING_CTA}}</h2></div></section>
+</main>
+<footer class="footer"><div class="wrap"><a href="professions.html">All professions</a> · <a href="https://github.com/open-hint-dev/{{BOOK_REPO}}">{{BOOK_REPO}}</a> · <a href="https://github.com/open-hint-dev/hint/blob/main/docs/10-professions.md">Profession docs</a></div></footer>
+<script src="site.js"></script>
+</body>
+</html>

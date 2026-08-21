@@ -34,25 +34,71 @@ Key facts an LLM should know about HINT:
 - Agents are expected to **write back**. When a session discovers something durable — an architectural decision and its rationale, an invariant, an operational hazard, a security constraint, an approach that does not work and why — it belongs in the most specific `.hint` that applies, not in a private memory file. It is then versioned with the code, reviewed in the same diff, and available to every agent on the repository.
 - Version 1.1 added `hint emit`, `hint status`, and the staleness signal on the read path. It removed the mode system (`--mode`, `hint modes`, `review` mode), `hint instruct`, `hint list`, and `lock --strict`, and renamed `--dry-run` to `--strict`. See the migration guide.
 
+<!-- professions:begin -->
 ## Pages
 
-- [Home](https://openhint.dev/): What HINT is, how it scopes and retrieves knowledge, the professions it serves, and quick start.
-- [For Software Engineers](https://openhint.dev/for-software-engineers.html): The software-engineer hintbook — keywords across intent & scope, project context, decisions & invariants, data, behavior, UI, and constraints.
-- [For Lawyers](https://openhint.dev/for-lawyers.html): The lawyer hintbook — legal drafting vocabulary (party, clause, obligation, right, exception, breach, liability, redline, never, authority); the same rigor applied to documents.
-- [For Knowledge Librarians](https://openhint.dev/for-knowledge-librarians.html): The librarian hintbook — immutable sources, evidence-backed claims, linked topics, bounded reference closure, and graph lint for persistent agent-maintained knowledge wikis.
-- [Knowledge Repositories](https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md): The librarian pattern for persistent agent-maintained wikis.
+- [Profession hub](https://openhint.dev/professions.html): All official and planned profession vocabularies.
+- [For Software Engineers](https://openhint.dev/for-software-engineers.html): Architecture, contracts, data models, and anti-patterns.
+- [For Lawyers](https://openhint.dev/for-lawyers.html): Matters, clauses, obligations, sources, and red lines.
+- [For Knowledge Librarians](https://openhint.dev/for-knowledge-librarians.html): Sources, claims, decisions, open questions, and linked topics.
+- [For Business Analysts](https://openhint.dev/for-business-analysts.html): Requirements, use cases, business rules, and traceability.
+- [For Product Managers](https://openhint.dev/for-product-managers.html): PRDs, stories, criteria, goals, and sourced metrics.
+- [For QA Engineers](https://openhint.dev/for-qa-engineers.html): Test plans, negative paths, coverage, and deterministic Gherkin.
+- [For Technical Writers](https://openhint.dev/for-technical-writers.html): Doc types, terminology, required sections, and runnable samples.
+- [For Compliance & Risk](https://openhint.dev/for-compliance-and-risk.html): Frameworks, controls, evidence, exceptions, and escalation.
+- [For Auditors](https://openhint.dev/for-auditors.html): Engagement scope, procedures, evidence, findings, and severity.
+- [For Data & BI Analysts](https://openhint.dev/for-data-analysts.html): Metrics, grains, formulas, sources, SQL, and caveats.
+- [For Financial Analysts](https://openhint.dev/for-financial-analysts.html): Sourced inputs, formulas, scenarios, sensitivities, and checks.
+- [For Procurement](https://openhint.dev/for-procurement.html): Neutral RFPs, requirements, timelines, and internal scoring.
+- [For Sales & Proposals](https://openhint.dev/for-sales-and-proposals.html): Offers, substantiated claims, commitments, and compliance matrices.
+- [For Customer Support](https://openhint.dev/for-customer-support.html): Approved answers, entitlement, verification, and escalation.
+- [For Marketing & Brand](https://openhint.dev/for-marketing-and-brand.html): Brand voice, terminology, channel constraints, and proven claims.
+- [For Policy Analysts](https://openhint.dev/for-policy-analysts.html): Cited instruments, options, criteria, impacts, and recommendations.
+- [For Clinical Operations](https://openhint.dev/for-clinical-operations.html): Operational SOPs, routing, roles, records, and escalation.
+- [For Educational Designers](https://openhint.dev/for-educational-designers.html): Objectives, activities, assessments, rubrics, and alignment.
 
 ## Hintbooks
 
-- [hintbook-software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer): The official general-purpose software-engineering vocabulary.
-- [hintbook-lawyer](https://github.com/open-hint-dev/hintbook-lawyer): The legal-drafting vocabulary — the reference for adapting HINT outside software.
-- [hintbook-librarian](https://github.com/open-hint-dev/hintbook-librarian): Provenance, claims, decisions, open questions, chronology, and typed cross-links for knowledge repositories.
+- [hintbook-software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer): Architecture, contracts, data models, and anti-patterns.
+- [hintbook-lawyer](https://github.com/open-hint-dev/hintbook-lawyer): Matters, clauses, obligations, sources, and red lines.
+- [hintbook-librarian](https://github.com/open-hint-dev/hintbook-librarian): Sources, claims, decisions, open questions, and linked topics.
+- [hintbook-business-analyst](https://github.com/open-hint-dev/hintbook-business-analyst): Requirements, use cases, business rules, and traceability.
+- [hintbook-product-manager](https://github.com/open-hint-dev/hintbook-product-manager): PRDs, stories, criteria, goals, and sourced metrics.
+- [hintbook-qa-engineer](https://github.com/open-hint-dev/hintbook-qa-engineer): Test plans, negative paths, coverage, and deterministic Gherkin.
+- [hintbook-technical-writer](https://github.com/open-hint-dev/hintbook-technical-writer): Doc types, terminology, required sections, and runnable samples.
+- [hintbook-compliance-officer](https://github.com/open-hint-dev/hintbook-compliance-officer): Frameworks, controls, evidence, exceptions, and escalation.
+- [hintbook-auditor](https://github.com/open-hint-dev/hintbook-auditor): Engagement scope, procedures, evidence, findings, and severity.
+- [hintbook-data-analyst](https://github.com/open-hint-dev/hintbook-data-analyst): Metrics, grains, formulas, sources, SQL, and caveats.
+- [hintbook-financial-analyst](https://github.com/open-hint-dev/hintbook-financial-analyst): Sourced inputs, formulas, scenarios, sensitivities, and checks.
+- [hintbook-procurement-specialist](https://github.com/open-hint-dev/hintbook-procurement-specialist): Neutral RFPs, requirements, timelines, and internal scoring.
+- [hintbook-proposal-manager](https://github.com/open-hint-dev/hintbook-proposal-manager): Offers, substantiated claims, commitments, and compliance matrices.
+- [hintbook-support-agent](https://github.com/open-hint-dev/hintbook-support-agent): Approved answers, entitlement, verification, and escalation.
+- [hintbook-marketing-manager](https://github.com/open-hint-dev/hintbook-marketing-manager): Brand voice, terminology, channel constraints, and proven claims.
+- [hintbook-policy-analyst](https://github.com/open-hint-dev/hintbook-policy-analyst): Cited instruments, options, criteria, impacts, and recommendations.
+- [hintbook-clinical-operations](https://github.com/open-hint-dev/hintbook-clinical-operations): Operational SOPs, routing, roles, records, and escalation.
+- [hintbook-instructional-designer](https://github.com/open-hint-dev/hintbook-instructional-designer): Objectives, activities, assessments, rubrics, and alignment.
 
 ## Demos
 
-- [demo-pied-piper](https://github.com/open-hint-dev/demo-pied-piper): A software-firm example project specified in `.hint`.
-- [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt): A legal-firm example matter specified in `.hint`.
-- [demo-knowledge-wiki](https://github.com/open-hint-dev/demo-knowledge-wiki): A source-grounded transformer knowledge wiki with immutable evidence and linked topics.
+- [demo-pied-piper](https://github.com/open-hint-dev/demo-pied-piper): Demonstrates software engineers Spec-as-Source.
+- [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt): Demonstrates lawyers Spec-as-Source.
+- [demo-knowledge-wiki](https://github.com/open-hint-dev/demo-knowledge-wiki): Demonstrates knowledge librarians Spec-as-Source.
+- [demo-initech-requirements](https://github.com/open-hint-dev/demo-initech-requirements): Demonstrates business analysts Spec-as-Source.
+- [demo-hooli-product](https://github.com/open-hint-dev/demo-hooli-product): Demonstrates product managers Spec-as-Source.
+- [demo-nakatomi-qa](https://github.com/open-hint-dev/demo-nakatomi-qa): Demonstrates qa engineers Spec-as-Source.
+- [demo-pied-piper-docs](https://github.com/open-hint-dev/demo-pied-piper-docs): Demonstrates technical writers Spec-as-Source.
+- [demo-wonka-compliance](https://github.com/open-hint-dev/demo-wonka-compliance): Demonstrates compliance & risk Spec-as-Source.
+- [demo-wonka-audit](https://github.com/open-hint-dev/demo-wonka-audit): Demonstrates auditors Spec-as-Source.
+- [demo-dunder-mifflin-bi](https://github.com/open-hint-dev/demo-dunder-mifflin-bi): Demonstrates data & bi analysts Spec-as-Source.
+- [demo-bluth-finance](https://github.com/open-hint-dev/demo-bluth-finance): Demonstrates financial analysts Spec-as-Source.
+- [demo-springfield-procurement](https://github.com/open-hint-dev/demo-springfield-procurement): Demonstrates procurement Spec-as-Source.
+- [demo-monorail-proposal](https://github.com/open-hint-dev/demo-monorail-proposal): Demonstrates sales & proposals Spec-as-Source.
+- [demo-vandelay-support](https://github.com/open-hint-dev/demo-vandelay-support): Demonstrates customer support Spec-as-Source.
+- [demo-sterling-cooper-brand](https://github.com/open-hint-dev/demo-sterling-cooper-brand): Demonstrates marketing & brand Spec-as-Source.
+- [demo-pawnee-policy](https://github.com/open-hint-dev/demo-pawnee-policy): Demonstrates policy analysts Spec-as-Source.
+- [demo-sacred-heart-clinical](https://github.com/open-hint-dev/demo-sacred-heart-clinical): Demonstrates clinical operations Spec-as-Source.
+- [demo-greendale-courses](https://github.com/open-hint-dev/demo-greendale-courses): Demonstrates educational designers Spec-as-Source.
+<!-- professions:end -->
 
 ## Source
 

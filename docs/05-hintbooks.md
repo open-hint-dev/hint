@@ -26,6 +26,27 @@ A book entry points at a **base directory**; every directory inside it containin
 
 When several hintbooks define the same keyword, the first one in `books` order wins.
 
+## Common core and composition
+
+Official profession hintbooks carry the same small, profession-neutral core. Its keywords, synonyms, rendered tags, and glossary sentences are identical in every book, so first-book-wins resolution is harmless for these collisions:
+
+| Keyword | Canonical tag | Neutral meaning |
+| --- | --- | --- |
+| `never` | `strict_prohibition` | Content or behavior that must never appear, unconditionally. |
+| `source` | `evidence_source` | Where a fact, figure, or citation came from; a missing source is a gap, never a blank to fill. |
+| `term` | `defined_term` | A defined term used verbatim and consistently. |
+| `assumption` | `stated_assumption` | Something taken as true for this work, with its basis. |
+| `risk` | `identified_risk` | A risk with its declared likelihood, impact, and mitigation. |
+| `decision` | `settled_decision` | A settled choice with rationale; extend it rather than silently relitigating it. |
+| `openquestion` | `open_question` | An unresolved point to report, not resolve silently. |
+| `checklist` | `verification_checklist` | Items that must all be satisfied before the work is done. |
+| `style` | `style_requirements` | Tone, format, and voice requirements for produced text. |
+| `example`, `good`, `bad` | `few_shot_example`, `enforced_patterns`, `prohibited_anti_patterns` | A worked example, a required pattern, and a prohibited pattern. |
+| `read`, `res` | `read_it`, `static_asset` | A runtime reference and an asset to use as declared. |
+| `notes` | excluded | Private scratch content that is never rendered. |
+
+A profession book may add domain keywords but must not redefine this core. Put the most task-specific book first in `books:` so genuine domain collisions resolve deliberately; the shared core behaves identically in any order.
+
 ## Anatomy of a hintbook
 
 ```
@@ -131,6 +152,8 @@ Names of the form `__name__` are **running instructions** — structural slots t
 | `__config__` | Optional replacement for the core instruction block that `hint apply` installs. The first vocabulary book defining it wins. |
 
 ## Authoring guidelines
+
+Start from the [`open-hint-dev/hintbook-template`](https://github.com/open-hint-dev/hintbook-template) repository. It ships the common core, running-instruction placeholders, CI, a package-quality checker, test data, and a checklist for the book/demo/page contract. Create from the template, replace every `<!-- fill -->` marker, then keep `scripts/check-book.mjs` green while adding domain vocabulary.
 
 - **One concept per keyword.** Small, sharply-defined vocabulary beats a sprawling one — every keyword is something a spec author must remember and an agent must obey.
 - **Make templates binding.** Render into explicit tags with imperative bodies ("implement exactly", "do not rename") and define each tag in `__system__.md` in the same authoritative voice.

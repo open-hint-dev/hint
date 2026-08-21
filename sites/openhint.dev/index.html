@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://openhint.dev" />
 <link rel="icon" type="image/png" href="favicon.png" />
 <link rel="apple-touch-icon" href="favicon.png" />
-<link rel="stylesheet" href="styles.css?v=1.5.1-numbers" />
+<link rel="stylesheet" href="styles.css?v=1.6.0-professions" />
 <style>
 /* ---------- Landing-specific ---------- */
 .hero { padding-top: clamp(48px, 6vw, 88px); padding-bottom: clamp(56px, 7vw, 96px); position: relative; overflow: hidden; }
@@ -150,7 +150,7 @@
 .principle p { color: var(--on-surface-mut); font-size: 0.96rem; }
 
 /* compare */
-.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.compare { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .vocab { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .vocab__head { padding: 18px 22px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); }
 .vocab__head h4 { font-size: 1.05rem; }
@@ -535,7 +535,7 @@
     </div>
     <p class="reveal" style="margin-top:22px; color:var(--ink-2); max-width:70ch;">Nothing in the engine changes between those columns — that is the whole point. Authoring a hintbook takes no programming: Markdown files with <code class="inl">{name}</code>-style placeholders. A profession that can write down its own rules can have a vocabulary for them.</p>
     <div class="hero__cta reveal" style="margin-top:26px;">
-      <a class="btn btn--ghost" href="#professions">Every profession</a>
+      <a class="btn btn--ghost" href="professions.html">Every profession</a>
       <a class="btn btn--ghost" href="https://github.com/open-hint-dev/demo-pearson-specter-litt" target="_blank" rel="noopener">A law firm, specified in .hint</a>
       <a class="btn btn--ghost" href="https://github.com/open-hint-dev/demo-knowledge-wiki" target="_blank" rel="noopener">A source-grounded knowledge wiki</a>
     </div>
@@ -726,56 +726,35 @@
       <p class="lede" style="margin-top:16px;">HINT isn't only for programmers. Any repository of high-stakes work has knowledge worth scoping to the paths it governs: the engineer knows the architecture, the lawyer knows the deal, and the librarian keeps a shared wiki grounded in sources.</p>
     </div>
 
-    <div class="profgrid reveal" style="grid-template-columns:repeat(3, 1fr); margin-bottom:14px;">
-      <a class="proftile proftile--live" href="for-software-engineers.html">
-        <svg class="proftile__ico" viewBox="0 0 32 32" fill="none"><path d="M11 11l-5 5 5 5M21 11l5 5-5 5M18 8l-4 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <div>
-          <h4>Software Engineers</h4>
-          <p>Architecture, data models, function contracts, anti-patterns</p>
-        </div>
-        <span class="proftile__go">Explore <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h9M8 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      </a>
-      <a class="proftile proftile--live" href="for-lawyers.html">
-        <svg class="proftile__ico" viewBox="0 0 32 32" fill="none"><path d="M16 5v22M8 27h16M16 5l-9 4 3 6a4 4 0 0 1-6 0l3-6M16 5l9 4-3 6a4 4 0 0 0 6 0l-3-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <div>
-          <h4>Lawyers</h4>
-          <p>Contracts, clauses, obligations, red lines</p>
-        </div>
-        <span class="proftile__go">Explore <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h9M8 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      </a>
-      <a class="proftile proftile--live" href="for-knowledge-librarians.html">
-        <svg class="proftile__ico" viewBox="0 0 32 32" fill="none"><path d="M7 6h7a5 5 0 0 1 5 5v15h-7a5 5 0 0 0-5 1V6Zm18 0h-6a5 5 0 0 0-5 5v15h6a5 5 0 0 1 5 1V6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-        <div>
-          <h4>Knowledge Librarians</h4>
-          <p>Sources, claims, decisions, open questions, linked topics</p>
-        </div>
-        <span class="proftile__go">Explore <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h9M8 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      </a>
+    <!-- professions:begin -->
+    <div class="profgrid reveal" style="margin-bottom:14px;">
+      <a class="proftile proftile--live" data-profession="software-engineers" data-status="live" href="for-software-engineers.html"><div><h4>Software Engineers</h4><p>Architecture, contracts, data models, and anti-patterns</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="lawyers" data-status="live" href="for-lawyers.html"><div><h4>Lawyers</h4><p>Matters, clauses, obligations, sources, and red lines</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="knowledge-librarians" data-status="live" href="for-knowledge-librarians.html"><div><h4>Knowledge Librarians</h4><p>Sources, claims, decisions, open questions, and linked topics</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="business-analysts" data-status="live" href="for-business-analysts.html"><div><h4>Business Analysts</h4><p>Requirements, use cases, business rules, and traceability</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="product-managers" data-status="live" href="for-product-managers.html"><div><h4>Product Managers</h4><p>PRDs, stories, criteria, goals, and sourced metrics</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="qa-engineers" data-status="live" href="for-qa-engineers.html"><div><h4>QA Engineers</h4><p>Test plans, negative paths, coverage, and deterministic Gherkin</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="technical-writers" data-status="live" href="for-technical-writers.html"><div><h4>Technical Writers</h4><p>Doc types, terminology, required sections, and runnable samples</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="compliance-and-risk" data-status="live" href="for-compliance-and-risk.html"><div><h4>Compliance &amp; Risk</h4><p>Frameworks, controls, evidence, exceptions, and escalation</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="auditors" data-status="live" href="for-auditors.html"><div><h4>Auditors</h4><p>Engagement scope, procedures, evidence, findings, and severity</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="data-analysts" data-status="live" href="for-data-analysts.html"><div><h4>Data &amp; BI Analysts</h4><p>Metrics, grains, formulas, sources, SQL, and caveats</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="financial-analysts" data-status="live" href="for-financial-analysts.html"><div><h4>Financial Analysts</h4><p>Sourced inputs, formulas, scenarios, sensitivities, and checks</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="procurement" data-status="live" href="for-procurement.html"><div><h4>Procurement</h4><p>Neutral RFPs, requirements, timelines, and internal scoring</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="sales-and-proposals" data-status="live" href="for-sales-and-proposals.html"><div><h4>Sales &amp; Proposals</h4><p>Offers, substantiated claims, commitments, and compliance matrices</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="customer-support" data-status="live" href="for-customer-support.html"><div><h4>Customer Support</h4><p>Approved answers, entitlement, verification, and escalation</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="marketing-and-brand" data-status="live" href="for-marketing-and-brand.html"><div><h4>Marketing &amp; Brand</h4><p>Brand voice, terminology, channel constraints, and proven claims</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="policy-analysts" data-status="live" href="for-policy-analysts.html"><div><h4>Policy Analysts</h4><p>Cited instruments, options, criteria, impacts, and recommendations</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="clinical-operations" data-status="live" href="for-clinical-operations.html"><div><h4>Clinical Operations</h4><p>Operational SOPs, routing, roles, records, and escalation</p></div><span class="proftile__go">Explore →</span></a>
+      <a class="proftile proftile--live" data-profession="educational-designers" data-status="live" href="for-educational-designers.html"><div><h4>Educational Designers</h4><p>Objectives, activities, assessments, rubrics, and alignment</p></div><span class="proftile__go">Explore →</span></a>
     </div>
 
-    <div class="reveal" style="display:flex; align-items:center; gap:14px; margin:30px 0 16px; flex-wrap:wrap;">
-      <span class="eyebrow" style="margin:0;">Coming soon</span>
-      <span style="font-size:0.92rem; color:var(--ink-3);">the same machinery, one new vocabulary at a time</span>
-    </div>
+    <div class="reveal profession-more"><a class="btn btn--ghost" href="professions.html">All professions →</a></div>
 
     <div class="soongrid reveal">
-      <div class="soontile"><h4>Business Analysts</h4><p>Requirements, scenarios, edge cases</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>Product Managers</h4><p>User stories, acceptance criteria, scope</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>QA Engineers</h4><p>Test cases, negative paths, expected behavior</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>Financial Analysts</h4><p>Models, assumptions, no invented numbers</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>Compliance &amp; Risk</h4><p>Policies, controls, red flags</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>Auditors</h4><p>Scope, evidence, findings, severity</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>Procurement</h4><p>RFPs, scoring matrices, requirements</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>Technical Writers</h4><p>Doc structure, terminology, required sections</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>Data &amp; BI Analysts</h4><p>Metric definitions, formulas, constraints</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>Customer Support</h4><p>Answer policy, escalation, prohibited replies</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>Sales &amp; Proposals</h4><p>RFP responses, value props, exclusions</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>Clinical Operations</h4><p>Protocols, patient routing, checklists</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>Educational Designers</h4><p>Modules, objectives, grading rubrics</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>Policy Analysts</h4><p>Regulations, justifications, constraints</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile"><h4>Marketing &amp; Brand</h4><p>Tone of voice, claims, brand safety</p><span class="soontile__tag">soon</span></div>
-      <div class="soontile soontile--author"><h4>Your profession</h4><p>Author a hintbook — no code required</p><span class="soontile__tag">open vocabulary</span></div>
+
+      <a class="soontile soontile--author" href="https://github.com/open-hint-dev/hintbook-template"><h4>Your profession</h4><p>Author a hintbook — no code required</p><span class="soontile__tag">open vocabulary</span></a>
     </div>
+    <!-- professions:end -->
 
     <div class="intentlayer reveal">
       <div>
@@ -810,7 +789,7 @@
         <div class="vocab__body">
           <span class="kw">goal</span><span class="kw">scope</span><span class="kw">entity</span><span class="kw">field</span><span class="kw">func</span><span class="kw">flow</span><span class="kw">error</span><span class="kw">rule</span><span class="kw">bad</span><span class="kw">test</span><span class="kw">ui</span><span class="kw">dep</span>
         </div>
-        <p class="vocab__foot">Thirty-plus keywords across intent, data, behavior, UI &amp; constraints. Three modes: <strong>implement</strong>, <strong>fix</strong>, <strong>review</strong>.</p>
+        <p class="vocab__foot">45 keywords including the shared core, across intent, data, behavior, UI &amp; constraints.</p>
       </div>
       <div class="vocab" data-accent="law">
         <div class="vocab__head">
@@ -821,7 +800,12 @@
         <div class="vocab__body">
           <span class="kw">party</span><span class="kw">clause</span><span class="kw">obligation</span><span class="kw">right</span><span class="kw">exception</span><span class="kw">breach</span><span class="kw">redline</span><span class="kw">never</span><span class="kw">liability</span><span class="kw">authority</span>
         </div>
-        <p class="vocab__foot">Forty-plus keywords across the full anatomy of a legal norm. Three modes: <strong>draft</strong>, <strong>revise</strong>, <strong>audit</strong>.</p>
+        <p class="vocab__foot">48 keywords including the shared core, across the full anatomy of a legal norm.</p>
+      </div>
+      <div class="vocab" data-accent="analysis-knowledge">
+        <div class="vocab__head"><h4>hintbook-librarian</h4><span class="pill pill--on"><span class="dot-ok"></span>live</span></div>
+        <div class="vocab__body"><span class="kw">source</span><span class="kw">concept</span><span class="kw">entity</span><span class="kw">claim</span><span class="kw">decision</span><span class="kw">openquestion</span><span class="kw">supersedes</span><span class="kw">relates</span></div>
+        <p class="vocab__foot">22 keywords including the shared core, for source-grounded knowledge and typed links.</p>
       </div>
     </div>
   </div>
@@ -937,7 +921,7 @@
         <ul>
           <li><a href="index.html#how">How it works</a></li>
           <li><a href="index.html#quickstart">Quick start</a></li>
-          <li><a href="index.html#professions">Professions</a></li>
+          <li><a href="professions.html">Professions</a></li>
           <li><a href="https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md" target="_blank" rel="noopener">Agent setup ↗</a></li>
         </ul>
       </div>
@@ -947,7 +931,7 @@
           <li><a href="for-software-engineers.html">For Engineers</a></li>
           <li><a href="for-lawyers.html">For Lawyers</a></li>
           <li><a href="for-knowledge-librarians.html">For Librarians</a></li>
-          <li><a href="index.html#professions">More soon</a></li>
+          <li><a href="professions.html">All profession guides</a></li>
         </ul>
       </div>
       <div class="footer__col">
