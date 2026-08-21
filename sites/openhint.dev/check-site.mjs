@@ -43,7 +43,7 @@ for (const page of PAGES) {
         fail(`${page} does not link to the agent integration documentation.`);
     }
 
-    if (!html.includes('<link rel="stylesheet" href="styles.css" />') || !html.includes('<script src="site.js"></script>')) {
+    if (!/<link rel="stylesheet" href="styles\.css(?:\?[^"#]+)?" \/>/.test(html) || !html.includes('<script src="site.js"></script>')) {
         fail(`${page} does not load the shared site assets.`);
     }
 
