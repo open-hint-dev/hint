@@ -5,6 +5,8 @@
 import * as Fs from 'node:fs';
 import * as Path from 'node:path';
 
+import '../../benchmarks/check-claims.mjs';
+
 const ROOT = import.meta.dirname;
 const PAGES = [
     'index.html',

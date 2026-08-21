@@ -1,0 +1,5 @@
+# concept Search retrieval {#search}
+
+Offline BM25 retrieval ranks scoped knowledge, flags weak matches, normalizes Unicode, and expands graph references deterministically.
+
+Поиск ранжирует знания и нормализует Юникод. 搜索排序知识图谱。

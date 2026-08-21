@@ -1,0 +1,22 @@
+Specification for `run_demo.sh` — runs the whole pipeline end to end with one command.
+
+# action run_demo {#run_demo_action}
+
+## arg text
+
+Optional `$1`: the text to compress. Default when absent (deliberately run-heavy, so middle-out shines): `Piiiiiiiiiieeeeeeeeeed Piiiiiiiiiipeeeeeeeeeer streeeeeeeeeetches sooooooooo goooooooood!`
+
+## flow
+
+1. If `$ROOT/bin/orchestrator` or `$ROOT/renderer-ts/dist/app.js` is missing, invoke the `build` action {#build_action} (`scripts/build.sh`) first.
+2. Log an `INFO` line announcing the run.
+3. Execute the pipeline as one pipe, exactly in stage order:
+
+```bash
+printf '%s' "$TEXT" \
+    | "$ROOT/bin/orchestrator" \
+    | python3 "$ROOT/compression-py/compressor.py" \
+    | node "$ROOT/renderer-ts/dist/app.js"
+```
+
+4. Exit with the pipeline's exit code — do not mask failures.

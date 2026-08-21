@@ -1,0 +1,32 @@
+Specification for `main.go` — the orchestrator CLI, stage 1 of the pipeline. Reads raw text from stdin and emits a traced compression job to stdout.
+
+# entity CompressionJob {#compression_job}
+
+The job message the orchestrator emits — the input contract of `compression-py`.
+
+## field request_id
+
+UUID v4 string, generated here and only here. Every downstream service copies it verbatim.
+
+## field source_service
+
+Constant string `orchestrator-go`.
+
+## field payload
+
+The raw text to compress: stdin content with leading/trailing whitespace trimmed. Non-empty (see the error below).
+
+# func main {#orchestrator_main}
+
+## flow
+
+1. Read all of stdin and trim surrounding whitespace.
+2. If the trimmed payload is empty, emit `PP_EMPTY_INPUT` and stop.
+3. Generate the `request_id` (UUID v4 from `crypto/rand`).
+4. Log acceptance: request id and payload size in bytes.
+5. Marshal the `CompressionJob` {#compression_job} and write it to stdout as a single line.
+6. Log emission and exit `0`.
+
+## error PP_EMPTY_INPUT
+
+Raised when stdin is empty or whitespace-only. Emit the shared error envelope with this code, `source_service` set to `orchestrator-go`, an empty `request_id`, and exit `1`.

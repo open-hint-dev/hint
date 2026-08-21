@@ -1,0 +1,5 @@
+# concept Authentication {#authentication}
+
+Service accounts exchange rotating bearer tokens. Login sessions require multi-factor authentication and explicit revocation.
+
+Аутентификация, вход и отзыв токена. 身份验证登录令牌撤销。

@@ -1,0 +1,15 @@
+The system orchestrator — stage 1 of the pipeline. Accepts raw text and turns it into a traced compression job.
+
+# lang Go {#go_lang}
+
+Go 1.26, standard library only, `gofmt`-formatted. One `main` package, built with `go build`. No goroutines — the orchestrator is a single linear pass.
+
+# good Idiomatic Go {#go_patterns}
+
+- Every error is handled explicitly at the call site; no `_`-discarded errors.
+- JSON marshalling goes through struct types with explicit `json:"snake_case"` tags — never `map[string]interface{}` for outbound messages.
+- A single deferred recovery in `main` converts any panic into the shared error envelope before the process exits.
+
+# dep {#go_deps}
+
+Go standard library only. Nothing in `go.mod` beyond the module declaration.

@@ -1,0 +1,17 @@
+Every service reports failures with this exact JSON envelope — written to **stdout** (it replaces the normal payload), followed by exit code `1`:
+
+```json
+{
+    "error": {
+        "code": "PP_EMPTY_INPUT",
+        "message": "human-readable description, one sentence",
+        "source_service": "orchestrator-go",
+        "request_id": "uuid-or-empty-string"
+    }
+}
+```
+
+- `code` is one of the registered company codes: `PP_EMPTY_INPUT`, `PP_BAD_JOB`, `PP_BAD_RESULT`, `PP_INTERNAL` (an unexpected crash wrapped by a service's last-resort handler). New codes require updating this shared contract first — never invent ad-hoc codes in a service.
+- `request_id` is copied from the incoming message when available, otherwise an empty string.
+- Raw stack traces, panics, and uncaught exceptions must never reach stdout — catch them and wrap them in this envelope.
+- A service receiving this envelope on its stdin must pass judgment, not crash: render or forward it as an error and exit `1`.

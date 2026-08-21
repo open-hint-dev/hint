@@ -1,0 +1,13 @@
+{
+  "version": "1.5.0",
+  "command": "make bench",
+  "runner": {
+    "os": "darwin 24.6.0",
+    "arch": "arm64",
+    "cpu": "Apple M2",
+    "node": "v26.6.0",
+    "date": "2026-08-21"
+  },
+  "files": 25,
+  "sha256": "51f0121c3f2453ff88d6e29347a83a90fad368ba00bc6068a34b327bdca36cc2"
+}

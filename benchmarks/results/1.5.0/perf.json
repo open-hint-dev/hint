@@ -1,0 +1,79 @@
+{
+  "version": "1.5.0",
+  "command": "make bench",
+  "runner": {
+    "os": "darwin 24.6.0",
+    "arch": "arm64",
+    "cpu": "Apple M2",
+    "node": "v26.6.0",
+    "date": "2026-08-21"
+  },
+  "results": {
+    "100": {
+      "hints": 100,
+      "compile": {
+        "p50_ms": 179.09,
+        "p95_ms": 225.02,
+        "runs": 20
+      },
+      "search": {
+        "p50_ms": 145.73,
+        "p95_ms": 155.48,
+        "runs": 5
+      },
+      "status": {
+        "p50_ms": 272.08,
+        "p95_ms": 272.08,
+        "runs": 1,
+        "git_processes": 4
+      },
+      "peak_rss_bytes": 100171776
+    },
+    "1000": {
+      "hints": 1000,
+      "compile": {
+        "p50_ms": 184,
+        "p95_ms": 217.66,
+        "runs": 20
+      },
+      "search": {
+        "p50_ms": 270.33,
+        "p95_ms": 304.81,
+        "runs": 5
+      },
+      "status": {
+        "p50_ms": 840.26,
+        "p95_ms": 840.26,
+        "runs": 1,
+        "git_processes": 4
+      },
+      "peak_rss_bytes": 111230976
+    },
+    "10000": {
+      "hints": 10000,
+      "compile": {
+        "p50_ms": 185.04,
+        "p95_ms": 207.13,
+        "runs": 20
+      },
+      "search": {
+        "p50_ms": 1177.67,
+        "p95_ms": 1262.59,
+        "runs": 5
+      },
+      "status": {
+        "p50_ms": 8348.56,
+        "p95_ms": 8348.56,
+        "runs": 1,
+        "git_processes": 4
+      },
+      "peak_rss_bytes": 198672384
+    }
+  },
+  "footprint": {
+    "package_bytes": 333144,
+    "unpacked_bytes": 1590617,
+    "runtime_dependencies": 4,
+    "native_modules": 0
+  }
+}

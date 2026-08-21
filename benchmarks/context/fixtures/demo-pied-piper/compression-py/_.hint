@@ -1,0 +1,15 @@
+The middle-out compression engine — stage 2 of the pipeline. The crown jewels of Pied Piper.
+
+# lang Python {#py_lang}
+
+Python 3.12+, standard library only, executed as a plain script (`python3 compressor.py`). PEP 8 style.
+
+# good Typed Python {#py_patterns}
+
+- Every function signature carries full type hints (parameters and return type).
+- Module-level constants for the service name and error codes — no magic strings repeated inline.
+- The `if __name__ == "__main__":` guard wraps the entry point so the module stays importable for tests.
+
+# dep {#py_deps}
+
+Python standard library only — `json`, `sys`, `datetime` and friends. No `pip install`, no `requirements.txt`.

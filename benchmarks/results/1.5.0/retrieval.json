@@ -1,0 +1,14 @@
+{
+  "version": "1.5.0",
+  "command": "make eval",
+  "fixture": "benchmarks/retrieval/fixture",
+  "metrics": {
+    "cases": 65,
+    "non_latin_cases": 26,
+    "precision_at_1": 1,
+    "precision_at_3": 1,
+    "recall_at_5": 1,
+    "mrr": 1,
+    "weak_flag_precision": 1
+  }
+}

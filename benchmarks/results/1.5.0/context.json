@@ -1,0 +1,32 @@
+{
+  "version": "1.5.0",
+  "command": "make bench",
+  "runner": {
+    "os": "darwin 24.6.0",
+    "arch": "arm64",
+    "cpu": "Apple M2",
+    "node": "v26.6.0",
+    "date": "2026-08-21"
+  },
+  "tokenizer": "openhint-unicode-v1",
+  "results": [
+    {
+      "fixture": "benchmarks/context/fixtures/demo-pied-piper",
+      "tokenizer": "openhint-unicode-v1",
+      "sample_size": 14,
+      "baseline_tokens": 3940,
+      "median_task_tokens": 1213,
+      "p90_task_tokens": 1607,
+      "ratio": 3.25
+    },
+    {
+      "fixture": "testdata/knowledge-repo",
+      "tokenizer": "openhint-unicode-v1",
+      "sample_size": 6,
+      "baseline_tokens": 73,
+      "median_task_tokens": 21,
+      "p90_task_tokens": 31,
+      "ratio": 3.48
+    }
+  ]
+}

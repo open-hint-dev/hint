@@ -1,0 +1,46 @@
+Core monorepo of Pied Piper. Three services in three languages form one data pipeline; every rule in this file is a system-wide contract that each service must honor in its own idiom.
+
+# app Pied Piper Compression Pipeline {#pied_piper_app}
+
+A middle-out compression pipeline composed of three independent processes chained over stdin/stdout:
+
+1. `orchestrator-go` — accepts raw text, wraps it into a traced compression job.
+2. `compression-py` — applies the proprietary middle-out algorithm to the job payload.
+3. `renderer-ts` — renders the compression result as a human-readable report.
+
+A full run is one shell pipe: `orchestrator | compressor | renderer`. The services share no code — only the contracts declared below.
+
+# rule Wire Contract {#wire_contract}
+
+@include "shared/api_conventions.hint"
+
+# rule Error Contract {#error_contract}
+
+@include "shared/error_format.hint"
+
+# rule Logging Contract {#logging_contract}
+
+@include "shared/logging_format.hint"
+
+# bad Integration Chaos {#integration_chaos}
+
+Real outages from our history. Never reintroduce any of these:
+
+- camelCase or PascalCase field names in any JSON that crosses a service boundary.
+- Logging to stdout — it corrupts the wire payload of the pipe.
+- Letting a raw stack trace, panic, or uncaught exception escape to stdout instead of the shared error envelope.
+- Regenerating or dropping `request_id` mid-pipeline — it breaks tracing across the three services.
+- Adding a third-party dependency to any service. The whole pipeline runs on language standard libraries only.
+
+# build {#pipeline_build}
+
+- `scripts/build.sh` — builds all three services (must stay green after any change).
+- `scripts/run_demo.sh [text]` — builds if needed, then runs the full pipeline end to end.
+
+# read README.md
+
+Before changing the pipeline topology — adding a service, reordering stages, or altering what flows between them — re-read the repository README and keep its architecture section true.
+
+# notes
+
+Spec-internal: this root baseline is deliberately the only place where the shared/*.hint contracts are included, so a contract change is a one-file edit. Folder hints below restate nothing — they only add language-local rules.

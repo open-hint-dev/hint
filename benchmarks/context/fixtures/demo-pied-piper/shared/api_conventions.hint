@@ -1,0 +1,8 @@
+All inter-service communication is JSON over stdin/stdout — one JSON object in, one JSON object out, UTF-8, no trailing output after it.
+
+- Every JSON field name on the wire is **snake_case**. Never camelCase, never PascalCase — regardless of the host language's local naming idiom (Go structs use `json:"snake_case"` tags, TypeScript interfaces declare snake_case properties, Python dicts use snake_case keys).
+- Every message carries the tracing pair:
+    - `request_id` — UUID v4 string, generated once by the orchestrator and copied verbatim by every downstream service. Never regenerated, never dropped.
+    - `source_service` — the emitting service's canonical name: `orchestrator-go`, `compression-py`, or `renderer-ts`.
+- A service writes exactly one JSON object to stdout. Everything else — logs, diagnostics, progress — goes to stderr.
+- Unknown extra fields in an incoming message are ignored, never an error; missing required fields are a contract violation reported via the shared error envelope.

@@ -12,6 +12,8 @@ spec (.hint) → scope + inheritance → retrieval → the governing intent → 
 
 Project home → [github.com/open-hint-dev/hint](https://github.com/open-hint-dev/hint#readme)
 
+Measured on Apple M2 / Node 26.6.0 (2026-08-21): cold scoped read p50/p95 is 185.04/207.13 ms at 10,000 hints; search p50/p95 is 1,177.67/1,262.59 ms; the packed CLI is 333,144 bytes with 0 native modules. [Results and exact methodology](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
 ---
 
 ## For humans
