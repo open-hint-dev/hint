@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Knowledge Librarians — claims stay sourced",
+  "metaDescription": "Turn source notes into scoped, linked knowledge where claims keep their evidence and superseded decisions remain visible to assistants.",
+  "profession": "knowledge management",
+  "packageRole": "Knowledge Librarians",
+  "h1": "Your assistant summarizes fast. HINT keeps every claim tied to its source.",
+  "intro": "HINT keeps source notes and curated knowledge in plain Markdown. Your assistant sees the claims, decisions, relationships and open questions that apply to the topic without treating every nearby document as equally authoritative.",
+  "artifact": "source note",
+  "situations": [
+    {"before":"A summary repeats a confident claim but loses where it came from.","after":"Claims retain provenance","body":"Each important assertion points back to a source note, so readers can inspect the evidence and its limits."},
+    {"before":"An old decision keeps resurfacing after the team replaced it.","after":"Supersession is explicit","body":"Typed links show which decision replaced another without deleting the history that explains the change."},
+    {"before":"A broad search floods the assistant with unrelated notes.","after":"Topic scope filters the library","body":"Folder context and ranked local search return the smallest useful set for the topic being maintained."}
+  ],
+  "example": {"path":"raw/attention-is-all-you-need.md.hint","intro":"The Knowledge Wiki demo records what one paper actually supports before that claim reaches a topic page.","lines":["# source Attention Is All You Need {#source_vaswani_2017}","","Vaswani et al., 2017, arXiv:1706.03762.","","# claim Transformer removes recurrence from sequence transduction","","The source describes an architecture based solely on attention mechanisms.","","Confidence: high for the architecture proposed by this paper."],"after":"It may summarize the scoped claim and link it into the wiki, but it preserves the paper reference and the stated confidence boundary.","compiled":"<source name=\"Attention Is All You Need\">…</source>\n<claim name=\"Transformer removes recurrence from sequence transduction\">\n  …\n</claim>"},
+  "never":["Turn an interpretation into a sourced fact.","Hide that a newer decision supersedes an older one.","Resolve an open question without evidence."],
+  "disclaimer":"HINT preserves declared provenance and relationships; it does not assess the truth or quality of a source for you.",
+  "faq":[{"q":"Is this a replacement for a wiki?","a":"No. It is a context layer for files in a repository and can govern the Markdown that feeds your existing publishing system."},{"q":"Can it distinguish sources from claims?","a":"Yes. The vocabulary gives each a separate role and lets topic notes link back to immutable source records."},{"q":"Does it require embeddings?","a":"No. Retrieval uses deterministic path scope and local lexical search."}],
+  "keywordDescriptions":{"source":"Records an identifiable source and its provenance.","concept":"Defines an idea in the vocabulary used by the repository.","entity":"Names a person, organization, system or other subject.","claim":"States an assertion with its support and confidence boundary.","decision":"Records a conclusion and the reason it was accepted.","openquestion":"Keeps an unresolved question visible without guessing an answer.","supersedes":"Links newer knowledge to the item it replaces.","relates":"Creates an explicit typed connection between topics."},
+  "technical":{"verify":false,"emit":false,"worksWith":["data-analysts","technical-writers","educational-designers"]}
+}

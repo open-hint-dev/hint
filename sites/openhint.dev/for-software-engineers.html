@@ -1,588 +1,95 @@
 <!DOCTYPE html>
 <html lang="en" data-accent="delivery">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-9KTEZLFTRE"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-9KTEZLFTRE');
-</script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HINT for Software Engineers — specs agents follow</title>
-<meta name="description" content="Architecture, contracts, data models, and constraints scoped per path; AI agents implement inside declared borders and never invent project facts." />
+<title>HINT for Software Engineers — code follows the spec</title>
+<meta name="description" content="Keep architecture, contracts and failure rules beside code so every coding agent sees the constraints that apply before making a change." />
 <link rel="canonical" href="https://openhint.dev/for-software-engineers.html" />
-<meta property="og:title" content="HINT for Software Engineers" /><meta property="og:description" content="Specs agents follow: scoped architecture, contracts, and constraints." /><meta property="og:type" content="website" /><meta property="og:url" content="https://openhint.dev/for-software-engineers.html" /><meta property="og:image" content="https://openhint.dev/assets/og/delivery.png" />
+<meta property="og:title" content="HINT for Software Engineers — code follows the spec" />
+<meta property="og:description" content="Keep architecture, contracts and failure rules beside code so every coding agent sees the constraints that apply before making a change." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://openhint.dev/for-software-engineers.html" />
+<meta property="og:image" content="https://openhint.dev/assets/og/delivery.png" />
 <meta name="twitter:card" content="summary_large_image" />
-<link rel="alternate" type="text/plain" href="llms.txt" />
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","name":"HINT for Software Engineers","url":"https://openhint.dev/for-software-engineers.html"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://openhint.dev/"},{"@type":"ListItem","position":2,"name":"Professions","item":"https://openhint.dev/professions.html"},{"@type":"ListItem","position":3,"name":"Software Engineers"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does HINT generate implementations?","acceptedAnswer":{"@type":"Answer","text":"No. HINT retrieves governing knowledge and deterministically emits only what templates fully determine."}},{"@type":"Question","name":"Can several hintbooks share one repository?","acceptedAnswer":{"@type":"Answer","text":"Yes. Official hintbooks share a neutral common core; book order resolves domain-specific collisions."}},{"@type":"Question","name":"Is verification deterministic?","acceptedAnswer":{"@type":"Answer","text":"Yes. hint verify and hint emit --check run without a model."}}]},{"@type":"SoftwareApplication","name":"HINT","applicationCategory":"DeveloperApplication","sameAs":"https://github.com/open-hint-dev"}]}</script>
+<link rel="alternate" type="text/plain" href="llms.txt" title="LLM-readable site summary" />
 <link rel="icon" type="image/png" href="favicon.png" />
 <link rel="apple-touch-icon" href="favicon.png" />
-<link rel="stylesheet" href="styles.css?v=1.6.1-code-contrast" />
-<style>
-.subhero { padding-top: clamp(40px, 5vw, 72px); padding-bottom: clamp(40px, 5vw, 64px); }
-.crumb { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3); margin-bottom: 26px; letter-spacing: 0.02em; }
-.crumb a { color: var(--ink-3); } .crumb a:hover { color: var(--ink); }
-.crumb .sep { margin-inline: 8px; opacity: 0.5; }
-.subhero__grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.02fr); gap: clamp(36px,5vw,72px); align-items: center; }
-.subhero h1 { font-size: clamp(2.4rem, 5vw, 4rem); letter-spacing: -0.035em; line-height: 1; margin-bottom: 22px; }
-.subhero h1 .em { color: var(--accent); }
-.subhero .lede { max-width: 44ch; margin-bottom: 28px; }
-.subhero__cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-.bookline { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-2); margin-bottom: 28px; background: var(--paper-2); border: 1px solid var(--line); padding: 8px 13px; border-radius: 100px; }
-.bookline .dot-ok { background: var(--accent-2); }
-
-.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-
-/* vocab */
-.kwgroup { margin-bottom: 40px; }
-.kwgroup__h { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; display: flex; align-items: center; gap: 12px; }
-.kwgroup__h::after { content: ""; flex: 1; height: 1px; background: var(--line); }
-.kwrow { display: grid; grid-template-columns: 210px 1fr; gap: 24px; padding: 15px 0; border-top: 1px solid var(--line); align-items: start; }
-.kwrow:first-of-type { border-top: none; }
-.kwrow__k { display: flex; flex-direction: column; gap: 6px; }
-.kwrow__k small { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-3); }
-.kwrow__d { color: var(--ink-2); font-size: 0.95rem; }
-.kwrow__d b { color: var(--ink); font-weight: 600; }
-.kw--lg { font-size: 0.86rem; padding: 4px 10px; align-self: flex-start; }
-
-/* tabs */
-.tabs { display: inline-flex; gap: 4px; padding: 4px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-.tabs button { font-family: var(--font-mono); font-size: 0.8rem; padding: 8px 15px; border-radius: 5px; color: var(--ink-3); transition: all .16s; }
-.tabs button.is-active { background: var(--ink); color: var(--paper); }
-.tabs button:not(.is-active):hover { color: var(--ink); }
-[data-panel] { display: none; }
-[data-panel].is-active { display: block; }
-
-/* modes */
-.mode { padding: 28px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); display: flex; flex-direction: column; gap: 12px; }
-.mode__k { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
-.mode h3 { font-size: 1.3rem; }
-.mode p { color: var(--ink-2); font-size: 0.93rem; }
-.mode__cmd { margin-top: auto; }
-.mode__role { font-size: 0.86rem; color: var(--ink-3); font-style: italic; border-left: 2px solid var(--accent-line); padding-left: 12px; }
-
-/* band */
-.band { background: var(--surface); color: var(--on-surface); }
-.band .eyebrow { color: var(--accent-bright); } .band .eyebrow::before { background: var(--accent-bright); }
-.band h2, .band h3 { color: var(--on-surface); }
-.band .lede { color: var(--on-surface-mut); }
-
-/* scenario */
-.scenario { display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(32px,4vw,56px); align-items: center; }
-.scenario__steps { display: flex; flex-direction: column; gap: 22px; }
-.scstep { display: flex; gap: 16px; }
-.scstep__n { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-bright); flex: none; width: 28px; padding-top: 2px; }
-.scstep h4 { font-size: 1.08rem; color: var(--on-surface); margin-bottom: 4px; }
-.scstep p { color: var(--on-surface-mut); font-size: 0.92rem; }
-.scstep code.inl { background: rgba(255,255,255,0.08); color: var(--on-surface); border-color: rgba(255,255,255,0.1); }
-
-/* report */
-.finding { border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px 18px; margin-bottom: 10px; background: var(--surface-2); }
-.finding__h { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-family: var(--font-mono); font-size: 0.78rem; }
-.sev { padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; }
-.sev--v { background: rgba(232,126,141,0.16); color: #E87E8D; }
-.sev--g { background: rgba(212,178,124,0.16); color: var(--tok-str); }
-.sev--r { background: rgba(95,208,194,0.14); color: var(--tok-id); }
-.finding__loc { color: var(--on-surface-mut); }
-.finding p { font-size: 0.9rem; color: var(--tok-body); }
-.finding p b { color: var(--on-surface); }
-
-.cta-final { text-align: center; }
-.cta-final .lede { max-width: 50ch; margin: 0 auto 28px; }
-.cta-final__btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-
-.nav__menu-btn { display: none; }
-.mobile-menu { display: none; }
-@media (max-width: 960px) {
-  .subhero__grid, .grid-3, .grid-2, .scenario { grid-template-columns: 1fr; }
-  .kwrow { grid-template-columns: 1fr; gap: 8px; }
-  .nav__menu-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; color: var(--ink); margin-left: auto; border: 1px solid var(--line); border-radius: 6px; }
-  .mobile-menu { display: block; position: fixed; inset: 64px 0 0; background: var(--paper); z-index: 49; padding: 28px 24px; transform: translateY(-12px); opacity: 0; pointer-events: none; transition: opacity .22s, transform .22s; }
-  .mobile-menu.open { opacity: 1; transform: none; pointer-events: auto; }
-  .mobile-menu a { display: block; font-family: var(--font-display); font-size: 1.5rem; padding: 14px 0; border-bottom: 1px solid var(--line); }
-}
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" />
+<link rel="stylesheet" href="styles.css?v=1.7.0-site-quality" />
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"SoftwareApplication","name":"HINT for Software Engineers","applicationCategory":"DeveloperApplication","operatingSystem":"Cross-platform","url":"https://openhint.dev/for-software-engineers.html","description":"Keep architecture, contracts and failure rules beside code so every coding agent sees the constraints that apply before making a change.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://openhint.dev/"},{"@type":"ListItem","position":2,"name":"Professions","item":"https://openhint.dev/professions.html"},{"@type":"ListItem","position":3,"name":"Software Engineers","item":"https://openhint.dev/for-software-engineers.html"}]},{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does this replace documentation?","acceptedAnswer":{"@type":"Answer","text":"No. It keeps the durable decisions an agent needs next to the paths they govern and links to longer sources when needed."}},{"@type":"Question","name":"Does it work with an existing codebase?","acceptedAnswer":{"@type":"Answer","text":"Yes. Add small `.hint` files gradually; `hint extract` can draft structural starting points where a language adapter exists."}},{"@type":"Question","name":"Is a model used to retrieve the rules?","acceptedAnswer":{"@type":"Answer","text":"No. Scoped lookup and local search are deterministic and run without a network call."}}]}]</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9KTEZLFTRE"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-9KTEZLFTRE');</script>
 </head>
 <body>
-
-<!-- NAV -->
-<nav class="nav">
+<a class="skip-link" href="#content">Skip to content</a>
+<!-- shared-nav:begin -->
+<nav class="nav" aria-label="Main navigation">
   <div class="wrap nav__inner">
-    <a class="logo" href="index.html" aria-label="hint — openhint.dev home">
-      <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
-    </a>
+    <a class="logo" href="index.html" aria-label="HINT home"><img class="logo__img" src="assets/logo-full.svg" alt="" width="147" height="46" /></a>
     <div class="nav__links">
       <a class="nav__link" href="index.html#how">How it works</a>
-      <a class="nav__link" href="index.html#emit">Emit</a>
-      <a class="nav__link" href="index.html#verify">Verify</a>
-      <a class="nav__link nav__link--active" href="for-software-engineers.html">For Engineers</a>
-      <a class="nav__link" href="for-lawyers.html">For Lawyers</a>
-      <a class="nav__link" href="for-knowledge-librarians.html">For Librarians</a>
+      <a class="nav__link nav__link--active" href="professions.html" aria-current="page">Professions</a>
       <a class="nav__link" href="https://github.com/open-hint-dev/hint/tree/main/docs" target="_blank" rel="noopener">Docs</a>
-      <a class="nav__link" href="index.html#quickstart">Quick start</a>
+      <a class="nav__link" href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn btn--primary nav__primary" href="index.html#quickstart">Get started</a>
     </div>
-    <div class="nav__cta">
-      <a class="nav__github" href="https://github.com/open-hint-dev/hintbook-software-engineer" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.7c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
-        <span>hintbook</span>
-      </a>
-      <a class="btn btn--primary" href="#quickstart">Get started</a>
-    </div>
-    <button class="nav__menu-btn" aria-label="Menu" aria-expanded="false">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 5h16M2 10h16M2 15h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    </button>
+    <button class="nav__menu-btn" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open navigation"><span></span><span></span><span></span></button>
   </div>
 </nav>
-<div class="mobile-menu">
-  <a href="index.html#how">How it works</a>
-  <a href="index.html#emit">Emit</a>
-  <a href="index.html#verify">Verify</a>
-  <a href="for-software-engineers.html">For Engineers</a>
-  <a href="for-lawyers.html">For Lawyers</a>
-  <a href="for-knowledge-librarians.html">For Librarians</a>
-  <a href="https://github.com/open-hint-dev/hint/tree/main/docs" target="_blank" rel="noopener">Docs ↗</a>
-  <a href="index.html#quickstart">Quick start</a>
+<div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+  <a href="index.html#how">How it works</a><a href="professions.html">Professions</a><a href="https://github.com/open-hint-dev/hint/tree/main/docs">Docs</a><a href="https://github.com/open-hint-dev/hint">GitHub</a><a href="index.html#quickstart">Get started</a>
 </div>
+<!-- shared-nav:end -->
+<noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+<main id="content">
+  <header class="profession-hero"><div class="wrap"><nav class="crumb" aria-label="Breadcrumb"><a href="index.html">Home</a> / <a href="professions.html">Professions</a> / Software Engineers</nav><p class="eyebrow">HINT for Software Engineers</p><h1>Your coding agent writes fast. HINT keeps it inside your architecture.</h1><p class="lede">HINT keeps plain-text engineering decisions beside the code they govern. Your agent reads only the relevant notes before it changes a file, so old constraints survive new sessions and new tools.</p><aside class="handoff" aria-labelledby="handoff-title">
+      <p class="eyebrow">No technical setup required from you</p>
+      <h2 id="handoff-title">Ask your AI assistant to set it up</h2>
+      <p>You need a folder with your documents and an AI assistant that can run commands in it: Claude Code, Cursor, Codex, GitHub Copilot, or OpenCode. <a href="https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md" target="_blank" rel="noopener">Which assistants can do this?</a></p>
+      <div class="handoff__actions"><button class="btn btn--primary" type="button" data-copy data-copy-text="Set up HINT in this folder for software engineering work. Run `npx -y @openhint/cli bootstrap` and follow exactly what it prints; when it asks which hintbook to use, choose `@openhint/hintbook-software-engineer`. When you are done, show me what you created, and write my first `.hint` file for renderer contract so I can see how it reads. If you cannot run commands, say so and show me the manual steps from https://openhint.dev/for-software-engineers.html#manual." aria-label="Copy the setup message for your AI assistant">Copy the message for your AI</button><button class="btn btn--ghost" type="button" data-copy data-copy-text="Open https://github.com/open-hint-dev/demo-pied-piper and walk me through its README scenario 1 in this chat." aria-label="Copy the demo message for your AI assistant">Ask your AI to show you the demo</button><span class="copy-status" aria-live="polite"></span></div>
+      <dl class="handoff__steps"><div><dt>What will happen</dt><dd>The assistant creates <code class="inl">hint.yml</code>, installs the vocabulary, and tells itself how to use it. Nothing in your documents changes.</dd></div><div><dt>What you do next</dt><dd>Write rules in plain Markdown beside your documents. Your assistant reads the ones that apply before it works.</dd></div><div><dt>If you have no such assistant</dt><dd>Send this page to a technical colleague, or use the <a href="#manual">manual steps</a>.</dd></div></dl>
+    </aside></div></header>
+  <section class="section divider" aria-labelledby="situations-title"><div class="wrap"><p class="eyebrow">Where it helps</p><h2 id="situations-title">Three situations your team will recognize</h2><div class="situation-grid"><article class="situation"><p class="situation__before">Before: A refactor quietly breaks an interface used by another language.</p><h3>The contract travels with the file</h3><p>The TypeScript renderer reads the exact shape declared by the Python compressor instead of guessing field names.</p></article><article class="situation"><p class="situation__before">Before: A familiar pattern is applied where the repository deliberately forbids it.</p><h3>Local decisions beat generic habits</h3><p>Architecture choices and rejected alternatives appear before implementation, while they can still change the approach.</p></article><article class="situation"><p class="situation__before">Before: A happy-path patch ships without the errors and checks the system expects.</p><h3>Failure behavior is part of the task</h3><p>Error contracts, required flows and verification criteria arrive in the same scoped context as the code.</p></article></div></div></section>
+  <section class="section divider example" aria-labelledby="example-title"><div class="wrap"><p class="eyebrow">See it</p><h2 id="example-title">A real renderer contract from the demo</h2><p>The Pied Piper demo connects a Python compression stage to a TypeScript report renderer.</p><div class="example__grid"><div><p class="demo__src"><a href="https://github.com/open-hint-dev/demo-pied-piper/blob/main/renderer-ts/app.ts.hint" target="_blank" rel="noopener">demo-pied-piper/renderer-ts/app.ts.hint ↗</a></p><pre class="code"><code># read ../compression-py/compressor.py
 
-<!-- SUBHERO -->
-<header class="subhero">
-  <div class="wrap">
-    <div class="crumb"><a href="index.html">Home</a><span class="sep">/</span><a href="professions.html">Professions</a><span class="sep">/</span><span style="color:var(--ink)">Software Engineers</span></div>
-    <div class="subhero__grid">
-      <div>
-        <span class="bookline"><span class="dot-ok"></span>@openhint/hintbook-software-engineer</span>
-        <h1>Ship code that obeys the <span class="em">spec</span> — not the vibe.</h1>
-        <p class="lede">The software-engineer hintbook gives your <code class="inl">.hint</code> files a precise vocabulary for architecture, data models, behavior, and constraints. Compile it into a binding prompt and your agent implements exactly what you declared — in dependency order, with no stubs, no invented features.</p>
-        <div class="subhero__cta">
-          <a class="btn btn--primary" href="#quickstart">Quick start</a>
-          <a class="btn btn--ghost" href="https://github.com/open-hint-dev/hintbook-software-engineer" target="_blank" rel="noopener">View hintbook ↗</a>
-        </div>
-      </div>
-      <div class="code-wrap">
-        <div class="code code--scroll">
-          <div class="code__bar">
-            <span class="code__dots"><i></i><i></i><i></i></span>
-            <span class="code__file"><b>src/compression/middleout.ts.hint</b></span>
-            <span class="code__tag">Markdown</span>
-          </div>
-<div class="code__body"><span class="t-bd">Middle-out compression core for Pied Piper.</span>
+The incoming message is the `CompressionResult` emitted by the compression engine.
 
-<span class="t-h"># </span><span class="t-kw">entity</span> <span class="t-nm">CompressionResult</span> <span class="t-id">{#result}</span>
+# func renderReport {#render_report}
 
-<span class="t-h">## </span><span class="t-kw">field</span> <span class="t-nm">weissmanScore</span>
+## arg result
 
-<span class="t-bd">Decimal string, two places. Never float.</span>
-
-<span class="t-h"># </span><span class="t-kw">func</span> <span class="t-nm">compress</span> <span class="t-id">{#compress}</span>
-
-<span class="t-h">## </span><span class="t-kw">arg</span> <span class="t-nm">input</span>
-
-<span class="t-bd">The raw byte buffer. Must not be mutated.</span>
-
-<span class="t-h">## </span><span class="t-kw">result</span>
-
-<span class="t-bd">A CompressionResult; throws on empty input.</span>
-
-<span class="t-h">## </span><span class="t-kw">flow</span>
-
-<span class="t-bd">1. Reject empty input with CompressionError.
-2. Run the middle-out pass.
-3. Compute the Weissman score.</span>
-
-<span class="t-h">## </span><span class="t-kw">bad</span> <span class="t-nm">LossyFallback</span>
-
-<span class="t-bd">Never silently fall back to lossy.</span>
-
-<span class="t-h"># </span><span class="t-kw">rule</span> <span class="t-nm">Determinism</span>
-
-<span class="t-bd">Same input → byte-identical output.</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</header>
-
-<section class="section divider" aria-label="Measured engineering results">
-  <div class="wrap numbers">
-    <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>185.04 / 207.13 ms</strong><span>cold read p50 / p95 · 10,000 hints</span></a>
-    <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>1,213 / 3,940 tokens</strong><span>median scoped / whole demo-pied-piper knowledge</span></a>
-    <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>8,348.56 ms · 4 git</strong><span>status · 10,000 hints</span></a>
-    <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>25 files</strong><span>committed SHA-256 determinism snapshot</span></a>
-  </div>
-</section>
-
-<!-- VALUE -->
-<section class="section divider">
-  <div class="wrap">
-    <div class="grid-3">
-      <div class="card reveal">
-        <h3 class="h3" style="margin-bottom:8px;">Schema, not suggestion</h3>
-        <p class="muted" style="font-size:0.95rem; color:var(--ink-2);">An <code class="inl">entity</code> compiles to a binding data contract — no renamed fields, no changed types, nothing extra or missing.</p>
-      </div>
-      <div class="card reveal" data-d="1">
-        <h3 class="h3" style="margin-bottom:8px;">Anti-patterns enforced</h3>
-        <p style="font-size:0.95rem; color:var(--ink-2);">A <code class="inl">bad</code> block carries the strongest enforcement language in the book — real past failures the agent must never reintroduce.</p>
-      </div>
-      <div class="card reveal" data-d="2">
-        <h3 class="h3" style="margin-bottom:8px;">Context inherits</h3>
-        <p style="font-size:0.95rem; color:var(--ink-2);">A folder's <code class="inl">_.hint</code> wraps everything beneath it, so stack, build pipeline, and dependency policy are always in scope.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- VOCABULARY -->
-<section class="section divider" id="vocabulary">
-  <div class="wrap">
-    <div class="reveal" style="max-width:60ch; margin-bottom:44px;">
-      <div class="eyebrow" style="margin-bottom:22px;">The vocabulary</div>
-      <h2 class="h2">Thirty-plus keywords across intent, data, behavior, UI &amp; constraints.</h2>
-      <p class="lede" style="margin-top:16px;">Every keyword is a markdown heading that compiles into an explicit, named tag the agent is trained to obey. Reach for the most specific one — a <code class="inl">field</code> inside an <code class="inl">entity</code> beats a bullet list in prose.</p>
-    </div>
-
-    <div class="reveal">
-      <div class="kwgroup">
-        <div class="kwgroup__h">Intent &amp; scope</div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">goal</span><small>why · intent</small></div><div class="kwrow__d">Why the work exists and the outcome it must produce — <b>the tie-breaker for everything the spec leaves unstated</b>.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">scope</span><small>nongoal · outofscope</small></div><div class="kwrow__d">What is in scope and explicitly out — the agent builds everything in, nothing out, and reports rather than expanding.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">done</span><small>acceptance · criteria</small></div><div class="kwrow__d">Observable conditions for "done" — proven with a test, a command, or an observation, never merely asserted.</div></div>
-      </div>
-
-      <div class="kwgroup">
-        <div class="kwgroup__h">Project context</div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">app</span><small>application</small></div><div class="kwrow__d">The domain, purpose, and overall structure — <b>informs naming and architecture everywhere</b>.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">lang</span><small>language</small></div><div class="kwrow__d">Language and runtime target. Only its syntax, APIs, and idioms are allowed.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">dep</span><small>deps · dependency</small></div><div class="kwrow__d">The approved dependency whitelist. Nothing outside it gets installed or imported without asking.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">build</span></div><div class="kwrow__d">Build and test commands. Generated code must never break these pipelines.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">module</span> <span class="kw kw--lg">lib</span><small>library</small></div><div class="kwrow__d">Existing modules and libraries to reuse — <b>never reimplement what they already provide</b>.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">namespace</span></div><div class="kwrow__d">The package / module path all code in this scope is emitted under.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">res</span><small>resource</small> <span class="kw kw--lg">read</span></div><div class="kwrow__d">Assets to honor and files to read first — match their conventions instead of guessing.</div></div>
-      </div>
-
-      <div class="kwgroup">
-        <div class="kwgroup__h">Data</div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">entity</span></div><div class="kwrow__d">A data model with an exact schema — <b>no renamed fields, changed types, extra or missing fields</b>.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">field</span></div><div class="kwrow__d">One named property: type, optionality, validation. Implemented exactly as declared.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">table</span> <span class="kw kw--lg">column</span> <span class="kw kw--lg">row</span></div><div class="kwrow__d">Tabular structures, their columns, and exact rows: names, types, labels, constraints.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">data</span><small>const · value</small></div><div class="kwrow__d">A named constant or magic value — used exactly as given, referenced rather than duplicated.</div></div>
-      </div>
-
-      <div class="kwgroup">
-        <div class="kwgroup__h">Behavior</div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">func</span><small>function</small></div><div class="kwrow__d">A binding function contract — <b>arguments, return, errors, and logic flow are all mandatory</b>.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">arg</span> <span class="kw kw--lg">result</span><small>return</small></div><div class="kwrow__d">Inputs and output: declared types and shapes, honored on every code path.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">flow</span></div><div class="kwrow__d">A step-by-step sequence the implementation must follow without skipping validations.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">action</span></div><div class="kwrow__d">A macro behavior invoked by name — its steps executed exactly whenever triggered.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">error</span></div><div class="kwrow__d">Exact error types under exact conditions — never substituted, wrapped, or renamed; each backed by a regression test.</div></div>
-      </div>
-
-      <div class="kwgroup">
-        <div class="kwgroup__h">Constraints &amp; tests</div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">rule</span></div><div class="kwrow__d">Non-negotiable system-level mandates every function and data path must satisfy.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">bad</span></div><div class="kwrow__d"><b>Unconditional prohibitions</b> — real past failures, never reintroduced even if examples suggest them.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">good</span> <span class="kw kw--lg">example</span></div><div class="kwrow__d">Required patterns and few-shot demonstrations to replicate exactly.</div></div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">test</span></div><div class="kwrow__d">Scenarios that must all appear in the test output: edge cases, mock shapes, assertions.</div></div>
-      </div>
-
-      <div class="kwgroup">
-        <div class="kwgroup__h">User interface</div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">ui</span> <span class="kw kw--lg">form</span> <span class="kw kw--lg">block</span> <span class="kw kw--lg">image</span></div><div class="kwrow__d">UI surfaces, forms, reusable components, and images — only the declared elements, all of them.</div></div>
-      </div>
-
-      <div class="kwgroup">
-        <div class="kwgroup__h">Spec-internal</div>
-        <div class="kwrow"><div class="kwrow__k"><span class="kw kw--lg">notes</span><small>note</small></div><div class="kwrow__d">Author-facing notes dropped from the output — reminders and TODOs the agent never sees.</div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- SEE IT COMPILE -->
-<section class="section divider band" id="compile">
-  <div class="wrap">
-    <div class="reveal" style="max-width:60ch; margin-bottom:36px;">
-      <div class="eyebrow" style="margin-bottom:22px;">See it work</div>
-      <h2 class="h2">One file. Scoped knowledge. A reviewable audit.</h2>
-      <p class="lede" style="margin-top:16px;">One <code class="inl">.hint</code> file, three uses. It is the knowledge an agent gets before touching the file, the brief when you hand the work to a fresh agent with <code class="inl">--prompt</code>, and the standard an audit is written against.</p>
-    </div>
-
-    <div class="reveal" data-tabs>
-      <div class="tabs">
-        <button data-tab="src" class="is-active">.hint source</button>
-        <button data-tab="out">what applies here</button>
-        <button data-tab="rep">review report</button>
-      </div>
-
-      <div data-panel="src" class="is-active code-wrap on-dark">
-        <button class="code__copy" data-copy>Copy</button>
-        <div class="code">
-          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file"><b>src/compression/middleout.ts.hint</b></span></div>
-<div class="code__body"><span class="t-h"># </span><span class="t-kw">func</span> <span class="t-nm">compress</span> <span class="t-id">{#compress}</span>
-
-<span class="t-bd">Compresses a buffer middle-out.</span>
-
-<span class="t-h">## </span><span class="t-kw">arg</span> <span class="t-nm">input</span>
-
-<span class="t-bd">The raw byte buffer. Must not be mutated.</span>
-
-<span class="t-h">## </span><span class="t-kw">result</span>
-
-<span class="t-bd">A CompressionResult; throws CompressionError on empty input.</span>
-
-<span class="t-h">## </span><span class="t-kw">flow</span>
-
-<span class="t-bd">1. Reject empty input with CompressionError.
-2. Run the middle-out pass.
-3. Compute the Weissman score.</span>
-
-<span class="t-h">## </span><span class="t-kw">bad</span> <span class="t-nm">LossyFallback</span>
-
-<span class="t-bd">Never silently fall back to lossy compression.</span></div>
-        </div>
-      </div>
-
-      <div data-panel="out" class="code-wrap on-dark">
-        <button class="code__copy" data-copy>Copy</button>
-        <div class="code">
-          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">hint src/compression/middleout.ts</span><span class="code__tag">implement</span></div>
-<div class="code__body"><span class="t-mut">&lt;</span><span class="t-tag">function_contract</span> <span class="t-at">name</span>=<span class="t-str">"compress"</span> <span class="t-at">id</span>=<span class="t-str">"compress"</span><span class="t-mut">&gt;</span>
-  <span class="t-bd">Compresses a buffer middle-out.</span>
-  <span class="t-mut">&lt;</span><span class="t-tag">argument</span> <span class="t-at">name</span>=<span class="t-str">"input"</span><span class="t-mut">&gt;</span>
-    <span class="t-bd">The raw byte buffer. Must not be mutated.</span>
-  <span class="t-mut">&lt;/</span><span class="t-tag">argument</span><span class="t-mut">&gt;</span>
-  <span class="t-mut">&lt;</span><span class="t-tag">return</span><span class="t-mut">&gt;</span>
-    <span class="t-bd">A CompressionResult; throws CompressionError on empty input.</span>
-  <span class="t-mut">&lt;/</span><span class="t-tag">return</span><span class="t-mut">&gt;</span>
-  <span class="t-mut">&lt;</span><span class="t-tag">logic_flow</span><span class="t-mut">&gt;</span>
-    <span class="t-bd">1. Reject empty input with CompressionError.
-    2. Run the middle-out pass.
-    3. Compute the Weissman score.</span>
-  <span class="t-mut">&lt;/</span><span class="t-tag">logic_flow</span><span class="t-mut">&gt;</span>
-  <span class="t-mut">&lt;</span><span class="t-tag">prohibited_anti_patterns</span> <span class="t-at">name</span>=<span class="t-str">"LossyFallback"</span><span class="t-mut">&gt;</span>
-    <span class="t-bd">Never silently fall back to lossy compression.</span>
-  <span class="t-mut">&lt;/</span><span class="t-tag">prohibited_anti_patterns</span><span class="t-mut">&gt;</span>
-<span class="t-mut">&lt;/</span><span class="t-tag">function_contract</span><span class="t-mut">&gt;</span></div>
-        </div>
-      </div>
-
-      <div data-panel="rep" class="reveal">
-        <p style="color:var(--on-surface-mut); font-family:var(--font-mono); font-size:0.82rem; margin-bottom:16px;">$ hint verify src/compression/middleout.ts&nbsp;&nbsp;<span style="opacity:.6">→ exit 1</span><br />$ hint --prompt src/compression/middleout.ts | claude -p "Audit against the spec. Findings only."</p>
-        <div class="finding">
-          <div class="finding__h"><span class="sev sev--v">violation</span><span class="finding__loc">middleout.ts · L41–48 → bad LossyFallback</span></div>
-          <p><b>The catch block falls back to <code class="inl">gzip()</code> on a failed pass.</b> The <code class="inl">LossyFallback</code> prohibition forbids any silent fallback. Minimal fix: re-throw <code class="inl">CompressionError</code>.</p>
-        </div>
-        <div class="finding">
-          <div class="finding__h"><span class="sev sev--g">gap</span><span class="finding__loc">middleout.ts · return → result</span></div>
-          <p><b>Empty input returns an empty buffer instead of throwing.</b> The <code class="inl">result</code> contract requires <code class="inl">CompressionError</code> on empty input — currently unhandled.</p>
-        </div>
-        <div class="finding">
-          <div class="finding__h"><span class="sev sev--r">risk</span><span class="finding__loc">middleout.ts · L12 → arg input</span></div>
-          <p><b><code class="inl">input.sort()</code> mutates the argument.</b> The <code class="inl">input</code> arg states it must not be mutated. Operate on a copy.</p>
-        </div>
-        <p style="color:var(--on-surface-mut); font-size:0.88rem; margin-top:14px;">Verdict: <strong style="color:#E87E8D;">does not conform</strong> — 1 violation, 1 gap, 1 risk.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- OUTPUT SHAPES -->
-<section class="section divider" id="modes">
-  <div class="wrap">
-    <div class="reveal" style="margin-bottom:42px;">
-      <div class="eyebrow" style="margin-bottom:22px;">Two costs, three uses</div>
-      <h2 class="h2">Same knowledge. Different job.</h2>
-    </div>
-    <div class="grid-3 reveal">
-      <div class="mode">
-        <div class="mode__k">default</div>
-        <h3>Load context</h3>
-        <p class="mode__role">What an agent already mid-session needs before it edits a file.</p>
-        <p>The decisions, invariants, and prohibitions that govern this path — inherited from the repo root down, and nothing else. No persona, no checklist, so it costs what it carries.</p>
-        <code class="inl mode__cmd">hint src/...</code>
-      </div>
-      <div class="mode">
-        <div class="mode__k">--prompt</div>
-        <h3>Hand off the work</h3>
-        <p class="mode__role">The same knowledge, framed for an agent starting cold.</p>
-        <p>Adds the senior-engineer role header and the verification-and-report footer. When a <code class="inl">hint.lock</code> exists and blocks have drifted, the drift list comes along automatically — scoping the work to what changed.</p>
-        <code class="inl mode__cmd">hint --prompt src/...</code>
-      </div>
-      <div class="mode">
-        <div class="mode__k">verify</div>
-        <h3>Gate it</h3>
-        <p class="mode__role">Deterministic, token-free, exits non-zero.</p>
-        <p>Every <code class="inl">func</code>, <code class="inl">entity</code>, <code class="inl">error</code> a spec declares must appear by name in the code. Catches a whole declaration dropped — a stubbed function, an unhandled error type — with no model involved.</p>
-        <code class="inl mode__cmd">hint verify src/...</code>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- SCENARIO / DEMO -->
-<section class="section divider band">
-  <div class="wrap">
-    <div class="reveal" style="max-width:56ch; margin-bottom:40px;">
-      <div class="eyebrow" style="margin-bottom:22px;">In practice · demo-pied-piper</div>
-      <h2 class="h2">A compression engine, specified before it's written.</h2>
-      <p class="lede" style="margin-top:16px;">The Pied Piper demo repo shows a whole module declared in <code class="inl">.hint</code> first — then built, reconciled, and audited entirely from the knowledge it carries.</p>
-    </div>
-    <div class="scenario reveal">
-      <div class="scenario__steps">
-        <div class="scstep"><span class="scstep__n">01</span><div><h4>Lay the baseline</h4><p>A root <code class="inl">_.hint</code> declares <code class="inl">lang</code> TypeScript, the <code class="inl">build</code> pipeline, and a <code class="inl">bad GlobalState</code> rule every file inherits.</p></div></div>
-        <div class="scstep"><span class="scstep__n">02</span><div><h4>Specify the module</h4><p>Companion hints define the <code class="inl">CompressionResult</code> entity, the <code class="inl">compress</code> contract, its <code class="inl">flow</code>, and the <code class="inl">LossyFallback</code> prohibition.</p></div></div>
-        <div class="scstep"><span class="scstep__n">03</span><div><h4>Emit, then implement</h4><p><code class="inl">hint emit src/compression/compress.ts</code> writes the declarations the spec fully determines and leaves a <b>hole</b> where the algorithm goes, with the <code class="inl">flow</code> and the <code class="inl">LossyFallback</code> prohibition printed above it. <code class="inl">hint --prompt src/compression | claude -p</code> hands the rest to an agent, which fills the holes with the Weissman score exact.</p></div></div>
-        <div class="scstep"><span class="scstep__n">04</span><div><h4>Gate every PR</h4><p><code class="inl">hint emit --check</code> and <code class="inl">hint verify</code> in CI, for free and with no model: an artifact that no longer equals what its spec produces, or a dropped declaration, fails the build. With the TypeScript adapter installed, <code class="inl">verify</code> compares <em>shape</em> — parameters, their types, the return — not just the presence of a name.</p></div></div>
-        <div class="scstep"><span class="scstep__n">05</span><div><h4>Verify, lock &amp; reconcile</h4><p><code class="inl">hint verify</code> confirms every declared <code class="inl">func</code>, <code class="inl">entity</code>, and <code class="inl">error</code> actually landed — deterministic, no tokens — then <code class="inl">hint lock</code> records what shipped. Later <code class="inl">hint diff</code> shows which blocks a spec edit touched, and <code class="inl">--prompt</code> carries that list automatically so only those get corrected — the rest stays byte-for-byte.</p></div></div>
-      </div>
-      <div class="code-wrap">
-        <div class="code">
-          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file"><b>_.hint</b> · project root</span></div>
-<div class="code__body"><span class="t-bd">Middle-out compression for Pied Piper.</span>
-
-<span class="t-h"># </span><span class="t-kw">lang</span> <span class="t-nm">TypeScript</span>
-
-<span class="t-bd">Node 22, ES modules, strict. No CommonJS.</span>
-
-<span class="t-h"># </span><span class="t-kw">build</span>
-
-<span class="t-bd">- npm run build to compile
-- npm test runs the vitest suites</span>
-
-<span class="t-h"># </span><span class="t-kw">bad</span> <span class="t-nm">GlobalState</span>
-
-<span class="t-bd">Never store request state in module-level
-variables.</span>
-
-<span class="t-h"># </span><span class="t-kw">dep</span> <span class="t-nm">Whitelist</span>
-
-<span class="t-bd">Only the packages in package.json. Ask
-before adding anything new.</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- QUICK START -->
-<section class="section divider" id="quickstart">
-  <div class="wrap">
-    <div class="reveal" style="margin-bottom:36px;">
-      <div class="eyebrow" style="margin-bottom:22px;">Quick start</div>
-      <h2 class="h2">Wire it into your repo.</h2>
-    </div>
-    <div class="agent-handoff reveal">
-      <div>
-        <h3>Fastest path: hand setup to your agent.</h3>
-        <p>The generated prompt initializes HINT, installs the software-engineering hintbook when needed, merges the right MCP entry for the current client, and verifies everything without replacing unrelated configuration.</p>
-      </div>
-      <div class="code-wrap">
-        <button class="code__copy" data-copy data-copy-text="Run `npx -y @openhint/cli bootstrap` from the repository root and follow exactly what it prints.">Copy</button>
-        <div class="code"><div class="code__body"><span class="t-bd">Run `npx -y @openhint/cli bootstrap` from the&#10;repository root and follow exactly what it prints.</span></div></div>
-      </div>
-    </div>
-    <div class="grid-2 reveal">
-      <div class="code-wrap">
-        <button class="code__copy" data-copy data-copy-text="npm install -g @openhint/cli&#10;hint config&#10;hint add @openhint/hintbook-software-engineer&#10;hint apply">Copy</button>
-        <div class="code">
-          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">1 · install &amp; register</span></div>
-<div class="code__body"><span class="t-mut"># from your repo root</span>
-<span class="t-bd">npm install -g @openhint/cli</span>
-<span class="t-bd">hint config</span>
-<span class="t-bd">hint add @openhint/hintbook-software-engineer</span>
-<span class="t-bd">hint apply</span></div>
-        </div>
-      </div>
-      <div class="code-wrap">
-        <button class="code__copy" data-copy data-copy-text="hint src/billing/invoice.ts&#10;hint emit src/billing/invoice.ts&#10;hint --prompt src/billing/invoice.ts | claude -p&#10;hint verify 'src/**/*.hint'&#10;hint emit --check">Copy</button>
-        <div class="code">
-          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file">2 · query &amp; ship</span></div>
-<div class="code__body"><span class="t-mut"># what governs this file?</span>
-<span class="t-bd">hint src/billing/invoice.ts</span>
-
-<span class="t-mut"># let the spec write what it fully determines</span>
-<span class="t-bd">hint emit src/billing/invoice.ts</span>
-
-<span class="t-mut"># hand it to a fresh agent</span>
-<span class="t-bd">hint --prompt src/billing/invoice.ts \
-  | claude -p</span>
-
-<span class="t-mut"># CI gate: shape, and artifacts still equal their specs</span>
-<span class="t-bd">hint verify 'src/**/*.hint'</span>
-<span class="t-bd">hint emit --check</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="reveal" style="margin-top:22px; display:flex; gap:14px; align-items:flex-start; padding:20px 24px; border:1px solid var(--accent-line); background:var(--accent-soft); border-radius:12px;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="color:var(--accent); flex:none; margin-top:2px;"><path d="M4 4h16v12H8.5L4 19.5V4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-      <p style="font-size:0.96rem; color:var(--ink-2); margin:0;"><strong>Then just keep talking to your agent.</strong> <code class="inl">hint apply</code> writes a short block into your <code class="inl">AGENTS.md</code> and <code class="inl">CLAUDE.md</code> teaching an agent to query HINT before it edits — and to record durable findings back into the nearest <code class="inl">.hint</code>. Works the same for Claude Code, Codex, OpenCode, or your own.</p>
-    </div>
-  </div>
-</section>
-
-<section class="section divider" id="faq"><div class="wrap"><div class="eyebrow">FAQ</div><h2 class="h2" style="margin:18px 0 28px">What engineers ask before adopting HINT</h2><div class="grid-3"><article class="card"><h3>Does HINT generate implementations?</h3><p>No. It retrieves the governing knowledge and deterministically emits only what templates fully determine.</p></article><article class="card"><h3>Can several hintbooks share one repo?</h3><p>Yes. Official books share a neutral common core; book order resolves domain-specific vocabulary.</p></article><article class="card"><h3>Is verification deterministic?</h3><p>Yes. <code class="inl">hint verify</code> and <code class="inl">hint emit --check</code> use no model.</p></article></div><p style="margin-top:28px">Key facts: HINT, <strong>Spec-as-Source</strong>, <strong>hintbook-software-engineer</strong>, and <strong>demo-pied-piper</strong> keep durable engineering intent beside the paths it governs. The assistant implements inside the borders; it never invents project facts.</p></div></section>
-
-<!-- FINAL CTA -->
-<section class="section divider">
-  <div class="wrap cta-final reveal">
-    <h2 class="h2">Borders around your codebase.</h2>
-    <p class="lede">Declare the architecture once. Let the agent build, fix, and review inside it — forever.</p>
-    <div class="cta-final__btns">
-      <a class="btn btn--primary" href="#quickstart">Get started</a>
-      <a class="btn btn--ghost" href="for-lawyers.html">See it for lawyers →</a>
-      <a class="btn btn--ghost" href="for-knowledge-librarians.html">See it for librarians →</a>
-    </div>
-  </div>
-</section>
-
-<!-- FOOTER -->
+A validated `CompressionResult` mirroring the compressor output.</code></pre></div><div class="example__result"><h3>What your assistant does next</h3><p>It mirrors the upstream field names, follows the declared score formula, and reports any missing decision instead of inventing an interface.</p><details><summary>What your AI assistant receives</summary><pre class="compiled"><code>&lt;function_contract name=&quot;renderReport&quot;&gt;
+  Read the upstream CompressionResult exactly.
+  Compute the score with the declared formula.
+  Return the specified report layout.
+&lt;/function_contract&gt;</code></pre></details></div></div></div></section>
+  <section class="section divider trust" aria-labelledby="trust-title"><div class="wrap trust__grid"><div><p class="eyebrow">Your boundaries stay visible</p><h2 id="trust-title">What it will never do</h2><ul><li>Invent an API, field or dependency that the repository does not declare.</li><li>Replace a settled architectural decision with a generic preference.</li><li>Report success when required error paths or tests are missing.</li></ul></div><aside class="disclaimer"><h3>Important boundary</h3><p>HINT supplies project context; it does not prove that generated code is correct. Normal review, tests and security controls still apply.</p></aside></div></section>
+  <section class="section divider" aria-labelledby="faq-title"><div class="wrap faq-layout"><div><p class="eyebrow">FAQ</p><h2 id="faq-title">Questions software engineers ask</h2></div><div><details class="faq"><summary>Does this replace documentation?</summary><p>No. It keeps the durable decisions an agent needs next to the paths they govern and links to longer sources when needed.</p></details><details class="faq"><summary>Does it work with an existing codebase?</summary><p>Yes. Add small <code class="inl">.hint</code> files gradually; <code class="inl">hint extract</code> can draft structural starting points where a language adapter exists.</p></details><details class="faq"><summary>Is a model used to retrieve the rules?</summary><p>No. Scoped lookup and local search are deterministic and run without a network call.</p></details></div></div></section>
+  <section class="section divider"><div class="wrap"><details class="technical"><summary>For your technical colleague</summary><div class="technical__body"><section><h2>The vocabulary</h2><p>A <em>hintbook</em> is a vocabulary for your profession—installed, not written by you.</p><dl class="keyword-list"><div class="kwrow"><dt><code>decision</code></dt><dd>Records a settled engineering choice and why it was made.</dd></div><div class="kwrow"><dt><code>invariant</code></dt><dd>States a property every change must preserve.</dd></div><div class="kwrow"><dt><code>entity</code></dt><dd>Defines a domain object and its role.</dd></div><div class="kwrow"><dt><code>field</code></dt><dd>Describes one field, including its type and constraints.</dd></div><div class="kwrow"><dt><code>func</code></dt><dd>Specifies a function&#39;s inputs, output and behavior.</dd></div><div class="kwrow"><dt><code>flow</code></dt><dd>Sets an ordered sequence that implementation must follow.</dd></div><div class="kwrow"><dt><code>error</code></dt><dd>Names a failure condition and its required response.</dd></div><div class="kwrow"><dt><code>test</code></dt><dd>Lists observable cases that prove the contract.</dd></div></dl></section><section id="manual"><h2>Manual setup</h2><p>Bootstrap is read-only: it prints instructions for the assistant. The assistant performs the installation.</p><pre class="code"><code>npm install -g @openhint/cli
+hint config
+hint add @openhint/hintbook-software-engineer
+hint apply
+hint verify renderer-ts/app.ts
+hint emit renderer-ts/app.ts</code></pre><p><a href="https://github.com/open-hint-dev/hintbook-software-engineer" target="_blank" rel="noopener">Hintbook repository ↗</a> · <a href="https://github.com/open-hint-dev/demo-pied-piper" target="_blank" rel="noopener">Demo repository ↗</a></p></section><section><h2>Works with</h2><ul><li><a href="for-product-managers.html">Product Managers</a></li><li><a href="for-qa-engineers.html">QA Engineers</a></li><li><a href="for-business-analysts.html">Business Analysts</a></li></ul></section></div></details></div></section>
+  <section class="section divider"><div class="wrap related"><p class="eyebrow">Related professions</p><div class="related__links"><a class="card" href="for-product-managers.html"><h2>Product Managers</h2><p>PRDs, stories, criteria, goals, and sourced metrics</p></a><a class="card" href="for-qa-engineers.html"><h2>QA Engineers</h2><p>Test plans, negative paths, coverage, and deterministic Gherkin</p></a><a class="card" href="for-business-analysts.html"><h2>Business Analysts</h2><p>Requirements, use cases, business rules, and traceability</p></a></div><div class="handoff handoff--closing"><h2>Ready to try it?</h2><p>Give one message to the assistant already working with your documents.</p><button class="btn btn--primary" type="button" data-copy data-copy-text="Set up HINT in this folder for software engineering work. Run `npx -y @openhint/cli bootstrap` and follow exactly what it prints; when it asks which hintbook to use, choose `@openhint/hintbook-software-engineer`. When you are done, show me what you created, and write my first `.hint` file for renderer contract so I can see how it reads. If you cannot run commands, say so and show me the manual steps from https://openhint.dev/for-software-engineers.html#manual." aria-label="Copy the setup message for your AI assistant">Copy the message for your AI</button><span class="copy-status" aria-live="polite"></span></div></div></section>
+  <section class="section section--tight divider" aria-label="Measured results"><div class="wrap"><div class="numbers"><a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>185 ms</strong><span>to answer across 10,000 files</span></a><a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>100%</strong><span>of 65 test queries found the right spec</span></a><a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>3.25× less</strong><span>context per measured task</span></a></div></div></section>
+</main>
+<!-- shared-footer:begin -->
 <footer class="footer">
   <div class="wrap">
     <div class="footer__grid">
-      <div class="footer__brand footer__col">
-        <div class="logo footer__logo">
-          <img class="logo__img" src="assets/logo-full.svg" alt="hint" />
-        </div>
-        <p>Spec-as-Source for any repository. Your intent in Markdown, scoped by path and inherited from the root down — so an agent gets what governs here, and nothing else.</p>
-      </div>
-      <div class="footer__col">
-        <h5>Product</h5>
-        <ul>
-          <li><a href="index.html#how">How it works</a></li>
-          <li><a href="#vocabulary">Vocabulary</a></li>
-          <li><a href="#modes">Output</a></li>
-          <li><a href="https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md" target="_blank" rel="noopener">Agent setup ↗</a></li>
-        </ul>
-      </div>
-      <div class="footer__col">
-        <h5>Professions</h5>
-        <ul>
-          <li><a href="professions.html">All professions</a></li>
-          <li><a href="for-software-engineers.html">For Engineers</a></li>
-          <li><a href="for-lawyers.html">For Lawyers</a></li>
-          <li><a href="for-knowledge-librarians.html">For Librarians</a></li>
-        </ul>
-      </div>
-      <div class="footer__col">
-        <h5>Source</h5>
-        <ul>
-          <li><a href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">hint ↗</a></li>
-          <li><a href="https://github.com/open-hint-dev/hintbook-software-engineer" target="_blank" rel="noopener">hintbook-software-engineer ↗</a></li>
-          <li><a href="https://github.com/open-hint-dev/demo-pied-piper" target="_blank" rel="noopener">demo-pied-piper ↗</a></li>
-        </ul>
-      </div>
+      <div class="footer__brand footer__col"><div class="logo footer__logo"><img class="logo__img" src="assets/logo-full.svg" alt="HINT" width="147" height="46" /></div><p>Durable project knowledge, kept beside the work and delivered to your assistant when it applies.</p></div>
+      <div class="footer__col"><h2>Product</h2><ul><li><a href="index.html#how">How it works</a></li><li><a href="index.html#quickstart">Quick start</a></li><li><a href="https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md" target="_blank" rel="noopener">Assistant setup ↗</a></li></ul></div>
+      <div class="footer__col footer__professions"><h2>Professions</h2><ul><li><a href="for-software-engineers.html">Software Engineers</a></li><li><a href="for-lawyers.html">Lawyers</a></li><li><a href="for-knowledge-librarians.html">Knowledge Librarians</a></li><li><a href="for-business-analysts.html">Business Analysts</a></li><li><a href="for-product-managers.html">Product Managers</a></li><li><a href="for-qa-engineers.html">QA Engineers</a></li><li><a href="for-technical-writers.html">Technical Writers</a></li><li><a href="for-compliance-and-risk.html">Compliance &amp; Risk</a></li><li><a href="for-auditors.html">Auditors</a></li><li><a href="for-data-analysts.html">Data &amp; BI Analysts</a></li><li><a href="for-financial-analysts.html">Financial Analysts</a></li><li><a href="for-procurement.html">Procurement</a></li><li><a href="for-sales-and-proposals.html">Sales &amp; Proposals</a></li><li><a href="for-customer-support.html">Customer Support</a></li><li><a href="for-marketing-and-brand.html">Marketing &amp; Brand</a></li><li><a href="for-policy-analysts.html">Policy Analysts</a></li><li><a href="for-clinical-operations.html">Clinical Operations</a></li><li><a href="for-educational-designers.html">Educational Designers</a></li><li><a href="professions.html">All professions</a></li></ul></div>
+      <div class="footer__col"><h2>Source</h2><ul><li><a href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">HINT ↗</a></li><li><a href="https://github.com/open-hint-dev/hintbook-template" target="_blank" rel="noopener">Build a hintbook ↗</a></li><li><a href="https://www.npmjs.com/org/openhint" target="_blank" rel="noopener">npm packages ↗</a></li></ul></div>
     </div>
-    <div class="footer__bottom">
-      <span>© 2026 openhint.dev · MIT licensed</span>
-      <span>Tell your agent what matters here.</span>
-    </div>
+    <div class="footer__bottom"><span>© 2026 openhint.dev · MIT licensed</span><span>HINT 1.5 · Tell your assistant what matters here.</span></div>
   </div>
 </footer>
-
-<script src="site.js"></script>
+<!-- shared-footer:end -->
+<script src="site.js?v=1.7.0-site-quality"></script>
 </body>
 </html>

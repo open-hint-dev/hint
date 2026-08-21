@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Auditors — findings stay evidence-based",
+  "metaDescription": "Keep engagement scope, procedures, evidence, findings and severity together so assistants do not turn assumptions into audit conclusions.",
+  "profession": "audit",
+  "packageRole": "Auditors",
+  "h1": "Your assistant drafts findings fast. HINT keeps conclusions inside the evidence.",
+  "intro": "HINT keeps engagement scope, criteria, procedures and evidence in plain-text notes beside working papers. Your assistant reads only what applies to this engagement before drafting a finding.",
+  "artifact": "audit finding",
+  "situations": [
+    {"before":"A draft finding extrapolates beyond the tested sample.","after":"Evidence limits the conclusion","body":"Sample facts and procedure results stay visible, so unsupported population-wide language is removed or qualified."},
+    {"before":"Severity is chosen because the wording sounds serious.","after":"The declared scale decides severity","body":"Impact and likelihood must map to the engagement's approved rating criteria."},
+    {"before":"A useful observation drifts outside engagement scope.","after":"Scope remains a wall","body":"The assistant separates an out-of-scope issue for follow-up instead of presenting it as an audited conclusion."}
+  ],
+  "example": {"path":"engagements/2026-factory-access/findings.md.hint","intro":"The Wonka audit demo grounds its factory-access finding in the engagement's approved evidence.","lines":["# read Approved source","","../../sources/approved.md","","# finding factory-access-2026-1 {#auditor_demo}","","Approved finding grounded in SRC-1.","","# never Invented details"],"after":"It drafts from SRC-1, keeps the finding inside the engagement boundary, and will not infer sample results that were never observed.","compiled":"<finding name=\"factory-access-2026-1\">\n  Approved finding grounded in SRC-1.\n</finding>\n<never name=\"Invented details\">…</never>"},
+  "never":["Invent sample results, evidence or an unsupported finding.","Assign severity outside the engagement's declared scale.","Present out-of-scope work as an audited conclusion."],
+  "disclaimer":"HINT assists with audit documentation; it does not provide assurance, replace professional skepticism or sign an audit opinion.",
+  "faq":[{"q":"Does it perform the audit?","a":"No. It carries scope, procedures and evidence context into drafting; auditors perform and evaluate the work."},{"q":"Can it choose severity?","a":"Only by applying the declared scale to documented impact and likelihood; missing inputs remain unresolved."},{"q":"Will another engagement's evidence appear?","a":"Folder scope keeps engagement-specific evidence out of unrelated working papers."}],
+  "keywordDescriptions":{"engagement":"Sets the subject, period, team and scope of the audit.","objective":"States what the engagement is intended to determine.","criteria":"Names the standard used to evaluate evidence.","audittest":"Defines a procedure and the population or sample it covers.","evidence":"Records an observed artifact and its provenance.","finding":"Connects criteria, condition, cause, effect and evidence.","severity":"Applies the engagement's approved rating scale.","followup":"Records remediation ownership and the next review point."},
+  "technical":{"verify":true,"emit":true,"worksWith":["compliance-and-risk","lawyers","financial-analysts"]}
+}

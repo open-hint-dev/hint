@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Policy Analysts — briefs stay sourced",
+  "metaDescription": "Keep cited instruments, options, criteria, impacts and recommendations together so assistants separate evidence from policy judgment.",
+  "profession": "policy analysis",
+  "packageRole": "Policy Analysts",
+  "h1": "Your assistant drafts briefs fast. HINT keeps evidence separate from judgment.",
+  "intro": "HINT keeps the issue, cited instruments, options, criteria and impacts in plain-text notes beside policy documents. Your assistant reads the declared frame before comparing options or writing a recommendation.",
+  "artifact": "options record",
+  "situations": [
+    {"before":"A brief cites a statute and section number from memory.","after":"Every instrument must be declared","body":"Missing authority becomes a research gap instead of a precise-looking citation."},
+    {"before":"An impact figure appears without evidence.","after":"Numbers retain their sources","body":"Fiscal and social estimates remain linked to the evidence and assumptions that produced them."},
+    {"before":"Options are framed so one conclusion is inevitable.","after":"The same criteria apply to every option","body":"Trade-offs stay visible and recommendations explain where judgment begins."}
+  ],
+  "example": {"path":"issues/lot-48-park/options.md.hint","intro":"The Pawnee Policy demo grounds the Lot 48 mandate in SRC-1.","lines":["# mandate overview-1 {#policy_analyst_overview}","","Approved mandate grounded in SRC-1.","","# source SRC-1","","../../sources/approved.md"],"after":"It compares options within the approved mandate and marks any absent instrument, stakeholder position or impact evidence as a gap.","compiled":"<mandate name=\"overview-1\">\n  Approved mandate grounded in SRC-1.\n</mandate>\n<source name=\"SRC-1\">../../sources/approved.md</source>"},
+  "never":["Cite an unverified instrument or provision.","State an impact figure without a source.","Invent a stakeholder position or use partisan framing."],
+  "disclaimer":"HINT supports policy analysis, not legal advice or democratic authority. Applicable law, consultation and accountable decision-making remain external.",
+  "faq":[{"q":"Which jurisdictions does it know?","a":"None by default. You declare the instruments and sources that govern the policy area."},{"q":"Does it provide legal advice?","a":"No. It structures cited policy context and identifies gaps for qualified review."},{"q":"How is neutrality enforced?","a":"Declare a neutral style, common evaluation criteria and prohibited framing; reviewers still judge whether the analysis is balanced."}],
+  "keywordDescriptions":{"issue":"Defines the policy question and its boundary.","mandate":"Names who requested the analysis and for what decision.","regulation":"Identifies a cited legal or regulatory instrument.","provision":"Records the exact cited section that applies.","option":"Defines one alternative with a stable identifier.","impact":"Records an effect, dimension and supporting source.","tradeoff":"Separates competing effects without hiding judgment.","recommendation":"States a conclusion together with its justification."},
+  "technical":{"verify":true,"emit":true,"worksWith":["lawyers","compliance-and-risk","auditors"]}
+}

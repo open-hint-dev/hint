@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Proposals — claims stay inside the offer",
+  "metaDescription": "Keep customer requirements, approved claims, proof and commitments beside proposals so assistants do not promise what delivery cannot support.",
+  "profession": "sales and proposal management",
+  "packageRole": "Proposal Managers",
+  "h1": "Your assistant writes proposals fast. HINT keeps every promise supportable.",
+  "intro": "HINT keeps customer requirements, approved offer language, proof and approval boundaries in plain-text notes beside a pursuit. Your assistant reads the context for this opportunity before drafting an answer.",
+  "artifact": "proposal answer",
+  "situations": [
+    {"before":"A strong claim appears without a case study or approved proof.","after":"Claims carry evidence","body":"The assistant links the claim to support or marks it for review instead of polishing uncertainty into certainty."},
+    {"before":"A helpful sentence becomes a contractual delivery commitment.","after":"Commitments stay inside authority","body":"Dates, service levels and custom work must come from the approved offer and named approver."},
+    {"before":"A response says compliant but never points to the answer.","after":"Compliance maps to evidence","body":"Each customer requirement links to the proposal section and proof that addresses it."}
+  ],
+  "example": {"path":"pursuits/springfield-monorail/proposal.md.hint","intro":"The Monorail proposal demo grounds a pursuit answer in an approved source.","lines":["# read Approved source","","../../sources/approved.md","","# answer springfield-monorail-1 {#proposal_manager_demo}","","Approved answer grounded in SRC-1.","","# never Invented details"],"after":"It drafts inside the approved offer and lists unsupported references, prices or delivery promises for review.","compiled":"<answer name=\"springfield-monorail-1\">\n  Approved answer grounded in SRC-1.\n</answer>\n<never name=\"Invented details\">…</never>"},
+  "never":["Invent a customer reference, price, proof point or commitment.","Claim compliance without mapping to an answer and evidence.","Turn an unresolved clarification into a convenient assumption."],
+  "disclaimer":"HINT supports proposal drafting; commercial, legal and delivery owners remain responsible for approvals and contractual commitments.",
+  "faq":[{"q":"Does it write the whole proposal?","a":"It can help draft sections from declared pursuit context, but the package intentionally has no deterministic emit surface for answers that require judgment."},{"q":"Can it reuse approved content?","a":"Yes. Shared proof and offer language can be included while opportunity-specific promises remain scoped to the pursuit."},{"q":"Can it decide that a requirement is compliant?","a":"No. It can show the declared answer and evidence; an authorized reviewer owns the compliance decision."}],
+  "keywordDescriptions":{"pursuit":"Sets the customer, opportunity and response boundary.","requirement":"Records a customer request with its source reference.","answer":"Drafts a response linked to the requirement it addresses.","offer":"Defines the approved commercial and delivery envelope.","valueprop":"States a customer-specific value proposition.","claim":"States an assertion that needs approved support.","proof":"Identifies evidence supporting a proposal claim.","pricing":"Records sourced commercial terms and approval.","commitment":"Records a promise with owner and approval.","legalreview":"Marks language that requires authorized legal review."},
+  "technical":{"verify":false,"emit":false,"worksWith":["procurement","marketing-and-brand","product-managers"]}
+}

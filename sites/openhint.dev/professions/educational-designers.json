@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Learning Design — every objective is assessed",
+  "metaDescription": "Keep objectives, activities, assessments, rubrics and accessibility rules aligned so assistants create course material without invented facts.",
+  "profession": "instructional design",
+  "packageRole": "Instructional Designers",
+  "h1": "Your assistant creates lessons fast. HINT keeps every objective aligned.",
+  "intro": "HINT keeps course goals, activities, assessments, rubrics and accessibility rules in plain-text notes beside learning materials. Your assistant reads the design for this course before writing a lesson or assessment.",
+  "artifact": "course syllabus",
+  "situations": [
+    {"before":"A learning objective cannot be observed or measured.","after":"Objectives use assessable outcomes","body":"The assistant works from your declared standard and flags vague verbs before they spread into activities."},
+    {"before":"An exam tests content that no objective covers.","after":"Assessment follows alignment","body":"Every activity and assessment names the objectives it serves, making omissions visible."},
+    {"before":"Rubric levels change meaning from one criterion to another.","after":"Performance levels stay consistent","body":"Declared descriptors and grading policy travel with the rubric while course-specific rules remain scoped."}
+  ],
+  "example": {"path":"courses/spanish-101/syllabus.md.hint","intro":"The Greendale Courses demo grounds its Spanish 101 syllabus in SRC-1.","lines":["# read Approved source","","../../sources/approved.md","","# course spanish-101-1 {#instructional_designer_demo}","","Approved course grounded in SRC-1.","","# never Invented details"],"after":"It builds the course document inside the approved alignment, applies accessibility rules, and marks unsupported facts for a source.","compiled":"<course name=\"spanish-101-1\">\n  Approved course grounded in SRC-1.\n</course>\n<never name=\"Invented details\">…</never>"},
+  "never":["Invent a fact in course content without a cited material.","Assess an objective that the course never declared.","Change grading policy outside the approved grading rules."],
+  "disclaimer":"HINT supports course design documentation; instructors and institutions remain responsible for academic accuracy, accessibility and approval.",
+  "faq":[{"q":"Does it export to an LMS?","a":"HINT works with Markdown artifacts; connect the generated material to your LMS through its existing import or publishing process."},{"q":"Does it enforce Bloom's taxonomy?","a":"Only if you declare the verb and objective rules your program uses; HINT does not impose a framework."},{"q":"Can courses use different grading policies?","a":"Yes. Put each course's grading rules in its folder so they do not leak into another course."}],
+  "keywordDescriptions":{"course":"Sets the title, audience, level and duration.","module":"Groups ordered objectives, activities and materials.","objective":"Defines a measurable learning objective with a stable identifier.","activity":"Names what learners do and the objective it supports.","assessment":"States how declared objectives are evaluated.","rubric":"Groups consistent criteria and performance levels.","criterion":"Defines one observable dimension in a rubric.","alignment":"Links objectives to activities and assessments."},
+  "technical":{"verify":true,"emit":true,"worksWith":["technical-writers","clinical-operations","knowledge-librarians"]}
+}

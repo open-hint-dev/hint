@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Customer Support — answers follow policy",
+  "metaDescription": "Keep approved answers, entitlement, verification and escalation rules beside support playbooks so assistants do not invent fixes or promises.",
+  "profession": "customer support",
+  "packageRole": "Support Agents",
+  "h1": "Your assistant replies fast. HINT keeps every answer inside support policy.",
+  "intro": "HINT keeps approved answers, entitlement rules, verification steps and escalation paths in plain-text notes beside support playbooks. Your assistant reads the rules for this product and customer context before replying.",
+  "artifact": "support answer",
+  "situations": [
+    {"before":"A response promises a refund or feature outside the customer's entitlement.","after":"Policy travels with the answer","body":"The assistant sees tier and entitlement limits before offering a remedy."},
+    {"before":"Sensitive account details are disclosed before identity is checked.","after":"Verification comes first","body":"Required verification steps precede any action or information covered by the policy."},
+    {"before":"A difficult case receives a confident invented ETA.","after":"Unknown is an acceptable answer","body":"The assistant states what is known and follows the declared escalation path without making a timing promise."}
+  ],
+  "example": {"path":"products/latex/playbook.md.hint","intro":"The Vandelay Support demo grounds a LaTeX-product answer in an approved source.","lines":["# read Approved source","","../../sources/approved.md","","# answer latex-1 {#support_agent_demo}","","Approved answer grounded in SRC-1.","","# never Invented details"],"after":"It replies from the approved playbook, verifies required facts, and escalates when policy does not supply an answer.","compiled":"<answer name=\"latex-1\">\n  Approved answer grounded in SRC-1.\n</answer>\n<never name=\"Invented details\">…</never>"},
+  "never":["Promise a remedy, feature or ETA outside declared policy.","Disclose protected information before required verification.","Invent a troubleshooting result or silently skip escalation."],
+  "disclaimer":"HINT governs answer content; your helpdesk, identity controls, service policies and authorized support processes remain authoritative.",
+  "faq":[{"q":"Does it integrate with a helpdesk?","a":"HINT governs the files and context behind an answer; your existing tools handle tickets and delivery."},{"q":"Can it work in live chat?","a":"Yes, when the assistant handling the chat can run HINT or receive its context through MCP."},{"q":"Can policies vary by locale or tier?","a":"Yes. Put narrower rules in the relevant product, locale or tier folder so they apply only there."}],
+  "keywordDescriptions":{"product":"Sets the product whose support rules apply.","tier":"Defines the customer's support level.","intent":"Names the customer's confirmed reason for contact.","answer":"Records approved response content and its conditions.","entitlement":"Defines what the customer's tier permits.","verify":"Lists checks required before an action or disclosure.","refund":"Defines an authorized refund condition and limit.","identify":"Sets required identity checks before disclosure.","escalate":"Defines when and where the case must be handed off."},
+  "technical":{"verify":true,"emit":true,"worksWith":["product-managers","marketing-and-brand","technical-writers"]}
+}

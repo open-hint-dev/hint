@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Data Analysts — metrics keep one meaning",
+  "metaDescription": "Keep metric definitions, grains, sources, formulas and caveats beside analytics work so assistants query declared data instead of guessing.",
+  "profession": "data and BI analysis",
+  "packageRole": "Data Analysts",
+  "h1": "Your assistant writes SQL fast. HINT keeps every metric on its definition.",
+  "intro": "HINT keeps metric definitions, data grain, source columns and caveats in plain-text notes beside dashboards and queries. Your assistant reads the context for this domain before changing a number.",
+  "artifact": "sales metric",
+  "situations": [
+    {"before":"Two dashboards use the same metric name with different filters.","after":"One metric keeps one definition","body":"The formula, grain, exclusions and owner travel together into every scoped task."},
+    {"before":"A query references a plausible column that is not in the source.","after":"SQL stays inside declared schemas","body":"Unknown fields become schema questions instead of silently broken joins."},
+    {"before":"A fresh-looking chart hides stale or partial data.","after":"Caveats travel with the number","body":"Freshness, quality limits and interpretation notes arrive beside the metric rather than in a forgotten wiki page."}
+  ],
+  "example": {"path":"domains/sales/metrics.md.hint","intro":"The Dunder Mifflin BI demo grounds the sales metric in an approved source.","lines":["# read Approved source","","../../sources/approved.md","","# metric sales-1 {#data_analyst_demo}","","Approved metric grounded in SRC-1.","","# never Invented details"],"after":"It uses the metric's declared source and definition, checks referenced columns, and carries caveats into the answer.","compiled":"<metric name=\"sales-1\">\n  Approved metric grounded in SRC-1.\n</metric>\n<never name=\"Invented details\">…</never>"},
+  "never":["Invent data, columns, freshness or metric definitions.","Change a metric's grain or exclusions without a decision.","Present an estimate without its caveat and source."],
+  "disclaimer":"HINT keeps analytic definitions visible; data quality, access control and interpretation still require your organization's checks.",
+  "faq":[{"q":"Does this replace dbt or LookML?","a":"No. It supplies intent and constraints to assistants working with those systems and can point to their definitions as sources."},{"q":"Does it validate SQL?","a":"It can require declared sources and checks, but execution and warehouse validation remain in your analytics stack."},{"q":"Can different domains define different metrics?","a":"Yes. Folder scope separates domain-specific definitions while shared policies can sit above them."}],
+  "keywordDescriptions":{"metric":"Defines a measure, formula, grain and owner.","dimension":"Names an approved axis for grouping or filtering.","grain":"States what one row or observation represents.","source":"Identifies the table, file or governed evidence behind data.","table":"Describes an allowed table and its analytic role.","formula":"Records the exact calculation for a metric.","filter":"Sets an approved inclusion or exclusion rule.","freshness":"States how current the source must be.","quality":"Defines an observable data-quality expectation.","dashboard":"Sets the audience and purpose of a BI surface."},
+  "technical":{"verify":true,"emit":true,"worksWith":["financial-analysts","knowledge-librarians","business-analysts"]}
+}

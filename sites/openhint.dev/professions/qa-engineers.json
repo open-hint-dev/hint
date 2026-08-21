@@ -1,0 +1,20 @@
+{
+  "title": "HINT for QA Engineers — cases derived, not imagined",
+  "metaDescription": "Keep the SUT, requirements, negative paths and expected results together so assistants derive test cases and emit checkable Gherkin.",
+  "profession": "quality assurance",
+  "packageRole": "QA Engineers",
+  "h1": "Your assistant creates cases fast. HINT makes them follow the requirement.",
+  "intro": "HINT keeps the system boundary, environment, coverage rules and expected results beside test artifacts. Your assistant derives cases from what is declared instead of filling a test plan with plausible paths.",
+  "artifact": "login test case",
+  "situations": [
+    {"before":"A generated suite covers only the successful login.","after":"Negative paths are explicit work","body":"Declared input boundaries and policy require meaningful failure and edge cases rather than a generic 'invalid input' row."},
+    {"before":"Expected results describe what the current build happens to do.","after":"Requirements remain the oracle","body":"Each expected outcome traces to a requirement, so a defect cannot redefine the test to make itself pass."},
+    {"before":"Steps assume an environment nobody prepared.","after":"Setup facts are declared","body":"The SUT version, fixtures and preconditions appear before the assistant writes or updates the case."}
+  ],
+  "example": {"path":"systems/vault-access/login.feature.hint","intro":"The Nakatomi demo derives the main vault-login case from REQ-1.","lines":["# case TC-MAIN {#main_case}","","Derived from REQ-1.","","## precondition Approved state","","Declared setup.","","## step Declared action"],"after":"It keeps the precondition and observable outcome tied to REQ-1, then the Gherkin emitter can reproduce the derivable scenario structure.","compiled":"<case name=\"TC-MAIN\">\n  Derived from REQ-1.\n  <precondition name=\"Approved state\">Declared setup.</precondition>\n  <step name=\"Declared action\">Perform it.</step>\n</case>"},
+  "never":["Mark a case passed without an observed result.","Change an expected result to match faulty behavior.","Invent an environment, fixture or requirement boundary."],
+  "disclaimer":"HINT defines and checks test knowledge; it does not execute your test suite or replace evidence from the system under test.",
+  "faq":[{"q":"Does HINT run tests?","a":"No. It helps specify and verify the test artifacts; your existing runner executes them."},{"q":"Does the emitted Gherkin work with Cucumber?","a":"Yes. The Gherkin pack writes ordinary `.feature` structure; project-specific step implementations remain yours."},{"q":"Can it invent expected results?","a":"No. Expected results must come from declared requirements; otherwise the assistant reports a gap."}],
+  "keywordDescriptions":{"plan":"Sets the purpose, scope and exit conditions of a test effort.","sut":"Defines the system under test and its boundaries.","case":"Records a test case with a stable identifier.","precondition":"States setup that must be true before a case begins.","expected":"Names an observable result traced to a requirement.","testdata":"Constrains fixtures and values without inventing them.","covers":"Links a case to requirement or story identifiers.","defect":"Structures an observed mismatch without inventing results."},
+  "technical":{"verify":true,"emit":true,"worksWith":["software-engineers","product-managers","business-analysts"]}
+}

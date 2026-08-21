@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Technical Writers — docs keep their structure",
+  "metaDescription": "Keep doc types, terminology, required sections and source rules beside documentation so assistants do not invent product behavior.",
+  "profession": "technical writing",
+  "packageRole": "Technical Writers",
+  "h1": "Your assistant writes quickly. HINT keeps the docs factual and complete.",
+  "intro": "HINT keeps plain-text rules for document types, terminology, sections and samples beside the docs. Your assistant reads the rules for this page before writing, including where product facts must come from.",
+  "artifact": "getting-started page",
+  "situations": [
+    {"before":"A tutorial includes a plausible CLI flag that does not exist.","after":"Product facts come from sources","body":"Commands, fields and defaults must come from declared product material; unknown behavior is marked to confirm."},
+    {"before":"A reference page ships without a required section.","after":"Document type determines structure","body":"The page inherits the section checklist for its type, and the emit pack can create the skeleton before anyone writes prose."},
+    {"before":"The same feature gets three names across a doc set.","after":"Approved terms stay consistent","body":"Preferred terminology and banned variants travel with every page in the relevant documentation area."}
+  ],
+  "example": {"path":"docs/tutorials/getting-started.md.hint","intro":"The Pied Piper docs demo grounds its tutorial page in an approved product source.","lines":["# read Approved source","","../../sources/approved.md","","# page tutorials-1 {#technical_writer_demo}","","Approved page grounded in SRC-1.","","# never Invented details"],"after":"It builds the required tutorial sections, uses the approved terminology, and marks any missing product fact instead of creating a flag or default.","compiled":"<page name=\"tutorials-1\">\n  Approved page grounded in SRC-1.\n</page>\n<never name=\"Invented details\">…</never>"},
+  "never":["Invent a CLI flag, API field, default or product behavior.","Omit a required section for the declared document type.","Publish a code sample that has not met the declared runnable-sample policy."],
+  "disclaimer":"HINT keeps writing constraints visible; product owners and reviewers still approve factual accuracy and publication readiness.",
+  "faq":[{"q":"Does it replace Vale?","a":"No. Vale checks prose rules mechanically; HINT supplies page-specific structure, facts and intent to the assistant before prose exists."},{"q":"Can it create page skeletons?","a":"Yes. Where the Markdown emit pack applies, it can write required headings and leave constrained holes for authored content."},{"q":"Can different doc types have different rules?","a":"Yes. Tutorial, how-to, reference and explanation folders can inherit distinct structure and sample policies."}],
+  "keywordDescriptions":{"docset":"Defines the documentation collection and its audience.","doctype":"Declares the page type and the sections it requires.","page":"Names a page and the purpose its H1 must express.","section":"Requires a particular section in the document.","procedure":"Structures an ordered task for a reader.","snippet":"Sets the language and verification rule for a code sample.","banned":"Lists wording that must not appear.","locale":"Sets language and regional conventions for a page."},
+  "technical":{"verify":true,"emit":true,"worksWith":["software-engineers","product-managers","customer-support"]}
+}
