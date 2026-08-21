@@ -232,6 +232,19 @@ strong { font-weight: 600; color: var(--ink); }
   font-family: var(--font-mono);
   box-shadow: 0 24px 60px -28px rgba(16,18,24,0.5), 0 2px 0 rgba(255,255,255,0.02) inset;
 }
+/* Profession pages use a compact <pre class="code"><code> form without the
+   window chrome below. Give that form its own readable foreground and spacing
+   instead of inheriting the document's near-black inline-code color. */
+pre.code {
+  padding: 20px 22px;
+  color: var(--tok-body);
+  font-size: 0.82rem;
+  line-height: 1.75;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+pre.code code { color: inherit; font: inherit; }
 .code__bar {
   display: flex; align-items: center; gap: 10px;
   padding: 11px 16px;
