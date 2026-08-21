@@ -139,6 +139,8 @@ Swap the hintbook and the same machinery specifies a different profession.
 
 Nothing in the engine changes between those two columns. Authoring a hintbook takes no programming — it is Markdown files with `{name}`-style placeholders — so a profession that can write down its own rules can have a vocabulary for them.
 
+Fifteen more profession vocabularies are shipping through the [profession hub](https://openhint.dev/professions.html); the package map and composition rules live in [`docs/10-professions.md`](docs/10-professions.md).
+
 Working example: [demo-pearson-specter-litt](https://github.com/open-hint-dev/demo-pearson-specter-litt), a law firm's matters specified in `.hint`. Guide → [`docs/05-hintbooks.md`](docs/05-hintbooks.md).
 
 For a persistent team wiki, install [`@openhint/hintbook-librarian`](https://github.com/open-hint-dev/hintbook-librarian): immutable sources under `raw/`, typed and interlinked topics under `wiki/`, scoped query, and deterministic graph lint. Guide → [`docs/09-knowledge-repos.md`](docs/09-knowledge-repos.md).

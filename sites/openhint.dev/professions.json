@@ -1,0 +1,524 @@
+[
+  {
+    "slug": "software-engineers",
+    "title": "Software Engineers",
+    "plural": "Software Engineers",
+    "family": "delivery",
+    "accent": "delivery",
+    "status": "live",
+    "package": "@openhint/hintbook-software-engineer",
+    "bookRepo": "hintbook-software-engineer",
+    "demoRepo": "demo-pied-piper",
+    "page": "for-software-engineers.html",
+    "tileLine": "Architecture, contracts, data models, and anti-patterns",
+    "keywords": [
+      "decision",
+      "invariant",
+      "entity",
+      "field",
+      "func",
+      "flow",
+      "error",
+      "test"
+    ],
+    "related": [
+      "product-managers",
+      "qa-engineers",
+      "business-analysts"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "lawyers",
+    "title": "Lawyers",
+    "plural": "Lawyers",
+    "family": "law-assurance",
+    "accent": "law-assurance",
+    "status": "live",
+    "package": "@openhint/hintbook-lawyer",
+    "bookRepo": "hintbook-lawyer",
+    "demoRepo": "demo-pearson-specter-litt",
+    "page": "for-lawyers.html",
+    "tileLine": "Matters, clauses, obligations, sources, and red lines",
+    "keywords": [
+      "matter",
+      "party",
+      "clause",
+      "obligation",
+      "right",
+      "source",
+      "redline",
+      "never"
+    ],
+    "related": [
+      "compliance-and-risk",
+      "auditors",
+      "policy-analysts"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "knowledge-librarians",
+    "title": "Knowledge Librarians",
+    "plural": "Knowledge Librarians",
+    "family": "analysis-knowledge",
+    "accent": "analysis-knowledge",
+    "status": "live",
+    "package": "@openhint/hintbook-librarian",
+    "bookRepo": "hintbook-librarian",
+    "demoRepo": "demo-knowledge-wiki",
+    "page": "for-knowledge-librarians.html",
+    "tileLine": "Sources, claims, decisions, open questions, and linked topics",
+    "keywords": [
+      "source",
+      "concept",
+      "entity",
+      "claim",
+      "decision",
+      "openquestion",
+      "supersedes",
+      "relates"
+    ],
+    "related": [
+      "data-analysts",
+      "technical-writers",
+      "educational-designers"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "business-analysts",
+    "title": "Business Analysts",
+    "plural": "Business Analysts",
+    "family": "delivery",
+    "accent": "delivery",
+    "status": "live",
+    "package": "@openhint/hintbook-business-analyst",
+    "bookRepo": "hintbook-business-analyst",
+    "demoRepo": "demo-initech-requirements",
+    "page": "for-business-analysts.html",
+    "tileLine": "Requirements, use cases, business rules, and traceability",
+    "keywords": [
+      "requirement",
+      "nfr",
+      "bizrule",
+      "usecase",
+      "scenario",
+      "acceptance",
+      "trace",
+      "scope"
+    ],
+    "related": [
+      "product-managers",
+      "qa-engineers",
+      "software-engineers"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "product-managers",
+    "title": "Product Managers",
+    "plural": "Product Managers",
+    "family": "delivery",
+    "accent": "delivery",
+    "status": "live",
+    "package": "@openhint/hintbook-product-manager",
+    "bookRepo": "hintbook-product-manager",
+    "demoRepo": "demo-hooli-product",
+    "page": "for-product-managers.html",
+    "tileLine": "PRDs, stories, criteria, goals, and sourced metrics",
+    "keywords": [
+      "product",
+      "persona",
+      "goal",
+      "metric",
+      "story",
+      "criteria",
+      "hypothesis",
+      "launch"
+    ],
+    "related": [
+      "business-analysts",
+      "qa-engineers",
+      "software-engineers"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "qa-engineers",
+    "title": "QA Engineers",
+    "plural": "QA Engineers",
+    "family": "delivery",
+    "accent": "delivery",
+    "status": "live",
+    "package": "@openhint/hintbook-qa-engineer",
+    "bookRepo": "hintbook-qa-engineer",
+    "demoRepo": "demo-nakatomi-qa",
+    "page": "for-qa-engineers.html",
+    "tileLine": "Test plans, negative paths, coverage, and deterministic Gherkin",
+    "keywords": [
+      "plan",
+      "sut",
+      "case",
+      "precondition",
+      "expected",
+      "testdata",
+      "covers",
+      "defect"
+    ],
+    "related": [
+      "software-engineers",
+      "product-managers",
+      "business-analysts"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "technical-writers",
+    "title": "Technical Writers",
+    "plural": "Technical Writers",
+    "family": "delivery",
+    "accent": "delivery",
+    "status": "live",
+    "package": "@openhint/hintbook-technical-writer",
+    "bookRepo": "hintbook-technical-writer",
+    "demoRepo": "demo-pied-piper-docs",
+    "page": "for-technical-writers.html",
+    "tileLine": "Doc types, terminology, required sections, and runnable samples",
+    "keywords": [
+      "docset",
+      "doctype",
+      "page",
+      "section",
+      "procedure",
+      "snippet",
+      "banned",
+      "locale"
+    ],
+    "related": [
+      "software-engineers",
+      "product-managers",
+      "customer-support"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "compliance-and-risk",
+    "title": "Compliance & Risk",
+    "plural": "Compliance & Risk",
+    "family": "law-assurance",
+    "accent": "law-assurance",
+    "status": "live",
+    "package": "@openhint/hintbook-compliance-officer",
+    "bookRepo": "hintbook-compliance-officer",
+    "demoRepo": "demo-wonka-compliance",
+    "page": "for-compliance-and-risk.html",
+    "tileLine": "Frameworks, controls, evidence, exceptions, and escalation",
+    "keywords": [
+      "framework",
+      "requirement",
+      "unit",
+      "control",
+      "evidence",
+      "mapping",
+      "exception",
+      "redflag"
+    ],
+    "related": [
+      "auditors",
+      "lawyers",
+      "policy-analysts"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "auditors",
+    "title": "Auditors",
+    "plural": "Auditors",
+    "family": "law-assurance",
+    "accent": "law-assurance",
+    "status": "live",
+    "package": "@openhint/hintbook-auditor",
+    "bookRepo": "hintbook-auditor",
+    "demoRepo": "demo-wonka-audit",
+    "page": "for-auditors.html",
+    "tileLine": "Engagement scope, procedures, evidence, findings, and severity",
+    "keywords": [
+      "engagement",
+      "objective",
+      "criteria",
+      "audittest",
+      "evidence",
+      "finding",
+      "severity",
+      "followup"
+    ],
+    "related": [
+      "compliance-and-risk",
+      "lawyers",
+      "financial-analysts"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "data-analysts",
+    "title": "Data & BI Analysts",
+    "plural": "Data & BI Analysts",
+    "family": "analysis-knowledge",
+    "accent": "analysis-knowledge",
+    "status": "live",
+    "package": "@openhint/hintbook-data-analyst",
+    "bookRepo": "hintbook-data-analyst",
+    "demoRepo": "demo-dunder-mifflin-bi",
+    "page": "for-data-analysts.html",
+    "tileLine": "Metrics, grains, formulas, sources, SQL, and caveats",
+    "keywords": [
+      "metric",
+      "grain",
+      "formula",
+      "dimension",
+      "filter",
+      "freshness",
+      "quality",
+      "dashboard"
+    ],
+    "related": [
+      "software-engineers",
+      "financial-analysts",
+      "product-managers"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "financial-analysts",
+    "title": "Financial Analysts",
+    "plural": "Financial Analysts",
+    "family": "analysis-knowledge",
+    "accent": "analysis-knowledge",
+    "status": "live",
+    "package": "@openhint/hintbook-financial-analyst",
+    "bookRepo": "hintbook-financial-analyst",
+    "demoRepo": "demo-bluth-finance",
+    "page": "for-financial-analysts.html",
+    "tileLine": "Sourced inputs, formulas, scenarios, sensitivities, and checks",
+    "keywords": [
+      "model",
+      "input",
+      "driver",
+      "formula",
+      "output",
+      "scenario",
+      "sensitivity",
+      "check"
+    ],
+    "related": [
+      "data-analysts",
+      "auditors",
+      "compliance-and-risk"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "procurement",
+    "title": "Procurement",
+    "plural": "Procurement Specialists",
+    "family": "commercial",
+    "accent": "commercial",
+    "status": "live",
+    "package": "@openhint/hintbook-procurement-specialist",
+    "bookRepo": "hintbook-procurement-specialist",
+    "demoRepo": "demo-springfield-procurement",
+    "page": "for-procurement.html",
+    "tileLine": "Neutral RFPs, requirements, timelines, and internal scoring",
+    "keywords": [
+      "tender",
+      "need",
+      "budget",
+      "requirement",
+      "exclusion",
+      "question",
+      "criterion",
+      "weight"
+    ],
+    "related": [
+      "sales-and-proposals",
+      "lawyers",
+      "compliance-and-risk"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "sales-and-proposals",
+    "title": "Sales & Proposals",
+    "plural": "Proposal Managers",
+    "family": "commercial",
+    "accent": "commercial",
+    "status": "live",
+    "package": "@openhint/hintbook-proposal-manager",
+    "bookRepo": "hintbook-proposal-manager",
+    "demoRepo": "demo-monorail-proposal",
+    "page": "for-sales-and-proposals.html",
+    "tileLine": "Offers, substantiated claims, commitments, and compliance matrices",
+    "keywords": [
+      "offer",
+      "valueprop",
+      "proof",
+      "claim",
+      "pricing",
+      "commitment",
+      "answer",
+      "legalreview"
+    ],
+    "related": [
+      "procurement",
+      "lawyers",
+      "marketing-and-brand"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "customer-support",
+    "title": "Customer Support",
+    "plural": "Support Agents",
+    "family": "commercial",
+    "accent": "commercial",
+    "status": "live",
+    "package": "@openhint/hintbook-support-agent",
+    "bookRepo": "hintbook-support-agent",
+    "demoRepo": "demo-vandelay-support",
+    "page": "for-customer-support.html",
+    "tileLine": "Approved answers, entitlement, verification, and escalation",
+    "keywords": [
+      "product",
+      "tier",
+      "intent",
+      "answer",
+      "entitlement",
+      "refund",
+      "identify",
+      "escalate"
+    ],
+    "related": [
+      "technical-writers",
+      "product-managers",
+      "marketing-and-brand"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "marketing-and-brand",
+    "title": "Marketing & Brand",
+    "plural": "Marketing Managers",
+    "family": "commercial",
+    "accent": "commercial",
+    "status": "live",
+    "package": "@openhint/hintbook-marketing-manager",
+    "bookRepo": "hintbook-marketing-manager",
+    "demoRepo": "demo-sterling-cooper-brand",
+    "page": "for-marketing-and-brand.html",
+    "tileLine": "Brand voice, terminology, channel constraints, and proven claims",
+    "keywords": [
+      "brand",
+      "audience",
+      "tagline",
+      "campaign",
+      "message",
+      "claim",
+      "proof",
+      "channel"
+    ],
+    "related": [
+      "sales-and-proposals",
+      "customer-support",
+      "technical-writers"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "policy-analysts",
+    "title": "Policy Analysts",
+    "plural": "Policy Analysts",
+    "family": "law-assurance",
+    "accent": "law-assurance",
+    "status": "live",
+    "package": "@openhint/hintbook-policy-analyst",
+    "bookRepo": "hintbook-policy-analyst",
+    "demoRepo": "demo-pawnee-policy",
+    "page": "for-policy-analysts.html",
+    "tileLine": "Cited instruments, options, criteria, impacts, and recommendations",
+    "keywords": [
+      "issue",
+      "mandate",
+      "regulation",
+      "provision",
+      "option",
+      "impact",
+      "tradeoff",
+      "recommendation"
+    ],
+    "related": [
+      "lawyers",
+      "compliance-and-risk",
+      "auditors"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "clinical-operations",
+    "title": "Clinical Operations",
+    "plural": "Clinical Operations",
+    "family": "operations-learning",
+    "accent": "operations-learning",
+    "status": "live",
+    "package": "@openhint/hintbook-clinical-operations",
+    "bookRepo": "hintbook-clinical-operations",
+    "demoRepo": "demo-sacred-heart-clinical",
+    "page": "for-clinical-operations.html",
+    "tileLine": "Operational SOPs, routing, roles, records, and escalation",
+    "keywords": [
+      "protocol",
+      "sop",
+      "record",
+      "role",
+      "route",
+      "redflag",
+      "deviation",
+      "training"
+    ],
+    "related": [
+      "compliance-and-risk",
+      "auditors",
+      "educational-designers"
+    ],
+    "addedOn": "2026-08-21"
+  },
+  {
+    "slug": "educational-designers",
+    "title": "Educational Designers",
+    "plural": "Instructional Designers",
+    "family": "operations-learning",
+    "accent": "operations-learning",
+    "status": "live",
+    "package": "@openhint/hintbook-instructional-designer",
+    "bookRepo": "hintbook-instructional-designer",
+    "demoRepo": "demo-greendale-courses",
+    "page": "for-educational-designers.html",
+    "tileLine": "Objectives, activities, assessments, rubrics, and alignment",
+    "keywords": [
+      "course",
+      "module",
+      "objective",
+      "activity",
+      "assessment",
+      "rubric",
+      "criterion",
+      "alignment"
+    ],
+    "related": [
+      "technical-writers",
+      "clinical-operations",
+      "knowledge-librarians"
+    ],
+    "addedOn": "2026-08-21"
+  }
+]

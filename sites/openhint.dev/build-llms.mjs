@@ -16,6 +16,8 @@ import * as Path from 'node:path';
 const ROOT = Path.resolve(import.meta.dirname, '../..');
 const OUTPUT = Path.join(ROOT, 'sites/openhint.dev/llms-full.txt');
 const DOCS = Path.join(ROOT, 'docs');
+const SITE = Path.join(ROOT, 'sites/openhint.dev');
+const MANIFEST = JSON.parse(Fs.readFileSync(Path.join(SITE, 'professions.json'), 'utf8'));
 const REPO = 'https://github.com/open-hint-dev/hint/blob/main/';
 const BASE = `${REPO}docs/`;
 
@@ -32,6 +34,7 @@ const SECTIONS = [
     { file: '07-migration.md', title: 'Migrating to 1.1' },
     { file: '08-emit.md', title: 'Emit (artifacts from specs)' },
     { file: '09-knowledge-repos.md', title: 'Knowledge Repositories' },
+    { file: '10-professions.md', title: 'Profession Hintbooks' },
 ];
 
 const RULE = '<!-- ============================================================ -->';
@@ -74,25 +77,44 @@ function build(existing) {
         parts.push(`${banner(`CORE DOCS — ${section.title}`)}\n\n${body}`);
     }
 
-    // The rule line opening the hintbook half belongs to it, not to the last core doc.
-    parts.push(existing.slice(existing.lastIndexOf(RULE, hintbooksAt)).trimEnd());
+    for (const entry of MANIFEST.filter(({ status }) => status === 'live')) {
+        const readme = Path.resolve(ROOT, '../hintbooks', entry.bookRepo, 'README.md');
+        const fallback = `# ${entry.package}\n\n${entry.tileLine}.\n\nSource: https://github.com/open-hint-dev/${entry.bookRepo}`;
+        const body = Fs.existsSync(readme) ? Fs.readFileSync(readme, 'utf8').trim() : fallback;
+        parts.push(`${banner(`HINTBOOK: ${entry.slug} — README`)}\n\n${absolute(body)}`);
+    }
 
     return `${parts.join('\n\n')}\n`;
+}
+
+function buildShort(existing) {
+    const begin = '<!-- professions:begin -->';
+    const end = '<!-- professions:end -->';
+    const pages = ['- [Profession hub](https://openhint.dev/professions.html): All official and planned profession vocabularies.', ...MANIFEST.filter(({status}) => status === 'live').map((entry) => `- [For ${entry.title}](https://openhint.dev/${entry.page}): ${entry.tileLine}.`)];
+    const books = MANIFEST.filter(({status}) => status === 'live').map((entry) => `- [${entry.bookRepo}](https://github.com/open-hint-dev/${entry.bookRepo}): ${entry.tileLine}.`);
+    const demos = MANIFEST.filter(({status}) => status === 'live').map((entry) => `- [${entry.demoRepo}](https://github.com/open-hint-dev/${entry.demoRepo}): Demonstrates ${entry.title.toLowerCase()} Spec-as-Source.`);
+    const fragment = `${begin}\n## Pages\n\n${pages.join('\n')}\n\n## Hintbooks\n\n${books.join('\n')}\n\n## Demos\n\n${demos.join('\n')}\n${end}`;
+    if (!existing.includes(begin) || !existing.includes(end)) throw new Error('llms.txt profession markers are missing');
+    return existing.replace(new RegExp(`${begin}[\\s\\S]*?${end}`), fragment);
 }
 
 function main() {
     const existing = Fs.readFileSync(OUTPUT, 'utf8');
     const built = build(existing);
+    const shortPath = Path.join(SITE, 'llms.txt');
+    const shortExisting = Fs.readFileSync(shortPath, 'utf8');
+    const shortBuilt = buildShort(shortExisting);
 
     if (!process.argv.includes('--check')) {
         Fs.writeFileSync(OUTPUT, built);
-        console.log(`llms-full.txt: ${SECTIONS.length} core docs assembled${built === existing ? ' (unchanged)' : ''}.`);
+        Fs.writeFileSync(shortPath, shortBuilt);
+        console.log(`llms files: ${SECTIONS.length} core docs and ${MANIFEST.filter(({status}) => status === 'live').length} live professions assembled${built === existing && shortBuilt === shortExisting ? ' (unchanged)' : ''}.`);
 
         return;
     }
 
-    if (built === existing) {
-        console.log('llms-full.txt is up to date with docs/.');
+    if (built === existing && shortBuilt === shortExisting) {
+        console.log('llms.txt and llms-full.txt are up to date.');
 
         return;
     }
