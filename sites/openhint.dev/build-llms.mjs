@@ -39,13 +39,25 @@ const SECTIONS = [
 
 const RULE = '<!-- ============================================================ -->';
 
-// Everything before the first section marker is the file's own preamble, and everything from the
-// first HINTBOOK marker on is copied from two other repositories. Both are kept verbatim: this script
-// owns the half it can derive and does not pretend to own the half it cannot.
+// Everything before the first section marker is the file's own preamble. Hintbook README sections
+// are refreshed from sibling repositories in the maintainer checkout. A clean CI clone preserves
+// their committed snapshots so --check is deterministic without checking out eighteen repositories.
 const HINTBOOK_MARKER = '<!-- HINTBOOK:';
 
 function banner(label) {
     return `${RULE}\n<!-- ${label} -->\n${RULE}`;
+}
+
+function committedHintbookReadme(existing, entry) {
+    const marker = banner(`HINTBOOK: ${entry.slug} — README`);
+    const markerAt = existing.indexOf(marker);
+
+    if (markerAt === -1) return null;
+
+    const bodyAt = markerAt + marker.length;
+    const nextBannerAt = existing.indexOf(RULE, bodyAt);
+
+    return existing.slice(bodyAt, nextBannerAt === -1 ? undefined : nextBannerAt).trim();
 }
 
 // `05-hintbooks.md` means nothing to a reader with no checkout, and neither does `../packages/…`.
@@ -80,7 +92,9 @@ function build(existing) {
     for (const entry of MANIFEST.filter(({ status }) => status === 'live')) {
         const readme = Path.resolve(ROOT, '../hintbooks', entry.bookRepo, 'README.md');
         const fallback = `# ${entry.package}\n\n${entry.tileLine}.\n\nSource: https://github.com/open-hint-dev/${entry.bookRepo}`;
-        const body = Fs.existsSync(readme) ? Fs.readFileSync(readme, 'utf8').trim() : fallback;
+        const body = Fs.existsSync(readme)
+            ? Fs.readFileSync(readme, 'utf8').trim()
+            : committedHintbookReadme(existing, entry) ?? fallback;
         parts.push(`${banner(`HINTBOOK: ${entry.slug} — README`)}\n\n${absolute(body)}`);
     }
 
