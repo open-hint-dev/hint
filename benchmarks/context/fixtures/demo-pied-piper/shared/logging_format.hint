@@ -1,0 +1,10 @@
+All diagnostic logging goes to **stderr** (stdout is reserved for the wire payload), one line per event, in this exact shape:
+
+```text
+[2026-06-12T10:15:42Z] [orchestrator-go] [INFO] accepted job 5f0c… (42 bytes)
+```
+
+- `[<UTC timestamp, ISO-8601, seconds precision, Z suffix>] [<service name>] [<LEVEL>] <message>`
+- Levels: `INFO` and `ERROR` only.
+- Every service logs at least: one `INFO` line when it accepts its input, one `INFO` line when it emits its output, and one `ERROR` line (with the error code) before emitting an error envelope.
+- Include the `request_id` in the message whenever one exists — that is what makes a pipeline run traceable across the three languages.

@@ -16,6 +16,8 @@ spec (.hint) → scope + inheritance → retrieval → the governing intent → 
 
 It is **agent-neutral**. Claude Code, Codex, OpenCode, Cline, a CI script, or a custom agent all consume the same output. HINT does not implement, plan, or replace an agent — it works underneath one.
 
+Measured latency, context cost, retrieval quality, determinism, and package footprint are published with fixtures and reproduction commands in [Benchmarks and evaluation](09-benchmarks.md).
+
 ## Spec-as-Source, without the model in the loop
 
 **Spec-as-Source** is the position that the specification — not the code — is the artifact you maintain and the authority the work answers to. It is the far end of the spec-driven spectrum: `spec-first` writes a spec and discards it, `spec-anchored` keeps it alive in CI, `spec-as-source` makes it *the* source.
@@ -143,4 +145,5 @@ See [Keeping it current in the README](../README.md#keeping-it-current), the can
 - [Integrations](integrations.md) — one-line agent setup and project-level MCP configuration for Claude Code, Codex, Cursor, VS Code / GitHub Copilot, and generic clients.
 - [Emit](08-emit.md) — producing artifacts from specs, and authoring an emitter.
 - [Knowledge repositories](09-knowledge-repos.md) — persistent agent-maintained wikis with the librarian hintbook.
-- [Migration guide](07-migration.md) — what changed through 1.4 and why.
+- [Benchmarks and evaluation](09-benchmarks.md) — measured performance, retrieval, context cost, and exact reproduction commands.
+- [Migration guide](07-migration.md) — what changed through 1.5 and why.

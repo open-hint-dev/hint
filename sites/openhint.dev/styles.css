@@ -315,6 +315,14 @@ code.inl {
 .pill--on { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
 .dot-ok { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-2); }
 
+/* Measured claims; every tile links to the committed methodology and results. */
+.numbers { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.number { padding: 24px; border-right: 1px solid var(--line); background: var(--paper); }
+.number:last-child { border-right: 0; }
+.number strong { display: block; font-family: var(--font-display); font-size: clamp(1.35rem, 2.4vw, 2rem); color: var(--accent); }
+.number span { display: block; margin-top: 6px; color: var(--ink-2); font-size: 0.82rem; line-height: 1.4; }
+@media (max-width: 720px) { .number { border-right: 0; border-bottom: 1px solid var(--line); } .number:last-child { border-bottom: 0; } }
+
 /* keyword chip */
 .kw {
   font-family: var(--font-mono); font-size: 0.8rem;

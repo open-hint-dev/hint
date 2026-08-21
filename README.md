@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-1.4-black">
+  <img alt="version" src="https://img.shields.io/badge/version-1.5-black">
   <img alt="paradigm" src="https://img.shields.io/badge/paradigm-Spec%E2%80%91as%E2%80%91Source-6e40c9">
   <img alt="format" src="https://img.shields.io/badge/format-Markdown%E2%80%91native-blue">
   <img alt="agents" src="https://img.shields.io/badge/agents-neutral-0aa">
@@ -108,6 +108,21 @@ $ hint search "service account authentication"
 
 Offline, deterministic, no model call, nothing read into context. `weak` flags a hit that matched under half your query terms — advisory, never hidden.
 
+## By the numbers
+
+| Measurement | Result |
+| --- | ---: |
+| `hint <path>` cold p50 / p95, 1,000 hints | [184.00 / 217.66 ms](benchmarks/results/1.5.0/perf.json) |
+| `hint <path>` cold p50 / p95, 10,000 hints | [185.04 / 207.13 ms](benchmarks/results/1.5.0/perf.json) |
+| demo-pied-piper median task / whole knowledge base | [1,213 / 3,940 tokens (3.25× smaller)](benchmarks/results/1.5.0/context.json) |
+| `hint search` p50 / p95, 10,000 hints | [1,177.67 / 1,262.59 ms](benchmarks/results/1.5.0/perf.json) |
+| `hint status`, 10,000 hints | [8,348.56 ms; 4 git processes](benchmarks/results/1.5.0/perf.json) |
+| retrieval P@1 / MRR | [1.000 / 1.000 on 65 queries](benchmarks/results/1.5.0/retrieval.json) |
+| determinism snapshot | [25 files; SHA-256 `51f0121c3f24…`](benchmarks/results/1.5.0/determinism.json) |
+| packed CLI footprint | [333,144 bytes; 4 runtime dependencies; 0 native modules](benchmarks/results/1.5.0/perf.json) |
+
+Measured 2026-08-21 on Apple M2 / macOS 24.6.0 / Node 26.6.0 with `make bench` and `make eval`; token counts use `openhint-unicode-v1`. Retrieval is cheap relative to repository work; the remaining question is whether implementation follows the retrieved spec, which is what verify, emit, lint, and status measure. [Methodology and reproduction commands](docs/09-benchmarks.md).
+
 ## Beyond code
 
 Every other tool in this category has its vocabulary compiled in, which is why every one of them is about software. HINT's engine knows **no keywords at all** — it understands files, headings, nesting, and inheritance. What a `decision`, an `invariant`, a `clause`, or an `obligation` *means* comes from a **hintbook**: a flat folder of Markdown templates you install like a dependency.
@@ -208,6 +223,8 @@ hint status --exit-code     # exit 1 on findings, for CI
 
 `orphan` is the one nothing else catches — a `.hint` whose target was deleted or renamed.
 
+**Curation.** Agent write-back uses a visible heading attribute: `{#id origin=agent}`. `hint status` lists those blocks as `unreviewed` until a human removes or changes the marker; configured `curation.agent_authors` globs can add git-blame provenance without guessing identities. The row is advisory unless a team opts into `hint status --strict-curation`.
+
 ## Contracts — optional
 
 A `.hint` can go further and *declare* surfaces the code must contain — a `func`, an `entity`, an `error`. Then HINT can check them mechanically, with no model involved:
@@ -256,7 +273,7 @@ MCP, editor, hook, and CI setup is collected in [Integrations](docs/integrations
 | [`docs/04-how-it-works.md`](docs/04-how-it-works.md) | The resolve → parse → render pipeline |
 | [`docs/05-hintbooks.md`](docs/05-hintbooks.md) | Using, authoring, and shipping hintbooks |
 | [`docs/06-cli.md`](docs/06-cli.md) | CLI reference — every command, flag, and exit code |
-| [`docs/07-migration.md`](docs/07-migration.md) | Breaking changes through 1.3 and how to migrate |
+| [`docs/07-migration.md`](docs/07-migration.md) | Changes through 1.5 and how to migrate |
 | [`docs/08-emit.md`](docs/08-emit.md) | Producing artifacts from specs; authoring an emitter or a language adapter |
 | [`docs/09-knowledge-repos.md`](docs/09-knowledge-repos.md) | Persistent knowledge wikis with the librarian hintbook |
 
@@ -350,6 +367,6 @@ If a `.hint` declares surfaces the code must contain, `hint verify <path>` check
 
 ---
 
-**Status** — 1.4; see [`docs/07-migration.md`](docs/07-migration.md) for the breaking changes. Engine under [`packages/transpiler/`](packages/transpiler/README.md), CLI under [`applications/cli/`](applications/cli/README.md), official hintbooks in their own repositories ([software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer), [lawyer](https://github.com/open-hint-dev/hintbook-lawyer), [librarian](https://github.com/open-hint-dev/hintbook-librarian)). Issues and PRs welcome.
+**Status** — 1.5; see [`docs/07-migration.md`](docs/07-migration.md) for release changes. Engine under [`packages/transpiler/`](packages/transpiler/README.md), CLI under [`applications/cli/`](applications/cli/README.md), official hintbooks in their own repositories ([software-engineer](https://github.com/open-hint-dev/hintbook-software-engineer), [lawyer](https://github.com/open-hint-dev/hintbook-lawyer), [librarian](https://github.com/open-hint-dev/hintbook-librarian)). Issues and PRs welcome.
 
 **License** — MIT, see [`LICENSE`](LICENSE).

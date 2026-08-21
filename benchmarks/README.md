@@ -1,0 +1,9 @@
+# HINT evaluation and benchmarks
+
+All published figures are generated from committed fixtures. `make bench` writes performance, context-cost, footprint, and determinism JSON under `results/<version>/`; `make eval` runs the 65-case retrieval set and enforces `retrieval/thresholds.json`. `make eval-agent` prints the manual, paid protocol.
+
+Latency uses p50/p95 wall time. Compile has 20 runs per synthetic size; search uses five full corpus rebuilds; status is a single inventory because 10,000-hint git fixtures are intentionally expensive. Synthetic repositories contain 100, 1,000, and 10,000 companion hints in nested folders, matching targets, and three git commits. Git process count comes from Git trace events. RSS is the process RSS delta around status. Package size comes from `npm pack --dry-run --json` over freshly built release artifacts. Context tokens use the fixed, dependency-free `openhint-unicode-v1` tokenizer (Unicode word runs and individual punctuation); values are comparable only under that named tokenizer. Context reports the whole compiled knowledge base versus every available per-file task (or the first 50 in larger fixtures). Determinism is SHA-256 over a full repository render.
+
+Retrieval metrics are P@1, P@3 (whether an expected target occurs in the first 3), R@5, mean reciprocal rank, and precision of the weak/empty signal for explicitly empty queries. The fixture has English, Cyrillic, and CJK cases. Results are produced by `run-eval.ts`; the Markdown table is generated from the same run.
+
+Performance regression comparison is valid only for the same OS, architecture, CPU, and Node major. `perf/thresholds.json` fixes ceilings at 125% of the 1.5.0 Apple M2 baseline, and `make bench` fails beyond them; a materially different runner needs its own reviewed threshold file. Never compare numbers across unlike machines.

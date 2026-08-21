@@ -1,0 +1,61 @@
+Specification for `compressor.py` — the middle-out compression engine, stage 2 of the pipeline. Reads a CompressionJob from stdin, emits a CompressionResult to stdout.
+
+# read ../orchestrator-go/main.go
+
+The incoming message is the `CompressionJob` emitted by the orchestrator. Read its struct definition and mirror the exact field names — do not guess the shape.
+
+# entity CompressionResult {#compression_result}
+
+The result message — the input contract of `renderer-ts`.
+
+## field request_id
+
+Copied verbatim from the incoming job.
+
+## field source_service
+
+Constant string `compression-py`.
+
+## field algorithm
+
+Constant string `middle-out-rle-v1`.
+
+## field original_size_bytes
+
+Integer: UTF-8 byte length of the incoming `payload`.
+
+## field compressed_payload
+
+String produced by `compress_middle_out` {#compress_middle_out}.
+
+## field compression_ratio
+
+Float, rounded to two decimals: `original_size_bytes / len(compressed_payload)`.
+
+# func compress_middle_out {#compress_middle_out}
+
+The proprietary algorithm: run-length encoding that works outward from the middle of the input — the two halves are encoded from the center toward the edges.
+
+## arg text
+
+Non-empty `str` — the job payload.
+
+## result
+
+`str` — `"<left>|<right>"`, where `left` is the RLE of the first half read right-to-left (from the middle outward) and `right` is the RLE of the second half read left-to-right. RLE encodes each run as the character followed by its decimal count, e.g. `aaab` → `a3b1`.
+
+# func main {#compressor_main}
+
+## flow
+
+1. Read all of stdin and parse it as JSON.
+2. If the message is the shared error envelope from upstream, log an `ERROR` line with its code, forward the envelope to stdout verbatim, and exit `1`.
+3. If parsing fails, or `request_id` / `payload` is missing, or `payload` is not a non-empty string, emit `PP_BAD_JOB` and stop.
+4. Log acceptance with the request id.
+5. Compress the payload with `compress_middle_out` {#compress_middle_out}.
+6. Build the `CompressionResult` {#compression_result} and write it to stdout as a single line.
+7. Log emission (request id and compression ratio) and exit `0`.
+
+## error PP_BAD_JOB
+
+Raised on malformed or incomplete input. Emit the shared error envelope with this code, `source_service` set to `compression-py`, the incoming `request_id` when one was readable (otherwise empty string), and exit `1`.

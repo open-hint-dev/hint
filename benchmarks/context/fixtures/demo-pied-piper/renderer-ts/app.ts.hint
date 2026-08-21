@@ -1,0 +1,49 @@
+Specification for `app.ts` — the report renderer, stage 3 and end of the pipeline. Reads a CompressionResult (or an error envelope) from stdin and prints the human-readable report.
+
+# read ../compression-py/compressor.py
+
+The incoming message is the `CompressionResult` emitted by the compression engine. Read it and mirror the exact field names in the TypeScript interface — do not guess the shape.
+
+# func renderReport {#render_report}
+
+## arg result
+
+A validated `CompressionResult` (interface mirroring `{#compression_result}`).
+
+## result
+
+`string` — the multi-line report, exactly in the layout of the example below.
+
+## flow
+
+1. Compute the Weissman score: `compression_ratio * 2.89`, capped at `5.2`, rounded to two decimals.
+2. Render the report with the original size, compressed size (length of `compressed_payload`), ratio, and score.
+
+# example Report Layout {#report_layout}
+
+The exact report shape (values are illustrative):
+
+```text
+=== PIED PIPER COMPRESSION REPORT ===
+request ........ 1b4e28ba-2fa1-4d3b-aef0-3a2c5c8b9e01
+algorithm ...... middle-out-rle-v1
+original ....... 64 bytes
+compressed ..... 41 bytes
+ratio .......... 1.56
+weissman ....... 4.51
+=====================================
+```
+
+# func main {#renderer_main}
+
+## flow
+
+1. Read all of stdin and parse it as JSON.
+2. If the message is the shared error envelope, log an `ERROR` line with its code, print `=== PIPELINE FAILED: <code>: <message> ===` to stdout, and exit `1`.
+3. Validate the message as a `CompressionResult` via a type-guard; on failure emit `PP_BAD_RESULT` and stop.
+4. Log acceptance with the request id.
+5. Print `renderReport` {#render_report} output to stdout, log emission, and exit `0`.
+
+## error PP_BAD_RESULT
+
+Raised when the incoming message is neither a valid CompressionResult nor an error envelope. Emit the shared error envelope with this code, `source_service` set to `renderer-ts`, the incoming `request_id` when readable (otherwise empty string), and exit `1`.

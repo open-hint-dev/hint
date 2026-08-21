@@ -1,0 +1,65 @@
+{"query":"card payment authorization","expected":["payments"],"notes":"payments"}
+{"query":"refund invoice settlement","expected":["payments"]}
+{"query":"idempotency audit trail","expected":["payments"]}
+{"query":"capture a charge","expected":["payments"]}
+{"query":"billing invoice","expected":["payments"]}
+{"query":"платёж возврат","expected":["payments"]}
+{"query":"счёт аудит","expected":["payments"]}
+{"query":"支付退款","expected":["payments"]}
+{"query":"发票结算","expected":["payments"]}
+{"query":"payment settlement","expected":["payments"]}
+{"query":"service account bearer token","expected":["authentication"]}
+{"query":"login session revocation","expected":["authentication"]}
+{"query":"multi factor authentication","expected":["authentication"]}
+{"query":"rotating credentials","expected":["authentication"]}
+{"query":"signin token","expected":["authentication"]}
+{"query":"аутентификация вход","expected":["authentication"]}
+{"query":"отзыв токена","expected":["authentication"]}
+{"query":"身份验证登录","expected":["authentication"]}
+{"query":"令牌撤销","expected":["authentication"]}
+{"query":"authentication service accounts","expected":["authentication"]}
+{"query":"offline BM25 retrieval","expected":["search"]}
+{"query":"weak search match","expected":["search"]}
+{"query":"Unicode normalization","expected":["search"]}
+{"query":"graph reference expansion","expected":["search"]}
+{"query":"rank scoped knowledge","expected":["search"]}
+{"query":"поиск знания","expected":["search"]}
+{"query":"ранжирует Юникод","expected":["search"]}
+{"query":"搜索排序","expected":["search"]}
+{"query":"知识图谱","expected":["search"]}
+{"query":"deterministic search","expected":["search"]}
+{"query":"generated contract clauses","expected":["contracts"]}
+{"query":"negotiated language holes","expected":["contracts"]}
+{"query":"emit region drift","expected":["contracts"]}
+{"query":"preserve human text","expected":["contracts"]}
+{"query":"contract generation","expected":["contracts"]}
+{"query":"договор условия","expected":["contracts"]}
+{"query":"согласованные условия","expected":["contracts"]}
+{"query":"合同条款","expected":["contracts"]}
+{"query":"协商生成","expected":["contracts"]}
+{"query":"deterministic emitted contract","expected":["contracts"]}
+{"query":"container deployment health","expected":["operations"]}
+{"query":"rollback telemetry incident","expected":["operations"]}
+{"query":"database backup recovery","expected":["operations"]}
+{"query":"health checks gates","expected":["operations"]}
+{"query":"incident response drill","expected":["operations"]}
+{"query":"развёртывание откат","expected":["operations"]}
+{"query":"резервной копии восстановление","expected":["operations"]}
+{"query":"部署回滚","expected":["operations"]}
+{"query":"监控恢复","expected":["operations"]}
+{"query":"operations telemetry","expected":["operations"]}
+{"query":"immutable cited sources","expected":["knowledge"]}
+{"query":"agent authored review queue","expected":["knowledge"]}
+{"query":"contradictions open questions","expected":["knowledge"]}
+{"query":"human knowledge curation","expected":["knowledge"]}
+{"query":"source grounded claims","expected":["knowledge"]}
+{"query":"знания источники","expected":["knowledge"]}
+{"query":"проверка человеком","expected":["knowledge"]}
+{"query":"知识来源","expected":["knowledge"]}
+{"query":"人工审查","expected":["knowledge"]}
+{"query":"knowledge provenance","expected":["knowledge"]}
+{"query":"quantum orchard saxophone","expected":[],"notes":"nothing should match"}
+{"query":"volcano penguin telescope","expected":[]}
+{"query":"квантовый саксофон","expected":[]}
+{"query":"火山企鹅望远镜","expected":[]}
+{"query":"unknown unrelated intent","expected":[]}

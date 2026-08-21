@@ -1,0 +1,12 @@
+[
+    {"id":"add-payment-field","prompt":"Add a payment audit identifier","checks":["hint verify","tests"]},
+    {"id":"rotate-token","prompt":"Change service-account token rotation","checks":["hint verify","tests"]},
+    {"id":"add-refund","prompt":"Add an idempotent refund operation","checks":["hint verify","tests"]},
+    {"id":"change-wire-format","prompt":"Extend the wire-format header","checks":["hint verify","forbidden-pattern grep"]},
+    {"id":"legacy-override","prompt":"Document a scoped legacy exception","checks":["hint lint","tests"]},
+    {"id":"emit-contract","prompt":"Generate the contract artifact","checks":["hint emit --check"]},
+    {"id":"remove-surface","prompt":"Remove a declared surface safely","checks":["hint verify","tests"]},
+    {"id":"search-intent","prompt":"Find the governing authentication knowledge","checks":["expected target"]},
+    {"id":"write-back","prompt":"Record a durable learning","checks":["origin=agent","hint lint"]},
+    {"id":"drift-reconcile","prompt":"Reconcile a drifted generated region","checks":["hint emit --check","tests"]}
+]

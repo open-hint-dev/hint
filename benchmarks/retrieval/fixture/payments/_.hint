@@ -1,0 +1,5 @@
+# concept Payment routing {#payments}
+
+Card payment authorization, capture, refunds, invoices, and settlement use idempotency keys and an immutable audit trail.
+
+Платёж, возврат и счёт сохраняют аудит. 支付退款发票结算。

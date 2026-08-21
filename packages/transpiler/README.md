@@ -4,6 +4,8 @@ The engine behind [HINT](https://github.com/open-hint-dev/hint#readme) — Spec-
 
 This package is the library; the command-line interface lives in [`@openhint/cli`](https://www.npmjs.com/package/@openhint/cli).
 
+The 65-query retrieval fixture records P@1/MRR of 1.000/1.000, while demo-pied-piper's median scoped context is 1,213 tokens versus 3,940 for its full knowledge base (3.25× smaller), measured 2026-08-21. [Results and exact methodology](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
 ## What it does
 
 The transpiler has no built-in keyword vocabulary. It implements the structural pipeline —
@@ -104,7 +106,7 @@ Producing the artifact a spec describes — deterministic, model-free, and optio
 
 The package root is an explicit, curated export list. Pipeline, contract, emit, search, lint, status, MCP-facing operations, their public types, the book prefixes, and `RUNNING_SYSTEM` are stable. Filesystem interpolation helpers, placeholder constants, and internal tree wrappers are intentionally not exported.
 
-Migrating to 1.3 → [`docs/07-migration.md`](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md).
+Migrating to 1.5 → [`docs/07-migration.md`](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md).
 
 ## Documentation
 

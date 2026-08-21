@@ -1,0 +1,48 @@
+name: Determinism
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+permissions:
+    contents: read
+
+jobs:
+    hash:
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, macos-latest, windows-latest]
+                node: [24, 26]
+        runs-on: ${{ matrix.os }}
+        steps:
+            - uses: actions/checkout@v5
+            - uses: actions/setup-node@v5
+              with:
+                  node-version: ${{ matrix.node }}
+                  package-manager-cache: false
+            - run: corepack enable
+            - run: yarn install --immutable
+            - name: Hash deterministic output
+              shell: bash
+              run: yarn vite-node benchmarks/run-determinism.ts
+              env:
+                  DETERMINISM_OUTPUT: determinism-${{ matrix.os }}-node${{ matrix.node }}.json
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: determinism-${{ matrix.os }}-node${{ matrix.node }}
+                  path: determinism-${{ matrix.os }}-node${{ matrix.node }}.json
+
+    compare:
+        needs: hash
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/download-artifact@v4
+              with:
+                  pattern: determinism-*
+                  path: results
+                  merge-multiple: true
+            - name: Require one byte-identical hash
+              run: test "$(jq -r .sha256 results/*.json | sort -u | wc -l)" -eq 1

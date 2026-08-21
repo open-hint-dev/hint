@@ -1,0 +1,12 @@
+Specification for `build.sh` — builds all three services into runnable artifacts. Idempotent; safe to run twice.
+
+# action build {#build_action}
+
+When invoked (directly or by `run_demo.sh`), execute exactly these steps, each preceded by an `INFO` log line:
+
+1. Build the orchestrator: `go build` inside `orchestrator-go/`, output binary to `$ROOT/bin/orchestrator`.
+2. Byte-compile the compression engine: `python3 -m py_compile compression-py/compressor.py` (catches syntax errors early; the service still runs from source).
+3. Compile the renderer: `npx tsc -p renderer-ts` from `$ROOT` (emits `renderer-ts/dist/app.js`). If `node_modules/` is missing, run `npm install` first.
+4. Log `build complete`.
+
+Any step failing aborts the script (via `set -euo pipefail`) — no partial-success exit `0`.

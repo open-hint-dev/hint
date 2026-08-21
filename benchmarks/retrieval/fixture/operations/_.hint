@@ -1,0 +1,5 @@
+# concept Operations {#operations}
+
+Deployments use container health checks, rollback gates, telemetry, incident response, and database backup recovery drills.
+
+Развёртывание, откат и восстановление резервной копии. 部署回滚监控恢复。

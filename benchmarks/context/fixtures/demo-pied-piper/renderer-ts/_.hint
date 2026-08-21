@@ -1,0 +1,14 @@
+The report renderer — stage 3, the end of the pipeline. Turns a compression result into the report a human actually reads.
+
+# lang TypeScript {#ts_lang}
+
+TypeScript 5 in `strict` mode, compiled by `tsc` (config: `renderer-ts/tsconfig.json`, output: `renderer-ts/dist/`), executed on Node.js 24. No `any`, no `@ts-ignore`, no non-null assertions.
+
+# good Typed Boundaries {#ts_patterns}
+
+- Every message shape that crosses the process boundary is a named `interface` with snake_case properties mirroring the wire contract.
+- Incoming JSON is validated with explicit type-guard functions before use — never blind `as` casts.
+
+# dep {#ts_deps}
+
+Node.js built-ins only at runtime. `typescript` and `@types/node` from the root `package.json` are the only build-time tools.

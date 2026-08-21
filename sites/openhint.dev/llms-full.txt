@@ -27,6 +27,8 @@ spec (.hint) → scope + inheritance → retrieval → the governing intent → 
 
 It is **agent-neutral**. Claude Code, Codex, OpenCode, Cline, a CI script, or a custom agent all consume the same output. HINT does not implement, plan, or replace an agent — it works underneath one.
 
+Measured latency, context cost, retrieval quality, determinism, and package footprint are published with fixtures and reproduction commands in [Benchmarks and evaluation](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md).
+
 ## Spec-as-Source, without the model in the loop
 
 **Spec-as-Source** is the position that the specification — not the code — is the artifact you maintain and the authority the work answers to. It is the far end of the spec-driven spectrum: `spec-first` writes a spec and discards it, `spec-anchored` keeps it alive in CI, `spec-as-source` makes it *the* source.
@@ -154,7 +156,8 @@ See [Keeping it current in the README](https://github.com/open-hint-dev/hint/blo
 - [Integrations](https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md) — one-line agent setup and project-level MCP configuration for Claude Code, Codex, Cursor, VS Code / GitHub Copilot, and generic clients.
 - [Emit](https://github.com/open-hint-dev/hint/blob/main/docs/08-emit.md) — producing artifacts from specs, and authoring an emitter.
 - [Knowledge repositories](https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md) — persistent agent-maintained wikis with the librarian hintbook.
-- [Migration guide](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md) — what changed through 1.4 and why.
+- [Benchmarks and evaluation](https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md) — measured performance, retrieval, context cost, and exact reproduction commands.
+- [Migration guide](https://github.com/open-hint-dev/hint/blob/main/docs/07-migration.md) — what changed through 1.5 and why.
 
 <!-- ============================================================ -->
 <!-- CORE DOCS — Quick Start -->
@@ -458,6 +461,7 @@ books:
 | `name`, `description` | Project identity, available to tooling.                                                                                                                            |
 | `books`               | Hintbooks providing the keyword vocabulary. `file://` paths resolve relative to the project root; `npm://` names resolve through local then global `node_modules`. |
 | `ignore`              | Glob patterns excluded from project-wide inventory, status, search, and lint walks.                                                                                 |
+| `curation.agent_authors` | Optional git-author globs (for example `*bot*`) used to identify agent-authored blocks that await human review.                                                    |
 
 Two kinds of specification files live in the tree:
 
@@ -486,16 +490,19 @@ A path outside the project root, or one that names nothing in the repository, is
 Every markdown heading opens a typed block:
 
 ```markdown
-# entity PaymentData {#payment_data}
+# entity PaymentData {#payment_data origin=agent}
 
 this entity describes the payment data contract
 ```
 
-A heading has three parts:
+A heading has four parts:
 
 - **Keyword** — the first word (`entity`). Matched against the instruction names and synonyms of your hintbooks; case matters, so write keywords the way the hintbook declares them.
 - **Name** — everything after the first word (`PaymentData`). May be empty.
 - **Id** — an optional `{#stable_id}` suffix. Ids give blocks a stable handle that survives renames; hintbook templates typically render them as `id="..."` attributes so other blocks and agents can reference them.
+- **Attributes** — optional `key=value` pairs after the id, with quotes for spaces: `{#legacy overrides=strict note="old client"}`. Unknown attributes are preserved. `overrides=<id>` replaces an ancestor-scope block only in the narrower scope; sibling/deeper targets are invalid. `supersedes=<id>` says the target is obsolete everywhere and lint requires the old block to be removed. `origin=agent` marks knowledge awaiting human review.
+
+Every rendered block carries its portable heading location (`source`, and `included_from` when an `@include` supplied it). Relations never hide either side: the narrower exception and the rule it overrides are both visible. `hint lint` rejects missing, same-scope, cyclic, or lingering supersession relations and advises when matching inherited blocks may conflict without an explicit override.
 
 ### Body
 
@@ -726,7 +733,7 @@ Every `*.md` file is one instruction. The file name is the keyword; the content 
 </data_structure>
 ```
 
-Four placeholders are available — `{id}`, `{name}`, `{body}`, and `{children}` (the block's already-rendered child blocks). Every occurrence is replaced.
+Templates can use `{id}`, `{name}`, `{body}`, `{children}` (already-rendered children), `{attrs}`, `{overrides}`, `{overridden_by}`, `{superseded_by}`, `{source}`, and `{included_from}`. `{attrs}` renders sorted `key="value"` pairs. If an older template uses none of the relation placeholders, HINT appends a deterministic plain-Markdown relation line so an override cannot disappear silently. Every occurrence is replaced.
 
 **The HTML-like tags are a convention, not a requirement.** An instruction is a pure markdown file, and the compiler does nothing but placeholder replacement — a template can be plain prose just as well:
 
@@ -1065,7 +1072,7 @@ Requires an emit pack that declares both a `symbols` adapter and an `extract` ma
 
 ## `hint lint <paths...>` — validate knowledge
 
-Checks vocabulary near-misses, broken includes, duplicate ids within a file, and empty specs. `--strict-vocab` promotes every unknown heading to a finding; `--json` prints stable machine-readable output.
+Checks vocabulary near-misses, broken includes, duplicate ids, empty specs, invalid `overrides`/`supersedes` relations, inheritance conflicts, and likely duplicate knowledge. `--strict-vocab` promotes every unknown heading to a finding; `--json` prints stable machine-readable output.
 
 `--graph` adds a deterministic repository graph pass over the selected hints: dead path references, unreferenced hints whose targets do not exist, duplicate ids across files, and duplicate or edit-distance-near block names. Graph results are advisory notes by default. `--strict-graph` implies `--graph`, promotes its notes to findings, and exits `1` when any are present.
 
@@ -1084,6 +1091,7 @@ Recorded knowledge decays in ways nobody notices at the time: a spec is not upda
 hint status                 # the inventory
 hint status --json          # machine-readable, includes the informational rows
 hint status --exit-code     # exit 1 when anything needs attention, for CI
+hint status --strict-curation # exit 1 when agent-authored blocks await review
 ```
 
 ```
@@ -1102,6 +1110,7 @@ unlocked  src/gateway/handler.go    companion spec has never been locked
 | `stale` | The code under the scope has moved substantially since the hint was last committed. An observation, not a verdict. |
 | `unfilled` | The spec declares holes that still hold their emitted stub — work asked for and not yet done. |
 | `unlocked` | A companion spec in a project that uses `hint.lock`, never locked. Only reported when a lock exists. |
+| `unreviewed` | A block marked `origin=agent`, or last changed by an identity matching `curation.agent_authors`. Advisory unless `--strict-curation`; JSON includes author, email, commit, date, and repository-relative age. |
 | `pending` | The target has not been written yet — a spec written ahead of its code. Supported and expected, so it is counted on stderr and listed only under `--json`, never in the table. |
 
 **Staleness is measured against git**, as the share of a scope's files that changed between the hint's last commit and `HEAD`. That is why it means the same thing for a single-file companion spec and for the repository root. Two thresholds apply, because two kinds of knowledge decay at different rates:
@@ -1114,6 +1123,13 @@ unlocked  src/gateway/handler.go    companion spec has never been locked
 Outside a git repository, or when git is unavailable, staleness and orphan detection are skipped and stderr says so — an unmeasurable scope is never reported as a healthy one. Hint files that exist only to be `@include`d are fragments describing no path, and are left out of the inventory entirely.
 
 Exit `0` when the inventory is clean, `2` when the project has no `.hint` files at all, and `1` only with `--exit-code` and at least one finding. Without `--exit-code` it always exits `0` on a populated project, so it is safe to run from a hook.
+
+Configure secondary git provenance explicitly; HINT never guesses which identities are agents:
+
+```yaml
+curation:
+  agent_authors: ["*bot*", "agent@*"]
+```
 
 ### Wiring it in
 
@@ -1158,7 +1174,7 @@ Full reference, including template syntax and how to author an emitter → [`doc
 Prints the CLI version, then every registered hintbook with its version and where it resolved from:
 
 ```
-@openhint/cli 1.3.0
+@openhint/cli 1.5.0
 npm://@openhint/hintbook-software-engineer 1.0.6 — /usr/local/lib/node_modules/@openhint/…/keywords
 file://hintbooks/team-conventions (version unknown) — hintbooks/team-conventions
 npm://@openhint/hintbook-chef (not installed)
@@ -1366,6 +1382,38 @@ Use the CLI when a lifecycle hook needs an exit code:
 
 Plain-CLI agents do not need MCP: `hint apply` maintains the canonical `<hint>` instruction block in `AGENTS.md` and `CLAUDE.md`.
 
+For just-in-time prefetch, use `PreToolUse` for `Edit|Write|MultiEdit`: run `hint "$CLAUDE_FILE_PATH"`, inject stdout into the tool context, and retain the first stderr line as the verdict note. Cursor and Copilot currently have no equivalent portable file-edit hook; call MCP `hint_context` before editing there.
+
+At session end, lint only changed knowledge and print the write-back rule. The command is silent when no `.hint` changed:
+
+```bash
+changed=$(git diff --name-only --diff-filter=ACMR HEAD -- '*.hint')
+test -z "$changed" || hint lint $changed
+test -z "$changed" || printf '%s\n' 'record durable learnings in the most specific .hint; mark origin=agent'
+```
+
+For a plain git pre-commit hook:
+
+```bash
+staged=$(git diff --cached --name-only --diff-filter=ACMR -- '*.hint')
+test -z "$staged" || hint lint $staged
+hint status --exit-code
+```
+
+Equivalent `.pre-commit-config.yaml` entry:
+
+```yaml
+- repo: local
+  hooks:
+    - id: hint-lint
+      name: HINT lint
+      entry: hint lint
+      language: system
+      files: \\.hint$
+```
+
+PR review checklist: `unreviewed blocks: hint status`.
+
 ## CI gates
 
 ```bash
@@ -1382,7 +1430,13 @@ Exit `1` means a check found work; exit `2` means the command resolved no subjec
 <!-- CORE DOCS — Migrating to 1.1 -->
 <!-- ============================================================ -->
 
-# Migrating to 1.4
+# Migrating to 1.5
+
+## Additive changes in 1.5
+
+Heading suffixes accept attributes after the stable id. `overrides`, `supersedes`, and `origin=agent` add deterministic reconcile and curation semantics; unknown attributes remain forward-compatible. Rendered blocks can expose source locations, and search results include heading lines. `hint search --expand` follows one graph hop. `hint status --strict-curation` opts into gating agent-authored knowledge. The default read exit codes and attribute-free syntax remain compatible.
+
+The benchmark harness (`make bench`, `make eval`) and published engineering numbers are new. Release 1.5 also removes the unused heading-id parser dependency; no hintbook or spec migration is required.
 
 ## Additive changes in 1.4
 
@@ -2109,7 +2163,7 @@ Run `npx -y @openhint/cli apply` after registering the book.
 
 **Ingest.** Add the source under `raw/`, create its companion `.hint`, and update every affected topic. Claims name their evidence; a changed conclusion supersedes the old claim instead of erasing history.
 
-**Query.** Start with `hint search "question or intent"`, then read useful targets with `hint wiki/<topic>`. A path-shaped `relates` block includes the referenced topic through the normal reference closure. `refs_depth` limits this breadth-first traversal; omitted references are always named on stderr.
+**Query.** Start with `hint search "question or intent"`, then read useful targets with `hint wiki/<topic>`. Add `--expand` when the answer may be one graph hop away: reference and `overrides`/`supersedes` neighbors are appended with a discounted score and `via`. A path-shaped `relates` block includes the referenced topic through the normal reference closure. `refs_depth` limits this breadth-first traversal; omitted references are always named on stderr.
 
 **Lint.** Run `hint lint . --graph`. The graph pass reports dead references, unreferenced target-less hints, ids duplicated across files, and duplicate or near-miss block names. These are advisory notes by default. Use `--strict-graph` to promote them to findings and exit `1` in CI.
 

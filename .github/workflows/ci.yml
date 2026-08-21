@@ -57,6 +57,12 @@ jobs:
             - name: Test
               run: make test
 
+            - name: Retrieval evaluation
+              run: make eval
+
+            - name: Benchmarks
+              run: make bench
+
             - name: Build release artifacts
               run: make release
               env:

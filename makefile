@@ -1,4 +1,4 @@
-.PHONY: release
+.PHONY: bench eval eval-agent release
 
 OS ?= linux
 export OS
@@ -29,6 +29,7 @@ publish:
 		exit 1; \
 	fi
 	@echo "Publishing version ${VERSION}..."
+	@node benchmarks/check-claims.mjs
 	@$(MAKE) release
 	@yarn workspace @openhint/transpiler publish
 	@yarn workspace @openhint/cli publish
@@ -44,3 +45,13 @@ release:
 test:
 	@yarn test
 	@yarn vite-node applications/cli/index.ts status --exit-code
+
+bench:
+	@yarn vite-node benchmarks/run-bench.ts
+	@node benchmarks/check-perf.mjs
+
+eval:
+	@yarn vite-node benchmarks/run-eval.ts
+
+eval-agent:
+	@cat benchmarks/agent/README.md

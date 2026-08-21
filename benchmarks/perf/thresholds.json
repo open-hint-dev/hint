@@ -1,0 +1,10 @@
+{
+    "baseline_version": "1.5.0",
+    "runner": {"os_prefix": "darwin", "arch": "arm64", "node_major": 26},
+    "maximum_p95_ms": {
+        "1000.compile": 314.54,
+        "10000.compile": 241.04,
+        "10000.search": 3111.78,
+        "10000.status": 9915.55
+    }
+}

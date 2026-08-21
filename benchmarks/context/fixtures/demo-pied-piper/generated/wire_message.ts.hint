@@ -1,0 +1,31 @@
+# entity WireMessage {#wire_message}
+
+The stable payload exchanged between stages.
+
+## field request_id: string
+
+## field payload: string
+
+# func validateWireMessage {#validate_wire}
+
+Accept only objects carrying both wire fields.
+
+## arg value: unknown
+
+## result boolean
+
+## flow
+
+Return false for any missing or non-string field.
+
+# func normalizePayload {#normalize_payload}
+
+Normalize transport newlines without changing any other byte.
+
+## arg payload: string
+
+## result string
+
+## flow
+
+Convert CRLF to LF and leave existing LF unchanged.

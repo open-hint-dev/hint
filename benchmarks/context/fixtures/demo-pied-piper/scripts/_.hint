@@ -1,0 +1,17 @@
+Operational shell scripts for the monorepo. These are the only entry points humans and CI use — they must work from any current directory.
+
+# lang Bash {#bash_lang}
+
+Bash via `#!/usr/bin/env bash`, with `set -euo pipefail` as the first statement after the shebang. POSIX-friendly otherwise; no bashisms beyond arrays and `[[ ]]`. Scripts are `chmod +x` and shellcheck-clean.
+
+# good Script Discipline {#bash_patterns}
+
+- Resolve the repository root once — `ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"` — and build every path from `$ROOT`; never depend on the caller's working directory.
+- Every variable expansion is double-quoted.
+- Scripts log through a local `log <LEVEL> <message>` function that emits the shared logging format (service name: `scripts`) to stderr.
+
+# bad Shell Hazards {#bash_hazards}
+
+- No `curl | sh`, no network access at all — everything needed is in the repo.
+- No `rm -rf` on any path containing a variable.
+- No silencing failures with `|| true`.
