@@ -24,10 +24,12 @@ jobs:
                   node-version: ${{ matrix.node }}
                   package-manager-cache: false
             - run: corepack enable
-            - run: yarn install --immutable
+            # Node 26 on Windows can leave the global Yarn 1 shim ahead of Corepack
+            # even after enable; invoking Corepack explicitly is stable on every runner.
+            - run: corepack yarn install --immutable
             - name: Hash deterministic output
               shell: bash
-              run: yarn vite-node benchmarks/run-determinism.ts
+              run: corepack yarn vite-node benchmarks/run-determinism.ts
               env:
                   DETERMINISM_OUTPUT: determinism-${{ matrix.os }}-node${{ matrix.node }}.json
             - uses: actions/upload-artifact@v4
