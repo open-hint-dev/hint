@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Business Analysts — requirements that trace",
+  "metaDescription": "Keep requirements, business rules, scenarios and traceability beside the work so assistants report gaps instead of inventing stakeholders.",
+  "profession": "business analysis",
+  "packageRole": "Business Analysts",
+  "h1": "Your assistant drafts quickly. HINT makes every requirement trace back.",
+  "intro": "HINT keeps plain-text requirements knowledge beside your BRDs and process documents. Your assistant reads the applicable stakeholders, rules, scope and open questions before it writes.",
+  "artifact": "business requirement",
+  "situations": [
+    {"before":"A BRD names a stakeholder who was never interviewed.","after":"Stakeholders come from declared context","body":"Unknown owners become questions for the analyst instead of plausible names in a finished-looking document."},
+    {"before":"A requirement contradicts a business rule stated elsewhere.","after":"Rules win over smooth prose","body":"The conflict is surfaced with both pieces of context so the analyst can make the decision explicitly."},
+    {"before":"Alternate flows are quietly merged into the happy path.","after":"Scenarios stay separate and traceable","body":"Main, alternate and edge paths retain their own acceptance criteria and links back to the need."}
+  ],
+  "example": {"path":"processes/tps-reporting/brd.md.hint","intro":"The Initech demo grounds a TPS-reporting requirement in an approved source.","lines":["# read Approved source","","../../sources/approved.md","","# requirement tps-reporting-1 {#business_analyst_demo}","","Approved requirement grounded in SRC-1.","","# never Invented details"],"after":"It builds the requirement from SRC-1, keeps its ID available for traceability, and lists any missing stakeholder or acceptance detail as an open question.","compiled":"<requirement name=\"tps-reporting-1\">\n  Approved requirement grounded in SRC-1.\n</requirement>\n<never name=\"Invented details\">…</never>"},
+  "never":["Invent stakeholders, systems, figures or regulations.","Resolve contradictions between a requirement and a business rule silently.","Specify anything that the declared scope excludes."],
+  "disclaimer":"HINT structures the context used to draft requirements; stakeholder validation and organizational approval remain part of your analysis process.",
+  "faq":[{"q":"Can it generate a BRD?","a":"It can help an assistant draft one from declared requirements and sources, and an emit pack can create derivable structure."},{"q":"Does it replace Jira or Confluence?","a":"No. It governs what goes into those systems; your existing tools can remain the publication and workflow layer."},{"q":"Can BA and PM hintbooks coexist?","a":"Yes. They share a compatible common core; put the most task-specific book first when a keyword overlaps."}],
+  "keywordDescriptions":{"requirement":"States a traceable functional need with a stable identifier.","nfr":"Captures a measurable quality constraint such as performance or security.","bizrule":"Records a business rule that requirements must not contradict.","usecase":"Defines an actor, goal and trigger for an interaction.","scenario":"Keeps one main or alternate flow as ordered behavior.","acceptance":"States observable conditions that make a requirement complete.","trace":"Links a need, requirement, use case and test identifier.","scope":"Draws the boundary around what the analysis covers."},
+  "technical":{"verify":true,"emit":true,"worksWith":["product-managers","qa-engineers","software-engineers"]}
+}

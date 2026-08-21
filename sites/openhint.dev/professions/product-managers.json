@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Product Managers — PRDs keep their intent",
+  "metaDescription": "Keep goals, personas, stories, non-goals and sourced metrics beside PRDs so assistants expose trade-offs instead of making them silently.",
+  "profession": "product management",
+  "packageRole": "Product Managers",
+  "h1": "Your assistant drafts PRDs fast. HINT keeps the product intent intact.",
+  "intro": "HINT stores goals, personas, non-goals, metrics and decisions as plain-text notes beside product documents. Your assistant reads the relevant product context before refining a story or roadmap.",
+  "artifact": "product story",
+  "situations": [
+    {"before":"A polished story targets a persona nobody defined.","after":"Every story points to a real persona","body":"The assistant uses only the declared audience and turns missing user context into a decision needed from the team."},
+    {"before":"A success metric arrives with an invented baseline.","after":"Metrics carry definitions and sources","body":"A number without a source stays an open question instead of becoming a credible-looking KPI."},
+    {"before":"A nice-to-have quietly enters the committed scope.","after":"Priorities and non-goals remain boundaries","body":"Trade-offs are surfaced for the product owner rather than settled invisibly during drafting."}
+  ],
+  "example": {"path":"products/nucleus/prd-compression.md.hint","intro":"The Hooli demo pins a Nucleus story to an approved product source.","lines":["# read Approved source","","../../sources/approved.md","","# story nucleus-1 {#product_manager_demo}","","Approved story grounded in SRC-1.","","# never Invented details"],"after":"It drafts criteria that stay inside the product scope and refuses to add a persona, baseline or trade-off decision that SRC-1 does not support.","compiled":"<story name=\"nucleus-1\">\n  Approved story grounded in SRC-1.\n</story>\n<never name=\"Invented details\">…</never>"},
+  "never":["Invent a persona, metric baseline or research finding.","Promote optional work without an explicit priority decision.","Pull a declared non-goal back into scope."],
+  "disclaimer":"HINT keeps product intent visible to an assistant; discovery, prioritization and outcome ownership remain with the product team.",
+  "faq":[{"q":"Can it write a PRD?","a":"It can help your assistant draft one from declared product context and create a derivable skeleton where an emit pack applies."},{"q":"Can it choose priorities?","a":"No. It presents declared priorities and marks unresolved trade-offs as decisions needed."},{"q":"Can PM and engineering books work together?","a":"Yes. Product stories and engineering contracts can share the common core while retaining their specialist vocabulary."}],
+  "keywordDescriptions":{"product":"Sets the product area whose context applies.","persona":"Defines a user group from known research.","goal":"States the measurable outcome the work serves.","metric":"Defines a measure together with its baseline source.","story":"Records a user story with a stable identifier.","criteria":"Sets testable acceptance conditions for a story.","hypothesis":"States a belief that an experiment can test.","launch":"Collects explicit go and no-go conditions."},
+  "technical":{"verify":true,"emit":true,"worksWith":["business-analysts","qa-engineers","software-engineers"]}
+}

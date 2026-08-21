@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Clinical Operations — SOPs do not improvise",
+  "metaDescription": "Keep operational protocols, routes, roles, checklists and cited sources together while excluding diagnosis, treatment and triage judgment.",
+  "profession": "clinical operations",
+  "packageRole": "Clinical Operations",
+  "h1": "Your assistant drafts SOPs fast. HINT keeps it out of clinical judgment.",
+  "intro": "HINT keeps operational protocols, roles, routes and checklists in plain-text notes beside unit documents. Your assistant reads the applicable approved source before drafting an operational step.",
+  "artifact": "arrival-routing protocol",
+  "situations": [
+    {"before":"A routing instruction is improvised from general medical knowledge.","after":"Every route needs an approved source","body":"The assistant points to the declared guideline and escalation role instead of deciding care."},
+    {"before":"A handoff checklist drops one required step.","after":"Ordered steps remain complete","body":"The role, timing and required record travel with the checklist through every revision."},
+    {"before":"One unit's protocol is applied in another unit.","after":"Operational scope stays local","body":"Hospital-wide policy can inherit downward while pharmacy and emergency-intake procedures remain isolated."}
+  ],
+  "example": {"path":"units/emergency-intake/sop-arrival-routing.md.hint","intro":"The Sacred Heart demo grounds its emergency-intake operations protocol in SRC-1.","lines":["# read Approved source","","../../sources/approved.md","","# protocol emergency-intake-1 {#clinical_operations_demo}","","Approved protocol grounded in SRC-1.","","# never Invented details"],"after":"It drafts only the declared operational route, preserves the required escalation, and refuses requests for diagnosis, treatment or triage judgment.","compiled":"<protocol name=\"emergency-intake-1\">\n  Approved protocol grounded in SRC-1.\n</protocol>\n<never name=\"Invented details\">…</never>"},
+  "never":["Provide medical advice, diagnosis, treatment, dosing or triage decisions.","Invent a routing rule, clinical criterion or guideline.","Skip a declared step, red flag or escalation role."],
+  "disclaimer":"For fictional demonstration and operational documentation only. HINT is not clinical guidance and must not be used to make care decisions.",
+  "faq":[{"q":"Does it give medical advice?","a":"No. The vocabulary explicitly limits the assistant to operations documents and excludes diagnosis, treatment, dosing and triage decisions."},{"q":"Does it know current regulations?","a":"No. Your organization supplies and approves the sources that govern each protocol."},{"q":"Can it approve an SOP?","a":"No. It can carry owner and review fields; your clinical governance process controls approval."}],
+  "keywordDescriptions":{"protocol":"Names an operational protocol, version and owner.","sop":"Defines a standard operating procedure from approved sources.","checklist":"Preserves a complete ordered set of required actions.","record":"States what operational information must be documented.","role":"Defines who is authorized to perform an action.","route":"Maps a declared condition to an operational destination.","redflag":"Triggers immediate escalation without making a diagnosis.","deviation":"Records how a departure from procedure is handled.","training":"States who must be trained on an approved procedure."},
+  "technical":{"verify":true,"emit":true,"worksWith":["compliance-and-risk","auditors","educational-designers"]}
+}

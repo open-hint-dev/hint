@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Lawyers — drafts stay inside the red lines",
+  "metaDescription": "Keep matter facts, clauses, sources and red lines beside legal documents so assistants draft from declared positions and expose gaps.",
+  "profession": "legal",
+  "packageRole": "Lawyers",
+  "h1": "Your assistant drafts fast. HINT keeps it inside the matter's red lines.",
+  "intro": "HINT is a folder of plain-text matter notes beside your documents. Your assistant reads the notes that apply before drafting and sees the parties, defined terms, sources and positions it must not cross.",
+  "artifact": "confidentiality agreement",
+  "situations": [
+    {"before":"A draft fills an absent commercial term with plausible language.","after":"Missing positions become visible gaps","body":"The assistant asks for the missing duration or remedy instead of choosing one for the client."},
+    {"before":"A clause uses a source or citation nobody verified.","after":"Authority must be declared","body":"Sources stay attached to the provision they support, and unsupported citations are reported for counsel to resolve."},
+    {"before":"Terms from another matter bleed into the current draft.","after":"Each client stays in its own scope","body":"Folder inheritance carries firm policy down while keeping another client's facts outside the current matter."}
+  ],
+  "example": {"path":"clients/acme_corp/hr/software_engineer_nda.md.hint","intro":"The Pearson Specter Litt demo records Acme's confidentiality position in the matter folder.","lines":["# recital Purpose {#acme_nda_recitals}","","The Employee has access to Acme's source code, systems, and product plans.","","# definition Confidential Information {#acme_nda_def_ci}","","Non-public information disclosed by or on behalf of Acme.","","## exception Standard Exclusions"],"after":"It drafts using the declared definition and exceptions, preserves defined-term discipline, and flags any commercial position that the matter has not supplied.","compiled":"<recital name=\"Purpose\">…</recital>\n<definition name=\"Confidential Information\">\n  …\n  <exception name=\"Standard Exclusions\">…</exception>\n</definition>"},
+  "never":["Invent a party, fact, citation or negotiated position.","Carry one client's matter knowledge into another client's folder.","Present generated language as legal advice or as ready for signature."],
+  "disclaimer":"HINT does not practice law. Drafts and reviews are work product for qualified counsel and require professional judgment before use.",
+  "faq":[{"q":"Does HINT give legal advice?","a":"No. It supplies declared matter context to an assistant; licensed counsel remains responsible for every legal judgment."},{"q":"Can it stop invented citations?","a":"It tells the assistant that authority must come from declared sources and turns missing support into a gap, but counsel still verifies every citation."},{"q":"Can firm policy and matter terms coexist?","a":"Yes. Firm rules can live above client folders; client and document notes add narrower context below them."}],
+  "keywordDescriptions":{"matter":"Sets the client, purpose and boundary of the legal work.","party":"Names a party and its role in the matter.","clause":"Records a clause that the document must contain.","obligation":"States an action a party is required to perform.","right":"States an entitlement and the conditions around it.","source":"Identifies authority or evidence rather than inviting a citation guess.","redline":"Marks a position that drafting must not cross.","never":"States an unconditional prohibition for the assistant."},
+  "technical":{"verify":true,"emit":true,"worksWith":["compliance-and-risk","auditors","policy-analysts"]}
+}

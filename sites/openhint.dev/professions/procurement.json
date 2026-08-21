@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Procurement — RFPs stay vendor-neutral",
+  "metaDescription": "Keep requirements, sources, timelines, evaluation rules and internal scoring separate so assistants draft fair procurement documents.",
+  "profession": "procurement",
+  "packageRole": "Procurement Specialists",
+  "h1": "Your assistant drafts RFPs fast. HINT keeps them fair and source-based.",
+  "intro": "HINT keeps requirements, timelines, evaluation rules and approvals in plain-text notes beside tender documents. Your assistant reads the rules for this procurement before drafting supplier-facing language.",
+  "artifact": "evaluation requirement",
+  "situations": [
+    {"before":"An RFP requirement happens to describe one vendor's product.","after":"Requirements stay outcome-based","body":"Brand-specific language must have an approved source or be rewritten around the business need."},
+    {"before":"Internal evaluation weights leak into the supplier document.","after":"Scoring stays in its proper boundary","body":"Internal evaluation context is available to the panel without being emitted into the RFP."},
+    {"before":"A budget figure appears because the assistant assumed a range.","after":"Commercial facts require authority","body":"Missing budgets and deadlines become questions for the procurement owner rather than invented commitments."}
+  ],
+  "example": {"path":"tenders/monorail/evaluation.md.hint","intro":"The Springfield procurement demo grounds an evaluation requirement in SRC-1.","lines":["# requirement overview-1 {#procurement_specialist_overview}","","Approved requirement grounded in SRC-1.","","# source SRC-1","","../../sources/approved.md"],"after":"It writes neutral evaluation language grounded in the approved source and keeps internal scoring details out of supplier-facing material.","compiled":"<requirement name=\"overview-1\">\n  Approved requirement grounded in SRC-1.\n</requirement>\n<source name=\"SRC-1\">../../sources/approved.md</source>"},
+  "never":["Invent a budget, deadline, approval or vendor fact.","Write a brand-specific requirement without a justified source.","Expose confidential evaluation weights in the RFP."],
+  "disclaimer":"HINT assists with procurement documentation; your policies, legal review and delegated authority govern the actual process and award.",
+  "faq":[{"q":"Does it select a supplier?","a":"No. It keeps criteria and evidence structured; authorized evaluators make and approve the decision."},{"q":"How is vendor neutrality enforced?","a":"Declare outcome-based requirements and prohibit unsupported brand references; reviewers still assess legitimate exceptions."},{"q":"Do weights have to total 100?","a":"Only if your declared evaluation policy says so. HINT does not invent a scoring rule."}],
+  "keywordDescriptions":{"tender":"Sets the procurement, authority and document boundary.","need":"States the business outcome behind the purchase.","requirement":"States a supplier-facing need with a stable identifier.","budget":"Records an authorized budget from a named source.","timeline":"Defines sourced milestones and deadlines.","criterion":"Names a factor evaluators apply consistently.","weight":"Records confidential scoring importance where authorized.","exclusion":"Marks an internal rule that must not enter the RFP.","question":"Records an approved supplier clarification."},
+  "technical":{"verify":true,"emit":true,"worksWith":["financial-analysts","sales-and-proposals","compliance-and-risk"]}
+}

@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Software Engineers — code follows the spec",
+  "metaDescription": "Keep architecture, contracts and failure rules beside code so every coding agent sees the constraints that apply before making a change.",
+  "profession": "software engineering",
+  "packageRole": "Software Engineers",
+  "h1": "Your coding agent writes fast. HINT keeps it inside your architecture.",
+  "intro": "HINT keeps plain-text engineering decisions beside the code they govern. Your agent reads only the relevant notes before it changes a file, so old constraints survive new sessions and new tools.",
+  "artifact": "renderer contract",
+  "situations": [
+    {"before":"A refactor quietly breaks an interface used by another language.","after":"The contract travels with the file","body":"The TypeScript renderer reads the exact shape declared by the Python compressor instead of guessing field names."},
+    {"before":"A familiar pattern is applied where the repository deliberately forbids it.","after":"Local decisions beat generic habits","body":"Architecture choices and rejected alternatives appear before implementation, while they can still change the approach."},
+    {"before":"A happy-path patch ships without the errors and checks the system expects.","after":"Failure behavior is part of the task","body":"Error contracts, required flows and verification criteria arrive in the same scoped context as the code."}
+  ],
+  "example": {"path":"renderer-ts/app.ts.hint","intro":"The Pied Piper demo connects a Python compression stage to a TypeScript report renderer.","lines":["# read ../compression-py/compressor.py","","The incoming message is the `CompressionResult` emitted by the compression engine.","","# func renderReport {#render_report}","","## arg result","","A validated `CompressionResult` mirroring the compressor output."],"after":"It mirrors the upstream field names, follows the declared score formula, and reports any missing decision instead of inventing an interface.","compiled":"<function_contract name=\"renderReport\">\n  Read the upstream CompressionResult exactly.\n  Compute the score with the declared formula.\n  Return the specified report layout.\n</function_contract>"},
+  "never":["Invent an API, field or dependency that the repository does not declare.","Replace a settled architectural decision with a generic preference.","Report success when required error paths or tests are missing."],
+  "disclaimer":"HINT supplies project context; it does not prove that generated code is correct. Normal review, tests and security controls still apply.",
+  "faq":[{"q":"Does this replace documentation?","a":"No. It keeps the durable decisions an agent needs next to the paths they govern and links to longer sources when needed."},{"q":"Does it work with an existing codebase?","a":"Yes. Add small `.hint` files gradually; `hint extract` can draft structural starting points where a language adapter exists."},{"q":"Is a model used to retrieve the rules?","a":"No. Scoped lookup and local search are deterministic and run without a network call."}],
+  "keywordDescriptions":{"decision":"Records a settled engineering choice and why it was made.","invariant":"States a property every change must preserve.","entity":"Defines a domain object and its role.","field":"Describes one field, including its type and constraints.","func":"Specifies a function's inputs, output and behavior.","flow":"Sets an ordered sequence that implementation must follow.","error":"Names a failure condition and its required response.","test":"Lists observable cases that prove the contract."},
+  "technical":{"verify":true,"emit":true,"worksWith":["product-managers","qa-engineers","business-analysts"]}
+}

@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Compliance — controls keep their evidence",
+  "metaDescription": "Keep frameworks, controls, owners, evidence and exceptions together so assistants draft compliance work without inventing regulations.",
+  "profession": "compliance and risk",
+  "packageRole": "Compliance Officers",
+  "h1": "Your assistant drafts controls fast. HINT keeps every claim tied to evidence.",
+  "intro": "HINT keeps frameworks, control owners, evidence and exceptions in plain-text notes beside compliance documents. Your assistant reads the rules for the business unit before it drafts or maps a control.",
+  "artifact": "factory control",
+  "situations": [
+    {"before":"A control sounds complete but nobody owns it.","after":"Ownership is part of the control","body":"The responsible role, cadence and evidence expectation remain attached instead of disappearing into polished prose."},
+    {"before":"An exception becomes an undocumented permanent practice.","after":"Exceptions carry expiry and approval","body":"The assistant sees the boundary, approver and review date whenever it works on the affected unit."},
+    {"before":"A framework requirement is quoted from memory.","after":"Regulatory statements need a source","body":"Missing authority is flagged for compliance review rather than turned into a confident citation."}
+  ],
+  "example": {"path":"units/factory/controls.md.hint","intro":"The Wonka compliance demo keeps the factory control grounded in SRC-1.","lines":["# control overview-1 {#compliance_officer_overview}","","Approved control grounded in SRC-1.","","# source SRC-1","","../../sources/approved.md"],"after":"It drafts the control with its declared source and asks for any missing owner, evidence or cadence before presenting the record as complete.","compiled":"<control name=\"overview-1\">\n  Approved control grounded in SRC-1.\n</control>\n<source name=\"SRC-1\">../../sources/approved.md</source>"},
+  "never":["Invent a regulation, clause number or control requirement.","Treat an exception without approval and expiry as permanent policy.","Claim operating effectiveness without declared evidence."],
+  "disclaimer":"HINT supports compliance documentation, not legal interpretation or certification. Qualified reviewers decide applicability and effectiveness.",
+  "faq":[{"q":"Does this prove compliance?","a":"No. It keeps requirements, controls and evidence expectations connected; assurance still depends on actual operation and review."},{"q":"Can it map more than one framework?","a":"Yes. Framework and requirement blocks can share controls while retaining distinct sources and applicability."},{"q":"Can auditors use the same repository?","a":"Yes. Compliance and audit books can coexist, with the task-specific vocabulary ordered first."}],
+  "keywordDescriptions":{"framework":"Names a compliance framework and its applicability.","requirement":"Records a sourced obligation from the framework.","unit":"Sets the organizational scope a rule applies to.","control":"Defines an owned action intended to address a requirement.","evidence":"Names the artifact that demonstrates control operation.","mapping":"Connects controls to the requirements they address.","exception":"Records an approved deviation, owner and expiry.","redflag":"Marks a condition that requires escalation."},
+  "technical":{"verify":true,"emit":true,"worksWith":["auditors","lawyers","policy-analysts"]}
+}

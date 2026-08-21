@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Financial Analysts — models stay sourced",
+  "metaDescription": "Keep model inputs, formulas, scenarios, sensitivities and checks together so assistants never fill financial gaps with plausible figures.",
+  "profession": "financial analysis",
+  "packageRole": "Financial Analysts",
+  "h1": "Your assistant builds models fast. HINT keeps every figure sourced.",
+  "intro": "HINT keeps inputs, formulas, dates, scenarios and checks in plain-text notes beside a financial model. Your assistant sees which assumptions may change and which figures require an approved source.",
+  "artifact": "model input",
+  "situations": [
+    {"before":"A blank rate becomes a plausible market assumption.","after":"Missing inputs stay missing","body":"The assistant asks for a dated source instead of filling the cell with a number that merely looks reasonable."},
+    {"before":"A downside case changes both assumptions and formulas.","after":"Scenarios alter declared inputs only","body":"Core calculation logic stays stable so scenario comparisons remain meaningful."},
+    {"before":"A model balances because an error was hidden in a hard-coded value.","after":"Checks fail visibly","body":"Required reconciliations and tolerances travel with the output and cannot be smoothed over in commentary."}
+  ],
+  "example": {"path":"models/banana-stand/model.md.hint","intro":"The Bluth Finance demo grounds a Banana Stand model input in SRC-1.","lines":["# read Approved source","","../../sources/approved.md","","# input banana-stand-1 {#financial_analyst_demo}","","Approved input grounded in SRC-1.","","# never Invented details"],"after":"It preserves the source and date, changes only inputs allowed by the scenario, and reports any failed model check.","compiled":"<input name=\"banana-stand-1\">\n  Approved input grounded in SRC-1.\n</input>\n<never name=\"Invented details\">…</never>"},
+  "never":["Invent a figure, rate, comparable or baseline.","Change a formula when a scenario permits only input changes.","Hide a failed check or unresolved reconciliation."],
+  "disclaimer":"HINT supports model documentation and assistant context. It does not provide investment advice, valuation assurance or approval to rely on an output.",
+  "faq":[{"q":"Is this investment advice?","a":"No. HINT records model rules and sources; it does not recommend securities or financial decisions."},{"q":"Can it update market data?","a":"Only through sources and tools you explicitly provide. HINT itself does not fetch or invent current values."},{"q":"Can it compare scenarios?","a":"Yes. Scenarios can specify which declared inputs change while leaving formulas and checks fixed."}],
+  "keywordDescriptions":{"model":"Sets the purpose, owner and valuation date of a model.","input":"Records a sourced and dated model input.","driver":"Names an assumption that may vary in a scenario.","formula":"Defines an explicit calculation from named inputs.","output":"Names a result and how it should be interpreted.","scenario":"Sets a coherent group of allowed input changes.","sensitivity":"Varies one declared driver over a stated range.","check":"Defines a reconciliation or tolerance that must pass."},
+  "technical":{"verify":true,"emit":true,"worksWith":["data-analysts","auditors","procurement"]}
+}

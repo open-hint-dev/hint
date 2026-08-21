@@ -1,0 +1,20 @@
+{
+  "title": "HINT for Marketing — copy stays on-brand and proven",
+  "metaDescription": "Keep brand voice, terminology, channel limits and claim proof beside campaigns so assistants write on-brand copy without unsupported promises.",
+  "profession": "marketing and brand",
+  "packageRole": "Marketing Managers",
+  "h1": "Your assistant writes copy fast. HINT keeps it on-brand and supportable.",
+  "intro": "HINT keeps voice, approved terms, channel limits and proof rules in plain-text notes beside each brand's work. Your assistant reads the rules for this client and campaign before drafting copy.",
+  "artifact": "campaign brief",
+  "situations": [
+    {"before":"A slogan sounds right but violates a banned-term rule.","after":"Brand language travels with the campaign","body":"Preferred and prohibited wording appears before copy is drafted, not only during final review."},
+    {"before":"The copy calls a product the best without substantiation.","after":"Claims carry proof or a flag","body":"The assistant links support, adds the required disclaimer, or marks the sentence for legal review."},
+    {"before":"One client's voice leaks into another client's campaign.","after":"Each brand remains scoped","body":"Agency-wide policy can be shared while brand voice and assets stay inside the client folder."}
+  ],
+  "example": {"path":"clients/acme/campaigns/spring-launch.md.hint","intro":"The Sterling Cooper demo grounds Acme's spring campaign in an approved source.","lines":["# read Approved source","","../../../sources/approved.md","","# campaign acme-1 {#marketing_manager_demo}","","Approved campaign grounded in SRC-1.","","# never Invented details"],"after":"It writes inside Acme's voice and channel limits, then identifies every statement that still needs proof or approval.","compiled":"<campaign name=\"acme-1\">\n  Approved campaign grounded in SRC-1.\n</campaign>\n<never name=\"Invented details\">…</never>"},
+  "never":["State an unsubstantiated product or performance claim.","Use banned terms or disparage a competitor.","Apply one brand's voice, assets or claims to another brand."],
+  "disclaimer":"HINT keeps brand and claim rules visible; marketing, legal and regulatory reviewers retain approval responsibility.",
+  "faq":[{"q":"Does this make copy less creative?","a":"No. It defines the brand and compliance boundaries; the assistant can explore freely inside them."},{"q":"Can an agency manage multiple brands?","a":"Yes. Shared agency rules live above client folders, while each brand's voice and assets remain isolated."},{"q":"Does it approve regulated claims?","a":"No. It identifies the declared disclaimer or review requirement and flags missing proof for the authorized reviewer."}],
+  "keywordDescriptions":{"brand":"Defines positioning and the identity whose rules apply.","audience":"Names a declared segment for the message.","term":"Records preferred language and disallowed variants.","banned":"Lists wording that must not appear.","tagline":"Preserves approved brand language verbatim.","campaign":"Defines a campaign's goal, audience and period.","message":"States a campaign message for a named audience.","claim":"States a marketing assertion that requires support or review.","proof":"Identifies evidence that substantiates a claim.","channel":"Sets format, length and disclaimer constraints."},
+  "technical":{"verify":true,"emit":true,"worksWith":["sales-and-proposals","customer-support","technical-writers"]}
+}

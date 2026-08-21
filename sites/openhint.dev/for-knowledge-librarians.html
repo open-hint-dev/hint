@@ -1,276 +1,92 @@
 <!DOCTYPE html>
 <html lang="en" data-accent="analysis-knowledge">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-9KTEZLFTRE"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-9KTEZLFTRE');
-</script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HINT for Knowledge Librarians — evidence that compounds</title>
-<meta name="description" content="Build a source-grounded knowledge wiki with claims, decisions, open questions, linked topics, and graph lint; AI never fills evidence gaps." />
+<title>HINT for Knowledge Librarians — claims stay sourced</title>
+<meta name="description" content="Turn source notes into scoped, linked knowledge where claims keep their evidence and superseded decisions remain visible to assistants." />
 <link rel="canonical" href="https://openhint.dev/for-knowledge-librarians.html" />
-<meta property="og:title" content="HINT for Knowledge Librarians" /><meta property="og:description" content="A source-grounded knowledge wiki for people and AI agents." /><meta property="og:type" content="website" /><meta property="og:url" content="https://openhint.dev/for-knowledge-librarians.html" /><meta property="og:image" content="https://openhint.dev/assets/og/analysis-knowledge.png" />
+<meta property="og:title" content="HINT for Knowledge Librarians — claims stay sourced" />
+<meta property="og:description" content="Turn source notes into scoped, linked knowledge where claims keep their evidence and superseded decisions remain visible to assistants." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://openhint.dev/for-knowledge-librarians.html" />
+<meta property="og:image" content="https://openhint.dev/assets/og/analysis-knowledge.png" />
 <meta name="twitter:card" content="summary_large_image" />
-<link rel="alternate" type="text/plain" href="llms.txt" />
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","name":"HINT for Knowledge Librarians","url":"https://openhint.dev/for-knowledge-librarians.html"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://openhint.dev/"},{"@type":"ListItem","position":2,"name":"Professions","item":"https://openhint.dev/professions.html"},{"@type":"ListItem","position":3,"name":"Knowledge Librarians"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is this a vector database?","acceptedAnswer":{"@type":"Answer","text":"No. It is a git-backed source-grounded wiki with deterministic local retrieval."}},{"@type":"Question","name":"Can agents write knowledge back?","acceptedAnswer":{"@type":"Answer","text":"Yes. Agent-authored blocks carry provenance and stay reviewable in git."}},{"@type":"Question","name":"Does it hide missing evidence?","acceptedAnswer":{"@type":"Answer","text":"No. Gaps and disagreement remain explicit open questions."}}]},{"@type":"SoftwareApplication","name":"HINT","sameAs":"https://github.com/open-hint-dev"}]}</script>
+<link rel="alternate" type="text/plain" href="llms.txt" title="LLM-readable site summary" />
 <link rel="icon" type="image/png" href="favicon.png" />
 <link rel="apple-touch-icon" href="favicon.png" />
-<link rel="stylesheet" href="styles.css?v=1.6.1-code-contrast" />
-<style>
-.subhero { padding-top: clamp(40px, 5vw, 72px); padding-bottom: clamp(48px, 6vw, 80px); }
-.crumb { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3); margin-bottom: 26px; }
-.crumb a { color: var(--ink-3); } .crumb a:hover { color: var(--ink); }
-.crumb .sep { margin-inline: 8px; opacity: 0.5; }
-.subhero__grid { display: grid; grid-template-columns: minmax(0,0.92fr) minmax(0,1.08fr); gap: clamp(36px,5vw,72px); align-items: center; }
-.subhero h1 { font-size: clamp(2.4rem, 5vw, 4rem); letter-spacing: -0.035em; line-height: 1; margin-bottom: 22px; }
-.subhero h1 .em { color: var(--accent); }
-.subhero .lede { max-width: 46ch; margin-bottom: 28px; }
-.subhero__cta { display: flex; gap: 12px; flex-wrap: wrap; }
-.bookline { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-2); margin-bottom: 28px; background: var(--paper-2); border: 1px solid var(--line); padding: 8px 13px; border-radius: 100px; }
-.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.flow { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-.flow__step { background: var(--paper); padding: 26px; min-height: 190px; }
-.flow__n { font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent); margin-bottom: 28px; }
-.flow__step h3 { font-size: 1.14rem; margin-bottom: 10px; }
-.flow__step p { color: var(--ink-2); font-size: 0.92rem; }
-.vocab { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
-.vocab__item { border-top: 1px solid var(--line); padding: 18px 0; display: grid; grid-template-columns: 145px 1fr; gap: 18px; }
-.vocab__item p { color: var(--ink-2); font-size: 0.93rem; }
-.band { background: var(--surface); color: var(--on-surface); }
-.band h2, .band h3 { color: var(--on-surface); }
-.band .lede { color: var(--on-surface-mut); }
-.checks { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-top: 36px; }
-.check { background: var(--surface-2); border: 1px solid rgba(255,255,255,0.1); padding: 22px; border-radius: 8px; }
-.check h3 { font-size: 1.05rem; margin-bottom: 8px; }
-.check p { color: var(--on-surface-mut); font-size: 0.9rem; }
-.repo-tree { font-family: var(--font-mono); color: var(--tok-body); font-size: 0.84rem; line-height: 1.9; }
-.repo-tree b { color: var(--tok-name); font-weight: 500; }
-.repo-tree .why { color: var(--tok-mut); }
-.cta-final { text-align: center; }
-.cta-final .lede { max-width: 54ch; margin: 16px auto 28px; }
-.cta-final__btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.nav__menu-btn { display: none; }
-.mobile-menu { display: none; }
-@media (max-width: 960px) {
-  .subhero__grid, .grid-3, .grid-2, .flow, .checks, .vocab { grid-template-columns: 1fr; }
-  .vocab__item { grid-template-columns: 1fr; gap: 8px; }
-  .nav__menu-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; color: var(--ink); margin-left: auto; border: 1px solid var(--line); border-radius: 6px; }
-  .mobile-menu { display: block; position: fixed; inset: 64px 0 0; background: var(--paper); z-index: 49; padding: 28px 24px; transform: translateY(-12px); opacity: 0; pointer-events: none; transition: opacity .22s, transform .22s; }
-  .mobile-menu.open { opacity: 1; transform: none; pointer-events: auto; }
-  .mobile-menu a { display: block; font-family: var(--font-display); font-size: 1.5rem; padding: 14px 0; border-bottom: 1px solid var(--line); }
-}
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" />
+<link rel="stylesheet" href="styles.css?v=1.7.0-site-quality" />
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"SoftwareApplication","name":"HINT for Knowledge Librarians","applicationCategory":"DeveloperApplication","operatingSystem":"Cross-platform","url":"https://openhint.dev/for-knowledge-librarians.html","description":"Turn source notes into scoped, linked knowledge where claims keep their evidence and superseded decisions remain visible to assistants.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://openhint.dev/"},{"@type":"ListItem","position":2,"name":"Professions","item":"https://openhint.dev/professions.html"},{"@type":"ListItem","position":3,"name":"Knowledge Librarians","item":"https://openhint.dev/for-knowledge-librarians.html"}]},{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is this a replacement for a wiki?","acceptedAnswer":{"@type":"Answer","text":"No. It is a context layer for files in a repository and can govern the Markdown that feeds your existing publishing system."}},{"@type":"Question","name":"Can it distinguish sources from claims?","acceptedAnswer":{"@type":"Answer","text":"Yes. The vocabulary gives each a separate role and lets topic notes link back to immutable source records."}},{"@type":"Question","name":"Does it require embeddings?","acceptedAnswer":{"@type":"Answer","text":"No. Retrieval uses deterministic path scope and local lexical search."}}]}]</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9KTEZLFTRE"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-9KTEZLFTRE');</script>
 </head>
-<body data-accent="librarian">
-
-<nav class="nav">
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<!-- shared-nav:begin -->
+<nav class="nav" aria-label="Main navigation">
   <div class="wrap nav__inner">
-    <a class="logo" href="index.html" aria-label="hint — openhint.dev home"><img class="logo__img" src="assets/logo-full.svg" alt="hint" /></a>
+    <a class="logo" href="index.html" aria-label="HINT home"><img class="logo__img" src="assets/logo-full.svg" alt="" width="147" height="46" /></a>
     <div class="nav__links">
       <a class="nav__link" href="index.html#how">How it works</a>
-      <a class="nav__link" href="for-software-engineers.html">For Engineers</a>
-      <a class="nav__link" href="for-lawyers.html">For Lawyers</a>
-      <a class="nav__link nav__link--active" href="for-knowledge-librarians.html">For Librarians</a>
+      <a class="nav__link nav__link--active" href="professions.html" aria-current="page">Professions</a>
       <a class="nav__link" href="https://github.com/open-hint-dev/hint/tree/main/docs" target="_blank" rel="noopener">Docs</a>
+      <a class="nav__link" href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn btn--primary nav__primary" href="index.html#quickstart">Get started</a>
     </div>
-    <div class="nav__cta">
-      <a class="nav__github" href="https://github.com/open-hint-dev/hintbook-librarian" target="_blank" rel="noopener"><span>hintbook</span></a>
-      <a class="btn btn--primary" href="#quickstart">Get started</a>
-    </div>
-    <button class="nav__menu-btn" aria-label="Menu" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 5h16M2 10h16M2 15h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="nav__menu-btn" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open navigation"><span></span><span></span><span></span></button>
   </div>
 </nav>
-<div class="mobile-menu">
-  <a href="index.html#how">How it works</a>
-  <a href="for-software-engineers.html">For Engineers</a>
-  <a href="for-lawyers.html">For Lawyers</a>
-  <a href="for-knowledge-librarians.html">For Librarians</a>
-  <a href="https://github.com/open-hint-dev/hint/tree/main/docs" target="_blank" rel="noopener">Docs ↗</a>
+<div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+  <a href="index.html#how">How it works</a><a href="professions.html">Professions</a><a href="https://github.com/open-hint-dev/hint/tree/main/docs">Docs</a><a href="https://github.com/open-hint-dev/hint">GitHub</a><a href="index.html#quickstart">Get started</a>
 </div>
+<!-- shared-nav:end -->
+<noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+<main id="content">
+  <header class="profession-hero"><div class="wrap"><nav class="crumb" aria-label="Breadcrumb"><a href="index.html">Home</a> / <a href="professions.html">Professions</a> / Knowledge Librarians</nav><p class="eyebrow">HINT for Knowledge Librarians</p><h1>Your assistant summarizes fast. HINT keeps every claim tied to its source.</h1><p class="lede">HINT keeps source notes and curated knowledge in plain Markdown. Your assistant sees the claims, decisions, relationships and open questions that apply to the topic without treating every nearby document as equally authoritative.</p><aside class="handoff" aria-labelledby="handoff-title">
+      <p class="eyebrow">No technical setup required from you</p>
+      <h2 id="handoff-title">Ask your AI assistant to set it up</h2>
+      <p>You need a folder with your documents and an AI assistant that can run commands in it: Claude Code, Cursor, Codex, GitHub Copilot, or OpenCode. <a href="https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md" target="_blank" rel="noopener">Which assistants can do this?</a></p>
+      <div class="handoff__actions"><button class="btn btn--primary" type="button" data-copy data-copy-text="Set up HINT in this folder for knowledge management work. Run `npx -y @openhint/cli bootstrap` and follow exactly what it prints; when it asks which hintbook to use, choose `@openhint/hintbook-librarian`. When you are done, show me what you created, and write my first `.hint` file for source note so I can see how it reads. If you cannot run commands, say so and show me the manual steps from https://openhint.dev/for-knowledge-librarians.html#manual." aria-label="Copy the setup message for your AI assistant">Copy the message for your AI</button><button class="btn btn--ghost" type="button" data-copy data-copy-text="Open https://github.com/open-hint-dev/demo-knowledge-wiki and walk me through its README scenario 1 in this chat." aria-label="Copy the demo message for your AI assistant">Ask your AI to show you the demo</button><span class="copy-status" aria-live="polite"></span></div>
+      <dl class="handoff__steps"><div><dt>What will happen</dt><dd>The assistant creates <code class="inl">hint.yml</code>, installs the vocabulary, and tells itself how to use it. Nothing in your documents changes.</dd></div><div><dt>What you do next</dt><dd>Write rules in plain Markdown beside your documents. Your assistant reads the ones that apply before it works.</dd></div><div><dt>If you have no such assistant</dt><dd>Send this page to a technical colleague, or use the <a href="#manual">manual steps</a>.</dd></div></dl>
+    </aside></div></header>
+  <section class="section divider" aria-labelledby="situations-title"><div class="wrap"><p class="eyebrow">Where it helps</p><h2 id="situations-title">Three situations your team will recognize</h2><div class="situation-grid"><article class="situation"><p class="situation__before">Before: A summary repeats a confident claim but loses where it came from.</p><h3>Claims retain provenance</h3><p>Each important assertion points back to a source note, so readers can inspect the evidence and its limits.</p></article><article class="situation"><p class="situation__before">Before: An old decision keeps resurfacing after the team replaced it.</p><h3>Supersession is explicit</h3><p>Typed links show which decision replaced another without deleting the history that explains the change.</p></article><article class="situation"><p class="situation__before">Before: A broad search floods the assistant with unrelated notes.</p><h3>Topic scope filters the library</h3><p>Folder context and ranked local search return the smallest useful set for the topic being maintained.</p></article></div></div></section>
+  <section class="section divider example" aria-labelledby="example-title"><div class="wrap"><p class="eyebrow">See it</p><h2 id="example-title">A real source note from the demo</h2><p>The Knowledge Wiki demo records what one paper actually supports before that claim reaches a topic page.</p><div class="example__grid"><div><p class="demo__src"><a href="https://github.com/open-hint-dev/demo-knowledge-wiki/blob/main/raw/attention-is-all-you-need.md.hint" target="_blank" rel="noopener">demo-knowledge-wiki/raw/attention-is-all-you-need.md.hint ↗</a></p><pre class="code"><code># source Attention Is All You Need {#source_vaswani_2017}
 
-<header class="subhero">
-  <div class="wrap">
-    <div class="crumb"><a href="index.html">Home</a><span class="sep">/</span><a href="professions.html">Professions</a><span class="sep">/</span><span style="color:var(--ink)">Knowledge Librarians</span></div>
-    <div class="subhero__grid">
-      <div>
-        <span class="bookline"><span class="dot-ok"></span>@openhint/hintbook-librarian</span>
-        <h1>A shared memory that stays <span class="em">grounded</span>.</h1>
-        <p class="lede">Turn a git repository into a persistent knowledge wiki for people and agents. Keep original sources immutable, organize durable conclusions by topic, connect every claim to evidence, and retrieve only the closure needed for the question at hand.</p>
-        <div class="subhero__cta">
-          <a class="btn btn--primary" href="#quickstart">Build a knowledge wiki</a>
-          <a class="btn btn--ghost" href="https://github.com/open-hint-dev/demo-knowledge-wiki" target="_blank" rel="noopener">Explore the demo ↗</a>
-        </div>
-      </div>
-      <div class="code-wrap">
-        <div class="code">
-          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file"><b>wiki/attention/_.hint</b></span><span class="code__tag">topic</span></div>
-<div class="code__body"><span class="t-h"># </span><span class="t-kw">concept</span> <span class="t-nm">Attention</span> <span class="t-id">{#attention}</span>
+Vaswani et al., 2017, arXiv:1706.03762.
 
-<span class="t-bd">A mechanism that weights relevant context when producing a representation.</span>
+# claim Transformer removes recurrence from sequence transduction
 
-<span class="t-h">## </span><span class="t-kw">claim</span> <span class="t-nm">Parallel sequence modeling</span>
+The source describes an architecture based solely on attention mechanisms.
 
-<span class="t-bd">Self-attention removes recurrence from the core sequence path.</span>
-
-<span class="t-h">## </span><span class="t-kw">relates</span> <span class="t-nm">Evidence</span>
-
-<span class="t-bd">../../raw/attention-paper.md</span>
-
-<span class="t-h">## </span><span class="t-kw">openquestion</span> <span class="t-nm">Long context</span>
-
-<span class="t-bd">Which approximation preserves retrieval quality at scale?</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</header>
-
-<section class="section divider" aria-label="Measured knowledge results">
-  <div class="wrap numbers">
-    <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>1.000 P@1 / MRR</strong><span>65 queries · 26 non-Latin</span></a>
-    <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>1,177.67 / 1,262.59 ms</strong><span>search p50 / p95 · 10,000 hints</span></a>
-    <a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>3.25× smaller</strong><span>median scoped context · demo-pied-piper</span></a>
-  </div>
-</section>
-
-<section class="section divider">
-  <div class="wrap">
-    <div class="reveal" style="max-width:66ch; margin-bottom:42px;">
-      <div class="eyebrow" style="margin-bottom:22px;">Why a librarian</div>
-      <h2 class="h2">Agents need a maintained map, not a bigger context dump.</h2>
-      <p class="lede" style="margin-top:16px;">A folder full of notes accumulates contradictions, dead links, duplicate concepts, and conclusions whose sources nobody can find. The librarian hintbook gives that repository an explicit information architecture and teaches every agent how to extend it without erasing provenance.</p>
-    </div>
-    <div class="grid-3">
-      <div class="card reveal"><h3 class="h3" style="margin-bottom:10px;">Sources remain evidence</h3><p style="color:var(--ink-2);">Store the original material under <code class="inl">raw/</code>. Add analysis beside it; do not silently rewrite the evidence to match a later conclusion.</p></div>
-      <div class="card reveal" data-d="1"><h3 class="h3" style="margin-bottom:10px;">Topics remain navigable</h3><p style="color:var(--ink-2);">Curate concepts, claims, decisions, and open questions under <code class="inl">wiki/</code>, linked to the sources that support them.</p></div>
-      <div class="card reveal" data-d="2"><h3 class="h3" style="margin-bottom:10px;">Retrieval remains bounded</h3><p style="color:var(--ink-2);">Ask for a topic and HINT follows typed references only to the configured depth. Shared context is emitted once, not repeated.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="section divider">
-  <div class="wrap">
-    <div class="reveal" style="max-width:66ch; margin-bottom:42px;">
-      <div class="eyebrow" style="margin-bottom:22px;">The workflow</div>
-      <h2 class="h2">Evidence in. Structured knowledge out. Exact context on demand.</h2>
-    </div>
-    <div class="flow reveal">
-      <div class="flow__step"><div class="flow__n">01 / preserve</div><h3>Add the source</h3><p>Commit a paper, transcript, policy, dataset note, or URL record under <code class="inl">raw/</code>.</p></div>
-      <div class="flow__step"><div class="flow__n">02 / describe</div><h3>Record provenance</h3><p>A companion <code class="inl">.hint</code> captures origin, authority, limits, and what the source actually supports.</p></div>
-      <div class="flow__step"><div class="flow__n">03 / synthesize</div><h3>Curate the topic</h3><p>Write claims, decisions, relationships, chronology, and unresolved questions in a topic <code class="inl">_.hint</code>.</p></div>
-      <div class="flow__step"><div class="flow__n">04 / retrieve</div><h3>Ask by path or intent</h3><p><code class="inl">hint wiki/topic</code> returns the topic and linked evidence; <code class="inl">hint search</code> finds the right topic offline.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="section band">
-  <div class="wrap">
-    <div class="grid-2" style="align-items:center;">
-      <div class="reveal">
-        <div class="eyebrow" style="margin-bottom:22px;">Repository shape</div>
-        <h2 class="h2">A wiki that can explain where it knows things from.</h2>
-        <p class="lede" style="margin-top:16px;">The layout separates evidence from synthesis. Git preserves the history; HINT supplies scope, typed meaning, reference closure, and deterministic validation.</p>
-      </div>
-      <div class="code-wrap reveal">
-        <div class="code"><div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file"><b>knowledge-repo/</b></span></div>
-<div class="code__body repo-tree"><b>hint.yml</b>                 <span class="why"># repo: knowledge</span>
-<b>_.hint</b>                   <span class="why"># purpose and repository policy</span>
-<b>raw/</b>
-  paper.md                  <span class="why"># immutable source</span>
-  paper.md.hint             <span class="why"># provenance and limits</span>
-<b>wiki/</b>
-  attention/_.hint          <span class="why"># curated topic</span>
-  retrieval/_.hint          <span class="why"># linked topic</span>
-<b>AGENTS.md</b>                <span class="why"># write-back instructions</span></div></div>
-      </div>
-    </div>
-    <div class="checks reveal">
-      <div class="check"><h3>Dead references</h3><p>A topic cannot point at a source or another topic that no longer exists.</p></div>
-      <div class="check"><h3>Orphan knowledge</h3><p>Unreachable, targetless knowledge is reported before it becomes a forgotten island.</p></div>
-      <div class="check"><h3>Duplicate identity</h3><p>Repeated IDs and suspiciously similar names are surfaced across the whole graph.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="section divider" id="vocabulary">
-  <div class="wrap">
-    <div class="reveal" style="max-width:62ch; margin-bottom:38px;">
-      <div class="eyebrow" style="margin-bottom:22px;">The vocabulary</div>
-      <h2 class="h2">Ten words for maintaining institutional memory.</h2>
-      <p class="lede" style="margin-top:16px;">The vocabulary distinguishes evidence, interpretation, settled choices, unresolved work, and informal scratch space so an agent does not treat them as equally authoritative.</p>
-    </div>
-    <div class="vocab reveal">
-      <div class="vocab__item"><code class="kw">source</code><p>Origin, authority, date, scope, and limitations of evidence.</p></div>
-      <div class="vocab__item"><code class="kw">concept</code><p>A stable topic or term the wiki should explain consistently.</p></div>
-      <div class="vocab__item"><code class="kw">entity</code><p>A person, organization, system, project, or other identified thing.</p></div>
-      <div class="vocab__item"><code class="kw">claim</code><p>An evidence-backed proposition, kept distinct from source text.</p></div>
-      <div class="vocab__item"><code class="kw">decision</code><p>A settled choice with rationale and consequences.</p></div>
-      <div class="vocab__item"><code class="kw">openquestion</code><p>An uncertainty that remains unresolved and must not be guessed away.</p></div>
-      <div class="vocab__item"><code class="kw">supersedes</code><p>An explicit replacement relationship that preserves history.</p></div>
-      <div class="vocab__item"><code class="kw">log</code><p>A chronological event or observation whose sequence matters.</p></div>
-      <div class="vocab__item"><code class="kw">relates</code><p>A typed edge to evidence or another topic, followed during retrieval.</p></div>
-      <div class="vocab__item"><code class="kw">scratch</code><p>Working notes excluded from authoritative compiled knowledge.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="section divider" id="quickstart">
-  <div class="wrap">
-    <div class="grid-2" style="align-items:center;">
-      <div class="reveal">
-        <div class="eyebrow" style="margin-bottom:22px;">Quick start</div>
-        <h2 class="h2">Give the setup to your agent.</h2>
-        <p class="lede" style="margin-top:16px;">Bootstrap detects the repository, installs the librarian hintbook, writes agent instructions, and prints the exact configuration it applied. The CLI and MCP server are the same package.</p>
-        <div class="subhero__cta" style="margin-top:24px;">
-          <a class="btn btn--ghost" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md" target="_blank" rel="noopener">Read the guide ↗</a>
-          <a class="btn btn--ghost" href="https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md" target="_blank" rel="noopener">Agent integrations ↗</a>
-        </div>
-      </div>
-      <div class="code-wrap reveal">
-        <button class="code__copy" data-copy data-copy-text="Run `npx -y @openhint/cli bootstrap` from the repository root and follow exactly what it prints.">Copy prompt</button>
-        <div class="code"><div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span class="code__file"><b>Tell Claude Code, Codex, or any agent:</b></span></div>
-<div class="code__body"><span class="t-bd">Run `npx -y @openhint/cli bootstrap` from the</span>
-<span class="t-bd">repository root and follow exactly what it prints.</span>
-
-<span class="t-mut"># CI once configured</span>
-<span class="t-bd">hint apply --check</span>
-<span class="t-bd">hint lint . --strict-graph</span></div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="section divider" id="faq"><div class="wrap"><div class="eyebrow">FAQ</div><h2 class="h2" style="margin:18px 0 28px">What knowledge teams ask</h2><div class="grid-3"><article class="card"><h3>Is this a vector database?</h3><p>No. It is a git-backed, source-grounded wiki with deterministic local retrieval.</p></article><article class="card"><h3>Can agents write knowledge back?</h3><p>Yes. Agent-authored blocks carry provenance and remain reviewable in git.</p></article><article class="card"><h3>Does it hide missing evidence?</h3><p>No. Gaps and disagreement remain explicit open questions.</p></article></div><p style="margin-top:28px">Key facts: HINT, <strong>Spec-as-Source</strong>, <strong>hintbook-librarian</strong>, and <strong>demo-knowledge-wiki</strong> preserve evidence-backed organizational knowledge. The assistant writes from declared sources; it never fills evidence gaps.</p></div></section>
-
-<section class="section divider">
-  <div class="wrap cta-final reveal">
-    <h2 class="h2">Make what your organization knows usable by every agent.</h2>
-    <p class="lede">Keep the evidence, preserve the reasoning, expose uncertainty, and retrieve the smallest trustworthy context for each task.</p>
-    <div class="cta-final__btns">
-      <a class="btn btn--primary" href="https://github.com/open-hint-dev/demo-knowledge-wiki" target="_blank" rel="noopener">Explore demo-knowledge-wiki</a>
-      <a class="btn btn--ghost" href="https://www.npmjs.com/package/@openhint/hintbook-librarian" target="_blank" rel="noopener">View npm package ↗</a>
-    </div>
-  </div>
-</section>
-
+Confidence: high for the architecture proposed by this paper.</code></pre></div><div class="example__result"><h3>What your assistant does next</h3><p>It may summarize the scoped claim and link it into the wiki, but it preserves the paper reference and the stated confidence boundary.</p><details><summary>What your AI assistant receives</summary><pre class="compiled"><code>&lt;source name=&quot;Attention Is All You Need&quot;&gt;…&lt;/source&gt;
+&lt;claim name=&quot;Transformer removes recurrence from sequence transduction&quot;&gt;
+  …
+&lt;/claim&gt;</code></pre></details></div></div></div></section>
+  <section class="section divider trust" aria-labelledby="trust-title"><div class="wrap trust__grid"><div><p class="eyebrow">Your boundaries stay visible</p><h2 id="trust-title">What it will never do</h2><ul><li>Turn an interpretation into a sourced fact.</li><li>Hide that a newer decision supersedes an older one.</li><li>Resolve an open question without evidence.</li></ul></div><aside class="disclaimer"><h3>Important boundary</h3><p>HINT preserves declared provenance and relationships; it does not assess the truth or quality of a source for you.</p></aside></div></section>
+  <section class="section divider" aria-labelledby="faq-title"><div class="wrap faq-layout"><div><p class="eyebrow">FAQ</p><h2 id="faq-title">Questions knowledge librarians ask</h2></div><div><details class="faq"><summary>Is this a replacement for a wiki?</summary><p>No. It is a context layer for files in a repository and can govern the Markdown that feeds your existing publishing system.</p></details><details class="faq"><summary>Can it distinguish sources from claims?</summary><p>Yes. The vocabulary gives each a separate role and lets topic notes link back to immutable source records.</p></details><details class="faq"><summary>Does it require embeddings?</summary><p>No. Retrieval uses deterministic path scope and local lexical search.</p></details></div></div></section>
+  <section class="section divider"><div class="wrap"><details class="technical"><summary>For your technical colleague</summary><div class="technical__body"><section><h2>The vocabulary</h2><p>A <em>hintbook</em> is a vocabulary for your profession—installed, not written by you.</p><dl class="keyword-list"><div class="kwrow"><dt><code>source</code></dt><dd>Records an identifiable source and its provenance.</dd></div><div class="kwrow"><dt><code>concept</code></dt><dd>Defines an idea in the vocabulary used by the repository.</dd></div><div class="kwrow"><dt><code>entity</code></dt><dd>Names a person, organization, system or other subject.</dd></div><div class="kwrow"><dt><code>claim</code></dt><dd>States an assertion with its support and confidence boundary.</dd></div><div class="kwrow"><dt><code>decision</code></dt><dd>Records a conclusion and the reason it was accepted.</dd></div><div class="kwrow"><dt><code>openquestion</code></dt><dd>Keeps an unresolved question visible without guessing an answer.</dd></div><div class="kwrow"><dt><code>supersedes</code></dt><dd>Links newer knowledge to the item it replaces.</dd></div><div class="kwrow"><dt><code>relates</code></dt><dd>Creates an explicit typed connection between topics.</dd></div></dl></section><section id="manual"><h2>Manual setup</h2><p>Bootstrap is read-only: it prints instructions for the assistant. The assistant performs the installation.</p><pre class="code"><code>npm install -g @openhint/cli
+hint config
+hint add @openhint/hintbook-librarian
+hint apply</code></pre><p><a href="https://github.com/open-hint-dev/hintbook-librarian" target="_blank" rel="noopener">Hintbook repository ↗</a> · <a href="https://github.com/open-hint-dev/demo-knowledge-wiki" target="_blank" rel="noopener">Demo repository ↗</a></p></section><section><h2>Works with</h2><ul><li><a href="for-data-analysts.html">Data &amp; BI Analysts</a></li><li><a href="for-technical-writers.html">Technical Writers</a></li><li><a href="for-educational-designers.html">Educational Designers</a></li></ul></section></div></details></div></section>
+  <section class="section divider"><div class="wrap related"><p class="eyebrow">Related professions</p><div class="related__links"><a class="card" href="for-data-analysts.html"><h2>Data &amp; BI Analysts</h2><p>Metrics, grains, formulas, sources, SQL, and caveats</p></a><a class="card" href="for-technical-writers.html"><h2>Technical Writers</h2><p>Doc types, terminology, required sections, and runnable samples</p></a><a class="card" href="for-educational-designers.html"><h2>Educational Designers</h2><p>Objectives, activities, assessments, rubrics, and alignment</p></a></div><div class="handoff handoff--closing"><h2>Ready to try it?</h2><p>Give one message to the assistant already working with your documents.</p><button class="btn btn--primary" type="button" data-copy data-copy-text="Set up HINT in this folder for knowledge management work. Run `npx -y @openhint/cli bootstrap` and follow exactly what it prints; when it asks which hintbook to use, choose `@openhint/hintbook-librarian`. When you are done, show me what you created, and write my first `.hint` file for source note so I can see how it reads. If you cannot run commands, say so and show me the manual steps from https://openhint.dev/for-knowledge-librarians.html#manual." aria-label="Copy the setup message for your AI assistant">Copy the message for your AI</button><span class="copy-status" aria-live="polite"></span></div></div></section>
+  <section class="section section--tight divider" aria-label="Measured results"><div class="wrap"><div class="numbers"><a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>185 ms</strong><span>to answer across 10,000 files</span></a><a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>100%</strong><span>of 65 test queries found the right spec</span></a><a class="number" href="https://github.com/open-hint-dev/hint/blob/main/docs/09-benchmarks.md"><strong>3.25× less</strong><span>context per measured task</span></a></div></div></section>
+</main>
+<!-- shared-footer:begin -->
 <footer class="footer">
   <div class="wrap">
     <div class="footer__grid">
-      <div class="footer__brand footer__col"><div class="logo footer__logo"><img class="logo__img" src="assets/logo-full.svg" alt="hint" /></div><p>Spec-as-Source for any repository — including repositories whose artifact is knowledge itself.</p></div>
-      <div class="footer__col"><h5>Product</h5><ul><li><a href="index.html#how">How it works</a></li><li><a href="#vocabulary">Vocabulary</a></li><li><a href="#quickstart">Quick start</a></li><li><a href="https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md" target="_blank" rel="noopener">Agent setup ↗</a></li></ul></div>
-      <div class="footer__col"><h5>Professions</h5><ul><li><a href="professions.html">All professions</a></li><li><a href="for-software-engineers.html">For Engineers</a></li><li><a href="for-lawyers.html">For Lawyers</a></li><li><a href="for-knowledge-librarians.html">For Librarians</a></li></ul></div>
-      <div class="footer__col"><h5>Source</h5><ul><li><a href="https://github.com/open-hint-dev/hintbook-librarian" target="_blank" rel="noopener">hintbook-librarian ↗</a></li><li><a href="https://github.com/open-hint-dev/demo-knowledge-wiki" target="_blank" rel="noopener">demo-knowledge-wiki ↗</a></li><li><a href="https://github.com/open-hint-dev/hint/blob/main/docs/09-knowledge-repos.md" target="_blank" rel="noopener">Knowledge repository guide ↗</a></li></ul></div>
+      <div class="footer__brand footer__col"><div class="logo footer__logo"><img class="logo__img" src="assets/logo-full.svg" alt="HINT" width="147" height="46" /></div><p>Durable project knowledge, kept beside the work and delivered to your assistant when it applies.</p></div>
+      <div class="footer__col"><h2>Product</h2><ul><li><a href="index.html#how">How it works</a></li><li><a href="index.html#quickstart">Quick start</a></li><li><a href="https://github.com/open-hint-dev/hint/blob/main/docs/integrations.md" target="_blank" rel="noopener">Assistant setup ↗</a></li></ul></div>
+      <div class="footer__col footer__professions"><h2>Professions</h2><ul><li><a href="for-software-engineers.html">Software Engineers</a></li><li><a href="for-lawyers.html">Lawyers</a></li><li><a href="for-knowledge-librarians.html">Knowledge Librarians</a></li><li><a href="for-business-analysts.html">Business Analysts</a></li><li><a href="for-product-managers.html">Product Managers</a></li><li><a href="for-qa-engineers.html">QA Engineers</a></li><li><a href="for-technical-writers.html">Technical Writers</a></li><li><a href="for-compliance-and-risk.html">Compliance &amp; Risk</a></li><li><a href="for-auditors.html">Auditors</a></li><li><a href="for-data-analysts.html">Data &amp; BI Analysts</a></li><li><a href="for-financial-analysts.html">Financial Analysts</a></li><li><a href="for-procurement.html">Procurement</a></li><li><a href="for-sales-and-proposals.html">Sales &amp; Proposals</a></li><li><a href="for-customer-support.html">Customer Support</a></li><li><a href="for-marketing-and-brand.html">Marketing &amp; Brand</a></li><li><a href="for-policy-analysts.html">Policy Analysts</a></li><li><a href="for-clinical-operations.html">Clinical Operations</a></li><li><a href="for-educational-designers.html">Educational Designers</a></li><li><a href="professions.html">All professions</a></li></ul></div>
+      <div class="footer__col"><h2>Source</h2><ul><li><a href="https://github.com/open-hint-dev/hint" target="_blank" rel="noopener">HINT ↗</a></li><li><a href="https://github.com/open-hint-dev/hintbook-template" target="_blank" rel="noopener">Build a hintbook ↗</a></li><li><a href="https://www.npmjs.com/org/openhint" target="_blank" rel="noopener">npm packages ↗</a></li></ul></div>
     </div>
-    <div class="footer__bottom"><span>© 2026 openhint.dev · MIT licensed</span><span>Evidence in. Exact context out.</span></div>
+    <div class="footer__bottom"><span>© 2026 openhint.dev · MIT licensed</span><span>HINT 1.5 · Tell your assistant what matters here.</span></div>
   </div>
 </footer>
-
-<script src="site.js"></script>
+<!-- shared-footer:end -->
+<script src="site.js?v=1.7.0-site-quality"></script>
 </body>
 </html>
