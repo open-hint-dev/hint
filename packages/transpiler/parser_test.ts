@@ -114,6 +114,22 @@ describe('parser', () => {
     });
 
     describe('parseHints', () => {
+        it('parses LF and CRLF files into byte-identical data', async () => {
+            const root = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-line-endings-'));
+            try {
+                const source = '# rule Portable {#portable}\n\nBody text.\n\n```text\ncode line\n```\n';
+                await FsPromises.writeFile(Path.join(root, 'lf.hint'), source);
+                await FsPromises.writeFile(Path.join(root, 'crlf.hint'), source.replaceAll('\n', '\r\n'));
+                const lf = (await parseHintFile(root, Path.join(root, 'lf.hint')))!;
+                const crlf = (await parseHintFile(root, Path.join(root, 'crlf.hint')))!;
+
+                expect(crlf.children[0]!.body).toBe(lf.children[0]!.body);
+                expect(crlf.children[0]!.name).toBe(lf.children[0]!.name);
+            } finally {
+                await FsPromises.rm(root, { recursive: true, force: true });
+            }
+        });
+
         it('parses heading attributes and degrades malformed suffixes to ordinary name text', async () => {
             const root = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-attrs-'));
             try {

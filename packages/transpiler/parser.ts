@@ -200,7 +200,9 @@ async function resolveIncludePath(target: string, fromFilePath: string, projectR
 // before any markdown parsing, so an included file behaves exactly as if its text were written in
 // place. Includes nest, and a file may not include itself transitively (cycle).
 async function expandIncludes(filePath: string, content: string, projectRootPath: string, seen: Set<string>): Promise<ExpandedContent> {
-    const lines = content.split('\n');
+    // Git may check the same repository out with CRLF on Windows. Normalize before
+    // parsing so code fences, bodies, includes, and rendered bytes stay platform-neutral.
+    const lines = content.replace(/\r\n?/g, '\n').split('\n');
     const out: string[] = [];
     const origins: LineOrigin[] = [];
     let fence: { marker: string; length: number } | null = null;
