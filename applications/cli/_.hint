@@ -16,6 +16,10 @@ A command that operated on no resolved subject exits 2 and explains the fix. Suc
 
 Command classes orchestrate one operation, `report.ts` owns shared verdict and exit semantics, and terminal concerns stay at the CLI edge. Keep engine behavior out of Commander actions.
 
+# decision AbsoluteContextPaths
+
+For a plain context read, an absolute path explicitly selects the HINT project that contains it, independent of the caller's current working directory. Relative paths remain anchored to the current working directory so existing scripts keep their meaning.
+
 # rule KnowledgeProfile
 
 `repo: knowledge` suppresses code-target staleness and pending noise and enriches missing-path verdicts with local search suggestions. It must not alter stdout knowledge or turn a missing path into success.

@@ -64,7 +64,7 @@ export async function findConfig(projectRootPath: string): Promise<string | null
                 return configPath;
             }
         } catch (err: unknown) {
-            if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+            if (['ENOENT', 'ENOTDIR'].includes((err as NodeJS.ErrnoException).code ?? '')) {
                 continue;
             }
 

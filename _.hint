@@ -23,3 +23,7 @@ Commit messages carry no attribution or co-author trailers.
 # decision MonorepoBoundaries
 
 Keep reusable behavior in the engine and orchestration/reporting in the CLI. Presets define build mechanics; `release/` is generated and must never be edited by hand.
+
+# decision TaggedReleases
+
+Release versions do not live in workspace manifests: a pushed semantic-version tag is the authority. The publish workflow derives `VERSION` from that tag, reruns lint and tests, rebuilds the disposable `release/` tree, publishes the packages, and creates the GitHub release.

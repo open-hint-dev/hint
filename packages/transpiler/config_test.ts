@@ -30,6 +30,10 @@ describe('config', () => {
             expect(await findProjectRoot(Path.join(projectRootPath, 'deep/nested'))).toBe(projectRootPath);
         });
 
+        it('walks up from an existing file to the project root', async () => {
+            expect(await findProjectRoot(Path.join(projectRootPath, 'src/payment.ts'))).toBe(projectRootPath);
+        });
+
         it('returns null outside of any project', async () => {
             const tempPath = await FsPromises.mkdtemp(Path.join(Os.tmpdir(), 'hint-root-'));
 

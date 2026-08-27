@@ -1,3 +1,5 @@
+import * as Path from 'node:path';
+
 import * as Transpiler from '@openhint/transpiler';
 
 import type { ICommand } from './command.js';
@@ -27,7 +29,9 @@ export class CompileCommand implements ICommand {
     }
 
     async execute(): Promise<void> {
-        const projectRootPath = await Transpiler.findProjectRoot(process.cwd());
+        // An absolute request is also an explicit project location. This makes `hint /other/repo`
+        // work from any cwd while preserving the established cwd-relative behavior for relative paths.
+        const projectRootPath = await Transpiler.findProjectRoot(this.paths.find((path) => Path.isAbsolute(path)) ?? process.cwd());
 
         if (!projectRootPath) {
             throw new Error(`No ${Transpiler.CONFIG_FILE_YML} found — run 'hint config' to initialize the project.`);

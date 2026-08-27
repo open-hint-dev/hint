@@ -110,6 +110,23 @@ describe('cli', () => {
             expect(result.stdout).not.toContain('<file_context');
         });
 
+        it('uses the project containing an absolute folder path instead of the cwd project', async () => {
+            const result = await runCli([knowledgeRootPath]);
+
+            expect(result.exitCode).toBeUndefined();
+            expect(result.stderr).not.toContain('matched no .hint files');
+            expect(result.stdout).toContain('<folder_context path=".">');
+            expect(result.stdout).toContain('<application_context name="Knowledge fixture"');
+        });
+
+        it('uses the project containing an absolute file path instead of the cwd project', async () => {
+            const result = await runCli([Path.join(knowledgeRootPath, 'raw/paper-a.md')]);
+
+            expect(result.exitCode).toBeUndefined();
+            expect(result.stderr).not.toContain('matched no .hint files');
+            expect(result.stdout).toContain('<file_context path="raw/paper-a.md">');
+        });
+
         it('--standalone implies --prompt and prepends the tag glossary', async () => {
             const plain = await runCli(['src/payment.ts.hint']);
             const standalone = await runCli([
