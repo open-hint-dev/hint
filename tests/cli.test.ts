@@ -720,6 +720,57 @@ Both required checks passed.
     expect(history.stdout).toContain('Status: superseded');
   });
 
+  test.each(['withdrawn', 'superseded'] as const)(
+    'checks fresh Notice fingerprints after a %s Thesis',
+    async (historicalStatus) => {
+      const project = await temporaryProject();
+      const verifiedSource = 'export const answer = 42;\n';
+      await writeFile(Path.join(project, '.hintrc'), 'high-quality-mode: true\n');
+
+      const [hypothesis, firstIteration, firstNotice] = qualityRecords(hash(verifiedSource));
+      const historicalThesis: HintRecord = {
+        kind: 'Thesis', id: 'T-historical', title: 'Use the former implementation',
+        metadata: {
+          Status: historicalStatus,
+          'Based-on': 'N-quality-1',
+          'Task-outcome': 'completed',
+          ...(historicalStatus === 'superseded' ? { 'Superseded-by': 'T-replacement' } : {}),
+        },
+        sections: { Guidance: 'Use the former implementation.', Rationale: 'The former evidence passed.' },
+      };
+      const replacement: HintRecord[] = historicalStatus === 'superseded'
+        ? [{
+            kind: 'Thesis', id: 'T-replacement', title: 'Use replacement guidance',
+            metadata: {
+              Status: 'accepted', 'Based-on': 'user:replacement',
+              'Task-outcome': 'not-applicable', Supersedes: 'T-historical',
+            },
+            sections: { Guidance: 'Use replacement guidance.', Rationale: 'The user replaced the old guidance.' },
+          }]
+        : [];
+      const freshCycle = qualityRecords(hash(verifiedSource), { attempt: 2 }).slice(1);
+      await writeFile(
+        Path.join(project, 'src', 'app.ts.hint'),
+        qualityDocument([
+          hypothesis as HintRecord,
+          firstIteration as HintRecord,
+          firstNotice as HintRecord,
+          historicalThesis,
+          ...replacement,
+          ...freshCycle,
+        ]),
+      );
+      await writeFile(Path.join(project, 'src', 'app.ts'), 'export const answer = 43;\n');
+
+      const checked = await runCli(project, ['check', 'src/app.ts', '--json']);
+      const envelope = JSON.parse(checked.stdout) as { data: { diagnostics: Array<{ message: string }> } };
+      expect(checked.code).toBe(1);
+      expect(envelope.data.diagnostics).toEqual(expect.arrayContaining([
+        expect.objectContaining({ message: 'N-quality-2 fingerprint is stale for src/app.ts' }),
+      ]));
+    },
+  );
+
   test('stops NEXT after the tenth completed error attempt', async () => {
     const project = await temporaryProject();
     const source = 'export const answer = 42;\n';

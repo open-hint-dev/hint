@@ -157,19 +157,9 @@ const commandKinds: Record<string, RecordKind> = {
   thesis: 'Thesis',
 };
 
-function hasOnlyHistoricalTheses(records: SourcedRecord[], hypothesisId: string): boolean {
-  const iterationIds = new Set(
-    records
-      .filter((record) => record.kind === 'Iteration' && record.metadata.Hypothesis === hypothesisId)
-      .map((record) => record.id),
-  );
-  const noticeIds = new Set(
-    records
-      .filter((record) => record.kind === 'Notice' && iterationIds.has(record.metadata.Iteration ?? ''))
-      .map((record) => record.id),
-  );
+function isHistoricalEvidence(records: SourcedRecord[], noticeId: string): boolean {
   const theses = records.filter(
-    (record) => record.kind === 'Thesis' && noticeIds.has(record.metadata['Based-on'] ?? ''),
+    (record) => record.kind === 'Thesis' && record.metadata['Based-on'] === noticeId,
   );
   return theses.length > 0 && theses.every((record) =>
     ['superseded', 'withdrawn'].includes(record.metadata.Status ?? ''),
@@ -330,7 +320,7 @@ async function checkCommand(args: Arguments): Promise<void> {
       for (const hypothesis of visible.filter((item) => item.kind === 'Hypothesis')) {
         const evaluated = await evaluateQuality(visible, hypothesis.id, scope.root);
         const state = evaluated.state;
-        if (!hasOnlyHistoricalTheses(visible, hypothesis.id)) {
+        if (!evaluated.notice || !isHistoricalEvidence(visible, evaluated.notice.id)) {
           for (const diagnostic of evaluated.diagnostics) {
             diagnosticMap.set(`${diagnostic.file}\0${diagnostic.line}\0${diagnostic.message}`, diagnostic);
           }

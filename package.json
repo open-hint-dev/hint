@@ -1,6 +1,6 @@
 {
   "name": "@openhint/cli",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Path-scoped research memory for coding agents",
   "type": "module",
   "bin": {
