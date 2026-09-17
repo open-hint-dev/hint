@@ -1,0 +1,28 @@
+---
+hint-format: 1
+---
+# Current theses
+
+## Thesis T-static-site-deployment: Publish only the verified static allowlist
+Status: accepted
+Based-on: user:2026-09-17 site deployment plan
+
+### Guidance
+Treat this folder as the only authored source for openhint.dev. Package public
+files through the repository allowlist. Before production writes, confirm that
+the configured target serves the live domain, require strict host-key checks,
+and back up every managed target. After SCP, remove only inventoried legacy
+HINT paths; never delete unknown hosting content or rules.
+
+### Rationale
+SCP adds and overwrites but does not remove obsolete pages, while a broad
+delete can damage unrelated hosting state. Verified targeting, bounded backup,
+and an exact cleanup manifest make the non-atomic deployment recoverable.
+
+### Revisit when
+The hosting provider offers an atomic release mechanism or the document root
+becomes exclusive to HINT with a separately verified retention policy.
+
+# Investigations
+
+# Historical theses
