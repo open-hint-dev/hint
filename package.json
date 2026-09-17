@@ -17,6 +17,9 @@
     "lint": "eslint src tests scripts --max-warnings=0",
     "test": "vitest run",
     "site:check": "node scripts/check-site.mjs",
+    "site:package": "./scripts/site-package.sh",
+    "site:publish:dry-run": "./scripts/site-publish.sh --dry-run",
+    "site:publish": "./scripts/site-publish.sh",
     "pack": "yarn pack --out hint.tgz"
   },
   "dependencies": {

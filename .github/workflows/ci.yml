@@ -29,6 +29,7 @@ jobs:
       - run: yarn test
       - run: yarn build
       - run: yarn site:check
+      - run: ./scripts/site-package.sh "$RUNNER_TEMP/openhint-site"
       - run: yarn pack --out hint.tgz
       - name: Smoke the packed CLI outside Git
         shell: bash

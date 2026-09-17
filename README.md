@@ -88,6 +88,12 @@ hint check <path...> [--json]
 - [Breaking migration](docs/migration.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Independent-agent event redelivery demo](https://github.com/open-hint-dev/hint-demo)
+- [openhint.dev source and deployment](sites/openhint.dev/README.md)
+
+The static site can be checked with `make site-check` and packaged from its
+explicit public allowlist with `make site-package DEST=/absolute/empty/path`.
+Publication is a separate SSH operation documented with the site source; it
+does not publish the npm package.
 
 HINT requires Node.js 24 or newer. It works without Git, configuration,
 network access, or any external knowledge package. License: MIT.
