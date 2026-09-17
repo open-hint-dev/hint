@@ -1,29 +1,49 @@
-HINT is a Spec-as-Source tool: durable intent lives in Markdown-native `.hint` files, and the engine returns only the knowledge governing a path or query.
+---
+hint-format: 1
+---
+# Current theses
 
-# app HINT
+## Thesis T-small-local-core: Keep HINT local and explicit
+Status: accepted
+Based-on: user:2026-09-17 refactoring decision
 
-The monorepo separates the vocabulary-neutral engine in `packages/transpiler`, the user-facing CLI in `applications/cli`, shared build presets in `presets`, and generated publish artifacts in `release`.
+### Guidance
+Keep HINT as one Node.js CLI whose canonical data is path-scoped Markdown. Do
+not add a database, daemon, model call, plugin vocabulary, network import, or
+hidden compatibility engine.
 
-# invariant DeterministicCore
+### Rationale
+The product exists to leave compact, inspectable evidence and guidance for a
+later agent without requiring another service or ecosystem.
 
-Compile, emit, search, and status derive their answers entirely from repository content. Do not introduce wall-clock input, randomness, or network access into those paths.
+### Revisit when
+A concrete user need cannot be met by the fixed H–I–N–T Markdown workflow.
 
-# rule ExitTaxonomy
+## Thesis T-output-contract: Keep machine output isolated
+Status: accepted
+Based-on: decision:CLI v1 contract
 
-Exit 0 means an operation ran successfully, 1 means a check ran and found a failure, and 2 means nothing was resolved. No command may report success over an empty subject set.
+### Guidance
+Write requested Markdown or one JSON value to stdout. Put verdicts, warnings,
+and NEXT on stderr in text mode. Exit 0 on success, 1 on validation/check/
+conflict failure, and 2 on usage or unresolved address.
 
-# rule OutputChannels
+### Rationale
+Agents must be able to consume output without advisory prose corrupting it.
 
-stdout is the requested knowledge or machine-readable result. stderr is the verdict and advisory channel; put the decisive line first because agent runners truncate output.
+## Thesis T-safe-storage: Preserve scope and concurrent work
+Status: accepted
+Based-on: decision:CLI v1 storage contract
 
-# rule Commits
+### Guidance
+Resolve real paths inside the selected project boundary. Serialize each
+read-modify-write, re-read under the lock, enforce requested revisions, and
+publish through same-directory atomic rename.
 
-Commit messages carry no attribution or co-author trailers.
+### Rationale
+Lexical checks miss symlink escapes and atomic rename alone still permits two
+writers to lose one another's changes.
 
-# decision MonorepoBoundaries
+# Investigations
 
-Keep reusable behavior in the engine and orchestration/reporting in the CLI. Presets define build mechanics; `release/` is generated and must never be edited by hand.
-
-# decision TaggedReleases
-
-Release versions do not live in workspace manifests: a pushed semantic-version tag is the authority. The publish workflow derives `VERSION` from that tag, reruns lint and tests, rebuilds the disposable `release/` tree, publishes the packages, and creates the GitHub release.
+# Historical theses

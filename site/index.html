@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HINT — research memory for coding agents</title>
+    <meta name="description" content="HINT keeps hypotheses, iterations, notices, and durable guidance in path-scoped Markdown." />
+    <link rel="canonical" href="https://openhint.dev/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://openhint.dev/" />
+    <meta property="og:title" content="HINT — research memory for coding agents" />
+    <meta property="og:description" content="Readable, path-scoped Markdown for evidence and durable guidance." />
+    <link rel="icon" href="favicon.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="HINT home">HINT<span>.</span></a>
+      <nav aria-label="Primary navigation">
+        <a href="#workflow">Workflow</a>
+        <a href="#format">Format</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/open-hint-dev/hint-demo">Demo</a>
+        <a href="https://github.com/open-hint-dev/hint">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Path-scoped research memory</p>
+          <h1 id="hero-title">Leave the next agent a conclusion, not a transcript.</h1>
+          <p class="lede">HINT connects what you suspected, what you tried, what you observed, and what future work should do. The record stays readable Markdown; the CLI keeps its links and states honest.</p>
+          <div class="hero-actions">
+            <a class="button" href="#install">Install HINT</a>
+            <a class="text-link" href="https://github.com/open-hint-dev/hint-demo">See the demo <span aria-hidden="true">↗</span></a>
+            <a class="text-link" href="https://github.com/open-hint-dev/hint">Read the source <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <div class="terminal" aria-label="HINT command example">
+          <div class="terminal-bar"><span></span><span></span><span></span><b>agent session</b></div>
+          <pre><code><i>$</i> hint guide
+<i>$</i> hint src/waiter.ts
+
+<em>## T-request-id</em>
+Match responses by request ID.
+
+<small>Based on: N-race
+Source: src/waiter.ts.hint</small></code></pre>
+        </div>
+      </section>
+
+      <section class="workflow" id="workflow" aria-labelledby="workflow-title">
+        <div class="section-heading">
+          <p class="eyebrow">One connected loop</p>
+          <h2 id="workflow-title">Evidence becomes guidance without losing its route.</h2>
+        </div>
+        <ol class="steps">
+          <li><span>H</span><div><h3>Hypothesis</h3><p>State a bounded claim, a check, and when the investigation stops.</p></div></li>
+          <li><span>I</span><div><h3>Iteration</h3><p>Take one action that can distinguish the claim from alternatives.</p></div></li>
+          <li><span>N</span><div><h3>Notice</h3><p>Record the result, evidence, and gaps. A saved observation is not proof.</p></div></li>
+          <li><span>T</span><div><h3>Thesis</h3><p>Keep accepted guidance current and supersede it explicitly when conditions change.</p></div></li>
+        </ol>
+      </section>
+
+      <section class="split" id="format" aria-labelledby="format-title">
+        <div>
+          <p class="eyebrow">Markdown is the source</p>
+          <h2 id="format-title">Readable with or without the CLI.</h2>
+          <p>A file gets a <code>&lt;file&gt;.hint</code> companion. A folder gets <code>_.hint</code>, inherited only by its subtree. Normal reads show accepted Theses; open work and history stay available on demand.</p>
+          <ul class="plain-list">
+            <li>Stable IDs and explicit evidence links</li>
+            <li>Atomic writes and revision conflicts</li>
+            <li>No database, daemon, network, or model runtime</li>
+          </ul>
+        </div>
+        <pre class="paper"><code>---
+hint-format: 1
+---
+# Current theses
+
+## Thesis T-request-id: Match by identity
+Status: accepted
+Based-on: N-race
+
+### Guidance
+Match responses by request ID.
+
+### Rationale
+Concurrent requests can share a route.</code></pre>
+      </section>
+
+      <section class="quality" aria-labelledby="quality-title">
+        <div class="quality-mark" aria-hidden="true">8<span>/10</span></div>
+        <div>
+          <p class="eyebrow">Optional high-quality mode</p>
+          <h2 id="quality-title">Criteria before confidence.</h2>
+          <p>Record the goal, required checks, current working-file fingerprints, known shortcomings, and a subjective score. Passing needs every required criterion, current evidence, no material gap, and a score of at least eight. Ten attempts is a limit, not a success condition.</p>
+        </div>
+      </section>
+
+      <section class="install" id="install" aria-labelledby="install-title">
+        <p class="eyebrow">Node.js 24+</p>
+        <h2 id="install-title">Start with one command.</h2>
+        <pre><code>npm install --global @openhint/cli
+hint guide</code></pre>
+        <p>Then run <code>hint &lt;path&gt;</code> before working and follow the returned NEXT within the user's task and your authority.</p>
+      </section>
+
+      <section class="limits" aria-labelledby="limits-title">
+        <h2 id="limits-title">What HINT does not pretend to do</h2>
+        <p>HINT does not run checks from Markdown, judge truth, call another model, or guarantee that an agent continues. It validates the record and exposes the next state. The agent still performs the work and reports blockers honestly.</p>
+      </section>
+    </main>
+
+    <footer>
+      <span>HINT is open source.</span>
+      <a href="https://github.com/open-hint-dev/hint-demo">Demo</a>
+      <a href="https://github.com/open-hint-dev/hint">GitHub</a>
+      <a href="https://www.npmjs.com/package/@openhint/cli">npm</a>
+    </footer>
+  </body>
+</html>

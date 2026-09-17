@@ -1,9 +1,0 @@
-{
-    "$schema": "https://json.schemastore.org/tsconfig",
-    "display": "Astro",
-    "extends": "astro/tsconfigs/base",
-    "compilerOptions": {
-        "jsx": "react-jsx",
-        "jsxImportSource": "react"
-    }
-}

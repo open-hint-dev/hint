@@ -1,88 +1,47 @@
 {
-    "name": "hint",
-    "private": true,
-    "workspaces": [
-        "applications/**/*",
-        "packages/**/*",
-        "presets/**/*",
-        "sites/**/*"
-    ],
-    "scripts": {
-        "coverage": "turbo coverage",
-        "fix": "turbo fix",
-        "lint": "turbo lint",
-        "publish": "turbo publish --force",
-        "refresh": "turbo refresh",
-        "refresh-react": "turbo refresh-react",
-        "release": "turbo release --force",
-        "test": "turbo test"
-    },
-    "resolutions": {
-        "@eslint/js": "9.28.0",
-        "@ianvs/prettier-plugin-sort-imports": "4.7.0",
-        "@modelcontextprotocol/sdk": "1.30.0",
-        "@types/mdast": "4.0.4",
-        "@types/node": "24.10.9",
-        "@types/react": "19.2.14",
-        "@types/react-dom": "^19.2.3",
-        "@types/source-map-support": "0.5.10",
-        "@typescript-eslint/eslint-plugin": "8.53.1",
-        "@typescript-eslint/parser": "8.53.1",
-        "@vitest/coverage-v8": "4.0.17",
-        "@wroud/vite-plugin-tsc": "0.11.6",
-        "astro": "6.0.8",
-        "commander": "15.0.0",
-        "es-toolkit": "1.44.0",
-        "esbuild-plugin-tsc": "0.5.0",
-        "eslint": "9.28.0",
-        "eslint-config-prettier": "10.1.5",
-        "eslint-import-resolver-typescript": "4.4.2",
-        "eslint-plugin-import-x": "4.16.1",
-        "eslint-plugin-prettier": "5.4.1",
-        "globals": "16.2.0",
-        "jiti": "2.7.0",
-        "mdast-util-to-string": "4.0.0",
-        "prettier": "3.6.2",
-        "prettier-eslint": "16.4.2",
-        "prettier-plugin-astro": "0.14.1",
-        "prettier-plugin-multiline-arrays": "4.0.3",
-        "prettier-plugin-packagejson": "2.5.15",
-        "react": "19.2.4",
-        "react-dom": "19.2.4",
-        "remark-parse": "11.0.0",
-        "remark-stringify": "11.0.0",
-        "rollup": "4.41.1",
-        "rollup-plugin-node-externals": "8.0.0",
-        "sass": "1.98.0",
-        "source-map-support": "0.5.21",
-        "turbo": "2.7.5",
-        "typescript": "5.8.3",
-        "typescript-eslint": "8.53.1",
-        "unified": "11.0.5",
-        "unist-util-visit": "5.1.0",
-        "vfile": "6.0.3",
-        "vfile-matter": "5.0.1",
-        "vite": "7.1.7",
-        "vite-node": "3.2.3",
-        "vite-plugin-no-bundle": "4.0.0",
-        "vite-plugin-static-copy": "4.1.1",
-        "vite-tsconfig-paths": "5.1.4",
-        "vitest": "4.0.17",
-        "yaml": "2.8.2",
-        "zod": "4.4.3"
-    },
-    "devDependencies": {
-        "@openhint/hintbook-software-engineer": "^1.2.0",
-        "@openhint/preset-eslint": "workspace:*",
-        "@openhint/preset-typescript": "workspace:*",
-        "eslint": "*",
-        "turbo": "*",
-        "vite": "*",
-        "vite-node": "*",
-        "vitest": "*"
-    },
-    "packageManager": "yarn@4.12.0",
-    "engines": {
-        "node": ">=24"
-    }
+  "name": "@openhint/cli",
+  "version": "2.0.0",
+  "description": "Path-scoped research memory for coding agents",
+  "type": "module",
+  "bin": {
+    "hint": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests scripts --max-warnings=0",
+    "test": "vitest run",
+    "site:check": "node scripts/check-site.mjs",
+    "pack": "yarn pack --out hint.tgz"
+  },
+  "dependencies": {
+    "yaml": "2.8.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.28.0",
+    "@types/node": "24.10.9",
+    "@vitest/coverage-v8": "4.0.17",
+    "eslint": "9.28.0",
+    "globals": "16.2.0",
+    "typescript": "5.8.3",
+    "typescript-eslint": "8.53.1",
+    "vitest": "4.0.17"
+  },
+  "packageManager": "yarn@4.12.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-hint-dev/hint.git"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

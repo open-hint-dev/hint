@@ -1,26 +1,8 @@
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-import { defineConfig, defineProject } from 'vitest/config';
-
-const root = dirname(fileURLToPath(import.meta.url));
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-    test: {
-        projects: [
-            'applications',
-            'testdata',
-            'packages',
-            'presets',
-            'sites',
-        ].map((path) =>
-            defineProject({
-                test: {
-                    root,
-                    globals: true,
-                    include: [`${path}/**/*_test.{ts,tsx}`],
-                },
-            }),
-        ),
-    },
+  test: {
+    coverage: { provider: 'v8', reporter: ['text', 'json-summary'] },
+    testTimeout: 15_000,
+  },
 });

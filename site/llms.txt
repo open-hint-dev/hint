@@ -1,0 +1,18 @@
+# HINT
+
+HINT is a local CLI for path-scoped research memory. Its fixed workflow is
+Hypothesis → Iteration → Notice → Thesis. Knowledge is readable Markdown in a
+`<file>.hint` companion or an inherited folder `_.hint`.
+
+Install: `npm install --global @openhint/cli`
+
+Start each agent session with `hint guide`. Before work, run `hint <path...>`
+to read accepted Thesis guidance. Use `hint --help` for the complete command
+surface and the repository documentation for the format and quality rules.
+
+HINT validates records, links, states, revisions, and optional evidence
+fingerprints. It does not execute checks from Markdown, call an LLM, or prove
+that a claim is true.
+
+Source: https://github.com/open-hint-dev/hint
+Demo: https://github.com/open-hint-dev/hint-demo
